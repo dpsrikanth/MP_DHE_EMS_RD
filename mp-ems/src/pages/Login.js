@@ -146,8 +146,10 @@ const Login = () => {
         background: 'white',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
+        // justifyContent: 'center',
         padding: '60px 40px',
+        justifyContent: 'flex-start',
+// paddingTop: '80px',
         boxShadow: '-5px 0 20px rgba(0,0,0,0.1)'
       }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
