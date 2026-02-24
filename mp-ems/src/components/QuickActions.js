@@ -70,7 +70,15 @@ const QuickActions = ({ stats }) => {
 
     setLoadingAction(action.id);
     try {
-      const response = await fetch(`http://localhost:8080${action.endpoint}`);
+      const response = await fetch(`http://localhost:8080${action.endpoint}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
       if (response.ok) {
         const data = await response.json();
         setExpandedData(prev => ({
