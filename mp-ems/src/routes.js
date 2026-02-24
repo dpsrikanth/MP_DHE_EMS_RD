@@ -4,13 +4,15 @@ import Dashboard from "./components/Dashboard";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import ViewStudentsAndUniversities from "./pages/viewStudentsAndUniversitys"
+import ProtectedRoute from "./components/ProtectedRoute";
 
 
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Login/>}/>
-      <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
+      
      <Route path="/register" element={<Register />} />
      <Route path="/viewStudentsAndUniversitys" element={<ViewStudentsAndUniversities/>} />
      

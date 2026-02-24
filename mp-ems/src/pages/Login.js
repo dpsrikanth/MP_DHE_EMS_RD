@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../App.css";
+import authUtils from "../utils/authUtils";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -29,9 +30,11 @@ const Login = () => {
       });
 
       const data = await response.json();
+      console.log(data,"daaaaaaaaa")
 
       if (response.ok) {
-        localStorage.setItem("token", data.token);
+        // Store token and role information using auth utility
+        authUtils.setAuth(data.data.token, data.data.role_name || "", data.data.id || "");
         
         // Show success message
         const successMsg = document.createElement('div');
@@ -40,7 +43,13 @@ const Login = () => {
         document.body.appendChild(successMsg);
         setTimeout(() => successMsg.remove(), 3000);
         
-        setTimeout(() => navigate("/dashboard"), 1000);
+        // Check if user is admin
+        if (authUtils.isAdmin()) {
+          setTimeout(() => navigate("/dashboard"), 1000);
+        } else {
+          alert("Access denied. Admin role required.");
+          authUtils.logout();
+        }
       } else {
         alert(data.message || "Login failed");
       }
