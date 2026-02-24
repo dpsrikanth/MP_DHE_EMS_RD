@@ -24,5 +24,9 @@ client.connect((err) => {
     }
 });
 
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+
 app.use(cors(corsOptions));
 app.use(express.json());

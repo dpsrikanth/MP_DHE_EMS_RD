@@ -1,0 +1,6 @@
+# Ignore node modules across the repository
+node_modules/
+**/node_modules/
+
+# Ignore common OS files
+.DS_Store
