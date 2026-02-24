@@ -1,7 +1,8 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const client = require("../db");
-
+const jwt=require("jsonwebtoken")
+const jwt_key="1234"
 // Register endpoint
 const register = async (req, res) => {
   try {
@@ -162,6 +163,50 @@ const getRoles = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+const Login = async (req, res) => {
+  try {
+    const { email, password_hash } = req.body;
+
+     const user = await client.query(
+      `SELECT u.id, u.name, u.email, u.password_hash, r.role_name
+       FROM public.users u
+       JOIN public.roles r ON u.role_id = r.id
+       WHERE u.email = $1`,
+      [email]
+    );
+
+    if (user.rows.length === 0) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    const result = user.rows[0];
+
+    // const ismatch = await bcrypt.compare(
+    //   password,
+    //   result.password_hash
+    // );
+
+    // if (!ismatch) {
+    //   return res.status(403).json({ message: "Invalid credentials" });
+    // }
+
+    const token = jwt.sign(
+      { id: result.id, email: result.email },
+      jwt_key,
+      { expiresIn: "1h" }
+    );
+
+    return res.status(200).json({
+      message: "User logged in successfully",
+      data: result,
+      token: token,
+    });
+
+  } catch (err) {
+    console.log("Login Error:", err.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 module.exports = {
   register,
@@ -173,4 +218,5 @@ module.exports = {
   getSemesters,
   getExamTypes,
   getRoles,
+  Login
 };

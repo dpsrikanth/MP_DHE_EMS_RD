@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { register, getDashboardStats, getUsers, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles } = require('../controllers/controller');
+const { register, getDashboardStats, getUsers, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles,Login } = require('../controllers/controller');
 
 router.post('/register', register);
 router.get('/roles', getRoles);
+router.post('/login', Login);
 // Dashboard endpoints
 router.get('/dashboard/stats', getDashboardStats);
 router.get('/users', getUsers);
