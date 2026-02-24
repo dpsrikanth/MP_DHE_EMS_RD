@@ -208,6 +208,32 @@ const Login = async (req, res) => {
   }
 };
 
+const getUniversities = async (req, res) => {
+  try {
+    const result = await client.query(  
+      "SELECT id, university_name FROM university",
+    );
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get universities error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getStudents = async(req,res)=>{
+  try{
+   const result = await client.query(
+    " SELECT id,student_name,college_id,university_id FROM students "
+   )
+   res.json(result.rows)
+  }
+  catch(err){
+    res.status(500).json({ message: "Server error", error: err.message });
+
+  }
+}
+
 module.exports = {
   register,
   getDashboardStats,
@@ -218,5 +244,7 @@ module.exports = {
   getSemesters,
   getExamTypes,
   getRoles,
-  Login
+  Login,
+  getUniversities,
+  getStudents
 };

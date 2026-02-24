@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, getDashboardStats, getUsers, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles,Login } = require('../controllers/controller');
+const { register, getDashboardStats, getUsers, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles,Login ,getUniversities,getStudents} = require('../controllers/controller');
 
 router.post('/register', register);
 router.get('/roles', getRoles);
@@ -13,5 +13,7 @@ router.get('/subjects', getSubjects);
 router.get('/academic-years', getAcademicYears);
 router.get('/semesters', getSemesters);
 router.get('/exam-types', getExamTypes);
+router.get('/universities', getUniversities);
+router.get('/students', getStudents);
 
 module.exports = router;
