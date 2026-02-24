@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 
 const Register = () => {
@@ -7,12 +7,38 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'student'
+    role: ''
   });
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [errors, setErrors] = useState({});
+  const [roles, setRoles] = useState([]);
+  const [rolesLoading, setRolesLoading] = useState(true);
+
+  useEffect(() => {
+    fetchRoles();
+  }, []);
+
+  const fetchRoles = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/roles');
+      if (response.ok) {
+        const data = await response.json();
+        setRoles(data);
+        if (data.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            role: data[0].role_name
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+    } finally {
+      setRolesLoading(false);
+    }
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -85,7 +111,7 @@ const Register = () => {
 
       // Redirect after 2 seconds
       setTimeout(() => {
-        window.location.href = '/login';
+        window.location.href = '/';
       }, 2000);
     } catch (error) {
       setMessage('Registration failed. Please try again.');
@@ -179,10 +205,14 @@ const Register = () => {
               name="role"
               value={formData.role}
               onChange={handleChange}
+              disabled={rolesLoading}
             >
-              <option value="superAdmin">superAdmin</option>
-              <option value="admin">admin</option>
-              <option value="student">student</option>
+              <option value="">Select a role</option>
+              {roles.map((role) => (
+                <option key={role.id} value={role.role_name}>
+                  {role.role_name}
+                </option>
+              ))}
             </select>
           </div>
 

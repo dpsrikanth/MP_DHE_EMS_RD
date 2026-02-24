@@ -89,14 +89,14 @@ th, td {
   box-sizing: border-box;
 }
 
-body {
+/* body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #ffffff 0%, #ffff 100%);
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-}
+} */
 
 .auth-container {
   display: flex;

@@ -1,9 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { getUserData ,register} = require('../controllers/controller');
-
-router.get('/getuser', getUserData);
+const { register, getDashboardStats, getUsers, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles } = require('../controllers/controller');
 
 router.post('/register', register);
+router.get('/roles', getRoles);
+// Dashboard endpoints
+router.get('/dashboard/stats', getDashboardStats);
+router.get('/users', getUsers);
+router.get('/programs', getPrograms);
+router.get('/subjects', getSubjects);
+router.get('/academic-years', getAcademicYears);
+router.get('/semesters', getSemesters);
+router.get('/exam-types', getExamTypes);
 
 module.exports = router;
