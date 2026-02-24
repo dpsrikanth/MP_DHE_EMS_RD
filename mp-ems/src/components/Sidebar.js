@@ -9,11 +9,15 @@ const Sidebar = () => {
     navigate("/viewStudentsAndUniversitys");
   };
 
+  const handleDashboardClick = () => {
+    navigate("/dashboard");
+  }
+
   return (
     <div className="sidebar">
       <h2>EMS</h2>
       <ul>
-        <li>Dashboard</li>
+        <li onClick={handleDashboardClick} style={{ cursor: 'pointer' }}>Dashboard</li>
         <li onClick={handleStudentsClick} style={{ cursor: 'pointer' }}>Students</li>
         <li>Exams</li>
         <li>Marks Entry</li>

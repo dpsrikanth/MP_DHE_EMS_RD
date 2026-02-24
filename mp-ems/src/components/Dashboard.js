@@ -1,6 +1,7 @@
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import StatCard from "../components/StatCard";
+import QuickActions from "../components/QuickActions";
 import ActivityTable from "../components/ActivityTable";
 import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale } from "chart.js";
@@ -99,6 +100,8 @@ const Dashboard = () => {
           <StatCard title="Total Subjects" value={stats.totalSubjects.toString()} />
           <StatCard title="Academic Years" value={stats.totalAcademicYears.toString()} />
         </div>
+
+        <QuickActions stats={stats} />
 
         <div className="chart-box">
           <h3>Monthly Fee Collection</h3>
