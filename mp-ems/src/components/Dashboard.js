@@ -5,6 +5,7 @@ import ActivityTable from "../components/ActivityTable";
 import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale } from "chart.js";
 import { useState, useEffect } from "react";
+import authUtils from "../utils/authUtils";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale);
 
@@ -24,7 +25,15 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const response = await fetch("http://localhost:8080/api/dashboard/stats");
+        const token = authUtils.getAuth().token;
+        
+        const response = await fetch("http://localhost:8080/api/dashboard/stats", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          }
+        });
         
         if (!response.ok) {
           throw new Error("Failed to fetch dashboard stats");
