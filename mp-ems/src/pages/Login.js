@@ -40,7 +40,7 @@ const Login = () => {
         document.body.appendChild(successMsg);
         setTimeout(() => successMsg.remove(), 3000);
         
-        setTimeout(() => navigate("/StudentDashboard"), 1000);
+        setTimeout(() => navigate("/dashboard"), 1000);
       } else {
         alert(data.message || "Login failed");
       }
