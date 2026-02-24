@@ -30,22 +30,15 @@ const Login = () => {
       });
 
       const data = await response.json();
-      console.log(data,"daaaaaaaaa")
+      console.log(data,"daaaaaaaaa",data.token)
 
       if (response.ok) {
         // Store token and role information using auth utility
-        authUtils.setAuth(data.data.token, data.data.role_name || "", data.data.id || "");
-        
-        // Show success message
-        const successMsg = document.createElement('div');
-        successMsg.className = 'success-toast';
-        successMsg.textContent = 'Login Successful!';
-        document.body.appendChild(successMsg);
-        setTimeout(() => successMsg.remove(), 3000);
+        authUtils.setAuth(data.token, data.data.role_name || "", data.data.id || "");
         
         // Check if user is admin
         if (authUtils.isAdmin()) {
-          setTimeout(() => navigate("/dashboard"), 1000);
+          navigate("/dashboard");
         } else {
           alert("Access denied. Admin role required.");
           authUtils.logout();

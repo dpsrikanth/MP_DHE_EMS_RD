@@ -1,8 +1,10 @@
+
+require("dotenv").config();
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const client = require("../db");
 const jwt=require("jsonwebtoken")
-const jwt_key="1234"
+
 // Register endpoint
 const register = async (req, res) => {
   try {
@@ -191,8 +193,12 @@ const Login = async (req, res) => {
     // }
 
     const token = jwt.sign(
-      { id: result.id, email: result.email },
-      jwt_key,
+      { 
+  id: result.id, 
+  email: result.email,
+  role: result.role_name
+},
+      process.env.JWT_KEY,
       { expiresIn: "1h" }
     );
 
