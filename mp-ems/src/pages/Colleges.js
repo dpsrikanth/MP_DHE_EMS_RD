@@ -40,7 +40,7 @@ const Colleges = () => {
           <tr>
             <th>ID</th>
             <th>College Name</th>
-            <th>University ID</th>
+            <th>University</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -48,8 +48,8 @@ const Colleges = () => {
           {data.map((item) => (
             <tr key={item.id}>
               <td>{item.id}</td>
-              <td>{item.college_name}</td>
-              <td>{item.university_id}</td>
+              <td>{item.college_name || item.name}</td>
+              <td>{item.university_name || item.university_id}</td>
               <td>
                 <button className="btn-edit">Edit</button>
                 <button className="btn-delete">Delete</button>
