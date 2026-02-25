@@ -15,6 +15,8 @@ const Register = () => {
   const [errors, setErrors] = useState({});
   const [roles, setRoles] = useState([]);
   const [rolesLoading, setRolesLoading] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     fetchRoles();
@@ -319,26 +321,51 @@ const Register = () => {
             }}>
               Password
             </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Create a strong password"
-              style={{
-                width: '100%',
-                padding: '12px 15px',
-                border: errors.password ? '2px solid #dc3545' : '2px solid #e0e0e0',
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'all 0.3s',
-                backgroundColor: errors.password ? '#fff5f5' : 'white'
-              }}
-              onFocus={(e) => !errors.password && (e.target.style.borderColor = '#667eea')}
-              onBlur={(e) => !errors.password && (e.target.style.borderColor = '#e0e0e0')}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Create a strong password"
+                style={{
+                  width: '100%',
+                  padding: '12px 15px',
+                  paddingRight: '45px',
+                  border: errors.password ? '2px solid #dc3545' : '2px solid #e0e0e0',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  outline: 'none',
+                  transition: 'all 0.3s',
+                  backgroundColor: errors.password ? '#fff5f5' : 'white',
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => !errors.password && (e.target.style.borderColor = '#667eea')}
+                onBlur={(e) => !errors.password && (e.target.style.borderColor = '#e0e0e0')}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '20px',
+                  color: '#667eea',
+                  padding: '0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
             {errors.password && <span style={{ color: '#dc3545', fontSize: '12px', marginTop: '5px', display: 'block' }}>{errors.password}</span>}
           </div>
 
@@ -353,26 +380,51 @@ const Register = () => {
             }}>
               Confirm Password
             </label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="Confirm your password"
-              style={{
-                width: '100%',
-                padding: '12px 15px',
-                border: errors.confirmPassword ? '2px solid #dc3545' : '2px solid #e0e0e0',
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'all 0.3s',
-                backgroundColor: errors.confirmPassword ? '#fff5f5' : 'white'
-              }}
-              onFocus={(e) => !errors.confirmPassword && (e.target.style.borderColor = '#667eea')}
-              onBlur={(e) => !errors.confirmPassword && (e.target.style.borderColor = '#e0e0e0')}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="Confirm your password"
+                style={{
+                  width: '100%',
+                  padding: '12px 15px',
+                  paddingRight: '45px',
+                  border: errors.confirmPassword ? '2px solid #dc3545' : '2px solid #e0e0e0',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  outline: 'none',
+                  transition: 'all 0.3s',
+                  backgroundColor: errors.confirmPassword ? '#fff5f5' : 'white',
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => !errors.confirmPassword && (e.target.style.borderColor = '#667eea')}
+                onBlur={(e) => !errors.confirmPassword && (e.target.style.borderColor = '#e0e0e0')}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '20px',
+                  color: '#667eea',
+                  padding: '0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
             {errors.confirmPassword && <span style={{ color: '#dc3545', fontSize: '12px', marginTop: '5px', display: 'block' }}>{errors.confirmPassword}</span>}
           </div>
 

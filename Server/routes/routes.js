@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, getDashboardStats, getUsers, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, Login, getUniversities, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, getExams, getMarks } = require('../controllers/controller');
+const { register, getDashboardStats, getUsers, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, Login, getUniversities, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, updateTeacher, getExams, getMarks } = require('../controllers/controller');
 const { verifyToken } = require('../middleware/auth.middleware');
 
 router.post('/register', register);
@@ -32,6 +32,8 @@ router.put('/academic-years/:id', verifyToken, updateAcademicYear);
 router.delete('/academic-years/:id', verifyToken, deleteAcademicYear);
 router.get('/students', verifyToken, getStudents);
 router.get('/teachers', verifyToken, getTeachers);
+router.put('/teachers/:id', verifyToken, updateTeacher);
+// router.delete('/teachers/:id', verifyToken, deleteTeacher);
 router.get('/exams', verifyToken, getExams);
 router.get('/marks', verifyToken, getMarks);
 

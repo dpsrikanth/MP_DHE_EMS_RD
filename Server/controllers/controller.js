@@ -471,6 +471,64 @@ ORDER BY t.id DESC;`
   }
 };
 
+const updateTeacher = async (req, res) => {
+  const { id } = req.params;
+  const { college_id, designation, status, name, email } = req.body;
+
+  try {
+    // 1️⃣ Check if teacher exists
+    const teacherResult = await client.query(
+      "SELECT * FROM teachers WHERE id = $1",
+      [id]
+    );
+
+    if (teacherResult.rows.length === 0) {
+      return res.status(404).json({ message: "Teacher not found" });
+    }
+
+    const teacher = teacherResult.rows[0];
+
+    // 2️⃣ Start transaction
+    await client.query("BEGIN");
+
+    // 3️⃣ Update users table (if name or email provided)
+    if (name || email) {
+      await client.query(
+        `UPDATE users 
+         SET name = COALESCE($1, name),
+             email = COALESCE($2, email)
+         WHERE id = $3`,
+        [name || null, email || null, teacher.user_id]
+      );
+    }
+
+    // 4️⃣ Update teachers table
+    await client.query(
+      `UPDATE teachers
+       SET college_id = COALESCE($1, college_id),
+           designation = COALESCE($2, designation),
+           status = COALESCE($3, status)
+       WHERE id = $4`,
+      [college_id ?? null, designation ?? null, status ?? null, id]
+    );
+
+    // 5️⃣ Commit transaction
+    await client.query("COMMIT");
+
+    res.json({ message: "Teacher updated successfully" });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+
+    if (error.code === "23505") {
+      return res.status(400).json({ message: "Email already in use" });
+    }
+
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 const getExams = async (req, res) => {
   try {
     const result = await client.query(
@@ -526,6 +584,8 @@ module.exports = {
   getStudents,
   getColleges,
   getTeachers,
+  updateTeacher,
+ 
   getExams,
   getMarks
 };
