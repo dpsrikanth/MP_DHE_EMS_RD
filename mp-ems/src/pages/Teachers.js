@@ -16,8 +16,10 @@ const Teachers = () => {
     email: '',
     college_name: '',
     designation: '',
-    status: true
+    password: ''
   });
+
+  const [colleges, setColleges] = useState([]);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
@@ -38,7 +40,22 @@ const Teachers = () => {
 
   useEffect(() => {
     fetchData();
+    fetchColleges();
   }, []);
+
+  const fetchColleges = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/colleges', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch colleges');
+      const data = await response.json();
+      setColleges(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setColleges([]);
+    }
+  };
 
   useEffect(() => {
     console.log('🎨 DATA STATE CHANGED - Component should re-render | Current data:', data);
@@ -72,7 +89,7 @@ const Teachers = () => {
   const openAddModal = () => {
     setAddError(null);
     setAddErrors({});
-    setAddForm({ teacher_name: '', email: '', college_name: '', designation: '', status: true });
+    setAddForm({ teacher_name: '', email: '', college_id: '', designation: '', password: '' });
     setShowAddModal(true);
   };
 
@@ -95,8 +112,8 @@ const Teachers = () => {
   const closeEditModal = () => setShowEditModal(false);
 
   const handleAddChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setAddForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    const { name, value } = e.target;
+    setAddForm(prev => ({ ...prev, [name]: value }));
     if (addErrors[name]) setAddErrors(prev => ({ ...prev, [name]: '' }));
   };
 
@@ -120,9 +137,20 @@ const Teachers = () => {
     const errors = {};
     if (!addForm.teacher_name || !addForm.teacher_name.trim()) errors.teacher_name = 'Full name is required';
     if (!addForm.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(addForm.email)) errors.email = 'Valid email is required';
+    if (!addForm.college_id) errors.college_id = 'College is required';
     if (!addForm.designation || !addForm.designation.trim()) errors.designation = 'Designation is required';
+    if (!addForm.password || addForm.password.length < 6) errors.password = 'Password (min 6 chars) is required';
     setAddErrors(errors);
     if (Object.keys(errors).length > 0) { setAddLoading(false); return; }
+    // Find the selected college's name
+    const selectedCollege = colleges.find(col => String(col.id) === String(addForm.college_id));
+    const payload = {
+      name: addForm.teacher_name,
+      email: addForm.email,
+      college_name: addForm.college_name,
+      designation: addForm.designation,
+      password: addForm.password
+    };
     try {
       const response = await fetch('http://localhost:8080/api/teachers', {
         method: 'POST',
@@ -130,7 +158,7 @@ const Teachers = () => {
           'Content-Type': 'application/json',
           ...authUtils.getAuthHeader()
         },
-        body: JSON.stringify(addForm)
+        body: JSON.stringify(payload)
       });
 
       const text = await response.text();
@@ -301,20 +329,25 @@ const Teachers = () => {
             </div>
             <div className="form-row">
               <label>College</label>
-              <input name="college_name" value={addForm.college_name} onChange={handleAddChange} placeholder="College / Institution" />
+              <select name="college_name" value={addForm.college_name} onChange={handleAddChange}>
+                <option value="">Select College</option>
+                {colleges.map(col => (
+                  <option key={col.id} value={col.name}>{col.college_name || col.name}</option>
+                ))}
+              </select>
+              {addErrors.college_name && <span className="input-error">{addErrors.college_name}</span>}
             </div>
             <div className="form-row">
               <label>Designation</label>
               <input name="designation" value={addForm.designation} onChange={handleAddChange} placeholder="Professor / Lecturer" />
               {addErrors.designation && <span className="input-error">{addErrors.designation}</span>}
             </div>
-            <div className="form-row inline" style={{ alignItems: 'center' }}>
-              <label style={{ marginRight: 8 }}>Active</label>
-              <label className="switch">
-                <input name="status" type="checkbox" checked={addForm.status} onChange={handleAddChange} />
-                <span className="slider" />
-              </label>
+            <div className="form-row">
+              <label>Password</label>
+              <input name="password" type="password" value={addForm.password} onChange={handleAddChange} placeholder="Password (min 6 chars)" autoComplete="new-password" />
+              {addErrors.password && <span className="input-error">{addErrors.password}</span>}
             </div>
+
 
             <div className="modal-actions">
               <button type="button" className="btn-cancel" onClick={closeAddModal} disabled={addLoading}>Cancel</button>

@@ -1,4 +1,5 @@
 
+
 require("dotenv").config();
 const express = require("express");
 const bcrypt = require("bcryptjs");
@@ -528,6 +529,82 @@ const updateTeacher = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+// Add Teacher endpoint
+const addTeacher = async (req, res) => {
+  const client = require('../db');
+  const bcrypt = require('bcryptjs');
+  const { name, email, password, designation, status, college_name } = req.body;
+
+  if (!name || !email || !password || !designation || !college_name) {
+    return res.status(400).json({ message: "All fields including college_name are required" });
+  }
+
+  try {
+    await client.query("BEGIN");
+
+    // Check email
+    const emailCheck = await client.query("SELECT id FROM users WHERE email = $1", [email]);
+    if (emailCheck.rows.length > 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "Email already in use" });
+    }
+
+    // Get role_id for teacher
+    const roleResult = await client.query("SELECT id FROM roles WHERE role_name = $1", ["TEACHER"]);
+    if (roleResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "Role 'teacher' not found" });
+    }
+    const roleId = roleResult.rows[0].id;
+
+    // Get college_id from college_name
+    const collegeResult = await client.query("SELECT id FROM colleges WHERE name = $1", [college_name]);
+    if (collegeResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "College not found" });
+    }
+    const collegeId = collegeResult.rows[0].id;
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Insert into users
+    const userResult = await client.query(
+      `INSERT INTO users (name, email, password, role_id, status)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email`,
+      [name, email, hashedPassword, roleId, status === undefined ? true : status]
+    );
+    const userId = userResult.rows[0].id;
+
+    // Insert into teachers with college_id
+    const teacherResult = await client.query(
+      `INSERT INTO teachers (user_id, college_id, designation, status)
+       VALUES ($1, $2, $3, $4) RETURNING id, user_id, college_id, designation, status`,
+      [userId, collegeId, designation, status === undefined ? true : status]
+    );
+
+    await client.query("COMMIT");
+
+    res.status(201).json({
+      message: "Teacher added successfully",
+      teacher: {
+        teacher_id: teacherResult.rows[0].id,
+        user_id: userId,
+        name: userResult.rows[0].name,
+        email: userResult.rows[0].email,
+        designation: teacherResult.rows[0].designation,
+        status: teacherResult.rows[0].status,
+        college_id: teacherResult.rows[0].college_id,
+        role_id: roleId
+      }
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Add teacher error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
 
 const getExams = async (req, res) => {
   try {
@@ -585,6 +662,7 @@ module.exports = {
   getColleges,
   getTeachers,
   updateTeacher,
+  addTeacher,
  
   getExams,
   getMarks
