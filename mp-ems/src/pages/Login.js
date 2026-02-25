@@ -5,7 +5,7 @@ import authUtils from "../utils/authUtils";
 
 const Login = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({ email: "", password: "",rememberMe: false });
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -26,6 +26,7 @@ const Login = () => {
         headers: {
           "Content-Type": "application/json"
         },
+        credentials: "include",
         body: JSON.stringify(formData)
       });
 
@@ -34,7 +35,7 @@ const Login = () => {
 
       if (response.ok) {
         // Store token and role information using auth utility
-        authUtils.setAuth(data.token, data.data.role_name || "", data.data.id || "");
+        authUtils.setAuth(data.token, data.user.role || "", data.user.id || "");
         
         // Check if user is admin
         if (authUtils.isAdmin()) {
@@ -231,7 +232,12 @@ const Login = () => {
             marginBottom: '20px'
           }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#666' }}>
-              <input type="checkbox" /> Remember me
+            <input
+  type="checkbox"
+  checked={formData.rememberMe}
+  onChange={(e) => setFormData({ ...formData, rememberMe: e.target.checked })}
+/>
+<label>Remember Me</label>
             </label>
             <a href="/forgot-password" style={{ color: '#667eea', textDecoration: 'none' }}>
               Forgot Password?

@@ -168,9 +168,10 @@ const getRoles = async (req, res) => {
 
 const Login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    // 1. Extract rememberMe from request body
+    const { email, password, rememberMe } = req.body;
 
-     const user = await client.query(
+    const user = await client.query(
       `SELECT u.id, u.name, u.email, u.password, r.role_name
        FROM public.users u
        JOIN public.roles r ON u.role_id = r.id
@@ -184,26 +185,36 @@ const Login = async (req, res) => {
 
     const result = user.rows[0];
 
+    // Note: Always uncomment and use bcrypt in production!
     // const ismatch = await bcrypt.compare(password, result.password);
+    // if (!ismatch) return res.status(403).json({ message: "Invalid credentials" });
 
-    // if (!ismatch) {
-    //   return res.status(403).json({ message: "Invalid credentials" });
-    // }
+    const payload = { 
+      id: result.id, 
+      email: result.email, 
+      role: result.role_name 
+    };
 
-    const token = jwt.sign(
-      { 
-        id: result.id, 
-        email: result.email,
-        role: result.role_name
-      },
-      process.env.JWT_KEY,
-      { expiresIn: "1h" }
-    );
+    // 2. Generate Access Token (Short-lived: 15 mins)
+    const accessToken = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: "15m" });
+
+    // 3. Generate Refresh Token (Long-lived: 7 days or 30 days)
+    const refreshToken = jwt.sign(payload, process.env.REFRESH_SECRET, { expiresIn: "30d" });
+
+    // 4. Set Refresh Token in an HttpOnly Cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,    // Protects against XSS
+      secure: false,      // Requires HTTPS
+      // sameSite: 'Strict', // Protects against CSRF,
+      sameSite: "Lax",
+      // If rememberMe is false, cookie expires when browser closes (Session Cookie)
+      maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : undefined 
+    });
 
     return res.status(200).json({
       message: "User logged in successfully",
-      data: result,
-      token: token,
+      user: { id: result.id, name: result.name, role: result.role_name },
+      token: accessToken, // React stores this in memory
     });
 
   } catch (err) {
@@ -255,9 +266,17 @@ const getColleges = async (req, res) => {
 const getTeachers = async (req, res) => {
   try {
     const result = await client.query(
-      `SELECT t.id, u.name as teacher_name, u.email, t.college_id, t.designation, t.status
-       FROM teachers t
-       LEFT JOIN users u ON t.user_id = u.id`
+      `SELECT 
+    t.id,
+    u.name AS teacher_name,
+    u.email,
+    c.name AS college_name,
+    t.designation,
+    t.status
+FROM teachers t
+LEFT JOIN users u ON t.user_id = u.id
+LEFT JOIN colleges c ON t.college_id = c.id
+ORDER BY t.id DESC;`
     );
     res.json(result.rows);
   } catch (error) {
