@@ -165,6 +165,13 @@ const Teachers = () => {
     setEditErrors(errors);
     if (Object.keys(errors).length > 0) { setEditLoading(false); return; }
     try {
+        const payload = {
+      name: editForm.teacher_name,   // 🔥 convert here
+      email: editForm.email,
+      college_id: 1, // or editForm.college_id if available
+      designation: editForm.designation,
+      status: editForm.status
+    };
       console.log('📤 Sending edit payload:', JSON.parse(JSON.stringify(editForm)));
       const response = await fetch(`http://localhost:8080/api/teachers/${editForm.id}`, {
         method: 'PUT',
@@ -172,7 +179,7 @@ const Teachers = () => {
           'Content-Type': 'application/json',
           ...authUtils.getAuthHeader()
         },
-        body: JSON.stringify(editForm)
+        body: JSON.stringify(payload)
       });
 
       const text = await response.text();
