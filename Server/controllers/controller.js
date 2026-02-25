@@ -60,12 +60,12 @@ const register = async (req, res) => {
 const getDashboardStats = async (req, res) => {
   try {
     const statsQueries = {
-      totalUsers: "SELECT COUNT(*) FROM public.users",
-      activeExams: "SELECT COUNT(*) FROM public.exam_types",
-      totalPrograms: "SELECT COUNT(*) FROM public.programs",
-      totalSemesters: "SELECT COUNT(*) FROM public.semesters",
-      totalSubjects: "SELECT COUNT(*) FROM public.subjects",
-      totalAcademicYears: "SELECT COUNT(*) FROM public.academic_years",
+      totalUsers: "SELECT COUNT(*) FROM users",
+      activeExams: "SELECT COUNT(*) FROM exams",
+      totalPrograms: "SELECT COUNT(*) FROM programs",
+      totalSemesters: "SELECT COUNT(*) FROM semesters",
+      totalSubjects: "SELECT COUNT(*) FROM subjects",
+      totalAcademicYears: "SELECT COUNT(*) FROM academic_years",
     };
 
     const stats = {};
@@ -97,7 +97,7 @@ const getUsers = async (req, res) => {
 const getPrograms = async (req, res) => {
   try {
     const result = await client.query(
-      "SELECT id, name, duration_years FROM public.programs",
+      "SELECT id, name, duration_years, university_id, status FROM programs"
     );
     res.json(result.rows);
   } catch (error) {
@@ -109,7 +109,7 @@ const getPrograms = async (req, res) => {
 const getSubjects = async (req, res) => {
   try {
     const result = await client.query(
-      "SELECT id, subject_code, subject_name, credit, max_internal, max_external FROM public.subjects LIMIT 10",
+      "SELECT id, name, program_id, semester_id, credits, status FROM subjects LIMIT 100"
     );
     res.json(result.rows);
   } catch (error) {
@@ -121,7 +121,7 @@ const getSubjects = async (req, res) => {
 const getAcademicYears = async (req, res) => {
   try {
     const result = await client.query(
-      "SELECT id, year_name FROM public.academic_years",
+      "SELECT id, year_name, university_id FROM academic_years"
     );
     res.json(result.rows);
   } catch (error) {
@@ -133,7 +133,7 @@ const getAcademicYears = async (req, res) => {
 const getSemesters = async (req, res) => {
   try {
     const result = await client.query(
-      "SELECT id, program_id, semester_no FROM public.semesters",
+      "SELECT id, semester_number, program_id, academic_year_id, start_date, end_date, status FROM semesters"
     );
     res.json(result.rows);
   } catch (error) {
@@ -145,7 +145,7 @@ const getSemesters = async (req, res) => {
 const getExamTypes = async (req, res) => {
   try {
     const result = await client.query(
-      "SELECT id, type_name FROM public.exam_types",
+      "SELECT id, type_name FROM exam_types"
     );
     res.json(result.rows);
   } catch (error) {
@@ -157,7 +157,7 @@ const getExamTypes = async (req, res) => {
 const getRoles = async (req, res) => {
   try {
     const result = await client.query(
-      "SELECT id, role_name FROM public.roles",
+      "SELECT id, role_name FROM roles"
     );
     res.json(result.rows);
   } catch (error) {
@@ -165,12 +165,13 @@ const getRoles = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 const Login = async (req, res) => {
   try {
-    const { email, password_hash } = req.body;
+    const { email, password } = req.body;
 
      const user = await client.query(
-      `SELECT u.id, u.name, u.email, u.password_hash, r.role_name
+      `SELECT u.id, u.name, u.email, u.password, r.role_name
        FROM public.users u
        JOIN public.roles r ON u.role_id = r.id
        WHERE u.email = $1`,
@@ -183,10 +184,7 @@ const Login = async (req, res) => {
 
     const result = user.rows[0];
 
-    // const ismatch = await bcrypt.compare(
-    //   password,
-    //   result.password_hash
-    // );
+    // const ismatch = await bcrypt.compare(password, result.password);
 
     // if (!ismatch) {
     //   return res.status(403).json({ message: "Invalid credentials" });
@@ -194,10 +192,10 @@ const Login = async (req, res) => {
 
     const token = jwt.sign(
       { 
-  id: result.id, 
-  email: result.email,
-  role: result.role_name
-},
+        id: result.id, 
+        email: result.email,
+        role: result.role_name
+      },
       process.env.JWT_KEY,
       { expiresIn: "1h" }
     );
@@ -216,10 +214,10 @@ const Login = async (req, res) => {
 
 const getUniversities = async (req, res) => {
   try {
-    const result = await client.query(  
-      "SELECT id, university_name FROM university",
+    const result = await client.query(
+      "SELECT id, name, address, status, created_at FROM universities"
     );
-    
+
     res.json(result.rows);
   } catch (error) {
     console.error("Get universities error:", error);
@@ -227,18 +225,74 @@ const getUniversities = async (req, res) => {
   }
 };
 
-const getStudents = async(req,res)=>{
-  try{
-   const result = await client.query(
-    " SELECT id,student_name,college_id,university_id FROM students "
-   )
-   res.json(result.rows)
-  }
-  catch(err){
+const getStudents = async (req, res) => {
+  try {
+    const result = await client.query(
+      `SELECT s.id, u.name as student_name, u.email, s.college_id, s.program_id, s.current_semester_id, s.admission_year, s.status
+       FROM students s
+       LEFT JOIN users u ON s.user_id = u.id`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Get students error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
-
   }
-}
+};
+
+
+const getColleges = async (req, res) => {
+  try {
+    const result = await client.query(
+      "SELECT id, name, university_id, address, status, created_at FROM colleges"
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get colleges error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getTeachers = async (req, res) => {
+  try {
+    const result = await client.query(
+      `SELECT t.id, u.name as teacher_name, u.email, t.college_id, t.designation, t.status
+       FROM teachers t
+       LEFT JOIN users u ON t.user_id = u.id`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get teachers error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getExams = async (req, res) => {
+  try {
+    const result = await client.query(
+      "SELECT id, name as exam_name, semester_id, college_id, exam_type, exam_date, status FROM exams"
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get exams error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getMarks = async (req, res) => {
+  try {
+    const result = await client.query(
+      `SELECT m.id, m.student_id, u.name as student_name, m.subject_id, sub.name as subject_name, m.exam_id, m.marks_obtained, m.max_marks
+       FROM marks m
+       LEFT JOIN students s ON m.student_id = s.id
+       LEFT JOIN users u ON s.user_id = u.id
+       LEFT JOIN subjects sub ON m.subject_id = sub.id`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get marks error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
 
 module.exports = {
   register,
@@ -252,5 +306,9 @@ module.exports = {
   getRoles,
   Login,
   getUniversities,
-  getStudents
+  getStudents,
+  getColleges,
+  getTeachers,
+  getExams,
+  getMarks
 };
