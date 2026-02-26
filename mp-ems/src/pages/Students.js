@@ -142,7 +142,7 @@ const Students = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'status' ? value === 'true' : value
+      [name]: name === 'status' ? value === 'true' : (value === '' ? '' : value)
     }));
   };
 
@@ -162,19 +162,28 @@ const Students = () => {
       
       const method = isEditing ? 'PUT' : 'POST';
 
+      // Prepare data - only send values if they're not empty
+      const submitData = {
+        user_id: parseInt(formData.user_id),
+        college_id: parseInt(formData.college_id),
+        status: formData.status
+      };
+
+      // Only include optional fields if they have values
+      if (formData.program_id && formData.program_id !== '') {
+        submitData.program_id = parseInt(formData.program_id);
+      }
+      if (formData.current_semester_id && formData.current_semester_id !== '') {
+        submitData.current_semester_id = parseInt(formData.current_semester_id);
+      }
+
       const response = await fetch(url, {
         method: method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({
-          user_id: parseInt(formData.user_id),
-          college_id: parseInt(formData.college_id),
-          program_id: formData.program_id ? parseInt(formData.program_id) : null,
-          current_semester_id: formData.current_semester_id ? parseInt(formData.current_semester_id) : null,
-          status: formData.status
-        })
+        body: JSON.stringify(submitData)
       });
 
       if (response.ok) {
@@ -307,26 +316,26 @@ const Students = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="program_id">Program ID</label>
+                <label htmlFor="program_id">Program ID (Optional)</label>
                 <input 
-                  type="number" 
+                  type="text" 
                   id="program_id" 
                   name="program_id" 
                   value={formData.program_id}
                   onChange={handleInputChange}
-                  placeholder="Enter Program ID"
+                  placeholder="Enter Program ID (or leave empty)"
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="current_semester_id">Current Semester ID</label>
+                <label htmlFor="current_semester_id">Current Semester ID (Optional)</label>
                 <input 
-                  type="number" 
+                  type="text" 
                   id="current_semester_id" 
                   name="current_semester_id" 
                   value={formData.current_semester_id}
                   onChange={handleInputChange}
-                  placeholder="Enter Current Semester ID"
+                  placeholder="Enter Current Semester ID (or leave empty)"
                 />
               </div>
 

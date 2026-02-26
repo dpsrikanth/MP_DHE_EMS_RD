@@ -444,12 +444,38 @@ const createStudent = async (req, res) => {
       return res.status(400).json({ message: 'User not found' });
     }
 
+    // Check if college exists
+    const collegeCheck = await client.query('SELECT id FROM colleges WHERE id = $1', [college_id]);
+    if (collegeCheck.rows.length === 0) {
+      return res.status(400).json({ message: 'College not found' });
+    }
+
+    // If program_id is provided and not empty, validate it exists
+    let validProgramId = null;
+    if (program_id && program_id !== '') {
+      const programCheck = await client.query('SELECT id FROM programs WHERE id = $1', [program_id]);
+      if (programCheck.rows.length === 0) {
+        return res.status(400).json({ message: 'Program not found' });
+      }
+      validProgramId = program_id;
+    }
+
+    // If current_semester_id is provided and not empty, validate it exists
+    let validSemesterId = null;
+    if (current_semester_id && current_semester_id !== '') {
+      const semesterCheck = await client.query('SELECT id FROM semesters WHERE id = $1', [current_semester_id]);
+      if (semesterCheck.rows.length === 0) {
+        return res.status(400).json({ message: 'Semester not found' });
+      }
+      validSemesterId = current_semester_id;
+    }
+
     // Insert student
     const result = await client.query(
       `INSERT INTO students (user_id, college_id, program_id, current_semester_id, status)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id, user_id, college_id, program_id, current_semester_id, status`,
-      [user_id, college_id, program_id || null, current_semester_id || null, status !== undefined ? status : true]
+      [user_id, college_id, validProgramId, validSemesterId, status !== undefined ? status : true]
     );
 
     res.status(201).json({
