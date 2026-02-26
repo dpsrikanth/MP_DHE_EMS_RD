@@ -418,7 +418,7 @@ const deleteAcademicYear = async (req, res) => {
 const getStudents = async (req, res) => {
   try {
     const result = await client.query(
-      `SELECT s.id, u.name as student_name, u.email, s.college_id, s.program_id, s.current_semester_id, s.admission_year, s.status
+      `SELECT s.id, u.name as student_name, u.email,u.university_id, s.college_id, s.program_id, s.current_semester_id, s.admission_year, s.status
        FROM students s
        LEFT JOIN users u ON s.user_id = u.id`
     );
