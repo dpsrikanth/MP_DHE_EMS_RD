@@ -86,7 +86,7 @@ const getDashboardStats = async (req, res) => {
 const getUsers = async (req, res) => {
   try {
     const result = await client.query(
-      "SELECT id, name, email, role_id, is_active, created_at FROM public.users LIMIT 10",
+      "SELECT id, name, email, role_id,status, created_at FROM public.users LIMIT 10",
     );
     res.json(result.rows);
   } catch (error) {
@@ -418,7 +418,7 @@ const deleteAcademicYear = async (req, res) => {
 const getStudents = async (req, res) => {
   try {
     const result = await client.query(
-      `SELECT s.id, u.name as student_name, u.email,u.university_id, s.college_id, s.program_id, s.current_semester_id, s.admission_year, s.status
+      `SELECT s.id, u.name as student_name, u.email,u.university_id, s.college_id, s.program_id, s.current_semester_id, s.admission_year, s.status, s.user_id
        FROM students s
        LEFT JOIN users u ON s.user_id = u.id`
     );
@@ -428,6 +428,94 @@ const getStudents = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
+const createStudent = async (req, res) => {
+  try {
+    const { user_id, college_id, program_id, current_semester_id, status } = req.body;
+
+    // Validate required fields
+    if (!user_id || !college_id) {
+      return res.status(400).json({ message: 'user_id and college_id are required' });
+    }
+
+    // Check if user exists
+    const userCheck = await client.query('SELECT id FROM users WHERE id = $1', [user_id]);
+    if (userCheck.rows.length === 0) {
+      return res.status(400).json({ message: 'User not found' });
+    }
+
+    // Insert student
+    const result = await client.query(
+      `INSERT INTO students (user_id, college_id, program_id, current_semester_id, status)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, user_id, college_id, program_id, current_semester_id, status`,
+      [user_id, college_id, program_id || null, current_semester_id || null, status !== undefined ? status : true]
+    );
+
+    res.status(201).json({
+      message: 'Student created successfully',
+      student: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Create student error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+const updateStudent = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { user_id, college_id, program_id, current_semester_id, status } = req.body;
+
+    // Check if student exists
+    const studentCheck = await client.query('SELECT id FROM students WHERE id = $1', [id]);
+    if (studentCheck.rows.length === 0) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    // Update student with COALESCE for partial updates
+    const result = await client.query(
+      `UPDATE students
+       SET user_id = COALESCE($1, user_id),
+           college_id = COALESCE($2, college_id),
+           program_id = COALESCE($3, program_id),
+           current_semester_id = COALESCE($4, current_semester_id),
+           status = COALESCE($5, status)
+       WHERE id = $6
+       RETURNING id, user_id, college_id, program_id, current_semester_id, status`,
+      [user_id || null, college_id || null, program_id || null, current_semester_id || null, status !== undefined ? status : null, id]
+    );
+
+    res.json({
+      message: 'Student updated successfully',
+      student: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Update student error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+const deleteStudent = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    // Check if student exists
+    const studentCheck = await client.query('SELECT id FROM students WHERE id = $1', [id]);
+    if (studentCheck.rows.length === 0) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    // Delete student
+    await client.query('DELETE FROM students WHERE id = $1', [id]);
+
+    res.json({ message: 'Student deleted successfully' });
+  } catch (err) {
+    console.error('Delete student error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 
 
 const getColleges = async (req, res) => {
@@ -659,11 +747,13 @@ module.exports = {
   updateAcademicYear,
   deleteAcademicYear,
   getStudents,
+  createStudent,
+  updateStudent,
+  deleteStudent,
   getColleges,
   getTeachers,
   updateTeacher,
   addTeacher,
- 
   getExams,
   getMarks
 };
