@@ -145,7 +145,8 @@ const AcademicYears = () => {
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1>📅 Academic Years</h1>
+        <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',marginBottom:12}}></div>
+        {/* <h1>📅 Academic Years</h1> */}
         <button className="btn-add-main" onClick={handleAddClick}>
           + Add Academic Year
         </button>
