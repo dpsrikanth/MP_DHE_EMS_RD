@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, getDashboardStats, getUsers, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, Login, getUniversities, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, updateTeacher, getExams, getMarks , getMasterSemesters, createMasterSemester, updateMasterSemester, deleteMasterSemester, getMasterSemester, getMasterSubjects, createMasterSubject, updateMasterSubject, deleteMasterSubject, getMasterSubject} = require('../controllers/controller');
+const { register, getDashboardStats, getUsers, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, Login, getUniversities, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, updateTeacher, getExams, getMarks , getMasterSemesters, createMasterSemester, updateMasterSemester, deleteMasterSemester, getMasterSemester, getMasterSubjects, createMasterSubject, updateMasterSubject, deleteMasterSubject, getMasterSubject, getMasterPrograms, createMasterProgram, getMasterProgram, updateMasterProgram, deleteMasterProgram} = require('../controllers/controller');
 const { getMasters, getUniversityConfig, updateUniversityConfig } = require('../controllers/masterController');
 const { verifyToken } = require('../middleware/auth.middleware');
 
@@ -54,5 +54,12 @@ router.get('/master-subjects/:id', verifyToken, getMasterSubject);
 router.post('/master-subjects', verifyToken, createMasterSubject);
 router.put('/master-subjects/:id', verifyToken, updateMasterSubject);
 router.delete('/master-subjects/:id', verifyToken, deleteMasterSubject);
+
+// master programs manage
+router.get('/master-programs', verifyToken, getMasterPrograms);
+router.get('/master-programs/:id', verifyToken, getMasterProgram);
+router.post('/master-programs', verifyToken, createMasterProgram);
+router.put('/master-programs/:id', verifyToken, updateMasterProgram);
+router.delete('/master-programs/:id', verifyToken, deleteMasterProgram);
 
 module.exports = router;

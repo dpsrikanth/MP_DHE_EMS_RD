@@ -774,6 +774,91 @@ const deleteMasterSubject = async (req, res) => {
   }
 };
 
+// =================== master_programs CRUD ===================
+const getMasterPrograms = async (req, res) => {
+  try {
+    const result = await client.query(
+      "SELECT id, name, duration_years, created_at FROM master_programs ORDER BY id"
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get master programs error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const createMasterProgram = async (req, res) => {
+  try {
+    const { name, duration_years } = req.body;
+    if (!name || !duration_years) {
+      return res.status(400).json({ message: "Program name and duration are required" });
+    }
+    const result = await client.query(
+      "INSERT INTO master_programs (name, duration_years) VALUES ($1, $2) RETURNING id, name, duration_years, created_at",
+      [name, duration_years]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("Create master program error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getMasterProgram = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await client.query(
+      "SELECT id, name, duration_years, created_at FROM master_programs WHERE id = $1",
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Master program not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Get master program error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const updateMasterProgram = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, duration_years } = req.body;
+    if (!name || !duration_years) {
+      return res.status(400).json({ message: "Program name and duration are required" });
+    }
+    const result = await client.query(
+      "UPDATE master_programs SET name = $1, duration_years = $2 WHERE id = $3 RETURNING id, name, duration_years, created_at",
+      [name, duration_years, id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Master program not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Update master program error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const deleteMasterProgram = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await client.query(
+      "DELETE FROM master_programs WHERE id = $1 RETURNING id",
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Master program not found" });
+    }
+    res.json({ message: "Deleted successfully" });
+  } catch (error) {
+    console.error("Delete master program error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   register,
   getDashboardStats,
@@ -818,5 +903,11 @@ module.exports = {
   getMasterSubject,
   createMasterSubject,
   updateMasterSubject,
-  deleteMasterSubject
+  deleteMasterSubject,
+  // master programs
+  getMasterPrograms,
+  createMasterProgram,
+  getMasterProgram,
+  updateMasterProgram,
+  deleteMasterProgram
 };
