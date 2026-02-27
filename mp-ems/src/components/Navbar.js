@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Navbar.css';
-
+import authUtils from '../utils/authUtils';
 const Navbar = () => {
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -10,10 +10,16 @@ const Navbar = () => {
     return user ? JSON.parse(user) : null;
   });
 
+  const roleName = localStorage.getItem('roleName');
+
+  const roleNmeee = authUtils.getAuth().roleName;
+
+  console.log( roleName,roleNmeee)
+
   const handleLogout = () => {
     // Clear localStorage
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem('roleName');
     
     // Redirect to login
     navigate('/');
@@ -32,8 +38,8 @@ const Navbar = () => {
   };
 
   const getInitials = () => {
-    if (userInfo && userInfo.name) {
-      return userInfo.name
+    if (roleName ) {
+      return roleName
         .split(' ')
         .map(word => word[0])
         .join('')
@@ -44,9 +50,9 @@ const Navbar = () => {
   };
 
   const getRoleColor = () => {
-    if (!userInfo) return '#667eea';
+    if (!roleName) return '#667eea';
     
-    const role = userInfo.role?.toUpperCase();
+    const role = roleName?.toUpperCase();
     switch (role) {
       case 'SUPER_ADMIN':
       case 'SUPERADMIN':
@@ -90,8 +96,8 @@ const Navbar = () => {
 
             {/* User Info */}
             <div className="user-info">
-              <div className="user-name">{userInfo?.name || 'User'}</div>
-              <div className="user-role">{userInfo?.role?.replace('_', ' ') || 'Guest'}</div>
+              <div className="user-name">{roleName}</div>
+              <div className="user-role">{roleName|| 'Guest'}</div>
             </div>
 
             {/* Dropdown Arrow */}
@@ -111,36 +117,14 @@ const Navbar = () => {
                     {getInitials()}
                   </div>
                   <div className="dropdown-user-info">
-                    <div className="dropdown-name">{userInfo?.name || 'User'}</div>
-                    <div className="dropdown-email">{userInfo?.email || 'No email'}</div>
+                    <div className="dropdown-name">{roleName}</div>
+                    <div className="dropdown-email">{'No email'}</div>
                   </div>
                 </div>
 
                 <div className="dropdown-divider"></div>
 
-                <div className="dropdown-menu-items">
-                  <button 
-                    className="dropdown-item profile-item"
-                    onClick={() => {
-                      handleProfileClick();
-                      setShowDropdown(false);
-                    }}
-                  >
-                    <span className="item-icon">👤</span>
-                    <span className="item-text">My Profile</span>
-                  </button>
-
-                  <button 
-                    className="dropdown-item settings-item"
-                    onClick={() => {
-                      // Add settings page later
-                      setShowDropdown(false);
-                    }}
-                  >
-                    <span className="item-icon">⚙️</span>
-                    <span className="item-text">Settings</span>
-                  </button>
-                </div>
+              
 
                 <div className="dropdown-divider"></div>
 
