@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS universities (
 CREATE TABLE IF NOT EXISTS colleges (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    college_code INTEGER,
     university_id INTEGER REFERENCES universities(id),
     address TEXT,
     status BOOLEAN DEFAULT TRUE,

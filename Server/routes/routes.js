@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { register, getDashboardStats, getUsers, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, Login, getUniversities, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, updateTeacher, getExams, getMarks , getMasterSemesters, createMasterSemester, updateMasterSemester, deleteMasterSemester, getMasterSemester, getMasterSubjects, createMasterSubject, updateMasterSubject, deleteMasterSubject, getMasterSubject, getMasterPrograms, createMasterProgram, getMasterProgram, updateMasterProgram, deleteMasterProgram} = require('../controllers/controller');
-const { getMasters, getUniversityConfig, updateUniversityConfig } = require('../controllers/masterController');
+const { getMasters, getUniversityConfig, updateUniversityConfig, getCollegeConfig, updateCollegeConfig } = require('../controllers/masterController');
 const { verifyToken } = require('../middleware/auth.middleware');
 
 router.post('/register', register);
@@ -28,6 +28,8 @@ router.get('/colleges', verifyToken, getColleges);
 router.post('/colleges', verifyToken, createCollege);
 router.put('/colleges/:id', verifyToken, updateCollege);
 router.delete('/colleges/:id', verifyToken, deleteCollege);
+router.get('/colleges/:id/config', verifyToken, getCollegeConfig);
+router.put('/colleges/:id/config', verifyToken, updateCollegeConfig);
 router.get('/programs', verifyToken, getPrograms);
 router.post('/programs', verifyToken, createProgram);
 router.put('/programs/:id', verifyToken, updateProgram);

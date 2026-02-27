@@ -129,22 +129,22 @@ const getAcademicYears = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
+ 
 const createAcademicYear = async (req, res) => {
   try {
     const { year_name } = req.body;
-    
+   
     if (!year_name) {
       return res.status(400).json({ message: 'Year name is required' });
     }
-
+ 
     const result = await client.query(
       `INSERT INTO master_academic_years (year_name, created_at, deleteflag)
        VALUES ($1, CURRENT_TIMESTAMP, true)
        RETURNING id, year_name, created_at, created_by, updated_at, updated_by`,
       [year_name]
     );
-
+ 
     res.status(201).json({
       message: 'Academic year created successfully',
       data: result.rows[0]
@@ -154,26 +154,26 @@ const createAcademicYear = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-
+ 
 const updateAcademicYear = async (req, res) => {
   try {
     const id = req.params.id;
     const { year_name } = req.body;
-
+ 
     if (!year_name) {
       return res.status(400).json({ message: 'Year name is required' });
     }
-
+ 
     // Check if exists
     const checkResult = await client.query(
       'SELECT id FROM master_academic_years WHERE id = $1 AND deleteflag = true',
       [id]
     );
-
+ 
     if (checkResult.rows.length === 0) {
       return res.status(404).json({ message: 'Academic year not found' });
     }
-
+ 
     const result = await client.query(
       `UPDATE master_academic_years
        SET year_name = $1, updated_at = CURRENT_TIMESTAMP
@@ -181,7 +181,7 @@ const updateAcademicYear = async (req, res) => {
        RETURNING id, year_name, created_at, created_by, updated_at, updated_by`,
       [year_name, id]
     );
-
+ 
     res.json({
       message: 'Academic year updated successfully',
       data: result.rows[0]
@@ -191,27 +191,27 @@ const updateAcademicYear = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-
+ 
 const deleteAcademicYear = async (req, res) => {
   try {
     const id = req.params.id;
-
+ 
     // Check if exists
     const checkResult = await client.query(
       'SELECT id FROM master_academic_years WHERE id = $1 AND deleteflag = true',
       [id]
     );
-
+ 
     if (checkResult.rows.length === 0) {
       return res.status(404).json({ message: 'Academic year not found' });
     }
-
+ 
     // Soft delete: set deleteflag to false
     await client.query(
       'UPDATE master_academic_years SET deleteflag = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
       [id]
     );
-
+ 
     res.json({ message: 'Academic year deleted successfully' });
   } catch (error) {
     console.error('Delete academic year error:', error);
@@ -339,12 +339,27 @@ const createUniversity = async (req, res) => {
   try {
     const { name, address, status } = req.body;
     if (!name) return res.status(400).json({ message: 'Name is required' });
-    const result = await client.query(
+
+    await client.query('BEGIN');
+    
+    // Create University
+    const universityResult = await client.query(
       'INSERT INTO universities (name, address, status) VALUES ($1, $2, $3) RETURNING id, name, address, status, created_at',
       [name, address || null, status === undefined ? true : status]
     );
-    res.status(201).json(result.rows[0]);
+    
+    const newUniversity = universityResult.rows[0];
+
+    // Create corresponding College record
+    await client.query(
+      'INSERT INTO colleges (name, university_id, address, status) VALUES ($1, $2, $3, $4)',
+      [name, newUniversity.id, address || null, status === undefined ? true : status]
+    );
+
+    await client.query('COMMIT');
+    res.status(201).json(newUniversity);
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('Create university error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -379,11 +394,11 @@ const deleteUniversity = async (req, res) => {
 
 const createCollege = async (req, res) => {
   try {
-    const { name, university_id, address, status } = req.body;
+    const { name, college_code, university_id, address, status } = req.body;
     if (!name) return res.status(400).json({ message: 'Name is required' });
     const result = await client.query(
-      'INSERT INTO colleges (name, university_id, address, status) VALUES ($1, $2, $3, $4) RETURNING *',
-      [name, university_id, address || null, status === undefined ? true : status]
+      'INSERT INTO colleges (name, college_code, university_id, address, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [name, college_code || null, university_id, address || null, status === undefined ? true : status]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -394,11 +409,11 @@ const createCollege = async (req, res) => {
 
 const updateCollege = async (req, res) => {
   try {
-    const { name, address, status } = req.body;
+    const { name, college_code, address, status } = req.body;
     const id = req.params.id;
     const result = await client.query(
-      'UPDATE colleges SET name=$1, address=$2, status=$3 WHERE id=$4 RETURNING *',
-      [name, address || null, status === undefined ? true : status, id]
+      'UPDATE colleges SET name=$1, college_code=$2, address=$3, status=$4 WHERE id=$5 RETURNING *',
+      [name, college_code || null, address || null, status === undefined ? true : status, id]
     );
     if (result.rows.length === 0) return res.status(404).json({ message: 'College not found' });
     res.json(result.rows[0]);
@@ -481,6 +496,7 @@ const getColleges = async (req, res) => {
     const result = await client.query(
       `SELECT c.id,
               c.name AS college_name,
+              c.college_code,
               c.university_id,
               u.name AS university_name,
               c.address,

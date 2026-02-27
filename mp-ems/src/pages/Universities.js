@@ -15,10 +15,8 @@ const Universities = () => {
   const [detailsModal, setDetailsModal] = useState(false);
   const [detailsType, setDetailsType] = useState(null);
   const [detailsList, setDetailsList] = useState([]);
-  const [colleges, setColleges] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [academicYears, setAcademicYears] = useState([]);
-  const [collegeForm, setCollegeForm] = useState({ name: '', address: '' });
   const [programForm, setProgramForm] = useState({ name: '', duration_years: 1 });
   const [yearForm, setYearForm] = useState({ year_name: '' });
 
@@ -36,7 +34,32 @@ const Universities = () => {
 
   useEffect(() => {
     fetchData();
+    fetchMasterData();
   }, []);
+
+  const fetchMasterData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+      // Fetch Masters
+      const masterRes = await fetch('http://localhost:8080/api/masters', { headers });
+      if (!masterRes.ok) throw new Error('Failed to fetch master data');
+      const masterData = await masterRes.json();
+      
+      const pOptions = masterData.policies.map(p => ({ value: p.id, label: p.name }));
+      const prgOptions = masterData.programs.map(p => ({ value: p.id, label: p.name }));
+      const ayOptions = masterData.academicYears.map(ay => ({ value: ay.id, label: ay.year_name }));
+      const semOptions = masterData.semesters.map(s => ({ value: s.id, label: s.semester_name }));
+      
+      setPolicyOptions(pOptions);
+      setProgramOptions(prgOptions);
+      setAcademicYearOptions(ayOptions);
+      setSemesterOptions(semOptions);
+    } catch (err) {
+      console.error('Error loading master data:', err);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -64,7 +87,6 @@ const Universities = () => {
       loadConfigData(selected.id);
     } else {
       setForm({ name: '', address: '', status: true });
-      setColleges([]);
       setPrograms([]);
       setAcademicYears([]);
       
@@ -81,30 +103,15 @@ const Universities = () => {
       const token = localStorage.getItem('token');
       const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-      // Fetch Masters
-      const masterRes = await fetch('http://localhost:8080/api/masters', { headers });
-      if (!masterRes.ok) throw new Error('Failed to fetch master data');
-      const masterData = await masterRes.json();
-      
-      const pOptions = masterData.policies.map(p => ({ value: p.id, label: p.name }));
-      const prgOptions = masterData.programs.map(p => ({ value: p.id, label: p.name }));
-      const ayOptions = masterData.academicYears.map(ay => ({ value: ay.id, label: ay.year_name }));
-      const semOptions = masterData.semesters.map(s => ({ value: s.id, label: s.semester_name }));
-      
-      setPolicyOptions(pOptions);
-      setProgramOptions(prgOptions);
-      setAcademicYearOptions(ayOptions);
-      setSemesterOptions(semOptions);
-
       // Fetch Current mapped Config
       const configRes = await fetch(`http://localhost:8080/api/universities/${universityId}/config`, { headers });
       if (!configRes.ok) throw new Error('Failed to fetch university config');
       const configData = await configRes.json();
 
-      setSelectedPolicies(pOptions.filter(opt => configData.policies.includes(opt.value)));
-      setSelectedPrograms(prgOptions.filter(opt => configData.programs.includes(opt.value)));
-      setSelectedAcademicYears(ayOptions.filter(opt => configData.academicYears.includes(opt.value)));
-      setSelectedSemesters(semOptions.filter(opt => configData.semesters.includes(opt.value)));
+      setSelectedPolicies(policyOptions.filter(opt => configData.policies.includes(opt.value)));
+      setSelectedPrograms(programOptions.filter(opt => configData.programs.includes(opt.value)));
+      setSelectedAcademicYears(academicYearOptions.filter(opt => configData.academicYears.includes(opt.value)));
+      setSelectedSemesters(semesterOptions.filter(opt => configData.semesters.includes(opt.value)));
     } catch (err) {
       console.error(err);
       alert('Error loading configuration: ' + err.message);
@@ -116,15 +123,12 @@ const Universities = () => {
   const loadRelatedData = async (universityId) => {
     try {
       const token = localStorage.getItem('token');
-      const [cRes, pRes, aRes] = await Promise.all([
-        fetch('http://localhost:8080/api/colleges', { headers: { Authorization: `Bearer ${token}` } }),
+      const [pRes, aRes] = await Promise.all([
         fetch('http://localhost:8080/api/programs', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('http://localhost:8080/api/academic-years', { headers: { Authorization: `Bearer ${token}` } })
       ]);
-      const c = cRes.ok ? (await cRes.json()).filter(x => x.university_id === universityId) : [];
       const p = pRes.ok ? (await pRes.json()).filter(x => x.university_id === universityId) : [];
       const a = aRes.ok ? (await aRes.json()).filter(x => x.university_id === universityId) : [];
-      setColleges(c);
       setPrograms(p);
       setAcademicYears(a);
     } catch (err) {
@@ -132,48 +136,7 @@ const Universities = () => {
     }
   };
 
-  const handleAddCollege = async () => {
-    if (!collegeForm.name) return alert('College name is required');
-    if (!selected) {
-      const newCollege = { ...collegeForm, id: Date.now() };
-      setColleges([...colleges, newCollege]);
-      setCollegeForm({ name: '', address: '' });
-      return;
-    }
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/colleges', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ...collegeForm, university_id: selected.id })
-      });
-      if (!res.ok) throw new Error('Failed to add college');
-      const newCollege = await res.json();
-      setColleges([...colleges, newCollege]);
-      setCollegeForm({ name: '', address: '' });
-    } catch (err) {
-      alert('Error: ' + err.message);
-    }
-  };
-
-  const handleDeleteCollege = async (collegeId) => {
-    if (!window.confirm('Delete this college?')) return;
-    if (!selected) {
-      setColleges(colleges.filter(c => c.id !== collegeId));
-      return;
-    }
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/colleges/${collegeId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Failed to delete');
-      setColleges(colleges.filter(c => c.id !== collegeId));
-    } catch (err) {
-      alert('Error: ' + err.message);
-    }
-  };
+  // Removed handleAddCollege and handleDeleteCollege as they are now handled in Colleges.js
 
   const handleAddProgram = async () => {
     if (!programForm.name || !programForm.duration_years) return alert('Name and duration are required');
@@ -294,13 +257,7 @@ const Universities = () => {
         const createdUniv = await res.json();
         finalUniversityId = createdUniv.id;
         
-        for (const c of colleges) {
-          await fetch('http://localhost:8080/api/colleges', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ name: c.name, address: c.address, university_id: finalUniversityId })
-          });
-        }
+        // Colleges are now handled separately on the Colleges page
         await submitConfigPayload(finalUniversityId);
       }
       setShowModal(false);
@@ -361,8 +318,8 @@ const Universities = () => {
 
   return (
     <div className="page-container">
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-        <h1>Universities</h1>
+      <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',marginBottom:12}}>
+        {/* <h1>Universities</h1> */}
         <div>
           <button className="btn-primary" onClick={() => { setSelected(null); setShowModal(true); }}>Add University</button>
         </div>
@@ -373,8 +330,8 @@ const Universities = () => {
             <th>ID</th>
             <th>University Name</th>
             <th>Colleges</th>
-            <th>Programs</th>
-            <th>Academic Years</th>
+            {/* <th>Programs</th>
+            <th>Academic Years</th> */}
             <th>Actions</th>
           </tr>
         </thead>
@@ -392,7 +349,7 @@ const Universities = () => {
                   <span>-</span>
                 )}
               </td>
-              <td>
+              {/* <td>
                 {item.programs_count > 0 ? (
                   <button className="btn-link" onClick={() => showDetails(item, 'programs')}>
                     {item.programs_count} Programs
@@ -409,10 +366,11 @@ const Universities = () => {
                 ) : (
                   <span>-</span>
                 )}
-              </td>
+              </td> */}
               <td>
                 <button className="btn-edit" onClick={() => { setSelected(item); setShowModal(true); }}>Edit</button>
                 <button className="btn-delete" onClick={() => handleDelete(item.id)}>Delete</button>
+                <button className="btn-primary" onClick={() => navigate('/colleges', { state: { universityId: item.id, addMode: true } })} style={{ marginRight: '5px' }}>Add Colleges</button>
               </td>
             </tr>
           ))}
@@ -448,34 +406,7 @@ const Universities = () => {
                 </div>
               </div>
 
-              <div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '16px', color: '#111827' }}>Colleges</h3>
-                <div style={{ marginBottom: '16px' }}>
-                      <div className="form-row">
-                        <label>Add College</label>
-                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                          <input type="text" placeholder="College Name" value={collegeForm.name} onChange={(e) => setCollegeForm({ ...collegeForm, name: e.target.value })} style={{ flex: 1, padding: '10px 14px', borderRadius: '6px', border: '1px solid #d1d5db' }} />
-                          <input type="text" placeholder="Address" value={collegeForm.address} onChange={(e) => setCollegeForm({ ...collegeForm, address: e.target.value })} style={{ flex: 1, padding: '10px 14px', borderRadius: '6px', border: '1px solid #d1d5db' }} />
-                          <button className="btn-primary" onClick={handleAddCollege} style={{ padding: '10px 24px' }}>Add</button>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      {colleges.length === 0 ? <div style={{ color: '#6b7280', fontSize: '14px' }}>No colleges added yet</div> : (
-                        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                          {colleges.map(c => (
-                            <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f3f4f6' }}>
-                              <div>
-                                <div style={{ fontWeight: '600' }}>{c.college_name || c.name}</div>
-                                <div style={{ fontSize: '12px', color: '#6b7280' }}>{c.address}</div>
-                              </div>
-                              <button className="btn-delete" onClick={() => handleDeleteCollege(c.id)}>Delete</button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-              </div>
+              {/* Removed Colleges section from university modal */}
 
 
 
