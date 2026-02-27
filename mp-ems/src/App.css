@@ -861,5 +861,8 @@ th, td {
     top: 16px;
   }
 }
-
+.page-header{
+  display: flex;
+    justify-content: space-between;
+}
 
