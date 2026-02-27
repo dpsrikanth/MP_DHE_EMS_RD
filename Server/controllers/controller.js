@@ -604,6 +604,176 @@ const getMarks = async (req, res) => {
   }
 };
 
+// master_semesters CRUD
+const getMasterSemesters = async (req, res) => {
+  try {
+    const result = await client.query(
+      "SELECT id, semester_name, created_at FROM master_semesters ORDER BY id"
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get master semesters error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const createMasterSemester = async (req, res) => {
+  try {
+    const { semester_name } = req.body;
+    if (!semester_name) {
+      return res.status(400).json({ message: "Semester name is required" });
+    }
+    const result = await client.query(
+      "INSERT INTO master_semesters (semester_name) VALUES ($1) RETURNING id, semester_name, created_at",
+      [semester_name]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("Create master semester error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const updateMasterSemester = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { semester_name } = req.body;
+    if (!semester_name) {
+      return res.status(400).json({ message: "Semester name is required" });
+    }
+    const result = await client.query(
+      "UPDATE master_semesters SET semester_name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, semester_name, created_at",
+      [semester_name, id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Master semester not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Update master semester error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const deleteMasterSemester = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await client.query(
+      "DELETE FROM master_semesters WHERE id = $1 RETURNING id",
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Master semester not found" });
+    }
+    res.json({ message: "Deleted successfully" });
+  } catch (error) {
+    console.error("Delete master semester error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getMasterSemester = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await client.query(
+      "SELECT id, semester_name, created_at FROM master_semesters WHERE id = $1",
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Master semester not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Get master semester error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// =================== master_subjects CRUD ===================
+const getMasterSubjects = async (req, res) => {
+  try {
+    const result = await client.query(
+      "SELECT id, subject_code, name, created_at FROM master_subjects ORDER BY id"
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get master subjects error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const createMasterSubject = async (req, res) => {
+  try {
+    const { subject_code, name } = req.body;
+    if (!subject_code || !name) {
+      return res.status(400).json({ message: "Subject code and name are required" });
+    }
+    const result = await client.query(
+      "INSERT INTO master_subjects (subject_code, name) VALUES ($1, $2) RETURNING id, subject_code, name, created_at",
+      [subject_code, name]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("Create master subject error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getMasterSubject = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await client.query(
+      "SELECT id, subject_code, name, created_at FROM master_subjects WHERE id = $1",
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Master subject not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Get master subject error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const updateMasterSubject = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { subject_code, name } = req.body;
+    if (!subject_code || !name) {
+      return res.status(400).json({ message: "Subject code and name are required" });
+    }
+    const result = await client.query(
+      "UPDATE master_subjects SET subject_code = $1, name = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, subject_code, name, created_at",
+      [subject_code, name, id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Master subject not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Update master subject error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const deleteMasterSubject = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await client.query(
+      "DELETE FROM master_subjects WHERE id = $1 RETURNING id",
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Master subject not found" });
+    }
+    res.json({ message: "Deleted successfully" });
+  } catch (error) {
+    console.error("Delete master subject error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   register,
   getDashboardStats,
@@ -634,5 +804,19 @@ module.exports = {
   updateTeacher,
  
   getExams,
-  getMarks
+  getMarks,
+
+   // master semesters
+  getMasterSemesters,
+  getMasterSemester,
+  createMasterSemester,
+  updateMasterSemester,
+  deleteMasterSemester,
+
+  // master subjects
+  getMasterSubjects,
+  getMasterSubject,
+  createMasterSubject,
+  updateMasterSubject,
+  deleteMasterSubject
 };
