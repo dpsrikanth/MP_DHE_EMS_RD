@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/DataTable.css';
+import { FaEdit } from "react-icons/fa";
+import { MdDelete } from "react-icons/md";
 
 const Semesters = () => {
   const [data, setData] = useState([]);
@@ -161,8 +163,8 @@ const Semesters = () => {
               <td>{item.semester_name}</td>
               <td>{item.created_at ? new Date(item.created_at).toLocaleString() : ''}</td>
               <td>
-                <button className="btn-edit" onClick={() => loadForEdit(item.id)}>Edit</button>
-                <button className="btn-delete" onClick={() => handleDelete(item)}>Delete</button>
+                <button className="btn-edit" onClick={() => loadForEdit(item.id)} aria-label="Edit"><FaEdit /></button>
+                <button className="btn-delete" onClick={() => handleDelete(item)} aria-label="Delete"><MdDelete /></button>
               </td>
             </tr>
           ))}

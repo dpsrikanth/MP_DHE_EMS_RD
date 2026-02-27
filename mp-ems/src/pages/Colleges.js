@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom';
 import Select from 'react-select';
 import '../styles/DataTable.css';
 import './Universities.css'; // Reusing modal styles
+import { FaEdit } from "react-icons/fa";
+import { MdDelete } from "react-icons/md";
 
 const Colleges = () => {
   const location = useLocation();
@@ -244,8 +246,8 @@ const Colleges = () => {
               <td>{item.college_name || item.name}</td>
               <td>{item.university_name || universities.find(u => u.id === item.university_id)?.name || item.university_id}</td>
               <td>
-                <button className="btn-edit" onClick={() => openEditModal(item)}>Edit</button>
-                <button className="btn-delete" onClick={() => handleDelete(item.id)}>Delete</button>
+                <button className="btn-edit" onClick={() => openEditModal(item)} aria-label="Edit"><FaEdit /></button>
+                <button className="btn-delete" onClick={() => handleDelete(item.id)} aria-label="Delete"><MdDelete /></button>
               </td>
             </tr>
           ))}

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/DataTable.css';
+import { FaEdit } from "react-icons/fa";
+import { MdDelete } from "react-icons/md";
 
 const AcademicYears = () => {
   const navigate = useNavigate();
@@ -226,14 +228,16 @@ const AcademicYears = () => {
                     <button 
                       className="btn-edit"
                       onClick={() => handleEditClick(item)}
+                      aria-label="Edit"
                     >
-                      Edit
+                      <FaEdit />
                     </button>
                     <button 
                       className="btn-delete"
                       onClick={() => handleDeleteClick(item.id)}
+                      aria-label="Delete"
                     >
-                      Delete
+                      <MdDelete />
                     </button>
                   </td>
                 </tr>

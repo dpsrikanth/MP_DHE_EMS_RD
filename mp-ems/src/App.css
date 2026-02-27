@@ -866,3 +866,7 @@ th, td {
     justify-content: space-between;
 }
 
+.logout-btn{
+  display: none !important;
+}
+

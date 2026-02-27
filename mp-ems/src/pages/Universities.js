@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import '../styles/DataTable.css';
 import './Universities.css';
+import { FaEdit, FaPlus } from "react-icons/fa";
+import { MdDelete } from "react-icons/md";
+
 
 const Universities = () => {
   const navigate = useNavigate();
@@ -321,7 +324,7 @@ const Universities = () => {
       <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',marginBottom:12}}>
         {/* <h1>Universities</h1> */}
         <div>
-          <button className="btn-primary" onClick={() => { setSelected(null); setShowModal(true); }}>Add University</button>
+          <button className="btn-primary" onClick={() => { setSelected(null); setShowModal(true); }} aria-label="Add University">Add University</button>
         </div>
       </div>
       <table className="data-table">
@@ -368,9 +371,9 @@ const Universities = () => {
                 )}
               </td> */}
               <td>
-                <button className="btn-edit" onClick={() => { setSelected(item); setShowModal(true); }}>Edit</button>
-                <button className="btn-delete" onClick={() => handleDelete(item.id)}>Delete</button>
-                <button className="btn-primary" onClick={() => navigate('/colleges', { state: { universityId: item.id, addMode: true } })} style={{ marginRight: '5px' }}>Add Colleges</button>
+                <button className="btn-edit" onClick={() => { setSelected(item); setShowModal(true); }} aria-label="Edit"><FaEdit /></button>
+                <button className="btn-delete" onClick={() => handleDelete(item.id)} aria-label="Delete"><MdDelete /></button>
+                <button className="btn-primary" onClick={() => navigate('/colleges', { state: { universityId: item.id, addMode: true } })} aria-label="Add Colleges"><FaPlus /></button>
               </td>
             </tr>
           ))}

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/DataTable.css';
+import { FaEdit } from "react-icons/fa";
+import { MdDelete } from "react-icons/md";
 import authUtils from '../utils/authUtils';
 
 const Teachers = () => {
@@ -267,8 +269,8 @@ const Teachers = () => {
                   </span>
                 </td>
                 <td>
-                  <button className="btn-edit" onClick={() => openEditModal(item)}>Edit</button>
-                  <button className="btn-delete">Delete</button>
+                  <button className="btn-edit" onClick={() => openEditModal(item)} aria-label="Edit"><FaEdit /></button>
+                  <button className="btn-delete" aria-label="Delete"><MdDelete /></button>
                 </td>
               </tr>
             ))

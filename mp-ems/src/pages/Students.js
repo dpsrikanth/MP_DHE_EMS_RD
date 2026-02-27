@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/DataTable.css';
+import { FaEdit } from "react-icons/fa";
+import { MdDelete } from "react-icons/md";
 
 const Students = () => {
   const [data, setData] = useState([]);
@@ -53,8 +55,8 @@ const Students = () => {
               <td>{item.college_id}</td>
               <td>{item.university_id}</td>
               <td>
-                <button className="btn-edit">Edit</button>
-                <button className="btn-delete">Delete</button>
+                <button className="btn-edit" aria-label="Edit"><FaEdit /></button>
+                <button className="btn-delete" aria-label="Delete"><MdDelete /></button>
               </td>
             </tr>
           ))}

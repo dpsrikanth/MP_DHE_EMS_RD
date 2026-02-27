@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/DataTable.css';
+import { FaEdit } from "react-icons/fa";
+import { MdDelete } from "react-icons/md";
 
 const Marks = () => {
   const [data, setData] = useState([]);
@@ -55,8 +57,8 @@ const Marks = () => {
               <td>{item.marks_obtained}</td>
               <td>{item.max_marks}</td>
               <td>
-                <button className="btn-edit">Edit</button>
-                <button className="btn-delete">Delete</button>
+                <button className="btn-edit" aria-label="Edit"><FaEdit /></button>
+                <button className="btn-delete" aria-label="Delete"><MdDelete /></button>
               </td>
             </tr>
           ))}
