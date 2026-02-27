@@ -16,6 +16,7 @@ const Sidebar = () => {
     { id: 9, name: 'Students', path: '/students', icon: '👨‍🎓' },
     { id: 10, name: 'Exams', path: '/exams', icon: '✏️' },
     { id: 11, name: 'Marks', path: '/marks', icon: '📊' },
+    { id: 12, name: 'test', path: '/dropdown-test', icon: '📊' },
   ];
 
   const handleMenuClick = (path) => {

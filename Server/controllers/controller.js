@@ -748,6 +748,30 @@ const getMarks = async (req, res) => {
   }
 };
 
+const getDropdownOptions = async (req, res) => {
+  try {
+ 
+    const policies = await client.query('SELECT DISTINCT policy FROM "AcademicStructure" ORDER BY policy ASC');
+    const programs = await client.query('SELECT DISTINCT program FROM "AcademicStructure" ORDER BY program ASC');
+    const years = await client.query('SELECT DISTINCT academic_year FROM "AcademicStructure" ORDER BY academic_year DESC');
+    const semesters = await client.query('SELECT DISTINCT semester FROM "AcademicStructure" ORDER BY semester ASC');
+
+    
+    res.json({
+      policies: policies.rows.map(r => r.policy),
+      programs: programs.rows.map(r => r.program),
+      academicYears: years.rows.map(r => r.academic_year),
+      semesters: semesters.rows.map(r => r.semester)
+    });
+
+    console.log(policies, programs, years, semesters);
+  } 
+  catch (err) {
+    console.error("Error fetching dropdown options:", err);
+    res.status(500).json({ message: "Error fetching dropdown options", error: err.message });
+  }
+};
+
 module.exports = {
   register,
   getDashboardStats,
@@ -781,5 +805,6 @@ module.exports = {
   updateTeacher,
   addTeacher,
   getExams,
-  getMarks
+  getMarks,
+  getDropdownOptions
 };

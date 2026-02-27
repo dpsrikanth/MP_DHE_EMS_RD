@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, getDashboardStats, getUsers, getPrograms, getSubjects,addTeacher, getAcademicYears, getSemesters, getExamTypes, getRoles, Login, getUniversities, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, createStudent, updateStudent, deleteStudent, getColleges, getTeachers, updateTeacher, getExams, getMarks } = require('../controllers/controller');
+const { register, getDashboardStats, getUsers, getPrograms, getSubjects,addTeacher, getAcademicYears, getSemesters, getExamTypes, getRoles, Login, getUniversities, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, createStudent, updateStudent, deleteStudent, getColleges, getTeachers, updateTeacher, getExams, getMarks,getDropdownOptions } = require('../controllers/controller');
 const { verifyToken } = require('../middleware/auth.middleware');
 
 router.post('/register', register);
@@ -40,5 +40,6 @@ router.put('/teachers/:id', verifyToken, updateTeacher);
 // router.delete('/teachers/:id', verifyToken, deleteTeacher);
 router.get('/exams', verifyToken, getExams);
 router.get('/marks', verifyToken, getMarks);
+router.get("/masterDetails",verifyToken,getDropdownOptions)
 
 module.exports = router;
