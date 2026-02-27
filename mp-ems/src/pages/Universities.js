@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Select from 'react-select';
 import '../styles/DataTable.css';
 import './Universities.css';
 
 const Universities = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,13 +15,24 @@ const Universities = () => {
   const [detailsModal, setDetailsModal] = useState(false);
   const [detailsType, setDetailsType] = useState(null);
   const [detailsList, setDetailsList] = useState([]);
-  const [modalTab, setModalTab] = useState('info');
   const [colleges, setColleges] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [academicYears, setAcademicYears] = useState([]);
   const [collegeForm, setCollegeForm] = useState({ name: '', address: '' });
   const [programForm, setProgramForm] = useState({ name: '', duration_years: 1 });
   const [yearForm, setYearForm] = useState({ year_name: '' });
+
+  // Config State
+  const [configLoading, setConfigLoading] = useState(false);
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [policyOptions, setPolicyOptions] = useState([]);
+  const [programOptions, setProgramOptions] = useState([]);
+  const [academicYearOptions, setAcademicYearOptions] = useState([]);
+  const [semesterOptions, setSemesterOptions] = useState([]);
+  const [selectedPolicies, setSelectedPolicies] = useState([]);
+  const [selectedPrograms, setSelectedPrograms] = useState([]);
+  const [selectedAcademicYears, setSelectedAcademicYears] = useState([]);
+  const [selectedSemesters, setSelectedSemesters] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -46,15 +60,58 @@ const Universities = () => {
   useEffect(() => {
     if (selected) {
       setForm({ name: selected.name || selected.university_name || '', address: selected.address || '', status: selected.status === undefined ? true : selected.status });
-      setModalTab('info');
       loadRelatedData(selected.id);
+      loadConfigData(selected.id);
     } else {
       setForm({ name: '', address: '', status: true });
       setColleges([]);
       setPrograms([]);
       setAcademicYears([]);
+      
+      setSelectedPolicies([]);
+      setSelectedPrograms([]);
+      setSelectedAcademicYears([]);
+      setSelectedSemesters([]);
     }
   }, [selected]);
+
+  const loadConfigData = async (universityId) => {
+    try {
+      setConfigLoading(true);
+      const token = localStorage.getItem('token');
+      const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+      // Fetch Masters
+      const masterRes = await fetch('http://localhost:8080/api/masters', { headers });
+      if (!masterRes.ok) throw new Error('Failed to fetch master data');
+      const masterData = await masterRes.json();
+      
+      const pOptions = masterData.policies.map(p => ({ value: p.id, label: p.name }));
+      const prgOptions = masterData.programs.map(p => ({ value: p.id, label: p.name }));
+      const ayOptions = masterData.academicYears.map(ay => ({ value: ay.id, label: ay.year_name }));
+      const semOptions = masterData.semesters.map(s => ({ value: s.id, label: s.semester_name }));
+      
+      setPolicyOptions(pOptions);
+      setProgramOptions(prgOptions);
+      setAcademicYearOptions(ayOptions);
+      setSemesterOptions(semOptions);
+
+      // Fetch Current mapped Config
+      const configRes = await fetch(`http://localhost:8080/api/universities/${universityId}/config`, { headers });
+      if (!configRes.ok) throw new Error('Failed to fetch university config');
+      const configData = await configRes.json();
+
+      setSelectedPolicies(pOptions.filter(opt => configData.policies.includes(opt.value)));
+      setSelectedPrograms(prgOptions.filter(opt => configData.programs.includes(opt.value)));
+      setSelectedAcademicYears(ayOptions.filter(opt => configData.academicYears.includes(opt.value)));
+      setSelectedSemesters(semOptions.filter(opt => configData.semesters.includes(opt.value)));
+    } catch (err) {
+      console.error(err);
+      alert('Error loading configuration: ' + err.message);
+    } finally {
+      setConfigLoading(false);
+    }
+  };
 
   const loadRelatedData = async (universityId) => {
     try {
@@ -77,6 +134,12 @@ const Universities = () => {
 
   const handleAddCollege = async () => {
     if (!collegeForm.name) return alert('College name is required');
+    if (!selected) {
+      const newCollege = { ...collegeForm, id: Date.now() };
+      setColleges([...colleges, newCollege]);
+      setCollegeForm({ name: '', address: '' });
+      return;
+    }
     try {
       const token = localStorage.getItem('token');
       const res = await fetch('http://localhost:8080/api/colleges', {
@@ -95,6 +158,10 @@ const Universities = () => {
 
   const handleDeleteCollege = async (collegeId) => {
     if (!window.confirm('Delete this college?')) return;
+    if (!selected) {
+      setColleges(colleges.filter(c => c.id !== collegeId));
+      return;
+    }
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`http://localhost:8080/api/colleges/${collegeId}`, {
@@ -174,10 +241,41 @@ const Universities = () => {
     }
   };
 
+  const submitConfigPayload = async (univId) => {
+    const token = localStorage.getItem('token');
+    const payload = {
+      policies: selectedPolicies.map(p => p.value),
+      programs: selectedPrograms.map(p => p.value),
+      academicYears: selectedAcademicYears.map(a => a.value),
+      semesters: selectedSemesters.map(s => s.value)
+    };
+    const res = await fetch(`http://localhost:8080/api/universities/${univId}/config`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Failed to update config');
+  };
+
+  const handleSaveConfig = async () => {
+    if (!selected) return;
+    try {
+      setSavingConfig(true);
+      await submitConfigPayload(selected.id);
+      alert('Configuration updated successfully!');
+    } catch (err) {
+      alert('Error updating configuration: ' + err.message);
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
   const handleSave = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!form.name) return alert('Name is required');
+      let finalUniversityId = null;
+
       if (selected) {
         const res = await fetch(`http://localhost:8080/api/universities/${selected.id}`, {
           method: 'PUT',
@@ -185,6 +283,7 @@ const Universities = () => {
           body: JSON.stringify(form)
         });
         if (!res.ok) { const t = await res.text(); throw new Error(t || 'Update failed'); }
+        finalUniversityId = selected.id;
       } else {
         const res = await fetch('http://localhost:8080/api/universities', {
           method: 'POST',
@@ -192,6 +291,17 @@ const Universities = () => {
           body: JSON.stringify(form)
         });
         if (!res.ok) { const t = await res.text(); throw new Error(t || 'Create failed'); }
+        const createdUniv = await res.json();
+        finalUniversityId = createdUniv.id;
+        
+        for (const c of colleges) {
+          await fetch('http://localhost:8080/api/colleges', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ name: c.name, address: c.address, university_id: finalUniversityId })
+          });
+        }
+        await submitConfigPayload(finalUniversityId);
       }
       setShowModal(false);
       setSelected(null);
@@ -317,74 +427,44 @@ const Universities = () => {
               <button className="btn-secondary" onClick={() => setShowModal(false)}>Close</button>
             </div>
             
-            <div style={{ display: 'flex', borderBottom: '1px solid #e5e7eb', marginBottom: '12px' }}>
-              <button 
-                onClick={() => setModalTab('info')}
-                style={{ padding: '10px 16px', borderBottom: modalTab === 'info' ? '2px solid #2563eb' : 'none', color: modalTab === 'info' ? '#2563eb' : '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}
-              >
-                University Info
-              </button>
-              <button 
-                onClick={() => setModalTab('colleges')}
-                style={{ padding: '10px 16px', borderBottom: modalTab === 'colleges' ? '2px solid #2563eb' : 'none', color: modalTab === 'colleges' ? '#2563eb' : '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600', opacity: selected ? 1 : 0.5 }}
-              >
-                Colleges ({colleges.length})
-              </button>
-              <button 
-                onClick={() => setModalTab('programs')}
-                style={{ padding: '10px 16px', borderBottom: modalTab === 'programs' ? '2px solid #2563eb' : 'none', color: modalTab === 'programs' ? '#2563eb' : '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600', opacity: selected ? 1 : 0.5 }}
-              >
-                Programs ({programs.length})
-              </button>
-              <button 
-                onClick={() => setModalTab('years')}
-                style={{ padding: '10px 16px', borderBottom: modalTab === 'years' ? '2px solid #2563eb' : 'none', color: modalTab === 'years' ? '#2563eb' : '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600', opacity: selected ? 1 : 0.5 }}
-              >
-                Academic Years ({academicYears.length})
-              </button>
-            </div>
-
-            {modalTab === 'info' && (
-              <div className="modal-body">
-                <div className="form-row">
-                  <label>University Name *</label>
-                  <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                </div>
-                <div className="form-row">
-                  <label>Address</label>
-                  <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-                </div>
-                <div className="form-row">
-                  <label>Status</label>
-                  <select value={form.status ? 'true' : 'false'} onChange={(e) => setForm({ ...form, status: e.target.value === 'true' })}>
-                    <option value="true">Active</option>
-                    <option value="false">Inactive</option>
-                  </select>
+            <div style={{ maxHeight: '72vh', overflowY: 'auto', padding: '10px 20px 20px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '16px', color: '#111827' }}>University Info</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div className="form-row">
+                    <label>Full Name</label>
+                    <input type="text" placeholder="Enter full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                  </div>
+                  <div className="form-row">
+                    <label>Address</label>
+                    <input type="text" placeholder="Institution Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+                  </div>
+                  <div className="form-row" style={{ flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
+                    <label style={{ marginBottom: 0 }}>Active</label>
+                    <div style={{ position: 'relative', width: '44px', height: '24px', borderRadius: '12px', background: form.status ? '#6366f1' : '#e5e7eb', cursor: 'pointer', transition: 'background 0.3s' }} onClick={() => setForm({ ...form, status: !form.status })}>
+                      <div style={{ position: 'absolute', top: '2px', left: form.status ? '22px' : '2px', width: '20px', height: '20px', borderRadius: '50%', background: 'white', transition: 'left 0.3s', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }} />
+                    </div>
+                  </div>
                 </div>
               </div>
-            )}
 
-            {modalTab === 'colleges' && (
-              <div style={{ padding: '14px' }}>
-                {!selected ? (
-                  <p style={{ color: '#6b7280', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>Please save the university first to add colleges</p>
-                ) : (
-                  <>
-                    <div style={{ marginBottom: '12px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '16px', color: '#111827' }}>Colleges</h3>
+                <div style={{ marginBottom: '16px' }}>
                       <div className="form-row">
                         <label>Add College</label>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <input type="text" placeholder="College Name" value={collegeForm.name} onChange={(e) => setCollegeForm({ ...collegeForm, name: e.target.value })} style={{ flex: 1 }} />
-                          <input type="text" placeholder="Address" value={collegeForm.address} onChange={(e) => setCollegeForm({ ...collegeForm, address: e.target.value })} style={{ flex: 1 }} />
-                          <button className="btn-primary" onClick={handleAddCollege}>Add</button>
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                          <input type="text" placeholder="College Name" value={collegeForm.name} onChange={(e) => setCollegeForm({ ...collegeForm, name: e.target.value })} style={{ flex: 1, padding: '10px 14px', borderRadius: '6px', border: '1px solid #d1d5db' }} />
+                          <input type="text" placeholder="Address" value={collegeForm.address} onChange={(e) => setCollegeForm({ ...collegeForm, address: e.target.value })} style={{ flex: 1, padding: '10px 14px', borderRadius: '6px', border: '1px solid #d1d5db' }} />
+                          <button className="btn-primary" onClick={handleAddCollege} style={{ padding: '10px 24px' }}>Add</button>
                         </div>
                       </div>
                     </div>
                     <div>
-                      {colleges.length === 0 ? <div>No colleges added yet</div> : (
+                      {colleges.length === 0 ? <div style={{ color: '#6b7280', fontSize: '14px' }}>No colleges added yet</div> : (
                         <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                           {colleges.map(c => (
-                            <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', borderBottom: '1px solid #e5e7eb' }}>
+                            <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f3f4f6' }}>
                               <div>
                                 <div style={{ fontWeight: '600' }}>{c.college_name || c.name}</div>
                                 <div style={{ fontSize: '12px', color: '#6b7280' }}>{c.address}</div>
@@ -395,84 +475,50 @@ const Universities = () => {
                         </div>
                       )}
                     </div>
-                  </>
-                )}
               </div>
-            )}
 
-            {modalTab === 'programs' && (
-              <div style={{ padding: '14px' }}>
-                {!selected ? (
-                  <p style={{ color: '#6b7280', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>Please save the university first to add programs</p>
+
+
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '16px', color: '#111827' }}>Config Mapping</h3>
+                {configLoading && selected ? (
+                  <p style={{ color: '#6b7280' }}>Loading master mappings...</p>
                 ) : (
-                  <>
-                    <div style={{ marginBottom: '12px' }}>
-                      <div className="form-row">
-                        <label>Add Program</label>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <input type="text" placeholder="Program Name" value={programForm.name} onChange={(e) => setProgramForm({ ...programForm, name: e.target.value })} style={{ flex: 1 }} />
-                          <input type="number" placeholder="Duration (years)" value={programForm.duration_years} onChange={(e) => setProgramForm({ ...programForm, duration_years: parseInt(e.target.value) })} style={{ width: '120px' }} />
-                          <button className="btn-primary" onClick={handleAddProgram}>Add</button>
-                        </div>
-                      </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Policies</label>
+                      <Select isMulti options={policyOptions} value={selectedPolicies} onChange={setSelectedPolicies} menuPosition="fixed" />
                     </div>
                     <div>
-                      {programs.length === 0 ? <div>No programs added yet</div> : (
-                        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                          {programs.map(p => (
-                            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', borderBottom: '1px solid #e5e7eb' }}>
-                              <div>
-                                <div style={{ fontWeight: '600' }}>{p.name}</div>
-                                <div style={{ fontSize: '12px', color: '#6b7280' }}>{p.duration_years} years</div>
-                              </div>
-                              <button className="btn-delete" onClick={() => handleDeleteProgram(p.id)}>Delete</button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
-            {modalTab === 'years' && (
-              <div style={{ padding: '14px' }}>
-                {!selected ? (
-                  <p style={{ color: '#6b7280', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>Please save the university first to add academic years</p>
-                ) : (
-                  <>
-                    <div style={{ marginBottom: '12px' }}>
-                      <div className="form-row">
-                        <label>Add Academic Year</label>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <input type="text" placeholder="Year Name (e.g., 2023-24)" value={yearForm.year_name} onChange={(e) => setYearForm({ ...yearForm, year_name: e.target.value })} style={{ flex: 1 }} />
-                          <button className="btn-primary" onClick={handleAddYear}>Add</button>
-                        </div>
-                      </div>
+                      <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Programs</label>
+                      <Select isMulti options={programOptions} value={selectedPrograms} onChange={setSelectedPrograms} menuPosition="fixed" />
                     </div>
                     <div>
-                      {academicYears.length === 0 ? <div>No academic years added yet</div> : (
-                        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                          {academicYears.map(y => (
-                            <div key={y.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', borderBottom: '1px solid #e5e7eb' }}>
-                              <div style={{ fontWeight: '600' }}>{y.year_name}</div>
-                              <button className="btn-delete" onClick={() => handleDeleteYear(y.id)}>Delete</button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Academic Years</label>
+                      <Select isMulti options={academicYearOptions} value={selectedAcademicYears} onChange={setSelectedAcademicYears} menuPosition="fixed" />
                     </div>
-                  </>
+                    <div>
+                      <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Semesters</label>
+                      <Select isMulti options={semesterOptions} value={selectedSemesters} onChange={setSelectedSemesters} menuPosition="fixed" />
+                    </div>
+                  </div>
                 )}
               </div>
-            )}
+            </div>
 
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-              {modalTab === 'info' && (
-                <button className="btn-primary" onClick={() => handleSave()}>{selected ? 'Update' : 'Create'}</button>
-              )}
+            <div className="modal-footer" style={{ borderTop: '1px solid #f3f4f6', paddingTop: '20px', paddingBottom: '0', marginTop: '0', display: 'flex', justifyContent: 'space-between' }}>
+              <div>
+                 {/* Empty div to push buttons to right if we don't have something on the left */}
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button className="btn-secondary" onClick={() => setShowModal(false)} style={{ padding: '10px 24px', borderRadius: '6px', backgroundColor: '#f3f4f6', border: 'none', color: '#374151' }}>Cancel</button>
+                <button className="btn-primary" onClick={() => handleSave()} style={{ padding: '10px 24px', backgroundColor: '#10b981', display: selected ? 'none' : 'block' }}>Save</button>
+                {selected && (
+                  <button className="btn-primary" onClick={() => { handleSave(); handleSaveConfig(); }} disabled={savingConfig} style={{ padding: '10px 24px', backgroundColor: '#10b981' }}>
+                    {savingConfig ? 'Saving...' : 'Save Changes'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

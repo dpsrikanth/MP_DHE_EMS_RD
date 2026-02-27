@@ -15,8 +15,6 @@ import Teachers from "./pages/Teachers";
 import Students from "./pages/Students";
 import Exams from "./pages/Exams";
 import Marks from "./pages/Marks";
-import DropdownTest from "./pages/DropdownTest";
-
 
 const AppRoutes = () => {
   return (
@@ -35,8 +33,6 @@ const AppRoutes = () => {
       <Route path="/students" element={<ProtectedRoute element={<Students />} />} />
       <Route path="/exams" element={<ProtectedRoute element={<Exams />} />} />
       <Route path="/marks" element={<ProtectedRoute element={<Marks />} />} />
-      <Route path="/dropdown-test" element={<ProtectedRoute element={<DropdownTest />} />} />
-      
     </Routes>
   );
 };

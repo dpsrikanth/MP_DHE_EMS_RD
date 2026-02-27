@@ -23,7 +23,7 @@ export const authUtils = {
   // Check if user is admin
   isAdmin: () => {
     const roleName = localStorage.getItem("roleName");
-    return roleName  === "SUPER_ADMIN";
+    return roleName === "SUPER_ADMIN" || roleName === "admin" || roleName === "superAdmin";
   },
 
   // Logout and clear auth data
