@@ -62,10 +62,11 @@ const getDashboardStats = async (req, res) => {
     const statsQueries = {
       totalUsers: "SELECT COUNT(*) FROM users",
       activeExams: "SELECT COUNT(*) FROM exams",
-      totalPrograms: "SELECT COUNT(*) FROM programs",
-      totalSemesters: "SELECT COUNT(*) FROM semesters",
-      totalSubjects: "SELECT COUNT(*) FROM subjects",
-      totalAcademicYears: "SELECT COUNT(*) FROM academic_years",
+      totalPrograms: "SELECT COUNT(*) FROM master_programs",
+      totalSemesters: "SELECT COUNT(*) FROM master_semesters",
+      totalSubjects: "SELECT COUNT(*) FROM master_subjects",
+      totalAcademicYears: "SELECT COUNT(*) FROM master_academic_years",
+      totalPolicies: "SELECT COUNT(*) FROM master_policies",
     };
 
     const stats = {};
@@ -300,15 +301,41 @@ const Login = async (req, res) => {
       maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : undefined 
     });
 
-    return res.status(200).json({
-      message: "User logged in successfully",
-      user: { id: result.id, name: result.name, role: result.role_name },
-      token: accessToken, // React stores this in memory
-    });
+    res.json({ token: accessToken, user: { id: result.id, name: result.name, email: result.email, role: result.role_name } });
+  } catch (error) {
+    console.error("Login Error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
 
-  } catch (err) {
-    console.log("Login Error:", err.message);
-    return res.status(500).json({ message: "Internal server error" });
+const refreshToken = async (req, res) => {
+  try {
+    const refreshTokenCookie = req.cookies.refreshToken;
+    if (!refreshTokenCookie) {
+      return res.status(401).json({ message: "No refresh token provided" });
+    }
+
+    // Verify the refresh token
+    jwt.verify(refreshTokenCookie, process.env.REFRESH_SECRET, async (err, decoded) => {
+      if (err) {
+        return res.status(403).json({ message: "Invalid refresh token" });
+      }
+
+      // Token is valid, generate a new access token
+      const payload = { 
+        id: decoded.id, 
+        email: decoded.email, 
+        role: decoded.role 
+      };
+
+      // Generate a new short-lived access token
+      const newAccessToken = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: "1m" });
+
+      res.json({ token: newAccessToken });
+    });
+  } catch (error) {
+    console.error("Refresh Token Error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -876,6 +903,95 @@ const deleteMasterProgram = async (req, res) => {
 };
 
 module.exports = {
+  deleteMasterProgram
+};
+
+// =================== master_policies CRUD ===================
+const getMasterPolicies = async (req, res) => {
+  try {
+    const result = await client.query(
+      "SELECT id, name, description, created_at FROM master_policies ORDER BY id"
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get master policies error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const createMasterPolicy = async (req, res) => {
+  try {
+    const { name, description } = req.body;
+    if (!name) {
+      return res.status(400).json({ message: "Policy name is required" });
+    }
+    const result = await client.query(
+      "INSERT INTO master_policies (name, description) VALUES ($1, $2) RETURNING id, name, description, created_at",
+      [name, description]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("Create master policy error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getMasterPolicy = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await client.query(
+      "SELECT id, name, description, created_at FROM master_policies WHERE id = $1",
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Master policy not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Get master policy error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const updateMasterPolicy = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description } = req.body;
+    if (!name) {
+      return res.status(400).json({ message: "Policy name is required" });
+    }
+    const result = await client.query(
+      "UPDATE master_policies SET name = $1, description = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, name, description, created_at",
+      [name, description, id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Master policy not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Update master policy error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const deleteMasterPolicy = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await client.query(
+      "DELETE FROM master_policies WHERE id = $1 RETURNING id",
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Master policy not found" });
+    }
+    res.json({ message: "Deleted successfully" });
+  } catch (error) {
+    console.error("Delete master policy error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+module.exports = {
   register,
   getDashboardStats,
   getUsers,
@@ -920,10 +1036,19 @@ module.exports = {
   createMasterSubject,
   updateMasterSubject,
   deleteMasterSubject,
+  
   // master programs
   getMasterPrograms,
   createMasterProgram,
   getMasterProgram,
   updateMasterProgram,
-  deleteMasterProgram
+  deleteMasterProgram,
+
+  // master policies
+  getMasterPolicies,
+  getMasterPolicy,
+  createMasterPolicy,
+  updateMasterPolicy,
+  deleteMasterPolicy,
+  refreshToken
 };

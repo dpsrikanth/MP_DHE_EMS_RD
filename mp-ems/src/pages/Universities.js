@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Select from 'react-select';
+import Select, { components } from 'react-select';
 import { 
   School, 
   Plus, 
@@ -11,6 +11,24 @@ import {
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+
+const CheckboxOption = (props) => {
+  return (
+    <div>
+      <components.Option {...props}>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={props.isSelected}
+            onChange={() => null}
+            className="w-4 h-4 text-sky-500 border-slate-300 rounded focus:ring-sky-500 pointer-events-none"
+          />
+          <span className="text-sm font-medium">{props.label}</span>
+        </div>
+      </components.Option>
+    </div>
+  );
+};
 
 const Universities = () => {
   const navigate = useNavigate();
@@ -572,6 +590,9 @@ const Universities = () => {
                         <label className="text-xs font-black text-slate-500 ml-1 uppercase">Mapped Policies</label>
                         <Select 
                           isMulti 
+                          hideSelectedOptions={false}
+                          closeMenuOnSelect={false}
+                          components={{ Option: CheckboxOption }}
                           options={policyOptions} 
                           value={selectedPolicies} 
                           onChange={setSelectedPolicies} 
@@ -591,15 +612,15 @@ const Universities = () => {
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-black text-slate-500 ml-1 uppercase">Available Programs</label>
-                        <Select isMulti options={programOptions} value={selectedPrograms} onChange={setSelectedPrograms} styles={{ control: (base) => ({ ...base, borderRadius: '1rem', border: '2px solid #f1f5f9' }) }} />
+                        <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }} options={programOptions} value={selectedPrograms} onChange={setSelectedPrograms} styles={{ control: (base) => ({ ...base, borderRadius: '1rem', border: '2px solid #f1f5f9' }) }} />
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-black text-slate-500 ml-1 uppercase">Academic Years</label>
-                        <Select isMulti options={academicYearOptions} value={selectedAcademicYears} onChange={setSelectedAcademicYears} styles={{ control: (base) => ({ ...base, borderRadius: '1rem', border: '2px solid #f1f5f9' }) }} />
+                        <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }} options={academicYearOptions} value={selectedAcademicYears} onChange={setSelectedAcademicYears} styles={{ control: (base) => ({ ...base, borderRadius: '1rem', border: '2px solid #f1f5f9' }) }} />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-xs font-black text-slate-500 ml-1 uppercase">Semesters List</label>
-                        <Select isMulti options={semesterOptions} value={selectedSemesters} onChange={setSelectedSemesters} styles={{ control: (base) => ({ ...base, borderRadius: '1rem', border: '2px solid #f1f5f9' }) }} />
+                        <label className="text-xs font-black text-slate-500 ml-1 uppercase">Semesters Mapping</label>
+                        <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }} options={semesterOptions} value={selectedSemesters} onChange={setSelectedSemesters} styles={{ control: (base) => ({ ...base, borderRadius: '1rem', border: '2px solid #f1f5f9' }) }} />
                       </div>
                     </div>
                   )}

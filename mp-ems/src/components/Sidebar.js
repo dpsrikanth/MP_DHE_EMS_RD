@@ -12,16 +12,26 @@ import {
   UserCircle, 
   FileText, 
   BarChart3,
-  ChevronRight
+  ChevronRight,
+  ShieldCheck,
+  Menu,
+  X
 } from "lucide-react";
 
 /**
  * Sidebar component with Tailwind CSS styling.
  * Designed for a modern, premium EMS application.
  */
-const Sidebar = () => {
+const Sidebar = ({ isOpen, setIsOpen }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const handleLinkClick = (path) => {
+    navigate(path);
+    if (window.innerWidth < 1024) {
+      setIsOpen(false);
+    }
+  };
 
   const menuItems = [
     { id: 1, name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
@@ -35,12 +45,13 @@ const Sidebar = () => {
     { id: 9, name: 'Students', path: '/students', icon: <UserCircle size={20} /> },
     { id: 10, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
     { id: 11, name: 'Marks', path: '/marks', icon: <BarChart3 size={20} /> },
+    { id: 12, name: 'Policies', path: '/policies', icon: <ShieldCheck size={20} /> },
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-slate-900 text-slate-300 flex flex-col shadow-2xl z-50 transition-all duration-300 overflow-hidden border-r border-slate-800">
+    <aside className={`fixed left-0 top-0 h-screen w-64 bg-slate-900 text-slate-300 flex flex-col shadow-2xl z-50 transition-transform duration-300 overflow-hidden border-r border-slate-800 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       {/* Brand Logo Section */}
-      <div className="p-6 mb-2">
+      <div className="p-6 mb-2 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="bg-sky-500 p-2 rounded-xl shadow-lg shadow-sky-500/30">
             <School className="text-white" size={24} />
@@ -49,6 +60,12 @@ const Sidebar = () => {
             EMS<span className="text-sky-500 not-italic ml-1">Admin</span>
           </h1>
         </div>
+        <button 
+          onClick={() => setIsOpen(!isOpen)}
+          className="text-slate-400 hover:text-white transition-colors"
+        >
+          {isOpen && window.innerWidth < 1024 ? <X size={24} /> : <Menu size={24} />}
+        </button>
       </div>
 
       {/* Navigation Menu */}
@@ -59,7 +76,7 @@ const Sidebar = () => {
           return (
             <button
               key={item.id}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleLinkClick(item.path)}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${
                 isActive 
                   ? 'bg-sky-500/10 text-sky-400 font-semibold' 
@@ -79,7 +96,7 @@ const Sidebar = () => {
       </nav>
 
       {/* Bottom Profile/Status Section */}
-      <div className="p-4 bg-slate-950/50 border-t border-slate-800">
+      {/* <div className="p-4 bg-slate-950/50 border-t border-slate-800">
         <div className="flex items-center gap-3 p-2 rounded-lg bg-slate-900/50">
           <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">
             AD
@@ -89,7 +106,7 @@ const Sidebar = () => {
             <p className="text-[10px] text-slate-500 truncate lowercase">admin@ems.edu</p>
           </div>
         </div>
-      </div>
+      </div> */}
     </aside>
   );
 };

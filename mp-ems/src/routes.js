@@ -16,6 +16,7 @@ import Teachers from "./pages/Teachers";
 import Students from "./pages/Students";
 import Exams from "./pages/Exams";
 import Marks from "./pages/Marks";
+import Policies from "./pages/Policies";
 
 import Layout from "./components/Layout";
 
@@ -38,6 +39,7 @@ const AppRoutes = () => {
       <Route path="/students" element={<Layout><ProtectedRoute element={<Students />} /></Layout>} />
       <Route path="/exams" element={<Layout><ProtectedRoute element={<Exams />} /></Layout>} />
       <Route path="/marks" element={<Layout><ProtectedRoute element={<Marks />} /></Layout>} />
+      <Route path="/policies" element={<Layout><ProtectedRoute element={<Policies />} /></Layout>} />
     </Routes>
   );
 };

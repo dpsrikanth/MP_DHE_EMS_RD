@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { register, getDashboardStats, getUsers, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, Login, getUniversities, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, updateTeacher, getExams, getMarks , getMasterSemesters, createMasterSemester, updateMasterSemester, deleteMasterSemester, getMasterSemester, getMasterSubjects, createMasterSubject, updateMasterSubject, deleteMasterSubject, getMasterSubject, getMasterPrograms, createMasterProgram, getMasterProgram, updateMasterProgram, deleteMasterProgram} = require('../controllers/controller');
+const { register, getDashboardStats, getUsers, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, Login, refreshToken, getUniversities, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, updateTeacher, getExams, getMarks , getMasterSemesters, createMasterSemester, updateMasterSemester, deleteMasterSemester, getMasterSemester, getMasterSubjects, createMasterSubject, updateMasterSubject, deleteMasterSubject, getMasterSubject, getMasterPrograms, createMasterProgram, getMasterProgram, updateMasterProgram, deleteMasterProgram, getMasterPolicies, getMasterPolicy, createMasterPolicy, updateMasterPolicy, deleteMasterPolicy} = require('../controllers/controller');
 const { getMasters, getUniversityConfig, updateUniversityConfig, getCollegeConfig, updateCollegeConfig } = require('../controllers/masterController');
 const { verifyToken } = require('../middleware/auth.middleware');
 
 router.post('/register', register);
 router.get('/roles', getRoles);
 router.post('/login', Login);
+router.post('/refresh-token', refreshToken);
 // Dashboard endpoints
 router.get('/dashboard/stats', verifyToken, getDashboardStats);
 router.get('/users', verifyToken, getUsers);
@@ -63,5 +64,12 @@ router.get('/master-programs/:id', verifyToken, getMasterProgram);
 router.post('/master-programs', verifyToken, createMasterProgram);
 router.put('/master-programs/:id', verifyToken, updateMasterProgram);
 router.delete('/master-programs/:id', verifyToken, deleteMasterProgram);
+
+// master policies manage
+router.get('/master-policies', verifyToken, getMasterPolicies);
+router.get('/master-policies/:id', verifyToken, getMasterPolicy);
+router.post('/master-policies', verifyToken, createMasterPolicy);
+router.put('/master-policies/:id', verifyToken, updateMasterPolicy);
+router.delete('/master-policies/:id', verifyToken, deleteMasterPolicy);
 
 module.exports = router;

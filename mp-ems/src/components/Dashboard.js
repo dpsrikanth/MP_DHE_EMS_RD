@@ -23,6 +23,7 @@ const Dashboard = () => {
     totalSemesters: 0,
     totalSubjects: 0,
     totalAcademicYears: 0,
+    totalPolicies: 0,
   });
 
   const [teachers, setTeachers] = useState([]);
@@ -33,6 +34,7 @@ const Dashboard = () => {
   const [universitiesCount, setUniversitiesCount] = useState(0);
   const [semestersCount, setSemestersCount] = useState(0);
   const [subjectsCount, setSubjectsCount] = useState(0);
+  const [policiesCount, setPoliciesCount] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -54,12 +56,14 @@ const Dashboard = () => {
           totalSemesters: data.totalSemesters || 0,
           totalSubjects: data.totalSubjects || 0,
           totalAcademicYears: data.totalAcademicYears || 0,
+          totalPolicies: data.totalPolicies || 0,
         });
 
         setProgramsCount(data.totalPrograms || 0);
         setExamsCount(data.activeExams || 0);
         setSemestersCount(data.totalSemesters || 0);
         setSubjectsCount(data.totalSubjects || 0);
+        setPoliciesCount(data.totalPolicies || 0);
 
         const [tRes, sRes, cRes, uRes] = await Promise.all([
           fetch("http://localhost:8080/api/teachers", authHeader),
@@ -110,6 +114,7 @@ const Dashboard = () => {
     { label: 'Exams', value: examsCount, icon: <FileText size={24} />, color: 'bg-purple-500', shadow: 'shadow-purple-500/20' },
     { label: 'Colleges', value: collegesCount, icon: <Building2 size={24} />, color: 'bg-sky-500', shadow: 'shadow-sky-500/20' },
     { label: 'Universities', value: universitiesCount, icon: <School size={24} />, color: 'bg-indigo-500', shadow: 'shadow-indigo-500/20' },
+    { label: 'Policies', value: policiesCount, icon: <Award size={24} />, color: 'bg-emerald-500', shadow: 'shadow-emerald-500/20' },
     { label: 'Semesters', value: semestersCount, icon: <Layers size={24} />, color: 'bg-rose-500', shadow: 'shadow-rose-500/20' },
     { label: 'Subjects', value: subjectsCount, icon: <Book size={24} />, color: 'bg-teal-500', shadow: 'shadow-teal-500/20' },
   ];

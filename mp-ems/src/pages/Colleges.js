@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import Select from 'react-select';
+import Select, { components } from 'react-select';
 import { 
   GraduationCap, 
   Plus, 
@@ -13,6 +13,24 @@ import {
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+
+const CheckboxOption = (props) => {
+  return (
+    <div>
+      <components.Option {...props}>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={props.isSelected}
+            onChange={() => null}
+            className="w-4 h-4 text-sky-500 border-slate-300 rounded focus:ring-sky-500 pointer-events-none"
+          />
+          <span className="text-sm font-medium">{props.label}</span>
+        </div>
+      </components.Option>
+    </div>
+  );
+};
 
 const Colleges = () => {
   const location = useLocation();
@@ -510,6 +528,9 @@ const Colleges = () => {
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Active Policies</label>
                         <Select 
                           isMulti 
+                          hideSelectedOptions={false}
+                          closeMenuOnSelect={false}
+                          components={{ Option: CheckboxOption }}
                           options={masterData.policies.filter(p => universityConfig.policies.includes(p.id)).map(p => ({ value: p.id, label: p.name }))} 
                           value={selectedConfig.policies.map(id => ({ value: id, label: masterData.policies.find(p => p.id === id)?.name || id }))}
                           onChange={(vals) => setSelectedConfig({ ...selectedConfig, policies: vals.map(v => v.value) })}
@@ -518,15 +539,15 @@ const Colleges = () => {
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Programs List</label>
-                        <Select isMulti options={masterData.programs.filter(p => universityConfig.programs.includes(p.id)).map(p => ({ value: p.id, label: p.name }))} value={selectedConfig.programs.map(id => ({ value: id, label: masterData.programs.find(p => p.id === id)?.name || id }))} onChange={(vals) => setSelectedConfig({ ...selectedConfig, programs: vals.map(v => v.value) })} styles={{ control: (base) => ({ ...base, borderRadius: '1.25rem', border: '2px solid #f1f5f9' }) }} />
+                        <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }} options={masterData.programs.filter(p => universityConfig.programs.includes(p.id)).map(p => ({ value: p.id, label: p.name }))} value={selectedConfig.programs.map(id => ({ value: id, label: masterData.programs.find(p => p.id === id)?.name || id }))} onChange={(vals) => setSelectedConfig({ ...selectedConfig, programs: vals.map(v => v.value) })} styles={{ control: (base) => ({ ...base, borderRadius: '1.25rem', border: '2px solid #f1f5f9' }) }} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Academic Years</label>
-                        <Select isMulti options={masterData.academicYears.filter(ay => universityConfig.academicYears.includes(ay.id)).map(ay => ({ value: ay.id, label: ay.year_name }))} value={selectedConfig.academicYears.map(id => ({ value: id, label: masterData.academicYears.find(ay => ay.id === id)?.year_name || id }))} onChange={(vals) => setSelectedConfig({ ...selectedConfig, academicYears: vals.map(v => v.value) })} styles={{ control: (base) => ({ ...base, borderRadius: '1.25rem', border: '2px solid #f1f5f9' }) }} />
+                        <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }} options={masterData.academicYears.filter(ay => universityConfig.academicYears.includes(ay.id)).map(ay => ({ value: ay.id, label: ay.year_name }))} value={selectedConfig.academicYears.map(id => ({ value: id, label: masterData.academicYears.find(ay => ay.id === id)?.year_name || id }))} onChange={(vals) => setSelectedConfig({ ...selectedConfig, academicYears: vals.map(v => v.value) })} styles={{ control: (base) => ({ ...base, borderRadius: '1.25rem', border: '2px solid #f1f5f9' }) }} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Semesters Mapping</label>
-                        <Select isMulti options={masterData.semesters.filter(s => universityConfig.semesters.includes(s.id)).map(s => ({ value: s.id, label: s.semester_name }))} value={selectedConfig.semesters.map(id => ({ value: id, label: masterData.semesters.find(s => s.id === id)?.semester_name || id }))} onChange={(vals) => setSelectedConfig({ ...selectedConfig, semesters: vals.map(v => v.value) })} styles={{ control: (base) => ({ ...base, borderRadius: '1.25rem', border: '2px solid #f1f5f9' }) }} />
+                        <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }} options={masterData.semesters.filter(s => universityConfig.semesters.includes(s.id)).map(s => ({ value: s.id, label: s.semester_name }))} value={selectedConfig.semesters.map(id => ({ value: id, label: masterData.semesters.find(s => s.id === id)?.semester_name || id }))} onChange={(vals) => setSelectedConfig({ ...selectedConfig, semesters: vals.map(v => v.value) })} styles={{ control: (base) => ({ ...base, borderRadius: '1.25rem', border: '2px solid #f1f5f9' }) }} />
                       </div>
                     </div>
                   )}

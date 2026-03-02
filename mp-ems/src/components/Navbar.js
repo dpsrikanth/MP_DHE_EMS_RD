@@ -6,14 +6,15 @@ import {
   User, 
   LogOut, 
   Settings,
-  ChevronDown
+  ChevronDown,
+  Menu
 } from 'lucide-react';
 
 /**
  * TopBar (Navbar) component with Tailwind CSS styling.
  * Featuring dynamic titles, search, and a refined user profile dropdown.
  */
-const Navbar = () => {
+const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -49,16 +50,24 @@ const Navbar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 flex items-center justify-between transition-all duration-300">
+    <header className="sticky top-0 z-30 w-full h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 lg:px-8 flex items-center justify-between transition-all duration-300">
       {/* Left: Dynamic Title */}
       <div className="flex items-center gap-4">
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+        {!isSidebarOpen && (
+          <button 
+            onClick={toggleSidebar}
+            className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"
+          >
+            <Menu size={24} />
+          </button>
+        )}
+        <h1 className="text-xl lg:text-2xl font-bold text-slate-900 tracking-tight">
           {getPageTitle(location.pathname)}
         </h1>
       </div>
 
       {/* Middle: Search Bar (Decorative/Functionality-placeholder) */}
-      <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
+      {/* <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
         <div className="relative w-full group">
           <Search 
             className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" 
@@ -70,7 +79,7 @@ const Navbar = () => {
             className="w-full bg-slate-100 border-none rounded-2xl py-2.5 pl-12 pr-4 text-sm text-slate-700 focus:ring-2 focus:ring-sky-500/20 focus:bg-white transition-all outline-none"
           />
         </div>
-      </div>
+      </div> */}
 
       {/* Right: Actions & Profile */}
       <div className="flex items-center gap-3">
