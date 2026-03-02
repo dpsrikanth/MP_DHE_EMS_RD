@@ -9,10 +9,12 @@ const register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
+    // Validation
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    // Check if email exists
     const existingUser = await client.query(
       "SELECT * FROM public.users WHERE email = $1",
       [email],
@@ -22,8 +24,10 @@ const register = async (req, res) => {
       return res.status(400).json({ message: "Email already registered" });
     }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Get role_id from roles table
     const roleResult = await client.query(
       "SELECT id FROM public.roles WHERE role_name = $1",
       [role],
@@ -35,6 +39,7 @@ const register = async (req, res) => {
 
     const roleId = roleResult.rows[0].id;
 
+    // Insert user
     const result = await client.query(
       "INSERT INTO public.users (name, email, password_hash, role_id) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role_id",
       [name, email, hashedPassword, roleId],
@@ -50,6 +55,7 @@ const register = async (req, res) => {
   }
 };
 
+// Dashboard endpoints - Get statistics and data
 const getDashboardStats = async (req, res) => {
   try {
     const statsQueries = {
@@ -429,7 +435,21 @@ const getColleges = async (req, res) => {
 
 const getTeachers = async (req, res) => {
   try {
-    const result = await client.query(`SELECT t.id, u.name AS teacher_name, u.email, c.name AS college_name, t.designation, t.status FROM teachers t LEFT JOIN users u ON t.user_id = u.id LEFT JOIN colleges c ON t.college_id = c.id ORDER BY t.id DESC;`);
+    const result = await client.query(
+      `SELECT 
+    t.id,
+    u.name AS teacher_name,
+    u.email,
+    c.name AS college_name,
+    t.department,
+    t.designation,
+    t.experience,
+    t.status
+FROM teachers t
+LEFT JOIN users u ON t.user_id = u.id
+LEFT JOIN colleges c ON t.college_id = c.id
+ORDER BY t.id DESC;`
+    );
     res.json(result.rows);
   } catch (error) {
     console.error("Get teachers error:", error);
@@ -439,16 +459,48 @@ const getTeachers = async (req, res) => {
 
 const updateTeacher = async (req, res) => {
   const { id } = req.params;
-  const { college_id, designation, status, name, email } = req.body;
+  const { college_id, designation, department, experience, status, name, email } = req.body;
+
   try {
-    const teacherResult = await client.query("SELECT * FROM teachers WHERE id = $1", [id]);
-    if (teacherResult.rows.length === 0) return res.status(404).json({ message: "Teacher not found" });
-    const teacher = teacherResult.rows[0];
-    await client.query("BEGIN");
-    if (name || email) {
-      await client.query(`UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email) WHERE id = $3`, [name || null, email || null, teacher.user_id]);
+    // 1️⃣ Check if teacher exists
+    const teacherResult = await client.query(
+      "SELECT * FROM teachers WHERE id = $1",
+      [id]
+    );
+
+    if (teacherResult.rows.length === 0) {
+      return res.status(404).json({ message: "Teacher not found" });
     }
-    await client.query(`UPDATE teachers SET college_id = COALESCE($1, college_id), designation = COALESCE($2, designation), status = COALESCE($3, status) WHERE id = $4`, [college_id ?? null, designation ?? null, status ?? null, id]);
+
+    const teacher = teacherResult.rows[0];
+
+    // 2️⃣ Start transaction
+    await client.query("BEGIN");
+
+    // 3️⃣ Update users table (if name or email provided)
+    if (name || email) {
+      await client.query(
+        `UPDATE users 
+         SET name = COALESCE($1, name),
+             email = COALESCE($2, email)
+         WHERE id = $3`,
+        [name || null, email || null, teacher.user_id]
+      );
+    }
+
+    // 4️⃣ Update teachers table
+    await client.query(
+      `UPDATE teachers
+       SET college_id = COALESCE($1, college_id),
+           designation = COALESCE($2, designation),
+           department = COALESCE($3, department),
+           experience = COALESCE($4, experience),
+           status = COALESCE($5, status)
+       WHERE id = $6`,
+      [college_id ?? null, designation ?? null, department ?? null, experience ?? null, status ?? null, id]
+    );
+
+    // 5️⃣ Commit transaction
     await client.query("COMMIT");
     res.json({ message: "Teacher updated successfully" });
   } catch (error) {
@@ -456,6 +508,44 @@ const updateTeacher = async (req, res) => {
     if (error.code === "23505") return res.status(400).json({ message: "Email already in use" });
     console.error(error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// Create teacher record (used by frontend when adding new faculty)
+const createTeacher = async (req, res) => {
+  const { teacher_name, email, college_id, designation, department, experience, status } = req.body;
+
+  if (!teacher_name || !email) {
+    return res.status(400).json({ message: 'Name and email are required' });
+  }
+
+  try {
+    // begin transaction
+    await client.query('BEGIN');
+    // insert user
+    const userResult = await client.query(
+      'INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id',
+      [teacher_name, email]
+    );
+    const userId = userResult.rows[0].id;
+
+    // insert teacher
+    const teacherResult = await client.query(
+      `INSERT INTO teachers (user_id, college_id, designation, department, experience, status)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [userId, college_id || null, designation || null, department || null, experience || null, status || true]
+    );
+
+    await client.query('COMMIT');
+    res.status(201).json({ message: 'Teacher created successfully', id: teacherResult.rows[0].id });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    if (error.code === '23505') {
+      return res.status(400).json({ message: 'Email already in use' });
+    }
+    console.error('Create teacher error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
@@ -722,6 +812,346 @@ const deleteMasterPolicy = async (req, res) => {
   }
 };
 
+// Master Teachers Functions
+const getMasterTeachers = async (req, res) => {
+  try {
+    const result = await client.query(
+      `SELECT 
+        mt.id,
+        u.name,
+        u.email,
+        c.name AS college_name,
+        md.department_name AS department,
+        mdes.designation_name AS designation,
+        mt.experience_years AS experience,
+        mt.status
+      FROM master_teachers mt
+      LEFT JOIN users u ON mt.user_id = u.id
+      LEFT JOIN colleges c ON mt.college_id = c.id
+      LEFT JOIN master_departments md ON mt.department_id = md.id
+      LEFT JOIN master_designations mdes ON mt.designation_id = mdes.id
+      WHERE mt.status = 'Active'
+      ORDER BY mt.id DESC`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get master teachers error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getMasterTeacher = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await client.query(
+      `SELECT 
+        mt.id,
+        u.name,
+        u.email,
+        mt.college_id,
+        mt.department_id,
+        mt.designation_id,
+        mt.experience_years,
+        mt.status,
+        c.name AS college_name,
+        md.department_name AS department,
+        mdes.designation_name AS designation
+      FROM master_teachers mt
+      LEFT JOIN users u ON mt.user_id = u.id
+      LEFT JOIN colleges c ON mt.college_id = c.id
+      LEFT JOIN master_departments md ON mt.department_id = md.id
+      LEFT JOIN master_designations mdes ON mt.designation_id = mdes.id
+      WHERE mt.id = $1`,
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Master teacher not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Get master teacher error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const createMasterTeacher = async (req, res) => {
+  const { name, email, college_id, department_id, designation_id, employee_code, experience, status } = req.body;
+
+  try {
+    // Validate required fields
+    if (!name || !email || !college_id || !department_id || !designation_id) {
+      return res.status(400).json({ success: false, message: "Name, email, college, department, and designation are required" });
+    }
+
+    // Check if email already exists
+    const existingEmail = await client.query(
+      "SELECT id FROM users WHERE email = $1",
+      [email]
+    );
+
+    if (existingEmail.rows.length > 0) {
+      return res.status(400).json({ success: false, message: "Email already exists" });
+    }
+
+    // Generate employee code if not provided
+    const finalEmployeeCode = employee_code || `EMP-${Date.now()}`;
+
+    // Check if employee code already exists
+    const existingCode = await client.query(
+      "SELECT id FROM master_teachers WHERE employee_code = $1",
+      [finalEmployeeCode]
+    );
+
+    if (existingCode.rows.length > 0) {
+      return res.status(400).json({ success: false, message: "Employee code already exists" });
+    }
+
+    // Begin transaction
+    await client.query('BEGIN');
+
+    // Create user
+    const userResult = await client.query(
+      "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id",
+      [name, email]
+    );
+    const userId = userResult.rows[0].id;
+
+    // Create master teacher
+    const result = await client.query(
+      `INSERT INTO master_teachers (user_id, employee_code, college_id, department_id, designation_id, experience_years, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, user_id, employee_code, college_id, department_id, designation_id, experience_years, status`,
+      [userId, finalEmployeeCode, college_id, department_id, designation_id, experience || 0, status || 'Active']
+    );
+
+    const teacherId = result.rows[0].id;
+
+    // Fetch the complete record with all joins for display
+    const completeRecord = await client.query(
+      `SELECT 
+        mt.id,
+        u.name,
+        u.email,
+        c.name AS college_name,
+        md.department_name AS department,
+        mdes.designation_name AS designation,
+        mt.experience_years AS experience,
+        mt.status,
+        mt.college_id,
+        mt.department_id,
+        mt.designation_id
+      FROM master_teachers mt
+      LEFT JOIN users u ON mt.user_id = u.id
+      LEFT JOIN colleges c ON mt.college_id = c.id
+      LEFT JOIN master_departments md ON mt.department_id = md.id
+      LEFT JOIN master_designations mdes ON mt.designation_id = mdes.id
+      WHERE mt.id = $1`,
+      [teacherId]
+    );
+
+    await client.query('COMMIT');
+    res.status(201).json({ 
+      success: true, 
+      message: "Teacher record created successfully",
+      data: completeRecord.rows[0]
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error("Create master teacher error:", error);
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
+const updateMasterTeacher = async (req, res) => {
+  const { id } = req.params;
+  const { name, email, college_id, department_id, designation_id, experience, status } = req.body;
+
+  try {
+    // Get existing teacher
+    const existing = await client.query(
+      "SELECT user_id FROM master_teachers WHERE id = $1",
+      [id]
+    );
+
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Master teacher not found" });
+    }
+
+    const userId = existing.rows[0].user_id;
+
+    // Begin transaction
+    await client.query('BEGIN');
+
+    // Update user if name or email provided
+    if (name || email) {
+      await client.query(
+        `UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email) WHERE id = $3`,
+        [name || null, email || null, userId]
+      );
+    }
+
+    // Update master teacher
+    await client.query(
+      `UPDATE master_teachers 
+       SET college_id = COALESCE($2, college_id),
+           department_id = COALESCE($3, department_id),
+           designation_id = COALESCE($4, designation_id),
+           experience_years = COALESCE($5, experience_years),
+           status = COALESCE($6, status),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1`,
+      [id, college_id || null, department_id || null, designation_id || null, experience || null, status || null]
+    );
+
+    // Fetch the complete updated record with all joins
+    const result = await client.query(
+      `SELECT 
+        mt.id,
+        u.name,
+        u.email,
+        c.name AS college_name,
+        md.department_name AS department,
+        mdes.designation_name AS designation,
+        mt.experience_years AS experience,
+        mt.status,
+        mt.college_id,
+        mt.department_id,
+        mt.designation_id
+      FROM master_teachers mt
+      LEFT JOIN users u ON mt.user_id = u.id
+      LEFT JOIN colleges c ON mt.college_id = c.id
+      LEFT JOIN master_departments md ON mt.department_id = md.id
+      LEFT JOIN master_designations mdes ON mt.designation_id = mdes.id
+      WHERE mt.id = $1`,
+      [id]
+    );
+
+    await client.query('COMMIT');
+    res.json({ 
+      success: true, 
+      message: "Teacher record updated successfully",
+      data: result.rows[0]
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error("Update master teacher error:", error);
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
+const deleteMasterTeacher = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Soft delete: Update status to 'Inactive' instead of deleting the record
+    const result = await client.query(
+      `UPDATE master_teachers 
+       SET status = 'Inactive', updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $1 
+       RETURNING id`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Master teacher not found" });
+    }
+
+    res.json({ 
+      success: true, 
+      message: "Teacher record deleted successfully",
+      data: { id: result.rows[0].id }
+    });
+  } catch (error) {
+    console.error("Delete master teacher error:", error);
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
+// Master Designation Functions
+const getMasterDesignations = async (req, res) => {
+  try {
+    const result = await client.query(
+      `SELECT id, designation_name, status
+       FROM master_designations
+       WHERE status = 'Active'
+       ORDER BY designation_name ASC`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get master designations error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const createMasterDesignation = async (req, res) => {
+  const { designation_name, status } = req.body;
+
+  try {
+    if (!designation_name) {
+      return res.status(400).json({ message: "Designation name is required" });
+    }
+
+    const result = await client.query(
+      `INSERT INTO master_designations (designation_name, status)
+       VALUES ($1, $2)
+       RETURNING id, designation_name, status`,
+      [designation_name, status || 'Active']
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("Create master designation error:", error);
+    if (error.code === '23505') {
+      return res.status(400).json({ message: "Designation already exists" });
+    }
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Master Department Functions
+const getMasterDepartments = async (req, res) => {
+  try {
+    const result = await client.query(
+      `SELECT id, department_name, department_code, college_id, status
+       FROM master_departments
+       WHERE status = 'Active'
+       ORDER BY department_name ASC`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get master departments error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const createMasterDepartment = async (req, res) => {
+  const { department_name, department_code, college_id, status } = req.body;
+
+  try {
+    if (!department_name || !college_id) {
+      return res.status(400).json({ message: "Department name and college are required" });
+    }
+
+    // Generate department code if not provided
+    const finalDeptCode = department_code || `DEPT-${Date.now().toString().slice(-8)}`;
+
+    const result = await client.query(
+      `INSERT INTO master_departments (department_name, department_code, college_id, status)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, department_name, department_code, college_id, status`,
+      [department_name, finalDeptCode, college_id, status || 'Active']
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("Create master department error:", error);
+    if (error.code === '23505') {
+      return res.status(400).json({ message: "Department code or name already exists" });
+    }
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   register,
   getDashboardStats,
@@ -773,5 +1203,17 @@ module.exports = {
   createMasterPolicy,
   getMasterPolicy,
   updateMasterPolicy,
-  deleteMasterPolicy
+  deleteMasterPolicy,
+ // master teachers
+  getMasterTeachers,
+  getMasterTeacher,
+  createMasterTeacher,
+  updateMasterTeacher,
+  deleteMasterTeacher,
+  // master designations
+  getMasterDesignations,
+  createMasterDesignation,
+  // master departments
+  getMasterDepartments,
+  createMasterDepartment
 };

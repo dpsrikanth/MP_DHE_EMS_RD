@@ -71,6 +71,8 @@ CREATE TABLE IF NOT EXISTS teachers (
     user_id INTEGER REFERENCES users(id),
     college_id INTEGER REFERENCES colleges(id),
     designation VARCHAR(100),
+    department VARCHAR(255),
+    experience INTEGER,
     status BOOLEAN DEFAULT TRUE
 );
 

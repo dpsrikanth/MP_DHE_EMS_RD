@@ -32,6 +32,66 @@ CREATE TABLE IF NOT EXISTS master_semesters (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS master_designations (
+    id SERIAL PRIMARY KEY,
+
+    designation_name VARCHAR(100) UNIQUE NOT NULL,
+
+    designation_type VARCHAR(50), -- Teaching / Administrative
+
+    level INT, -- hierarchy level (1 = highest)
+
+    status VARCHAR(20) DEFAULT 'Active',
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS master_departments (
+    id SERIAL PRIMARY KEY,
+
+    department_code VARCHAR(20) UNIQUE NOT NULL,
+    department_name VARCHAR(150) NOT NULL,
+
+    college_id INT NOT NULL REFERENCES colleges(id),
+
+    hod_id INT NULL REFERENCES teachers(id),
+
+    status VARCHAR(20) DEFAULT 'Active',
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE IF NOT EXISTS master_teachers (
+    id SERIAL PRIMARY KEY,
+
+    user_id INT UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+    employee_code VARCHAR(50) UNIQUE NOT NULL,
+
+    designation_id INT NOT NULL REFERENCES master_designations(id),
+
+    department_id INT NOT NULL REFERENCES master_departments(id),
+
+    college_id INT NOT NULL REFERENCES colleges(id),
+
+    qualification VARCHAR(255),
+
+    experience_years INT,
+
+    joining_date DATE,
+
+    phone VARCHAR(20),
+
+    address TEXT,
+
+    status VARCHAR(20) DEFAULT 'Active',
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Note: We already have a roles table in our DB config for Auth mapping.
 -- To avoid conflicts, and since the user requestedRoles like 'CoE,HOD,Lecture,AsstLect,Pueon,Prof,AsstPro,ComputerOper'
 -- we will update the existing roles or create master_roles depending on the required use case.
@@ -150,3 +210,6 @@ INSERT INTO master_roles (role_name) VALUES
     ('AsstPro'),
     ('ComputerOper')
 ON CONFLICT (role_name) DO NOTHING;
+-- Add department and experience fields for teachers if they are missing
+ALTER TABLE teachers ADD COLUMN IF NOT EXISTS department VARCHAR(255);
+ALTER TABLE teachers ADD COLUMN IF NOT EXISTS experience INTEGER; 

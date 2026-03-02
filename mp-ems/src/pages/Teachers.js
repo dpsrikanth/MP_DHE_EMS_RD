@@ -23,12 +23,34 @@ const Teachers = () => {
   const [error, setError] = useState(null);
 
   const availableColumns = [
-    { key: 'teacher_name', label: 'Teacher Profile' },
-    { key: 'college_name', label: 'College & Dept' },
-    { key: 'id', label: 'Identity' },
+    { key: 'id', label: 'ID' },
+    { key: 'name', label: 'Name' },
+    { key: 'email', label: 'Email' },
+    { key: 'college_name', label: 'College' },
+    { key: 'department', label: 'Department' },
+    { key: 'designation', label: 'Designation' },
+    { key: 'experience', label: 'Experience' },
     { key: 'status', label: 'Status' }
   ];
 
+  const [designationFilter, setDesignationFilter] = useState('All');
+  const [designationOptions, setDesignationOptions] = useState([]);
+  const [departmentOptions, setDepartmentOptions] = useState([]);
+  const [collegeOptions, setCollegeOptions] = useState([]);
+  
+  // apply designation filter ahead of the table hook
+  // teachers data may include a designation object or string depending on API
+  const filteredByDesignation = designationFilter && designationFilter !== 'All'
+    ? data.filter(d => {
+        let des = d.designation;
+        if (des && typeof des === 'object') {
+          // API might return { designation_name: 'Professor' }
+          des = des.designation_name || des.name || '';
+        }
+        return des === designationFilter;
+      })
+    : data;
+  
   const {
     paginatedData,
     searchQuery,
@@ -43,8 +65,8 @@ const Teachers = () => {
     totalItems,
     visibleColumns,
     toggleColumn
-  } = useDataTable(data, { 
-    searchFields: ['id', 'teacher_name', 'email', 'college_name', 'designation'],
+  } = useDataTable(filteredByDesignation, { 
+    searchFields: ['id', 'name', 'email', 'college_name', 'department', 'designation'],
     initialSort: { field: 'id', direction: 'desc' },
     initialPageSize: 10,
     availableColumns
@@ -54,10 +76,12 @@ const Teachers = () => {
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState('');
   const [addForm, setAddForm] = useState({
-    teacher_name: '',
+    name: '',
     email: '',
-    college_name: '',
-    designation: '',
+    college_id: '',
+    designation_id: '',
+    department_id: '',
+    experience: '',
     status: true
   });
   const [addErrors, setAddErrors] = useState({});
@@ -67,17 +91,74 @@ const Teachers = () => {
   const [editError, setEditError] = useState('');
   const [editForm, setEditForm] = useState({
     id: '',
-    teacher_name: '',
+    name: '',
     email: '',
-    college_name: '',
-    designation: '',
+    college_id: '',
+    designation_id: '',
+    department_id: '',
+    experience: '',
     status: true
   });
   const [editErrors, setEditErrors] = useState({});
 
+  // Fetch designations and departments
+  const fetchDropdownOptions = async () => {
+    try {
+      const [designResp, deptResp, collegeResp] = await Promise.all([
+        fetch('http://localhost:8080/api/master-designations', {
+          headers: authUtils.getAuthHeader()
+        }),
+        fetch('http://localhost:8080/api/master-departments', {
+          headers: authUtils.getAuthHeader()
+        }),
+        fetch('http://localhost:8080/api/colleges', {
+          headers: authUtils.getAuthHeader()
+        })
+      ]);
+      
+      if (designResp.ok) {
+        const designations = await designResp.json();
+        setDesignationOptions(designations.map(d => ({
+          id: d.id,
+          name: d.designation_name
+        })));
+      }
+      
+      if (deptResp.ok) {
+        const departments = await deptResp.json();
+        setDepartmentOptions(departments.map(d => ({
+          id: d.id,
+          name: d.department_name
+        })));
+      }
+
+      if (collegeResp.ok) {
+        const colleges = await collegeResp.json();
+         console.log("college", colleges);  
+        setCollegeOptions(colleges.map(c => ({
+         
+          id: c.id,
+          name: c.college_name
+        })));
+      }
+    } catch (err) {
+      console.error('Failed to fetch options:', err);
+    }
+  };
+
+  const validate = (form) => {
+    const errs = {};
+    if (!form.name) errs.name = 'Name is required';
+    if (!form.email) errs.email = 'Email is required';
+    if (!form.designation_id) errs.designation_id = 'Designation is required';
+    if (!form.college_id) errs.college_id = 'College is required';
+    if (!form.department_id) errs.department_id = 'Department is required';
+    return errs;
+  };
+
   const fetchData = useCallback(async () => {
     try {
-      const resp = await fetch('http://localhost:8080/api/teachers', {
+      const resp = await fetch('http://localhost:8080/api/master-teachers', {
         headers: authUtils.getAuthHeader()
       });
       if (!resp.ok) throw new Error('Failed to fetch teachers');
@@ -92,18 +173,13 @@ const Teachers = () => {
 
   useEffect(() => {
     fetchData();
+    // load master designation list immediately for both filter and forms
+    fetchDropdownOptions();
   }, [fetchData]);
 
-  const validate = (form) => {
-    const errs = {};
-    if (!form.teacher_name) errs.teacher_name = 'Name is required';
-    if (!form.email) errs.email = 'Email is required';
-    if (!form.designation) errs.designation = 'Designation is required';
-    return errs;
-  };
-
   const openAddModal = () => {
-    setAddForm({ teacher_name: '', email: '', college_name: '', designation: '', status: true });
+    fetchDropdownOptions();
+    setAddForm({ name: '', email: '', college_id: '', designation_id: '', department_id: '', experience: '', status: true });
     setAddErrors({});
     setAddError('');
     setShowAddModal(true);
@@ -123,13 +199,30 @@ const Teachers = () => {
     setAddLoading(true);
     setAddError('');
     try {
-      const resp = await fetch('http://localhost:8080/api/teachers', {
+      const payload = {
+        ...addForm,
+        college_id: addForm.college_id ? parseInt(addForm.college_id) : null,
+        designation_id: addForm.designation_id ? parseInt(addForm.designation_id) : null,
+        department_id: addForm.department_id ? parseInt(addForm.department_id) : null,
+        experience: addForm.experience ? parseInt(addForm.experience) : 0,
+        status: addForm.status ? 'Active' : 'Inactive'
+      };
+      const resp = await fetch('http://localhost:8080/api/master-teachers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
-        body: JSON.stringify(addForm)
+        body: JSON.stringify(payload)
       });
       if (!resp.ok) throw new Error('Failed to add teacher');
-      await fetchData();
+      
+      const result = await resp.json();
+      
+      // Add the new record to the table
+      if (result.data) {
+        setData(prevData => [result.data, ...prevData]);
+      }
+      
+      // Show success message
+      alert(result.message || 'Teacher record created successfully!');
       setShowAddModal(false);
     } catch (err) {
       setAddError(err.message);
@@ -138,11 +231,36 @@ const Teachers = () => {
     }
   };
 
-  const openEditModal = (item) => {
-    setEditForm({ ...item, status: !!item.status });
-    setEditErrors({});
-    setEditError('');
-    setShowEditModal(true);
+  const openEditModal = async (item) => {
+    try {
+      // Fetch dropdown options and full teacher record in parallel
+      await fetchDropdownOptions();
+      
+      const resp = await fetch(`http://localhost:8080/api/master-teachers/${item.id}`, {
+        headers: authUtils.getAuthHeader()
+      });
+      
+      if (!resp.ok) throw new Error('Failed to fetch teacher details');
+      const teacherData = await resp.json();
+      
+      // Populate form with fetched data
+      setEditForm({ 
+        id: teacherData.id,
+        name: teacherData.name,
+        email: teacherData.email,
+        college_id: teacherData.college_id || '',
+        designation_id: teacherData.designation_id || '',
+        department_id: teacherData.department_id || '',
+        experience: teacherData.experience_years || teacherData.experience || '',
+        status: teacherData.status === 'Active' || teacherData.status === true
+      });
+      setEditErrors({});
+      setEditError('');
+      setShowEditModal(true);
+    } catch (err) {
+      console.error('Failed to open edit modal:', err);
+      setEditError('Failed to load teacher details');
+    }
   };
   const closeEditModal = () => setShowEditModal(false);
 
@@ -159,13 +277,33 @@ const Teachers = () => {
     setEditLoading(true);
     setEditError('');
     try {
-      const resp = await fetch(`http://localhost:8080/api/teachers/${editForm.id}`, {
+      const payload = {
+        name: editForm.name,
+        email: editForm.email,
+        college_id: editForm.college_id ? parseInt(editForm.college_id) : null,
+        designation_id: editForm.designation_id ? parseInt(editForm.designation_id) : null,
+        department_id: editForm.department_id ? parseInt(editForm.department_id) : null,
+        experience: editForm.experience ? parseInt(editForm.experience) : 0,
+        status: editForm.status ? 'Active' : 'Inactive'
+      };
+      const resp = await fetch(`http://localhost:8080/api/master-teachers/${editForm.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
-        body: JSON.stringify(editForm)
+        body: JSON.stringify(payload)
       });
       if (!resp.ok) throw new Error('Failed to update teacher');
-      await fetchData();
+      
+      const result = await resp.json();
+      
+      // Update the table data with the returned record
+      if (result.data) {
+        setData(prevData => 
+          prevData.map(item => item.id === editForm.id ? result.data : item)
+        );
+      }
+      
+      // Show success message
+      alert(result.message || 'Teacher record updated successfully!');
       setShowEditModal(false);
     } catch (err) {
       setEditError(err.message);
@@ -174,8 +312,44 @@ const Teachers = () => {
     }
   };
 
+  const handleArchive = async (item) => {
+    if (!window.confirm('Are you sure you want to delete this faculty member? This action cannot be undone.')) return;
+    
+    try {
+      const resp = await fetch(`http://localhost:8080/api/master-teachers/${item.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() }
+      });
+      
+      if (!resp.ok) throw new Error('Failed to delete teacher');
+      
+      const result = await resp.json();
+      
+      // Remove the record from the table
+      setData(prevData => prevData.filter(t => t.id !== item.id));
+      
+      // Show success message
+      alert(result.message || 'Teacher record deleted successfully!');
+    } catch (err) {
+      alert('Error: ' + err.message);
+      console.error('Delete error', err);
+    }
+  };
+
   const total = data.length;
-  const activeCount = data.filter(t => t.status).length;
+  const activeCount = data.filter(t => t.status === 'Active' || t.status === true).length;
+
+  // Helper function to safely convert values to strings
+  const safeDisplay = (value) => {
+    if (value === null || value === undefined) return '-';
+    if (typeof value === 'object') {
+      if (value.designation_name) return value.designation_name;
+      if (value.department_name) return value.department_name;
+      if (value.name) return value.name;
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
 
   return (
     <div className="space-y-6">
@@ -209,8 +383,23 @@ const Teachers = () => {
               <TableSearch 
                 value={searchQuery} 
                 onChange={setSearchQuery} 
-                placeholder="Search faculty by name, email or college..."
+                placeholder="Search by name, email, college or department..."
               />
+
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-black text-slate-600">Designation:</label>
+                <select
+                  value={designationFilter}
+                  onChange={e => setDesignationFilter(e.target.value)}
+                  className="px-3 py-2 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:outline-none"
+                >
+                  <option value="All">All</option>
+                  {designationOptions.map(opt => (
+                    <option key={opt.id} value={opt.name}>{opt.name}</option>
+                  ))}
+                </select>
+              </div>
+
               <ColumnVisibilitySelector 
                 columns={availableColumns} 
                 visibleColumns={visibleColumns} 
@@ -221,7 +410,7 @@ const Teachers = () => {
                 className="inline-flex items-center gap-2 px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
               >
                 <Plus size={20} />
-                <span>Register Faculty</span>
+                <span>Add Teacher</span>
               </button>
             </div>
           </div>
@@ -232,28 +421,49 @@ const Teachers = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-y border-slate-100 bg-slate-50/20">
-                <SortHeader 
-                  label="Teacher Profile" 
-                  field="teacher_name" 
-                  currentSort={sortConfig} 
-                  onSort={handleSort} 
-                  className="px-8" 
-                  visible={visibleColumns.teacher_name}
+                <SortHeader
+                  label="ID"
+                  field="id"
+                  currentSort={sortConfig}
+                  onSort={handleSort}
+                  className="text-center"
+                  visible={visibleColumns.id}
                 />
-                <SortHeader 
-                  label="College & Dept" 
-                  field="college_name" 
-                  currentSort={sortConfig} 
-                  onSort={handleSort} 
+                <SortHeader
+                  label="Name"
+                  field="name"
+                  currentSort={sortConfig}
+                  onSort={handleSort}
+                  visible={visibleColumns.name}
+                />
+                <th className={`${visibleColumns.email ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Email</th>
+                <SortHeader
+                  label="College"
+                  field="college_name"
+                  currentSort={sortConfig}
+                  onSort={handleSort}
                   visible={visibleColumns.college_name}
                 />
-                <SortHeader 
-                  label="Identity" 
-                  field="id" 
-                  currentSort={sortConfig} 
-                  onSort={handleSort} 
-                  className="text-center" 
-                  visible={visibleColumns.id}
+                <SortHeader
+                  label="Department"
+                  field="department"
+                  currentSort={sortConfig}
+                  onSort={handleSort}
+                  visible={visibleColumns.department}
+                />
+                <SortHeader
+                  label="Designation"
+                  field="designation"
+                  currentSort={sortConfig}
+                  onSort={handleSort}
+                  visible={visibleColumns.designation}
+                />
+                <SortHeader
+                  label="Experience"
+                  field="experience"
+                  currentSort={sortConfig}
+                  onSort={handleSort}
+                  visible={visibleColumns.experience}
                 />
                 <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center`}>Status</th>
                 <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Settings</th>
@@ -263,33 +473,6 @@ const Teachers = () => {
               {paginatedData.length > 0 ? (
                 paginatedData.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
-                    {visibleColumns.teacher_name && (
-                      <td className="px-8 py-5">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
-                            <User size={20} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900 leading-tight mb-0.5">{item.teacher_name}</p>
-                            <p className="text-[11px] font-medium text-slate-400 flex items-center gap-1">
-                              <Mail size={12} /> {item.email}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                    )}
-                    {visibleColumns.college_name && (
-                      <td className="px-4 py-5">
-                        <div className="space-y-1">
-                          <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                            <Building size={14} className="text-slate-400" /> {item.college_name || 'Global'}
-                          </p>
-                          <p className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
-                            <Briefcase size={14} className="text-slate-400" /> {item.designation}
-                          </p>
-                        </div>
-                      </td>
-                    )}
                     {visibleColumns.id && (
                       <td className="px-4 py-5 text-center">
                         <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
@@ -297,9 +480,46 @@ const Teachers = () => {
                         </span>
                       </td>
                     )}
+                    {visibleColumns.name && (
+                      <td className="px-8 py-5">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
+                            <User size={20} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-900 leading-tight mb-0.5">{item.name}</p>
+                          </div>
+                        </div>
+                      </td>
+                    )}
+                    {visibleColumns.email && (
+                      <td className="px-4 py-5">
+                        <p className="text-[11px] text-slate-700">{item.email}</p>
+                      </td>
+                    )}
+                    {visibleColumns.college_name && (
+                      <td className="px-4 py-5">
+                        <p className="text-[11px] text-slate-700">{item.college_name || 'Global'}</p>
+                      </td>
+                    )}
+                    {visibleColumns.department && (
+                      <td className="px-4 py-5">
+                        <p className="text-[11px] text-slate-700">{safeDisplay(item.department)}</p>
+                      </td>
+                    )}
+                    {visibleColumns.designation && (
+                      <td className="px-4 py-5">
+                        <p className="text-[11px] text-slate-700">{safeDisplay(item.designation)}</p>
+                      </td>
+                    )}
+                    {visibleColumns.experience && (
+                      <td className="px-4 py-5">
+                        <p className="text-[11px] text-slate-700">{item.experience ?? '-'}</p>
+                      </td>
+                    )}
                     {visibleColumns.status && (
                       <td className="px-4 py-5 text-center">
-                        {item.status ? (
+                        {(item.status === 'Active' || item.status === true) ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase border border-emerald-100 tracking-tighter shadow-sm">
                             <ShieldCheck size={12} /> Active
                           </span>
@@ -320,6 +540,7 @@ const Teachers = () => {
                           <Pencil size={18} />
                         </button>
                         <button 
+                          onClick={() => handleArchive(item)}
                           className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                           title="Archive Teacher"
                         >
@@ -363,7 +584,7 @@ const Teachers = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={showAddModal ? closeAddModal : closeEditModal} />
           
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
             {/* Header */}
             <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
               <div>
@@ -396,14 +617,14 @@ const Teachers = () => {
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input 
-                      name="teacher_name" 
-                      value={showAddModal ? addForm.teacher_name : editForm.teacher_name} 
+                      name="name" 
+                      value={showAddModal ? addForm.name : editForm.name} 
                       onChange={showAddModal ? handleAddChange : handleEditChange} 
                       placeholder="e.g. Dr. Jane Doe"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.teacher_name || editErrors.teacher_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.name || editErrors.name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.teacher_name || editErrors.teacher_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.teacher_name || editErrors.teacher_name}</p> }
+                  { (addErrors.name || editErrors.name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.name || editErrors.name}</p> }
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -426,13 +647,17 @@ const Teachers = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Institute / College</label>
                   <div className="relative">
                     <Building className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="college_name" 
-                      value={showAddModal ? addForm.college_name : editForm.college_name} 
-                      onChange={showAddModal ? handleAddChange : handleEditChange} 
-                      placeholder="Search and select college"
+                    <select 
+                      name="college_id" 
+                      value={showAddModal ? addForm.college_id : editForm.college_id} 
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
                       className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold"
-                    />
+                    >
+                      <option value="">Select college</option>
+                      {collegeOptions.map(college => (
+                        <option key={college.id} value={college.id}>{college.name}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
@@ -440,15 +665,53 @@ const Teachers = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Designation</label>
                   <div className="relative">
                     <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="designation" 
-                      value={showAddModal ? addForm.designation : editForm.designation} 
-                      onChange={showAddModal ? handleAddChange : handleEditChange} 
-                      placeholder="e.g. Associate Professor"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.designation || editErrors.designation) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    <select
+                      name="designation_id"
+                      value={showAddModal ? addForm.designation_id : editForm.designation_id}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.designation_id || editErrors.designation_id) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    >
+                      <option value="">Select designation</option>
+                      {designationOptions.map(opt => (
+                        <option key={opt.id} value={opt.id}>{opt.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  { (addErrors.designation_id || editErrors.designation_id) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.designation_id || editErrors.designation_id}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Department</label>
+                  <div className="relative">
+                    <Building className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <select
+                      name="department_id"
+                      value={showAddModal ? addForm.department_id : editForm.department_id}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold"
+                    >
+                      <option value="">Select department</option>
+                      {departmentOptions.map(opt => (
+                        <option key={opt.id} value={opt.id}>{opt.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Years Experience</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="experience"
+                      type="number"
+                      min="0"
+                      value={showAddModal ? addForm.experience : editForm.experience}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="0"
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold"
                     />
                   </div>
-                  { (addErrors.designation || editErrors.designation) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.designation || editErrors.designation}</p> }
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">

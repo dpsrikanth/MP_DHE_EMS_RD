@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, getDashboardStats, getUsers, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, Login, refreshToken, getUniversities, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, updateTeacher, getExams, getMarks , getMasterSemesters, createMasterSemester, updateMasterSemester, deleteMasterSemester, getMasterSemester, getMasterSubjects, createMasterSubject, updateMasterSubject, deleteMasterSubject, getMasterSubject, getMasterPrograms, createMasterProgram, getMasterProgram, updateMasterProgram, deleteMasterProgram, getMasterPolicies, getMasterPolicy, createMasterPolicy, updateMasterPolicy, deleteMasterPolicy,createStudent} = require('../controllers/controller');
+const { register, getDashboardStats, getUsers, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, Login, refreshToken, getUniversities, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, updateTeacher, getExams, getMarks , getMasterSemesters, createMasterSemester, updateMasterSemester, deleteMasterSemester, getMasterSemester, getMasterSubjects, createMasterSubject, updateMasterSubject, deleteMasterSubject, getMasterSubject, getMasterPrograms, createMasterProgram, getMasterProgram, updateMasterProgram, deleteMasterProgram, getMasterPolicies, getMasterPolicy, createMasterPolicy, updateMasterPolicy, deleteMasterPolicy,createStudent, getMasterTeachers, getMasterTeacher, createMasterTeacher, updateMasterTeacher, deleteMasterTeacher, getMasterDesignations, createMasterDesignation, getMasterDepartments, createMasterDepartment} = require('../controllers/controller');
 const { getMasters, getUniversityConfig, updateUniversityConfig, getCollegeConfig, updateCollegeConfig } = require('../controllers/masterController');
 const { verifyToken } = require('../middleware/auth.middleware');
 
@@ -41,6 +41,7 @@ router.put('/academic-years/:id', verifyToken, updateAcademicYear);
 router.delete('/academic-years/:id', verifyToken, deleteAcademicYear);
 router.get('/students', verifyToken, getStudents);
 router.get('/teachers', verifyToken, getTeachers);
+// router.post('/teachers', verifyToken, createTeacher);
 router.put('/teachers/:id', verifyToken, updateTeacher);
 // router.delete('/teachers/:id', verifyToken, deleteTeacher);
 router.get('/exams', verifyToken, getExams);
@@ -73,5 +74,20 @@ router.get('/master-policies/:id', verifyToken, getMasterPolicy);
 router.post('/master-policies', verifyToken, createMasterPolicy);
 router.put('/master-policies/:id', verifyToken, updateMasterPolicy);
 router.delete('/master-policies/:id', verifyToken, deleteMasterPolicy);
+
+// master teachers manage
+router.get('/master-teachers', verifyToken, getMasterTeachers);
+router.get('/master-teachers/:id', verifyToken, getMasterTeacher);
+router.post('/master-teachers', verifyToken, createMasterTeacher);
+router.put('/master-teachers/:id', verifyToken, updateMasterTeacher);
+router.delete('/master-teachers/:id', verifyToken, deleteMasterTeacher);
+
+// master designations manage
+router.get('/master-designations', verifyToken, getMasterDesignations);
+router.post('/master-designations', verifyToken, createMasterDesignation);
+
+// master departments manage
+router.get('/master-departments', verifyToken, getMasterDepartments);
+router.post('/master-departments', verifyToken, createMasterDepartment);
 
 module.exports = router;
