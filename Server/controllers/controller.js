@@ -1,21 +1,18 @@
-
 require("dotenv").config();
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const client = require("../db");
-const jwt=require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
 
 // Register endpoint
 const register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    // Validation
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Check if email exists
     const existingUser = await client.query(
       "SELECT * FROM public.users WHERE email = $1",
       [email],
@@ -25,10 +22,8 @@ const register = async (req, res) => {
       return res.status(400).json({ message: "Email already registered" });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Get role_id from roles table
     const roleResult = await client.query(
       "SELECT id FROM public.roles WHERE role_name = $1",
       [role],
@@ -40,7 +35,6 @@ const register = async (req, res) => {
 
     const roleId = roleResult.rows[0].id;
 
-    // Insert user
     const result = await client.query(
       "INSERT INTO public.users (name, email, password_hash, role_id) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role_id",
       [name, email, hashedPassword, roleId],
@@ -56,7 +50,6 @@ const register = async (req, res) => {
   }
 };
 
-// Dashboard endpoints - Get statistics and data
 const getDashboardStats = async (req, res) => {
   try {
     const statsQueries = {
@@ -70,12 +63,10 @@ const getDashboardStats = async (req, res) => {
     };
 
     const stats = {};
-
     for (const [key, query] of Object.entries(statsQueries)) {
       const result = await client.query(query);
       stats[key] = parseInt(result.rows[0].count, 10);
     }
-
     res.json(stats);
   } catch (error) {
     console.error("Dashboard stats error:", error);
@@ -130,89 +121,48 @@ const getAcademicYears = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
- 
+
 const createAcademicYear = async (req, res) => {
   try {
     const { year_name } = req.body;
-   
-    if (!year_name) {
-      return res.status(400).json({ message: 'Year name is required' });
-    }
- 
+    if (!year_name) return res.status(400).json({ message: 'Year name is required' });
     const result = await client.query(
       `INSERT INTO master_academic_years (year_name, created_at, deleteflag)
        VALUES ($1, CURRENT_TIMESTAMP, true)
        RETURNING id, year_name, created_at, created_by, updated_at, updated_by`,
       [year_name]
     );
- 
-    res.status(201).json({
-      message: 'Academic year created successfully',
-      data: result.rows[0]
-    });
+    res.status(201).json({ message: 'Academic year created successfully', data: result.rows[0] });
   } catch (error) {
     console.error('Create academic year error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
- 
+
 const updateAcademicYear = async (req, res) => {
   try {
     const id = req.params.id;
     const { year_name } = req.body;
- 
-    if (!year_name) {
-      return res.status(400).json({ message: 'Year name is required' });
-    }
- 
-    // Check if exists
-    const checkResult = await client.query(
-      'SELECT id FROM master_academic_years WHERE id = $1 AND deleteflag = true',
-      [id]
-    );
- 
-    if (checkResult.rows.length === 0) {
-      return res.status(404).json({ message: 'Academic year not found' });
-    }
- 
+    if (!year_name) return res.status(400).json({ message: 'Year name is required' });
+    const checkResult = await client.query('SELECT id FROM master_academic_years WHERE id = $1 AND deleteflag = true', [id]);
+    if (checkResult.rows.length === 0) return res.status(404).json({ message: 'Academic year not found' });
     const result = await client.query(
-      `UPDATE master_academic_years
-       SET year_name = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $2 AND deleteflag = true
-       RETURNING id, year_name, created_at, created_by, updated_at, updated_by`,
+      `UPDATE master_academic_years SET year_name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND deleteflag = true RETURNING id, year_name, created_at, created_by, updated_at, updated_by`,
       [year_name, id]
     );
- 
-    res.json({
-      message: 'Academic year updated successfully',
-      data: result.rows[0]
-    });
+    res.json({ message: 'Academic year updated successfully', data: result.rows[0] });
   } catch (error) {
     console.error('Update academic year error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
- 
+
 const deleteAcademicYear = async (req, res) => {
   try {
     const id = req.params.id;
- 
-    // Check if exists
-    const checkResult = await client.query(
-      'SELECT id FROM master_academic_years WHERE id = $1 AND deleteflag = true',
-      [id]
-    );
- 
-    if (checkResult.rows.length === 0) {
-      return res.status(404).json({ message: 'Academic year not found' });
-    }
- 
-    // Soft delete: set deleteflag to false
-    await client.query(
-      'UPDATE master_academic_years SET deleteflag = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
-      [id]
-    );
- 
+    const checkResult = await client.query('SELECT id FROM master_academic_years WHERE id = $1 AND deleteflag = true', [id]);
+    if (checkResult.rows.length === 0) return res.status(404).json({ message: 'Academic year not found' });
+    await client.query('UPDATE master_academic_years SET deleteflag = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1', [id]);
     res.json({ message: 'Academic year deleted successfully' });
   } catch (error) {
     console.error('Delete academic year error:', error);
@@ -222,9 +172,7 @@ const deleteAcademicYear = async (req, res) => {
 
 const getSemesters = async (req, res) => {
   try {
-    const result = await client.query(
-      "SELECT id, semester_number, program_id, academic_year_id, start_date, end_date, status FROM semesters"
-    );
+    const result = await client.query("SELECT id, semester_number, program_id, academic_year_id, start_date, end_date, status FROM semesters");
     res.json(result.rows);
   } catch (error) {
     console.error("Get semesters error:", error);
@@ -234,9 +182,7 @@ const getSemesters = async (req, res) => {
 
 const getExamTypes = async (req, res) => {
   try {
-    const result = await client.query(
-      "SELECT id, type_name FROM exam_types"
-    );
+    const result = await client.query("SELECT id, type_name FROM exam_types");
     res.json(result.rows);
   } catch (error) {
     console.error("Get exam types error:", error);
@@ -246,9 +192,7 @@ const getExamTypes = async (req, res) => {
 
 const getRoles = async (req, res) => {
   try {
-    const result = await client.query(
-      "SELECT id, role_name FROM roles"
-    );
+    const result = await client.query("SELECT id, role_name FROM roles");
     res.json(result.rows);
   } catch (error) {
     console.error("Get roles error:", error);
@@ -258,49 +202,22 @@ const getRoles = async (req, res) => {
 
 const Login = async (req, res) => {
   try {
-    // 1. Extract rememberMe from request body
     const { email, password, rememberMe } = req.body;
-
-     const user = await client.query(
-      `SELECT u.id, u.name, u.email, u.password, r.role_name
-       FROM public.users u
-       JOIN public.roles r ON u.role_id = r.id
-       WHERE u.email = $1`,
+    const user = await client.query(
+      `SELECT u.id, u.name, u.email, u.password, r.role_name FROM public.users u JOIN public.roles r ON u.role_id = r.id WHERE u.email = $1`,
       [email]
     );
-
-    if (user.rows.length === 0) {
-      return res.status(400).json({ message: "User not found" });
-    }
-
+    if (user.rows.length === 0) return res.status(400).json({ message: "User not found" });
     const result = user.rows[0];
-
-    // Note: Always uncomment and use bcrypt in production!
-    // const ismatch = await bcrypt.compare(password, result.password);
-    // if (!ismatch) return res.status(403).json({ message: "Invalid credentials" });
-
-    const payload = { 
-      id: result.id, 
-      email: result.email, 
-      role: result.role_name 
-    };
-
-    // 2. Generate Access Token (Short-lived: 15 mins)
+    const payload = { id: result.id, email: result.email, role: result.role_name };
     const accessToken = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: "15m" });
-
-    // 3. Generate Refresh Token (Long-lived: 7 days or 30 days)
     const refreshToken = jwt.sign(payload, process.env.REFRESH_SECRET, { expiresIn: "30d" });
-
-    // 4. Set Refresh Token in an HttpOnly Cookie
     res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,    // Protects against XSS
-      secure: false,      // Requires HTTPS
-      // sameSite: 'Strict', // Protects against CSRF,
+      httpOnly: true,
+      secure: false,
       sameSite: "Lax",
-      // If rememberMe is false, cookie expires when browser closes (Session Cookie)
       maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : undefined 
     });
-
     res.json({ token: accessToken, user: { id: result.id, name: result.name, email: result.email, role: result.role_name } });
   } catch (error) {
     console.error("Login Error:", error);
@@ -311,50 +228,28 @@ const Login = async (req, res) => {
 const refreshToken = async (req, res) => {
   try {
     const refreshTokenCookie = req.cookies.refreshToken;
-    if (!refreshTokenCookie) {
-      return res.status(401).json({ message: "No refresh token provided" });
-    }
-
-    // Verify the refresh token
+    if (!refreshTokenCookie) return res.status(401).json({ message: "No refresh token provided" });
     jwt.verify(refreshTokenCookie, process.env.REFRESH_SECRET, async (err, decoded) => {
-      if (err) {
-        return res.status(403).json({ message: "Invalid refresh token" });
-      }
-
-      // Token is valid, generate a new access token
-      const payload = { 
-        id: decoded.id, 
-        email: decoded.email, 
-        role: decoded.role 
-      };
-
-      // Generate a new short-lived access token
+      if (err) return res.status(403).json({ message: "Invalid refresh token" });
+      const payload = { id: decoded.id, email: decoded.email, role: decoded.role };
       const newAccessToken = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: "1m" });
-
       res.json({ token: newAccessToken });
     });
-  } catch (error) {
-    console.error("Refresh Token Error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+  } catch (err) {
+    console.log("Refresh Error:", err.message);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
 const getUniversities = async (req, res) => {
   try {
     const result = await client.query(
-      `SELECT 
-        u.id,
-        u.name,
-        u.address,
-        u.status,
-        u.created_at,
+      `SELECT u.id, u.name, u.address, u.status, u.created_at,
         (SELECT COUNT(*) FROM colleges WHERE university_id = u.id) as colleges_count,
         (SELECT COUNT(*) FROM programs WHERE university_id = u.id) as programs_count,
         (SELECT COUNT(*) FROM academic_years WHERE university_id = u.id) as academic_years_count
-       FROM universities u
-       ORDER BY u.id`
+       FROM universities u ORDER BY u.id`
     );
-
     res.json(result.rows);
   } catch (error) {
     console.error("Get universities error:", error);
@@ -366,23 +261,16 @@ const createUniversity = async (req, res) => {
   try {
     const { name, address, status } = req.body;
     if (!name) return res.status(400).json({ message: 'Name is required' });
-
     await client.query('BEGIN');
-    
-    // Create University
     const universityResult = await client.query(
       'INSERT INTO universities (name, address, status) VALUES ($1, $2, $3) RETURNING id, name, address, status, created_at',
       [name, address || null, status === undefined ? true : status]
     );
-    
     const newUniversity = universityResult.rows[0];
-
-    // Create corresponding College record
     await client.query(
       'INSERT INTO colleges (name, university_id, address, status) VALUES ($1, $2, $3, $4)',
       [name, newUniversity.id, address || null, status === undefined ? true : status]
     );
-
     await client.query('COMMIT');
     res.status(201).json(newUniversity);
   } catch (err) {
@@ -505,11 +393,7 @@ const deleteProgram = async (req, res) => {
 
 const getStudents = async (req, res) => {
   try {
-    const result = await client.query(
-      `SELECT s.id, u.name as student_name, u.email, s.college_id, s.program_id, s.current_semester_id, s.admission_year, s.status
-       FROM students s
-       LEFT JOIN users u ON s.user_id = u.id`
-    );
+    const result = await client.query(`SELECT * FROM public.students ORDER BY id ASC`);
     res.json(result.rows);
   } catch (err) {
     console.error("Get students error:", err);
@@ -517,21 +401,25 @@ const getStudents = async (req, res) => {
   }
 };
 
+const createStudent = async (req, res) => {
+  try {
+    const { name, policies, programName, admission_year, semister } = req.body;
+    if (!name) return res.status(400).json({ message: 'Student name is required' });
+    const result = await client.query(
+      `INSERT INTO students (name, policies, "programName", admission_year, semister, created_at, updated_at, "deleteStatus")
+       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true) RETURNING *`,
+      [name, policies || null, programName || null, admission_year || null, semister || null]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Create student error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
 
 const getColleges = async (req, res) => {
   try {
-    const result = await client.query(
-      `SELECT c.id,
-              c.name AS college_name,
-              c.college_code,
-              c.university_id,
-              u.name AS university_name,
-              c.address,
-              c.status,
-              c.created_at
-       FROM colleges c
-       LEFT JOIN universities u ON c.university_id = u.id`
-    );
+    const result = await client.query(`SELECT c.id, c.name AS college_name, c.college_code, c.university_id, u.name AS university_name, c.address, c.status, c.created_at FROM colleges c LEFT JOIN universities u ON c.university_id = u.id`);
     res.json(result.rows);
   } catch (error) {
     console.error("Get colleges error:", error);
@@ -541,19 +429,7 @@ const getColleges = async (req, res) => {
 
 const getTeachers = async (req, res) => {
   try {
-    const result = await client.query(
-      `SELECT 
-    t.id,
-    u.name AS teacher_name,
-    u.email,
-    c.name AS college_name,
-    t.designation,
-    t.status
-FROM teachers t
-LEFT JOIN users u ON t.user_id = u.id
-LEFT JOIN colleges c ON t.college_id = c.id
-ORDER BY t.id DESC;`
-    );
+    const result = await client.query(`SELECT t.id, u.name AS teacher_name, u.email, c.name AS college_name, t.designation, t.status FROM teachers t LEFT JOIN users u ON t.user_id = u.id LEFT JOIN colleges c ON t.college_id = c.id ORDER BY t.id DESC;`);
     res.json(result.rows);
   } catch (error) {
     console.error("Get teachers error:", error);
@@ -564,56 +440,20 @@ ORDER BY t.id DESC;`
 const updateTeacher = async (req, res) => {
   const { id } = req.params;
   const { college_id, designation, status, name, email } = req.body;
-
   try {
-    // 1️⃣ Check if teacher exists
-    const teacherResult = await client.query(
-      "SELECT * FROM teachers WHERE id = $1",
-      [id]
-    );
-
-    if (teacherResult.rows.length === 0) {
-      return res.status(404).json({ message: "Teacher not found" });
-    }
-
+    const teacherResult = await client.query("SELECT * FROM teachers WHERE id = $1", [id]);
+    if (teacherResult.rows.length === 0) return res.status(404).json({ message: "Teacher not found" });
     const teacher = teacherResult.rows[0];
-
-    // 2️⃣ Start transaction
     await client.query("BEGIN");
-
-    // 3️⃣ Update users table (if name or email provided)
     if (name || email) {
-      await client.query(
-        `UPDATE users 
-         SET name = COALESCE($1, name),
-             email = COALESCE($2, email)
-         WHERE id = $3`,
-        [name || null, email || null, teacher.user_id]
-      );
+      await client.query(`UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email) WHERE id = $3`, [name || null, email || null, teacher.user_id]);
     }
-
-    // 4️⃣ Update teachers table
-    await client.query(
-      `UPDATE teachers
-       SET college_id = COALESCE($1, college_id),
-           designation = COALESCE($2, designation),
-           status = COALESCE($3, status)
-       WHERE id = $4`,
-      [college_id ?? null, designation ?? null, status ?? null, id]
-    );
-
-    // 5️⃣ Commit transaction
+    await client.query(`UPDATE teachers SET college_id = COALESCE($1, college_id), designation = COALESCE($2, designation), status = COALESCE($3, status) WHERE id = $4`, [college_id ?? null, designation ?? null, status ?? null, id]);
     await client.query("COMMIT");
-
     res.json({ message: "Teacher updated successfully" });
-
   } catch (error) {
     await client.query("ROLLBACK");
-
-    if (error.code === "23505") {
-      return res.status(400).json({ message: "Email already in use" });
-    }
-
+    if (error.code === "23505") return res.status(400).json({ message: "Email already in use" });
     console.error(error);
     res.status(500).json({ message: "Server error" });
   }
@@ -621,9 +461,7 @@ const updateTeacher = async (req, res) => {
 
 const getExams = async (req, res) => {
   try {
-    const result = await client.query(
-      "SELECT id, name as exam_name, semester_id, college_id, exam_type, exam_date, status FROM exams"
-    );
+    const result = await client.query("SELECT id, name as exam_name, semester_id, college_id, exam_type, exam_date, status FROM exams");
     res.json(result.rows);
   } catch (error) {
     console.error("Get exams error:", error);
@@ -633,13 +471,7 @@ const getExams = async (req, res) => {
 
 const getMarks = async (req, res) => {
   try {
-    const result = await client.query(
-      `SELECT m.id, m.student_id, u.name as student_name, m.subject_id, sub.name as subject_name, m.exam_id, m.marks_obtained, m.max_marks
-       FROM marks m
-       LEFT JOIN students s ON m.student_id = s.id
-       LEFT JOIN users u ON s.user_id = u.id
-       LEFT JOIN subjects sub ON m.subject_id = sub.id`
-    );
+    const result = await client.query(`SELECT m.id, m.student_id, u.name as student_name, m.subject_id, sub.name as subject_name, m.exam_id, m.marks_obtained, m.max_marks FROM marks m LEFT JOIN students s ON m.student_id = s.id LEFT JOIN users u ON s.user_id = u.id LEFT JOIN subjects sub ON m.subject_id = sub.id`);
     res.json(result.rows);
   } catch (error) {
     console.error("Get marks error:", error);
@@ -647,12 +479,9 @@ const getMarks = async (req, res) => {
   }
 };
 
-// master_semesters CRUD
 const getMasterSemesters = async (req, res) => {
   try {
-    const result = await client.query(
-      "SELECT id, semester_name, created_at FROM master_semesters ORDER BY id"
-    );
+    const result = await client.query("SELECT id, semester_name, created_at FROM master_semesters ORDER BY id");
     res.json(result.rows);
   } catch (error) {
     console.error("Get master semesters error:", error);
@@ -663,13 +492,8 @@ const getMasterSemesters = async (req, res) => {
 const createMasterSemester = async (req, res) => {
   try {
     const { semester_name } = req.body;
-    if (!semester_name) {
-      return res.status(400).json({ message: "Semester name is required" });
-    }
-    const result = await client.query(
-      "INSERT INTO master_semesters (semester_name) VALUES ($1) RETURNING id, semester_name, created_at",
-      [semester_name]
-    );
+    if (!semester_name) return res.status(400).json({ message: "Semester name is required" });
+    const result = await client.query("INSERT INTO master_semesters (semester_name) VALUES ($1) RETURNING id, semester_name, created_at", [semester_name]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error("Create master semester error:", error);
@@ -681,16 +505,9 @@ const updateMasterSemester = async (req, res) => {
   try {
     const { id } = req.params;
     const { semester_name } = req.body;
-    if (!semester_name) {
-      return res.status(400).json({ message: "Semester name is required" });
-    }
-    const result = await client.query(
-      "UPDATE master_semesters SET semester_name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, semester_name, created_at",
-      [semester_name, id]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Master semester not found" });
-    }
+    if (!semester_name) return res.status(400).json({ message: "Semester name is required" });
+    const result = await client.query("UPDATE master_semesters SET semester_name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, semester_name, created_at", [semester_name, id]);
+    if (result.rows.length === 0) return res.status(404).json({ message: "Master semester not found" });
     res.json(result.rows[0]);
   } catch (error) {
     console.error("Update master semester error:", error);
@@ -701,13 +518,8 @@ const updateMasterSemester = async (req, res) => {
 const deleteMasterSemester = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query(
-      "DELETE FROM master_semesters WHERE id = $1 RETURNING id",
-      [id]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Master semester not found" });
-    }
+    const result = await client.query("DELETE FROM master_semesters WHERE id = $1 RETURNING id", [id]);
+    if (result.rows.length === 0) return res.status(404).json({ message: "Master semester not found" });
     res.json({ message: "Deleted successfully" });
   } catch (error) {
     console.error("Delete master semester error:", error);
@@ -718,13 +530,8 @@ const deleteMasterSemester = async (req, res) => {
 const getMasterSemester = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query(
-      "SELECT id, semester_name, created_at FROM master_semesters WHERE id = $1",
-      [id]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Master semester not found" });
-    }
+    const result = await client.query("SELECT id, semester_name, created_at FROM master_semesters WHERE id = $1", [id]);
+    if (result.rows.length === 0) return res.status(404).json({ message: "Master semester not found" });
     res.json(result.rows[0]);
   } catch (error) {
     console.error("Get master semester error:", error);
@@ -732,12 +539,9 @@ const getMasterSemester = async (req, res) => {
   }
 };
 
-// =================== master_subjects CRUD ===================
 const getMasterSubjects = async (req, res) => {
   try {
-    const result = await client.query(
-      "SELECT id, subject_code, name, created_at FROM master_subjects ORDER BY id"
-    );
+    const result = await client.query("SELECT id, subject_code, name, created_at FROM master_subjects ORDER BY id");
     res.json(result.rows);
   } catch (error) {
     console.error("Get master subjects error:", error);
@@ -748,13 +552,8 @@ const getMasterSubjects = async (req, res) => {
 const createMasterSubject = async (req, res) => {
   try {
     const { subject_code, name } = req.body;
-    if (!subject_code || !name) {
-      return res.status(400).json({ message: "Subject code and name are required" });
-    }
-    const result = await client.query(
-      "INSERT INTO master_subjects (subject_code, name) VALUES ($1, $2) RETURNING id, subject_code, name, created_at",
-      [subject_code, name]
-    );
+    if (!subject_code || !name) return res.status(400).json({ message: "Subject code and name are required" });
+    const result = await client.query("INSERT INTO master_subjects (subject_code, name) VALUES ($1, $2) RETURNING id, subject_code, name, created_at", [subject_code, name]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error("Create master subject error:", error);
@@ -765,13 +564,8 @@ const createMasterSubject = async (req, res) => {
 const getMasterSubject = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query(
-      "SELECT id, subject_code, name, created_at FROM master_subjects WHERE id = $1",
-      [id]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Master subject not found" });
-    }
+    const result = await client.query("SELECT id, subject_code, name, created_at FROM master_subjects WHERE id = $1", [id]);
+    if (result.rows.length === 0) return res.status(404).json({ message: "Master subject not found" });
     res.json(result.rows[0]);
   } catch (error) {
     console.error("Get master subject error:", error);
@@ -783,16 +577,9 @@ const updateMasterSubject = async (req, res) => {
   try {
     const { id } = req.params;
     const { subject_code, name } = req.body;
-    if (!subject_code || !name) {
-      return res.status(400).json({ message: "Subject code and name are required" });
-    }
-    const result = await client.query(
-      "UPDATE master_subjects SET subject_code = $1, name = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, subject_code, name, created_at",
-      [subject_code, name, id]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Master subject not found" });
-    }
+    if (!subject_code || !name) return res.status(400).json({ message: "Subject code and name are required" });
+    const result = await client.query("UPDATE master_subjects SET subject_code = $1, name = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, subject_code, name, created_at", [subject_code, name, id]);
+    if (result.rows.length === 0) return res.status(404).json({ message: "Master subject not found" });
     res.json(result.rows[0]);
   } catch (error) {
     console.error("Update master subject error:", error);
@@ -803,13 +590,8 @@ const updateMasterSubject = async (req, res) => {
 const deleteMasterSubject = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query(
-      "DELETE FROM master_subjects WHERE id = $1 RETURNING id",
-      [id]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Master subject not found" });
-    }
+    const result = await client.query("DELETE FROM master_subjects WHERE id = $1 RETURNING id", [id]);
+    if (result.rows.length === 0) return res.status(404).json({ message: "Master subject not found" });
     res.json({ message: "Deleted successfully" });
   } catch (error) {
     console.error("Delete master subject error:", error);
@@ -817,12 +599,9 @@ const deleteMasterSubject = async (req, res) => {
   }
 };
 
-// =================== master_programs CRUD ===================
 const getMasterPrograms = async (req, res) => {
   try {
-    const result = await client.query(
-      "SELECT id, name, duration_years, created_at FROM master_programs ORDER BY id"
-    );
+    const result = await client.query("SELECT id, name, duration_years, created_at FROM master_programs ORDER BY id");
     res.json(result.rows);
   } catch (error) {
     console.error("Get master programs error:", error);
@@ -833,13 +612,8 @@ const getMasterPrograms = async (req, res) => {
 const createMasterProgram = async (req, res) => {
   try {
     const { name, duration_years } = req.body;
-    if (!name || !duration_years) {
-      return res.status(400).json({ message: "Program name and duration are required" });
-    }
-    const result = await client.query(
-      "INSERT INTO master_programs (name, duration_years) VALUES ($1, $2) RETURNING id, name, duration_years, created_at",
-      [name, duration_years]
-    );
+    if (!name || !duration_years) return res.status(400).json({ message: "Program name and duration are required" });
+    const result = await client.query("INSERT INTO master_programs (name, duration_years) VALUES ($1, $2) RETURNING id, name, duration_years, created_at", [name, duration_years]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error("Create master program error:", error);
@@ -850,13 +624,8 @@ const createMasterProgram = async (req, res) => {
 const getMasterProgram = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query(
-      "SELECT id, name, duration_years, created_at FROM master_programs WHERE id = $1",
-      [id]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Master program not found" });
-    }
+    const result = await client.query("SELECT id, name, duration_years, created_at FROM master_programs WHERE id = $1", [id]);
+    if (result.rows.length === 0) return res.status(404).json({ message: "Master program not found" });
     res.json(result.rows[0]);
   } catch (error) {
     console.error("Get master program error:", error);
@@ -868,16 +637,9 @@ const updateMasterProgram = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, duration_years } = req.body;
-    if (!name || !duration_years) {
-      return res.status(400).json({ message: "Program name and duration are required" });
-    }
-    const result = await client.query(
-      "UPDATE master_programs SET name = $1, duration_years = $2 WHERE id = $3 RETURNING id, name, duration_years, created_at",
-      [name, duration_years, id]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Master program not found" });
-    }
+    if (!name || !duration_years) return res.status(400).json({ message: "Program name and duration are required" });
+    const result = await client.query("UPDATE master_programs SET name = $1, duration_years = $2 WHERE id = $3 RETURNING id, name, duration_years, created_at", [name, duration_years, id]);
+    if (result.rows.length === 0) return res.status(404).json({ message: "Master program not found" });
     res.json(result.rows[0]);
   } catch (error) {
     console.error("Update master program error:", error);
@@ -888,13 +650,8 @@ const updateMasterProgram = async (req, res) => {
 const deleteMasterProgram = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query(
-      "DELETE FROM master_programs WHERE id = $1 RETURNING id",
-      [id]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Master program not found" });
-    }
+    const result = await client.query("DELETE FROM master_programs WHERE id = $1 RETURNING id", [id]);
+    if (result.rows.length === 0) return res.status(404).json({ message: "Master program not found" });
     res.json({ message: "Deleted successfully" });
   } catch (error) {
     console.error("Delete master program error:", error);
@@ -902,16 +659,9 @@ const deleteMasterProgram = async (req, res) => {
   }
 };
 
-module.exports = {
-  deleteMasterProgram
-};
-
-// =================== master_policies CRUD ===================
 const getMasterPolicies = async (req, res) => {
   try {
-    const result = await client.query(
-      "SELECT id, name, description, created_at FROM master_policies ORDER BY id"
-    );
+    const result = await client.query("SELECT id, name FROM master_policies ORDER BY id");
     res.json(result.rows);
   } catch (error) {
     console.error("Get master policies error:", error);
@@ -922,13 +672,8 @@ const getMasterPolicies = async (req, res) => {
 const createMasterPolicy = async (req, res) => {
   try {
     const { name, description } = req.body;
-    if (!name) {
-      return res.status(400).json({ message: "Policy name is required" });
-    }
-    const result = await client.query(
-      "INSERT INTO master_policies (name, description) VALUES ($1, $2) RETURNING id, name, description, created_at",
-      [name, description]
-    );
+    if (!name) return res.status(400).json({ message: "Policy name is required" });
+    const result = await client.query("INSERT INTO master_policies (name, description) VALUES ($1, $2) RETURNING id, name, description, created_at", [name, description]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error("Create master policy error:", error);
@@ -939,13 +684,8 @@ const createMasterPolicy = async (req, res) => {
 const getMasterPolicy = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query(
-      "SELECT id, name, description, created_at FROM master_policies WHERE id = $1",
-      [id]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Master policy not found" });
-    }
+    const result = await client.query("SELECT id, name, description, created_at FROM master_policies WHERE id = $1", [id]);
+    if (result.rows.length === 0) return res.status(404).json({ message: "Master policy not found" });
     res.json(result.rows[0]);
   } catch (error) {
     console.error("Get master policy error:", error);
@@ -957,16 +697,12 @@ const updateMasterPolicy = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, description } = req.body;
-    if (!name) {
-      return res.status(400).json({ message: "Policy name is required" });
-    }
+    if (!name) return res.status(400).json({ message: "Policy name is required" });
     const result = await client.query(
       "UPDATE master_policies SET name = $1, description = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, name, description, created_at",
       [name, description, id]
     );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Master policy not found" });
-    }
+    if (result.rows.length === 0) return res.status(404).json({ message: "Master policy not found" });
     res.json(result.rows[0]);
   } catch (error) {
     console.error("Update master policy error:", error);
@@ -977,13 +713,8 @@ const updateMasterPolicy = async (req, res) => {
 const deleteMasterPolicy = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query(
-      "DELETE FROM master_policies WHERE id = $1 RETURNING id",
-      [id]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Master policy not found" });
-    }
+    const result = await client.query("DELETE FROM master_policies WHERE id = $1 RETURNING id", [id]);
+    if (result.rows.length === 0) return res.status(404).json({ message: "Master policy not found" });
     res.json({ message: "Deleted successfully" });
   } catch (error) {
     console.error("Delete master policy error:", error);
@@ -998,10 +729,14 @@ module.exports = {
   getPrograms,
   getSubjects,
   getAcademicYears,
+  createAcademicYear,
+  updateAcademicYear,
+  deleteAcademicYear,
   getSemesters,
   getExamTypes,
   getRoles,
   Login,
+  refreshToken,
   getUniversities,
   createUniversity,
   updateUniversity,
@@ -1012,43 +747,31 @@ module.exports = {
   createProgram,
   updateProgram,
   deleteProgram,
-  createAcademicYear,
-  updateAcademicYear,
-  deleteAcademicYear,
   getStudents,
+  createStudent,
   getColleges,
   getTeachers,
   updateTeacher,
- 
   getExams,
   getMarks,
-
-   // master semesters
   getMasterSemesters,
-  getMasterSemester,
   createMasterSemester,
   updateMasterSemester,
   deleteMasterSemester,
-
-  // master subjects
+  getMasterSemester,
   getMasterSubjects,
-  getMasterSubject,
   createMasterSubject,
+  getMasterSubject,
   updateMasterSubject,
   deleteMasterSubject,
-  
-  // master programs
   getMasterPrograms,
   createMasterProgram,
   getMasterProgram,
   updateMasterProgram,
   deleteMasterProgram,
-
-  // master policies
   getMasterPolicies,
-  getMasterPolicy,
   createMasterPolicy,
+  getMasterPolicy,
   updateMasterPolicy,
-  deleteMasterPolicy,
-  refreshToken
+  deleteMasterPolicy
 };
