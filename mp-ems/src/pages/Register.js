@@ -1,7 +1,24 @@
 import React, { useState, useEffect } from 'react';
-
+import { 
+  UserPlus, 
+  Mail, 
+  Lock, 
+  Eye, 
+  EyeOff, 
+  User, 
+  ShieldCheck, 
+  ChevronDown, 
+  CheckCircle2,
+  School,
+  Sparkles,
+  Target,
+  Rocket,
+  ArrowLeft
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -45,10 +62,10 @@ const Register = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    if (!formData.name.trim()) newErrors.name = 'Full name is required';
+    if (!formData.email.trim()) newErrors.email = 'Email address is required';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
+      newErrors.email = 'Please enter a valid email';
     }
     if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
@@ -101,19 +118,10 @@ const Register = () => {
         return;
       }
 
-      setMessage(data.message);
-      setFormData({
-        name: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        role: 'student'
-      });
-      setErrors({});
-
-      // Redirect after 2 seconds
+      setMessage('Registration successful! Redirecting...');
+      
       setTimeout(() => {
-        window.location.href = '/';
+        navigate('/');
       }, 2000);
     } catch (error) {
       setMessage('Registration failed. Please try again.');
@@ -124,400 +132,258 @@ const Register = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      {/* Left side - Blue section with registration benefits */}
-      <div style={{
-        flex: 1,
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '50px',
-        color: 'white',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center'
-      }}>
-        <div style={{ maxWidth: '500px', margin: '0 auto' }}>
-          <h1 style={{ fontSize: '3rem', marginBottom: '10px' }}>Student Management System</h1>
-          <p style={{ fontSize: '1.2rem', marginBottom: '40px', opacity: 0.9 }}>
-            Efficiently Manage Your Academic Journey
+    <div className="min-h-screen bg-white flex flex-col md:flex-row font-sans overflow-hidden">
+      {/* Left Panel: Information & Branding */}
+      <div className="relative flex-1 bg-slate-900 overflow-hidden hidden lg:flex flex-col justify-center p-16 xl:p-24 overflow-y-auto">
+        {/* Abstract Background Design */}
+        <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
+          <div className="absolute top-[-15%] left-[-10%] w-[60%] h-[60%] bg-sky-500 rounded-full blur-[140px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-600 rounded-full blur-[120px]" />
+        </div>
+
+        <div className="relative z-10 max-w-xl">
+          <button 
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-12 font-bold text-sm tracking-widest uppercase group"
+          >
+            <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
+            <span>Back to Login</span>
+          </button>
+
+          <div className="flex items-center gap-4 mb-10">
+            <div className="w-14 h-14 bg-sky-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-sky-500/20">
+              <School size={32} />
+            </div>
+            <div>
+              <h1 className="text-3xl font-black text-white tracking-tight italic leading-none mb-1">EMS<span className="text-sky-400 not-italic ml-1">Admin</span></h1>
+              <p className="text-sky-400/80 font-bold text-[10px] tracking-[0.2em] uppercase">Enterprise Suite</p>
+            </div>
+          </div>
+
+          <h2 className="text-5xl font-black text-white leading-[1.1] mb-8 tracking-tight">
+            Design your <span className="text-sky-400 underline decoration-sky-500/30 underline-offset-8">Ideal</span> Academic Ecosystem.
+          </h2>
+          
+          <p className="text-lg text-slate-400 font-medium mb-12 leading-relaxed">
+            Join the elite network of educational institutions utilizing our cloud-native management platform for unmatched institutional efficiency.
           </p>
 
-          {/* Features */}
-          <div style={{ marginBottom: '30px' }}>
-            <h3 style={{ fontSize: '1.5rem', marginBottom: '15px' }}>✨ Key Features</h3>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              <li style={{ marginBottom: '10px' }}>📚 Track Academic Progress</li>
-              <li style={{ marginBottom: '10px' }}>📊 View Detailed Performance Analytics</li>
-              <li style={{ marginBottom: '10px' }}>📧 Receive Important Updates</li>
-            </ul>
-          </div>
-
-          {/* Benefits */}
-          <div style={{ marginBottom: '30px' }}>
-            <h3 style={{ fontSize: '1.5rem', marginBottom: '15px' }}>🎯 Registration Benefits</h3>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              <li style={{ marginBottom: '10px' }}>✓ Easy Access to All Resources</li>
-              <li style={{ marginBottom: '10px' }}>✓ Personalized Learning Dashboard</li>
-              <li style={{ marginBottom: '10px' }}>✓ Direct Communication with Instructors</li>
-            </ul>
-          </div>
-
-          {/* Getting Started */}
-          <div style={{ marginBottom: '40px' }}>
-            <h3 style={{ fontSize: '1.5rem', marginBottom: '15px' }}>🚀 Getting Started</h3>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              <li style={{ marginBottom: '10px' }}>• Complete your profile setup</li>
-              <li style={{ marginBottom: '10px' }}>• Join your class or role group</li>
-              <li style={{ marginBottom: '10px' }}>• Start exploring course materials</li>
-            </ul>
-          </div>
-
-          {/* Stats */}
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between',
-            borderTop: '1px solid rgba(255,255,255,0.2)',
-            borderBottom: '1px solid rgba(255,255,255,0.2)',
-            padding: '20px 0',
-            marginBottom: '30px'
-          }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>1000+</div>
-              <div style={{ opacity: 0.8 }}>Students</div>
+          <div className="space-y-6 mb-16">
+            <div className="flex gap-5 items-start">
+              <div className="mt-1 w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-sky-400 shrink-0 border border-slate-700/50">
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-lg leading-tight mb-1">Modern Student Experience</h3>
+                <p className="text-slate-500 text-sm font-medium leading-relaxed">Personalized dashboards and real-time progress tracking for every student.</p>
+              </div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>100+</div>
-              <div style={{ opacity: 0.8 }}>Courses</div>
+            <div className="flex gap-5 items-start">
+              <div className="mt-1 w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-indigo-400 shrink-0 border border-slate-700/50">
+                <Target size={20} />
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-lg leading-tight mb-1">Performance Intelligence</h3>
+                <p className="text-slate-500 text-sm font-medium leading-relaxed">Advanced data analytics to identify trends and improve learning outcomes.</p>
+              </div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>24/7</div>
-              <div style={{ opacity: 0.8 }}>Support</div>
+            <div className="flex gap-5 items-start">
+              <div className="mt-1 w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-emerald-400 shrink-0 border border-slate-700/50">
+                <Rocket size={20} />
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-lg leading-tight mb-1">Rapid Deployment</h3>
+                <p className="text-slate-500 text-sm font-medium leading-relaxed">Get your institution online in minutes with our streamlined setup process.</p>
+              </div>
             </div>
           </div>
 
-          {/* Testimonial */}
-          <div style={{
-            background: 'rgba(255,255,255,0.1)',
-            padding: '20px',
-            borderRadius: '10px'
-          }}>
-            <p style={{ fontStyle: 'italic', marginBottom: '10px' }}>
-              "The student management system has made tracking my progress incredibly easy. 
-              All my academic information is organized and always accessible."
-            </p>
-            <p style={{ textAlign: 'right', opacity: 0.8 }}>
-              - Alex Kumar, Engineering Student
+          <div className="bg-slate-800/30 rounded-[2rem] p-8 border border-slate-700/50 backdrop-blur-sm">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="flex -space-x-3">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white uppercase overflow-hidden">
+                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 100}`} alt="avatar" />
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm font-bold text-slate-300">Trusted by 200+ Institutions</p>
+            </div>
+            <p className="text-slate-400 text-xs italic leading-relaxed">
+              "The transition was seamless. EMSAdmin has redefined how we handle our semesterly examinations and grading."
             </p>
           </div>
         </div>
       </div>
 
-      {/* Right side - White registration form */}
-      <div style={{
-        width: '450px',
-        background: 'white',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        padding: '60px 40px',
-        boxShadow: '-5px 0 20px rgba(0,0,0,0.1)',
-        overflowY: 'auto'
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <h2 style={{ fontSize: '2rem', color: '#333', marginBottom: '10px' }}>Create Account</h2>
-          <p style={{ color: '#666' }}>Join our educational community</p>
+      {/* Right Panel: Registration Form */}
+      <div className="w-full lg:w-[600px] bg-white flex flex-col p-8 sm:p-12 lg:p-20 relative overflow-y-auto">
+        {/* Mobile Header */}
+        <div className="lg:hidden flex items-center justify-between mb-12">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center text-white">
+              <School size={24} />
+            </div>
+            <h1 className="text-xl font-black text-slate-900 tracking-tight italic">EMS<span className="text-sky-500">Admin</span></h1>
+          </div>
+          <button onClick={() => navigate('/')} className="text-sm font-bold text-sky-500">Login</button>
         </div>
 
-        {message && (
-          <div style={{
-            padding: '12px 15px',
-            borderRadius: '8px',
-            marginBottom: '20px',
-            fontSize: '14px',
-            background: message.includes('successful') ? '#d4edda' : '#f8d7da',
-            color: message.includes('successful') ? '#155724' : '#721c24',
-            border: `1px solid ${message.includes('successful') ? '#c3e6cb' : '#f5c6cb'}`
-          }}>
-            {message}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ 
-              display: 'block', 
-              fontSize: '14px', 
-              fontWeight: 'bold', 
-              color: '#333',
-              marginBottom: '8px',
-              textTransform: 'uppercase'
-            }}>
-              Full Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter your full name"
-              style={{
-                width: '100%',
-                padding: '12px 15px',
-                border: errors.name ? '2px solid #dc3545' : '2px solid #e0e0e0',
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'all 0.3s',
-                backgroundColor: errors.name ? '#fff5f5' : 'white'
-              }}
-              onFocus={(e) => !errors.name && (e.target.style.borderColor = '#667eea')}
-              onBlur={(e) => !errors.name && (e.target.style.borderColor = '#e0e0e0')}
-            />
-            {errors.name && <span style={{ color: '#dc3545', fontSize: '12px', marginTop: '5px', display: 'block' }}>{errors.name}</span>}
+        <div className="max-w-md mx-auto lg:mx-0 w-full my-auto py-10">
+          <div className="mb-10 text-center lg:text-left">
+            <h2 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">Create Account</h2>
+            <p className="text-slate-500 font-medium">Join the next generation of academic management</p>
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ 
-              display: 'block', 
-              fontSize: '14px', 
-              fontWeight: 'bold', 
-              color: '#333',
-              marginBottom: '8px',
-              textTransform: 'uppercase'
-            }}>
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              style={{
-                width: '100%',
-                padding: '12px 15px',
-                border: errors.email ? '2px solid #dc3545' : '2px solid #e0e0e0',
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'all 0.3s',
-                backgroundColor: errors.email ? '#fff5f5' : 'white'
-              }}
-              onFocus={(e) => !errors.email && (e.target.style.borderColor = '#667eea')}
-              onBlur={(e) => !errors.email && (e.target.style.borderColor = '#e0e0e0')}
-            />
-            {errors.email && <span style={{ color: '#dc3545', fontSize: '12px', marginTop: '5px', display: 'block' }}>{errors.email}</span>}
-          </div>
+          {message && (
+            <div className={`mb-8 p-5 rounded-2xl flex items-center gap-4 border animate-in slide-in-from-top-4 duration-300 ${message.includes('successful') ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${message.includes('successful') ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+                {message.includes('successful') ? <CheckCircle2 size={20} /> : <Rocket size={20} className="rotate-45" />}
+              </div>
+              <p className="text-sm font-bold leading-tight">{message}</p>
+            </div>
+          )}
 
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ 
-              display: 'block', 
-              fontSize: '14px', 
-              fontWeight: 'bold', 
-              color: '#333',
-              marginBottom: '8px',
-              textTransform: 'uppercase'
-            }}>
-              Password
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Create a strong password"
-                style={{
-                  width: '100%',
-                  padding: '12px 15px',
-                  paddingRight: '45px',
-                  border: errors.password ? '2px solid #dc3545' : '2px solid #e0e0e0',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  outline: 'none',
-                  transition: 'all 0.3s',
-                  backgroundColor: errors.password ? '#fff5f5' : 'white',
-                  boxSizing: 'border-box'
-                }}
-                onFocus={(e) => !errors.password && (e.target.style.borderColor = '#667eea')}
-                onBlur={(e) => !errors.password && (e.target.style.borderColor = '#e0e0e0')}
-              />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+              <div className="relative group">
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
+                  <User size={18} />
+                </div>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Enter your full name"
+                  className={`w-full bg-slate-50 border-2 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm ${errors.name ? 'border-red-200 bg-red-50/50' : 'border-slate-100'}`}
+                />
+              </div>
+              {errors.name && <p className="text-[10px] font-bold text-red-500 ml-1 uppercase">{errors.name}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+              <div className="relative group">
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
+                  <Mail size={18} />
+                </div>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="admin@institution.edu"
+                  className={`w-full bg-slate-50 border-2 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm ${errors.email ? 'border-red-200 bg-red-50/50' : 'border-slate-100'}`}
+                />
+              </div>
+              {errors.email && <p className="text-[10px] font-bold text-red-500 ml-1 uppercase">{errors.email}</p>}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
+                <div className="relative group">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
+                    <Lock size={18} />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    className={`w-full bg-slate-50 border-2 rounded-2xl py-4 pl-14 pr-12 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm ${errors.password ? 'border-red-200 bg-red-50/50' : 'border-slate-100'}`}
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors">
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {errors.password && <p className="text-[10px] font-bold text-red-500 ml-1 uppercase">{errors.password}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Confirm</label>
+                <div className="relative group">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
+                    <ShieldCheck size={18} />
+                  </div>
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    className={`w-full bg-slate-50 border-2 rounded-2xl py-4 pl-14 pr-12 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm ${errors.confirmPassword ? 'border-red-200 bg-red-50/50' : 'border-slate-100'}`}
+                  />
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors">
+                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {errors.confirmPassword && <p className="text-[10px] font-bold text-red-500 ml-1 uppercase">{errors.confirmPassword}</p>}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Assigned Role</label>
+              <div className="relative group">
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
+                  <UserPlus size={18} />
+                </div>
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-12 text-slate-800 focus:bg-white focus:border-sky-500 outline-none appearance-none transition-all font-semibold shadow-sm"
+                  disabled={rolesLoading}
+                >
+                  {roles.length === 0 && <option value="">Loading roles...</option>}
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.role_name}>{role.role_name}</option>
+                  ))}
+                </select>
+                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <ChevronDown size={18} />
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4">
               <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '20px',
-                  color: '#667eea',
-                  padding: '0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                type="submit"
+                disabled={loading}
+                className="w-full group relative overflow-hidden bg-slate-900 text-white rounded-[1.5rem] py-4 font-black text-sm uppercase tracking-[0.15em] shadow-xl shadow-slate-900/10 hover:shadow-sky-500/20 active:scale-[0.98] transition-all disabled:opacity-70"
               >
-                {showPassword ? '👁️' : '👁️‍🗨️'}
+                <div className="absolute inset-0 bg-gradient-to-r from-sky-400 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative flex items-center justify-center gap-2">
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <span>Submit Application</span>
+                      <Rocket size={18} className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                    </>
+                  )}
+                </div>
               </button>
             </div>
-            {errors.password && <span style={{ color: '#dc3545', fontSize: '12px', marginTop: '5px', display: 'block' }}>{errors.password}</span>}
-          </div>
+          </form>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ 
-              display: 'block', 
-              fontSize: '14px', 
-              fontWeight: 'bold', 
-              color: '#333',
-              marginBottom: '8px',
-              textTransform: 'uppercase'
-            }}>
-              Confirm Password
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="Confirm your password"
-                style={{
-                  width: '100%',
-                  padding: '12px 15px',
-                  paddingRight: '45px',
-                  border: errors.confirmPassword ? '2px solid #dc3545' : '2px solid #e0e0e0',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  outline: 'none',
-                  transition: 'all 0.3s',
-                  backgroundColor: errors.confirmPassword ? '#fff5f5' : 'white',
-                  boxSizing: 'border-box'
-                }}
-                onFocus={(e) => !errors.confirmPassword && (e.target.style.borderColor = '#667eea')}
-                onBlur={(e) => !errors.confirmPassword && (e.target.style.borderColor = '#e0e0e0')}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '20px',
-                  color: '#667eea',
-                  padding: '0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
-              </button>
-            </div>
-            {errors.confirmPassword && <span style={{ color: '#dc3545', fontSize: '12px', marginTop: '5px', display: 'block' }}>{errors.confirmPassword}</span>}
-          </div>
-
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ 
-              display: 'block', 
-              fontSize: '14px', 
-              fontWeight: 'bold', 
-              color: '#333',
-              marginBottom: '8px',
-              textTransform: 'uppercase'
-            }}>
-              Role
-            </label>
-            <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              disabled={rolesLoading}
-              style={{
-                width: '100%',
-                padding: '12px 15px',
-                border: '2px solid #e0e0e0',
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'all 0.3s',
-                backgroundColor: rolesLoading ? '#f5f5f5' : 'white'
-              }}
-              onFocus={(e) => (e.target.style.borderColor = '#667eea')}
-              onBlur={(e) => (e.target.style.borderColor = '#e0e0e0')}
+          <p className="mt-12 text-center text-slate-500 text-sm font-medium">
+            Already have an account?{' '}
+            <button 
+              onClick={() => navigate("/")}
+              className="text-sky-500 font-black hover:text-sky-600 underline underline-offset-4 decoration-sky-200"
             >
-              <option value="">Select a role</option>
-              {roles.map((role) => (
-                <option key={role.id} value={role.role_name}>
-                  {role.role_name}
-                </option>
-              ))}
-            </select>
+              Log In Instead
+            </button>
+          </p>
+
+          <div className="mt-16 pt-8 border-t border-slate-50 flex items-center justify-center gap-2 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+            <CheckCircle2 size={16} className="text-sky-500" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Enterprise grade institutional security</span>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '14px',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1,
-              transition: 'all 0.3s',
-              marginBottom: '20px'
-            }}
-          >
-            {loading ? 'Registering...' : 'Register'}
-          </button>
-        </form>
-
-        <div style={{
-          textAlign: 'center',
-          paddingTop: '20px',
-          borderTop: '2px solid #f0f0f0'
-        }}>
-          <p style={{ color: '#666', marginBottom: '10px' }}>Already have an account?</p>
-          <a href="/" style={{
-            display: 'inline-block',
-            background: 'transparent',
-            border: '2px solid #667eea',
-            color: '#667eea',
-            padding: '10px 20px',
-            borderRadius: '8px',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.3s',
-            textDecoration: 'none'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.background = '#667eea';
-            e.target.style.color = 'white';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.background = 'transparent';
-            e.target.style.color = '#667eea';
-          }}>
-            Login here
-          </a>
         </div>
       </div>
     </div>

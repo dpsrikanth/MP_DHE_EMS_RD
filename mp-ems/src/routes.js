@@ -17,88 +17,28 @@ import Students from "./pages/Students";
 import Exams from "./pages/Exams";
 import Marks from "./pages/Marks";
 
+import Layout from "./components/Layout";
+
 const AppRoutes = () => {
   return (
-    <>
-      <Routes>
-        <Route path="/" element={<Login/>}/>
-        <Route path="/register" element={<Register />} />
-        
-        {/* Protected Routes with Navbar */}
-        <Route path="/dashboard" element={
-          <>
-            <Navbar />
-            <ProtectedRoute element={<Dashboard />} />
-          </>
-        } />
-        <Route path="/viewStudentsAndUniversitys" element={
-          <>
-            <Navbar />
-            <ViewStudentsAndUniversities/>
-          </>
-        } />
-        <Route path="/universities" element={
-          <>
-            <Navbar />
-            <ProtectedRoute element={<Universities />} />
-          </>
-        } />
-        <Route path="/colleges" element={
-          <>
-            <Navbar />
-            <ProtectedRoute element={<Colleges />} />
-          </>
-        } />
-        <Route path="/programs" element={
-          <>
-            <Navbar />
-            <ProtectedRoute element={<Programs />} />
-          </>
-        } />
-        <Route path="/academic-years" element={
-          <>
-            <Navbar />
-            <ProtectedRoute element={<AcademicYears />} />
-          </>
-        } />
-        <Route path="/semesters" element={
-          <>
-            <Navbar />
-            <ProtectedRoute element={<Semesters />} />
-          </>
-        } />
-        <Route path="/subjects" element={
-          <>
-            <Navbar />
-            <ProtectedRoute element={<Subjects />} />
-          </>
-        } />
-        <Route path="/teachers" element={
-          <>
-            <Navbar />
-            <ProtectedRoute element={<Teachers />} />
-          </>
-        } />
-        <Route path="/students" element={
-          <>
-            <Navbar />
-            <ProtectedRoute element={<Students />} />
-          </>
-        } />
-        <Route path="/exams" element={
-          <>
-            <Navbar />
-            <ProtectedRoute element={<Exams />} />
-          </>
-        } />
-        <Route path="/marks" element={
-          <>
-            <Navbar />
-            <ProtectedRoute element={<Marks />} />
-          </>
-        } />
-      </Routes>
-    </>
+    <Routes>
+      <Route path="/" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      
+      {/* Protected Routes wrapped in common Layout */}
+      <Route path="/dashboard" element={<Layout><ProtectedRoute element={<Dashboard />} /></Layout>} />
+      <Route path="/viewStudentsAndUniversitys" element={<Layout><ViewStudentsAndUniversities /></Layout>} />
+      <Route path="/universities" element={<Layout><ProtectedRoute element={<Universities />} /></Layout>} />
+      <Route path="/colleges" element={<Layout><ProtectedRoute element={<Colleges />} /></Layout>} />
+      <Route path="/programs" element={<Layout><ProtectedRoute element={<Programs />} /></Layout>} />
+      <Route path="/academic-years" element={<Layout><ProtectedRoute element={<AcademicYears />} /></Layout>} />
+      <Route path="/semesters" element={<Layout><ProtectedRoute element={<Semesters />} /></Layout>} />
+      <Route path="/subjects" element={<Layout><ProtectedRoute element={<Subjects />} /></Layout>} />
+      <Route path="/teachers" element={<Layout><ProtectedRoute element={<Teachers />} /></Layout>} />
+      <Route path="/students" element={<Layout><ProtectedRoute element={<Students />} /></Layout>} />
+      <Route path="/exams" element={<Layout><ProtectedRoute element={<Exams />} /></Layout>} />
+      <Route path="/marks" element={<Layout><ProtectedRoute element={<Marks />} /></Layout>} />
+    </Routes>
   );
 };
 

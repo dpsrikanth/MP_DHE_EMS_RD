@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
-import '../styles/DataTable.css';
-import './Universities.css';
-import { FaEdit, FaPlus } from "react-icons/fa";
+import { 
+  School, 
+  Plus, 
+  Pencil, 
+  X, 
+  Check 
+} from "lucide-react";
 import { MdDelete } from "react-icons/md";
-
+import { useDataTable } from '../hooks/useDataTable';
+import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 
 const Universities = () => {
   const navigate = useNavigate();
@@ -22,6 +27,33 @@ const Universities = () => {
   const [academicYears, setAcademicYears] = useState([]);
   const [programForm, setProgramForm] = useState({ name: '', duration_years: 1 });
   const [yearForm, setYearForm] = useState({ year_name: '' });
+
+  const availableColumns = [
+    { key: 'id', label: 'ID' },
+    { key: 'name', label: 'University Name' },
+    { key: 'colleges', label: 'Linked Colleges' }
+  ];
+
+  const {
+    paginatedData,
+    searchQuery,
+    setSearchQuery,
+    sortConfig,
+    handleSort,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    totalItems,
+    visibleColumns,
+    toggleColumn
+  } = useDataTable(data, { 
+    searchFields: ['id', 'name'],
+    initialSort: { field: 'id', direction: 'desc' },
+    initialPageSize: 10,
+    availableColumns
+  });
 
   // Config State
   const [configLoading, setConfigLoading] = useState(false);
@@ -320,164 +352,318 @@ const Universities = () => {
   if (error) return <div className="error">Error: {error}</div>;
 
   return (
-    <div className="page-container">
-      <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',marginBottom:12}}>
-        {/* <h1>Universities</h1> */}
-        <div>
-          <button className="btn-primary" onClick={() => { setSelected(null); setShowModal(true); }} aria-label="Add University">Add University</button>
+    <div className="space-y-6">
+      {/* Page Header Card */}
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-600">
+              <School size={28} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 leading-none">Universities</h1>
+              <p className="text-sm text-slate-500 mt-1 font-medium">Manage and configure institution profiles</p>
+            </div>
+          </div>
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <TableSearch 
+              value={searchQuery} 
+              onChange={setSearchQuery} 
+              placeholder="Search universities by name or ID..."
+            />
+            <ColumnVisibilitySelector 
+              columns={availableColumns} 
+              visibleColumns={visibleColumns} 
+              onToggle={toggleColumn} 
+            />
+            <button 
+              onClick={() => { setSelected(null); setShowModal(true); }}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-2xl shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+            >
+              <Plus size={20} />
+              <span>Add University</span>
+            </button>
+          </div>
         </div>
-      </div>
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>University Name</th>
-            <th>Colleges</th>
-            {/* <th>Programs</th>
-            <th>Academic Years</th> */}
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item) => (
-            <tr key={item.id}>
-              <td>{item.id}</td>
-              <td>{item.name}</td>
-              <td>
-                {item.colleges_count > 0 ? (
-                  <button className="btn-link" onClick={() => showDetails(item, 'colleges')}>
-                    {item.colleges_count} Colleges
-                  </button>
-                ) : (
-                  <span>-</span>
-                )}
-              </td>
-              {/* <td>
-                {item.programs_count > 0 ? (
-                  <button className="btn-link" onClick={() => showDetails(item, 'programs')}>
-                    {item.programs_count} Programs
-                  </button>
-                ) : (
-                  <span>-</span>
-                )}
-              </td>
-              <td>
-                {item.academic_years_count > 0 ? (
-                  <button className="btn-link" onClick={() => showDetails(item, 'academic_years')}>
-                    {item.academic_years_count} Years
-                  </button>
-                ) : (
-                  <span>-</span>
-                )}
-              </td> */}
-              <td>
-                <button className="btn-edit" onClick={() => { setSelected(item); setShowModal(true); }} aria-label="Edit"><FaEdit /></button>
-                <button className="btn-delete" onClick={() => handleDelete(item.id)} aria-label="Delete"><MdDelete /></button>
-                <button className="btn-primary" onClick={() => navigate('/colleges', { state: { universityId: item.id, addMode: true } })} aria-label="Add Colleges"><FaPlus /></button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
 
+        {/* Table Section */}
+        <div className="overflow-x-auto text-slate-700">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-y border-slate-100 bg-slate-50/50">
+                <SortHeader 
+                  label="ID" 
+                  field="id" 
+                  currentSort={sortConfig} 
+                  onSort={handleSort} 
+                  className="px-8" 
+                  visible={visibleColumns.id}
+                />
+                <SortHeader 
+                  label="University Name" 
+                  field="name" 
+                  currentSort={sortConfig} 
+                  onSort={handleSort} 
+                  visible={visibleColumns.name}
+                />
+                <th className={`${visibleColumns.colleges ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Linked Colleges</th>
+                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Settings</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {paginatedData.length > 0 ? (
+                paginatedData.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
+                    {visibleColumns.id && <td className="px-8 py-5 text-sm font-bold text-slate-400">#{item.id}</td>}
+                    {visibleColumns.name && (
+                      <td className="px-4 py-5 text-sm font-semibold text-slate-900 leading-tight">
+                        {item.name}
+                      </td>
+                    )}
+                    {visibleColumns.colleges && (
+                      <td className="px-4 py-5">
+                        {item.colleges_count > 0 ? (
+                          <button 
+                            onClick={() => showDetails(item, 'colleges')}
+                            className="inline-flex items-center px-3 py-1 bg-sky-50 text-sky-600 rounded-full text-xs font-bold hover:bg-sky-100 transition-colors"
+                          >
+                            {item.colleges_count} Colleges
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-400">No colleges</span>
+                        )}
+                      </td>
+                    )}
+                    <td className="px-8 py-5 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => { setSelected(item); setShowModal(true); }}
+                          className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 rounded-xl transition-all"
+                          title="Edit University"
+                        >
+                          <Pencil size={18} />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(item.id)}
+                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                          title="Delete University"
+                        >
+                          <MdDelete size={20} />
+                        </button>
+                        <div className="w-px h-4 bg-slate-200 mx-1"></div>
+                        <button 
+                          onClick={() => navigate('/colleges', { state: { universityId: item.id, addMode: true } })}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl text-xs font-bold transition-all"
+                          title="Manage Colleges"
+                        >
+                          <Plus size={14} />
+                          <span>Colleges</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="px-8 py-12 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No universities match your search</p>
+                      <button 
+                        onClick={() => setSearchQuery('')}
+                        className="text-xs font-black text-sky-500 hover:text-sky-600 underline uppercase tracking-tighter"
+                      >
+                        Clear Search
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <TablePagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
+        />
+      </div>
+
+      {/* Main Modal */}
       {showModal && (
-        <div className="modal-backdrop">
-          <div className="modal" style={{ maxWidth: '900px' }}>
-            <div className="modal-header">
-              <div className="modal-title">{selected ? 'Edit University' : 'Add University'}</div>
-              <button className="btn-secondary" onClick={() => setShowModal(false)}>Close</button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setShowModal(false)} />
+          
+          <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+            {/* Modal Header */}
+            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                  {selected ? 'Edit University' : 'Register New University'}
+                </h2>
+                <p className="text-sm text-slate-500 font-medium">Please fill in the details below</p>
+              </div>
+              <button 
+                onClick={() => setShowModal(false)}
+                className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-2xl transition-all"
+              >
+                <X size={20} />
+              </button>
             </div>
             
-            <div style={{ maxHeight: '72vh', overflowY: 'auto', padding: '10px 20px 20px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-              <div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '16px', color: '#111827' }}>University Info</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div className="form-row">
-                    <label>Full Name</label>
-                    <input type="text" placeholder="Enter full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto px-10 py-10 space-y-10">
+              {/* Row 1: Basic Info */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Primary Information</h3>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">University Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Barkatullah University" 
+                      value={form.name} 
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-medium"
+                    />
                   </div>
-                  <div className="form-row">
-                    <label>Address</label>
-                    <input type="text" placeholder="Institution Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Full Address</label>
+                    <textarea 
+                      placeholder="Physical address of the main campus" 
+                      rows={3}
+                      value={form.address} 
+                      onChange={(e) => setForm({ ...form, address: e.target.value })}
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-medium resize-none"
+                    />
                   </div>
-                  <div className="form-row" style={{ flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
-                    <label style={{ marginBottom: 0 }}>Active</label>
-                    <div style={{ position: 'relative', width: '44px', height: '24px', borderRadius: '12px', background: form.status ? '#6366f1' : '#e5e7eb', cursor: 'pointer', transition: 'background 0.3s' }} onClick={() => setForm({ ...form, status: !form.status })}>
-                      <div style={{ position: 'absolute', top: '2px', left: form.status ? '22px' : '2px', width: '20px', height: '20px', borderRadius: '50%', background: 'white', transition: 'left 0.3s', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }} />
+
+                  <div className="flex items-center gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-slate-900">Activation Status</p>
+                      <p className="text-[11px] text-slate-500 font-medium">Enable or disable this university record</p>
                     </div>
+                    <button 
+                      onClick={() => setForm({ ...form, status: !form.status })}
+                      className={`relative w-14 h-8 rounded-full transition-all duration-300 shadow-inner ${form.status ? 'bg-sky-500' : 'bg-slate-300'}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 ${form.status ? 'translate-x-6' : ''}`} />
+                    </button>
                   </div>
                 </div>
-              </div>
 
-              {/* Removed Colleges section from university modal */}
-
-
-
-              <div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '16px', color: '#111827' }}>Config Mapping</h3>
-                {configLoading && selected ? (
-                  <p style={{ color: '#6b7280' }}>Loading master mappings...</p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Policies</label>
-                      <Select isMulti options={policyOptions} value={selectedPolicies} onChange={setSelectedPolicies} menuPosition="fixed" />
+                {/* Configuration Section */}
+                <div className="space-y-6 bg-slate-50/50 rounded-3xl p-8 border border-slate-100">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Master Mappings</h3>
+                  
+                  {configLoading && selected ? (
+                    <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                      <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+                      <p className="text-xs font-bold text-slate-400">Loading Configuration...</p>
                     </div>
-                    <div>
-                      <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Programs</label>
-                      <Select isMulti options={programOptions} value={selectedPrograms} onChange={setSelectedPrograms} menuPosition="fixed" />
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black text-slate-500 ml-1 uppercase">Mapped Policies</label>
+                        <Select 
+                          isMulti 
+                          options={policyOptions} 
+                          value={selectedPolicies} 
+                          onChange={setSelectedPolicies} 
+                          className="text-sm font-medium"
+                          styles={{
+                            control: (base) => ({
+                              ...base,
+                              borderRadius: '1rem',
+                              padding: '0.25rem',
+                              border: '2px solid #f1f5f9',
+                              backgroundColor: 'white',
+                              boxShadow: 'none',
+                              '&:hover': { border: '2px solid #0ea5e9' }
+                            })
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black text-slate-500 ml-1 uppercase">Available Programs</label>
+                        <Select isMulti options={programOptions} value={selectedPrograms} onChange={setSelectedPrograms} styles={{ control: (base) => ({ ...base, borderRadius: '1rem', border: '2px solid #f1f5f9' }) }} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black text-slate-500 ml-1 uppercase">Academic Years</label>
+                        <Select isMulti options={academicYearOptions} value={selectedAcademicYears} onChange={setSelectedAcademicYears} styles={{ control: (base) => ({ ...base, borderRadius: '1rem', border: '2px solid #f1f5f9' }) }} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black text-slate-500 ml-1 uppercase">Semesters List</label>
+                        <Select isMulti options={semesterOptions} value={selectedSemesters} onChange={setSelectedSemesters} styles={{ control: (base) => ({ ...base, borderRadius: '1rem', border: '2px solid #f1f5f9' }) }} />
+                      </div>
                     </div>
-                    <div>
-                      <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Academic Years</label>
-                      <Select isMulti options={academicYearOptions} value={selectedAcademicYears} onChange={setSelectedAcademicYears} menuPosition="fixed" />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Semesters</label>
-                      <Select isMulti options={semesterOptions} value={selectedSemesters} onChange={setSelectedSemesters} menuPosition="fixed" />
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="modal-footer" style={{ borderTop: '1px solid #f3f4f6', paddingTop: '20px', paddingBottom: '0', marginTop: '0', display: 'flex', justifyContent: 'space-between' }}>
-              <div>
-                 {/* Empty div to push buttons to right if we don't have something on the left */}
-              </div>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button className="btn-secondary" onClick={() => setShowModal(false)} style={{ padding: '10px 24px', borderRadius: '6px', backgroundColor: '#f3f4f6', border: 'none', color: '#374151' }}>Cancel</button>
-                <button className="btn-primary" onClick={() => handleSave()} style={{ padding: '10px 24px', backgroundColor: '#10b981', display: selected ? 'none' : 'block' }}>Save</button>
-                {selected && (
-                  <button className="btn-primary" onClick={() => { handleSave(); handleSaveConfig(); }} disabled={savingConfig} style={{ padding: '10px 24px', backgroundColor: '#10b981' }}>
-                    {savingConfig ? 'Saving...' : 'Save Changes'}
-                  </button>
+            {/* Modal Footer */}
+            <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4 sticky bottom-0 z-10">
+              <button 
+                className="px-8 py-3.5 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
+                onClick={() => setShowModal(false)}
+              >
+                Discard Changes
+              </button>
+              <button 
+                onClick={() => { handleSave(); if(selected) handleSaveConfig(); }}
+                disabled={savingConfig}
+                className="inline-flex items-center gap-2 px-10 py-3.5 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-xl shadow-slate-900/10 transition-all hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed text-sm uppercase tracking-wider"
+              >
+                {savingConfig ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check size={18} />
+                    <span>{selected ? 'Update Profile' : 'Register Now'}</span>
+                  </>
                 )}
-              </div>
+              </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Details View Modal */}
       {detailsModal && (
-        <div className="modal-backdrop">
-          <div className="modal">
-            <div className="modal-header">
-              <div className="modal-title">
-                {detailsType === 'colleges' ? 'Colleges' : detailsType === 'programs' ? 'Programs' : 'Academic Years'}
-              </div>
-              <button className="btn-secondary" onClick={() => setDetailsModal(false)}>Close</button>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/20 backdrop-blur-md animate-in fade-in" onClick={() => setDetailsModal(false)} />
+          <div className="relative bg-white rounded-3xl shadow-3xl w-full max-w-md overflow-hidden animate-in zoom-in-95">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-900">
+                {detailsType === 'colleges' ? 'Colleges List' : detailsType === 'programs' ? 'Programs Overview' : 'Academic Calendar'}
+              </h3>
+              <button onClick={() => setDetailsModal(false)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400">
+                <X size={18} />
+              </button>
             </div>
-            <div style={{ padding: '14px', maxHeight: '400px', overflowY: 'auto' }}>
+            <div className="p-2 divide-y divide-slate-50 max-h-[400px] overflow-y-auto">
               {detailsList.length === 0 ? (
-                <div>No data available</div>
+                <div className="py-12 text-center">
+                  <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No entries found</p>
+                </div>
               ) : (
-                <ul style={{ listStyle: 'none', padding: 0 }}>
-                  {detailsList.map((item) => (
-                    <li key={item.id} style={{ padding: '8px 0', borderBottom: '1px solid #e5e7eb' }}>
-                      {item.college_name || item.name || item.year_name || 'Unknown'}
-                    </li>
-                  ))}
-                </ul>
+                detailsList.map((item) => (
+                  <div key={item.id} className="p-4 flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-sky-500"></div>
+                    <span className="text-sm font-semibold text-slate-700">
+                      {item.college_name || item.name || item.year_name || 'Anonymous Entry'}
+                    </span>
+                  </div>
+                ))
               )}
             </div>
           </div>
