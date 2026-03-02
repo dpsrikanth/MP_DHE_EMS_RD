@@ -67,4 +67,11 @@ router.delete('/master-programs/:id', verifyToken, deleteMasterProgram);
 
 router.post('/students', verifyToken, createStudent);
 
+// master policies manage
+router.get('/master-policies', verifyToken, getMasterPolicies);
+router.get('/master-policies/:id', verifyToken, getMasterPolicy);
+router.post('/master-policies', verifyToken, createMasterPolicy);
+router.put('/master-policies/:id', verifyToken, updateMasterPolicy);
+router.delete('/master-policies/:id', verifyToken, deleteMasterPolicy);
+
 module.exports = router;
