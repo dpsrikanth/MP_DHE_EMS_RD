@@ -64,8 +64,36 @@ const Students = () => {
   });
   const [addErrors, setAddErrors] = useState({});
 
+  // ---- Edit Student Modal State ----
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [editForm, setEditForm] = useState({
+    id: null,
+    name: '',
+    policies: '',
+    programName: '',
+    admission_year: '',
+    semister: ''
+  });
+  const [editErrors, setEditErrors] = useState({});
+
+  // ---- Delete Confirmation Modal State ----
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [studentToDelete, setStudentToDelete] = useState(null);
+
+  // ---- Dropdown Data State ----
+  const [academicYears, setAcademicYears] = useState([]);
+  const [policies, setPolicies] = useState([]);
+  const [programs, setPrograms] = useState([]);
+  const [semesters, setSemesters] = useState([]);
+  const [dropdownLoading, setDropdownLoading] = useState(true);
+
   useEffect(() => {
     fetchData();
+    fetchDropdownData();
   }, []);
 
   const fetchData = async () => {
@@ -84,6 +112,52 @@ const Students = () => {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchDropdownData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Fetch all dropdown data in parallel
+      const [yearRes, policyRes, programRes, semesterRes] = await Promise.all([
+        fetch('http://localhost:8080/api/academic-years', {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch('http://localhost:8080/api/master-policies', {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch('http://localhost:8080/api/master-programs', {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch('http://localhost:8080/api/master-semesters', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+
+      if (yearRes.ok) {
+        const years = await yearRes.json();
+        setAcademicYears(years || []);
+      }
+
+      if (policyRes.ok) {
+        const pols = await policyRes.json();
+        setPolicies(pols || []);
+      }
+
+      if (programRes.ok) {
+        const progs = await programRes.json();
+        setPrograms(progs || []);
+      }
+
+      if (semesterRes.ok) {
+        const sems = await semesterRes.json();
+        setSemesters(sems || []);
+      }
+    } catch (err) {
+      console.error('Error fetching dropdown data:', err);
+    } finally {
+      setDropdownLoading(false);
     }
   };
 
@@ -127,10 +201,7 @@ const Students = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({
-          ...addForm,
-          admission_year: Number(addForm.admission_year)
-        })
+        body: JSON.stringify(addForm)
       });
       if (!resp.ok) {
         const text = await resp.text();
@@ -145,7 +216,97 @@ const Students = () => {
     }
   };
 
-  
+  // ---- Edit Modal Handlers ----
+  const openEditModal = (student) => {
+    setEditForm({
+      id: student.id,
+      name: student.name,
+      policies: student.policies || '',
+      programName: student.programName || '',
+      admission_year: student.admission_year || '',
+      semister: student.semister || ''
+    });
+    setEditErrors({});
+    setEditError('');
+    setShowEditModal(true);
+  };
+
+  const closeEditModal = () => setShowEditModal(false);
+
+  const handleEditChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setEditForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    const errs = validate(editForm);
+    if (Object.keys(errs).length > 0) return setEditErrors(errs);
+
+    setEditLoading(true);
+    setEditError('');
+    try {
+      const token = localStorage.getItem('token');
+      const resp = await fetch(`http://localhost:8080/api/students/${editForm.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: editForm.name,
+          policies: editForm.policies,
+          programName: editForm.programName,
+          admission_year: editForm.admission_year,
+          semister: editForm.semister
+        })
+      });
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(text || 'Failed to update student');
+      }
+      await fetchData();
+      setShowEditModal(false);
+    } catch (err) {
+      setEditError(err.message);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // ---- Delete Modal Handlers ----
+  const openDeleteModal = (student) => {
+    setStudentToDelete(student);
+    setDeleteError('');
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => setShowDeleteModal(false);
+
+  const handleDeleteConfirm = async () => {
+    setDeleteLoading(true);
+    setDeleteError('');
+    try {
+      const token = localStorage.getItem('token');
+      const resp = await fetch(`http://localhost:8080/api/students/${studentToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(text || 'Failed to delete student');
+      }
+      await fetchData();
+      setShowDeleteModal(false);
+      setStudentToDelete(null);
+    } catch (err) {
+      setDeleteError(err.message);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
@@ -290,12 +451,14 @@ const Students = () => {
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button 
+                          onClick={() => openEditModal(item)}
                           className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
                           title="Edit Record"
                         >
                           <Pencil size={18} />
                         </button>
                         <button 
+                          onClick={() => openDeleteModal(item)}
                           className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                           title="Remove Record"
                         >
@@ -387,14 +550,20 @@ const Students = () => {
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Policy</label>
                   <div className="relative">
-                    <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
+                    <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
                       name="policies" 
                       value={addForm.policies} 
-                      onChange={handleAddChange} 
-                      placeholder="e.g. NEP2020"
-                      className={`w-full bg-slate-50 border-2 ${addErrors.policies ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
-                    />
+                      onChange={handleAddChange}
+                      className={`w-full bg-slate-50 border-2 ${addErrors.policies ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer`}
+                    >
+                      <option value="">-- Select Policy --</option>
+                      {policies.map((policy) => (
+                        <option key={policy.id} value={policy.name}>
+                          {policy.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   {addErrors.policies && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.policies}</p>}
                 </div>
@@ -403,14 +572,20 @@ const Students = () => {
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Program</label>
                   <div className="relative">
-                    <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
+                    <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
                       name="programName" 
                       value={addForm.programName} 
-                      onChange={handleAddChange} 
-                      placeholder="e.g. btech"
-                      className={`w-full bg-slate-50 border-2 ${addErrors.programName ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
-                    />
+                      onChange={handleAddChange}
+                      className={`w-full bg-slate-50 border-2 ${addErrors.programName ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer`}
+                    >
+                      <option value="">-- Select Program --</option>
+                      {programs.map((program) => (
+                        <option key={program.id} value={program.name}>
+                          {program.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   {addErrors.programName && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.programName}</p>}
                 </div>
@@ -419,15 +594,20 @@ const Students = () => {
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Admission Year</label>
                   <div className="relative">
-                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
                       name="admission_year" 
-                      type="number"
                       value={addForm.admission_year} 
-                      onChange={handleAddChange} 
-                      placeholder="e.g. 2024"
-                      className={`w-full bg-slate-50 border-2 ${addErrors.admission_year ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
-                    />
+                      onChange={handleAddChange}
+                      className={`w-full bg-slate-50 border-2 ${addErrors.admission_year ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer`}
+                    >
+                      <option value="">-- Select Academic Year --</option>
+                      {academicYears.map((year) => (
+                        <option key={year.id} value={year.year_name}>
+                          {year.year_name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   {addErrors.admission_year && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.admission_year}</p>}
                 </div>
@@ -436,14 +616,20 @@ const Students = () => {
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Semester</label>
                   <div className="relative">
-                    <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
+                    <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
                       name="semister" 
                       value={addForm.semister} 
-                      onChange={handleAddChange} 
-                      placeholder="e.g. 1"
-                      className={`w-full bg-slate-50 border-2 ${addErrors.semister ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
-                    />
+                      onChange={handleAddChange}
+                      className={`w-full bg-slate-50 border-2 ${addErrors.semister ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer`}
+                    >
+                      <option value="">-- Select Semester --</option>
+                      {semesters.map((semester) => (
+                        <option key={semester.id} value={semester.semester_name}>
+                          {semester.semester_name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   {addErrors.semister && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.semister}</p>}
                 </div>
@@ -472,6 +658,235 @@ const Students = () => {
                   <Check size={20} />
                 )}
                 <span>Save Record</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Edit Student Modal ===== */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeEditModal} />
+          
+          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
+              <div>
+                <h2 className="text-2xl font-black tracking-tight leading-none mb-1">
+                  Edit Student
+                </h2>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70 flex items-center gap-2">
+                  <GraduationCap size={12} /> Student ID: {editForm.id}
+                </p>
+              </div>
+              <button 
+                onClick={closeEditModal}
+                className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-2xl transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            {/* Body */}
+            <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto">
+              {editError && (
+                <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-bold flex items-center gap-2">
+                  <ShieldAlert size={18} /> {editError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Student Name */}
+                <div className="space-y-2 col-span-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Student Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="name" 
+                      value={editForm.name} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Sriram"
+                      className={`w-full bg-slate-50 border-2 ${editErrors.name ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  {editErrors.name && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.name}</p>}
+                </div>
+
+                {/* Policy */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Policy</label>
+                  <div className="relative">
+                    <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
+                      name="policies" 
+                      value={editForm.policies} 
+                      onChange={handleEditChange}
+                      className={`w-full bg-slate-50 border-2 ${editErrors.policies ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer`}
+                    >
+                      <option value="">-- Select Policy --</option>
+                      {policies.map((policy) => (
+                        <option key={policy.id} value={policy.name}>
+                          {policy.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {editErrors.policies && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.policies}</p>}
+                </div>
+
+                {/* Program */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Program</label>
+                  <div className="relative">
+                    <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
+                      name="programName" 
+                      value={editForm.programName} 
+                      onChange={handleEditChange}
+                      className={`w-full bg-slate-50 border-2 ${editErrors.programName ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer`}
+                    >
+                      <option value="">-- Select Program --</option>
+                      {programs.map((program) => (
+                        <option key={program.id} value={program.name}>
+                          {program.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {editErrors.programName && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.programName}</p>}
+                </div>
+
+                {/* Admission Year */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Admission Year</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
+                      name="admission_year" 
+                      value={editForm.admission_year} 
+                      onChange={handleEditChange}
+                      className={`w-full bg-slate-50 border-2 ${editErrors.admission_year ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer`}
+                    >
+                      <option value="">-- Select Academic Year --</option>
+                      {academicYears.map((year) => (
+                        <option key={year.id} value={year.year_name}>
+                          {year.year_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {editErrors.admission_year && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.admission_year}</p>}
+                </div>
+
+                {/* Semester */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Semester</label>
+                  <div className="relative">
+                    <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
+                      name="semister" 
+                      value={editForm.semister} 
+                      onChange={handleEditChange}
+                      className={`w-full bg-slate-50 border-2 ${editErrors.semister ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer`}
+                    >
+                      <option value="">-- Select Semester --</option>
+                      {semesters.map((semester) => (
+                        <option key={semester.id} value={semester.semester_name}>
+                          {semester.semester_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {editErrors.semister && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.semister}</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-5">
+              <button 
+                className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
+                onClick={closeEditModal}
+                disabled={editLoading}
+              >
+                Discard
+              </button>
+              <button 
+                onClick={handleEditSubmit}
+                disabled={editLoading}
+                className="px-10 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm uppercase tracking-widest flex items-center gap-3 disabled:opacity-50 disabled:scale-100"
+              >
+                {editLoading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Check size={20} />
+                )}
+                <span>Update Record</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Delete Confirmation Modal ===== */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeDeleteModal} />
+          
+          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="px-10 py-8 border-b border-red-100 bg-red-50">
+              <h2 className="text-2xl font-black text-red-600 tracking-tight leading-none">
+                Delete Student
+              </h2>
+              <p className="text-[10px] font-black text-red-400 uppercase tracking-widest opacity-70 mt-2">
+                Confirmation Required
+              </p>
+            </div>
+            
+            {/* Body */}
+            <div className="p-10 space-y-4">
+              {deleteError && (
+                <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-bold flex items-center gap-2">
+                  <ShieldAlert size={18} /> {deleteError}
+                </div>
+              )}
+              
+              <div className="bg-red-50 border border-red-100 rounded-2xl p-6 text-center">
+                <p className="text-sm text-slate-700 font-bold mb-3">
+                  Are you sure you want to remove:
+                </p>
+                <div className="bg-white rounded-xl p-4 border border-red-100 mb-4">
+                  <p className="text-lg font-black text-slate-900">{studentToDelete?.name}</p>
+                  <p className="text-xs text-slate-500 mt-1">Student ID: {studentToDelete?.id}</p>
+                </div>
+                <p className="text-xs text-red-600 font-bold">
+                  This action will soft-delete the record. It cannot be immediately undone.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-5">
+              <button 
+                className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
+                onClick={closeDeleteModal}
+                disabled={deleteLoading}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDeleteConfirm}
+                disabled={deleteLoading}
+                className="px-10 py-4 bg-red-600 hover:bg-red-700 text-white font-black rounded-2xl shadow-xl shadow-red-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm uppercase tracking-widest flex items-center gap-3 disabled:opacity-50 disabled:scale-100"
+              >
+                {deleteLoading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <MdDelete size={20} />
+                )}
+                <span>Delete Student</span>
               </button>
             </div>
           </div>

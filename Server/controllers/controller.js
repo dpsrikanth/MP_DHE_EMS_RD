@@ -399,7 +399,9 @@ const deleteProgram = async (req, res) => {
 
 const getStudents = async (req, res) => {
   try {
-    const result = await client.query(`SELECT * FROM public.students ORDER BY id ASC`);
+    const result = await client.query(`SELECT * FROM public.students
+WHERE "deleteStatus" = true
+ORDER BY id ASC;`);
     res.json(result.rows);
   } catch (err) {
     console.error("Get students error:", err);
@@ -419,6 +421,65 @@ const createStudent = async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Create student error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+const updateStudent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, policies, programName, admission_year, semister } = req.body;
+    
+    if (!name) return res.status(400).json({ message: 'Student name is required' });
+    
+    // Check if student exists
+    const checkResult = await client.query(
+      'SELECT id FROM students WHERE id = $1 AND "deleteStatus" = true',
+      [id]
+    );
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+    
+    const result = await client.query(
+      `UPDATE students 
+       SET name = $1, policies = $2, "programName" = $3, admission_year = $4, semister = $5, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $6 AND "deleteStatus" = true
+       RETURNING *`,
+      [name, policies || null, programName || null, admission_year || null, semister || null, id]
+    );
+    
+    res.json({ message: 'Student updated successfully', data: result.rows[0] });
+  } catch (err) {
+    console.error('Update student error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+const deleteStudent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if student exists
+    const checkResult = await client.query(
+      'SELECT id FROM students WHERE id = $1 AND "deleteStatus" = true',
+      [id]
+    );
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+    
+    // Soft delete: set deleteStatus to false
+    await client.query(
+      'UPDATE students SET "deleteStatus" = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+      [id]
+    );
+    
+    res.json({ message: 'Student deleted successfully' });
+  } catch (err) {
+    console.error('Delete student error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
@@ -1179,6 +1240,8 @@ module.exports = {
   deleteProgram,
   getStudents,
   createStudent,
+  updateStudent,
+  deleteStudent,
   getColleges,
   getTeachers,
   updateTeacher,
