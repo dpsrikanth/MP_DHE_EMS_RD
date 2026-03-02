@@ -64,7 +64,7 @@ router.get('/master-programs/:id', verifyToken, getMasterProgram);
 router.post('/master-programs', verifyToken, createMasterProgram);
 router.put('/master-programs/:id', verifyToken, updateMasterProgram);
 router.delete('/master-programs/:id', verifyToken, deleteMasterProgram);
-router.get('/policies', verifyToken, getpolicies);
+
 router.post('/students', verifyToken, createStudent);
 
 module.exports = router;
