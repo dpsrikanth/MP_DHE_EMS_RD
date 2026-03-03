@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { toast } from 'react-toastify';
 import { 
   Users, 
   Plus, 
@@ -127,6 +128,8 @@ const Teachers = () => {
     status: true
   });
   const [editErrors, setEditErrors] = useState({});
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // Fetch designations and departments
   const fetchDropdownOptions = async () => {
@@ -303,7 +306,7 @@ const Teachers = () => {
       }
       
       // Show success message
-      alert(result.message || 'Teacher record created successfully!');
+      toast.success(result.message || 'Teacher record created successfully!');
       setShowAddModal(false);
     } catch (err) {
       setAddError(err.message);
@@ -423,7 +426,7 @@ const Teachers = () => {
       }
       
       // Show success message
-      alert(result.message || 'Teacher record updated successfully!');
+      toast.success(result.message || 'Teacher record updated successfully!');
       setShowEditModal(false);
     } catch (err) {
       setEditError(err.message);
@@ -432,11 +435,15 @@ const Teachers = () => {
     }
   };
 
-  const handleArchive = async (item) => {
-    if (!window.confirm('Are you sure you want to delete this faculty member? This action cannot be undone.')) return;
-    
+  const handleArchive = (item) => {
+    setDeleteTarget(item);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
     try {
-      const resp = await fetch(`http://localhost:8080/api/master-teachers/${item.id}`, {
+      const resp = await fetch(`http://localhost:8080/api/master-teachers/${deleteTarget.id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() }
       });
@@ -446,12 +453,12 @@ const Teachers = () => {
       const result = await resp.json();
       
       // Remove the record from the table
-      setData(prevData => prevData.filter(t => t.id !== item.id));
+      setData(prevData => prevData.filter(t => t.id !== deleteTarget.id));
       
-      // Show success message
-      alert(result.message || 'Teacher record deleted successfully!');
+      setShowDeleteModal(false);
+      setDeleteTarget(null);
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
       console.error('Delete error', err);
     }
   };
@@ -1109,6 +1116,38 @@ const Teachers = () => {
                 )}
                 <span>{showAddModal ? 'Save Record' : 'Confirm Update'}</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
+          <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+            <div className="p-8 text-center flex flex-col items-center">
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+                <MdDelete size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Confirm Removal</h3>
+              <p className="text-slate-500 text-sm leading-relaxed mb-8">
+                Are you sure you want to delete <span className="font-bold text-slate-900">"{deleteTarget?.name}"</span>? This action cannot be reversed.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button 
+                  className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-500/20 transition-all"
+                  onClick={handleDeleteConfirm}
+                >
+                  Remove
+                </button>
+              </div>
             </div>
           </div>
         </div>

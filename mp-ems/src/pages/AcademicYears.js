@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from 'react-toastify';
 import { useNavigate } from "react-router-dom";
 import { 
   Calendar, 
@@ -23,6 +24,8 @@ const AcademicYears = () => {
   const [formData, setFormData] = useState({
     year_name: ''
   });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const availableColumns = [
     { key: 'id', label: 'ID' },
@@ -91,18 +94,25 @@ const AcademicYears = () => {
     setShowModal(true);
   };
 
-  const handleDeleteClick = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this academic year?')) return;
+  const handleDeleteClick = (item) => {
+    setDeleteTarget(item);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/academic-years/${id}`, {
+      const response = await fetch(`http://localhost:8080/api/academic-years/${deleteTarget.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Delete failed');
+      setShowDeleteModal(false);
+      setDeleteTarget(null);
       fetchData();
     } catch (err) {
-      alert(`Error: ${err.message}`);
+      toast.error(`Error: ${err.message}`);
     }
   };
 
@@ -112,7 +122,7 @@ const AcademicYears = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.year_name.trim()) return alert('Year name is required');
+    if (!formData.year_name.trim()) return toast.warning('Year name is required');
     try {
       const token = localStorage.getItem('token');
       const url = isEditing 
@@ -129,11 +139,16 @@ const AcademicYears = () => {
         body: JSON.stringify({ year_name: formData.year_name })
       });
 
-      if (!response.ok) throw new Error('Submit failed');
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Submit failed');
+      }
+      const result = await response.json();
+      toast.success(result.message || (isEditing ? 'Academic year updated successfully!' : 'Academic year added successfully!'));
       setShowModal(false);
       fetchData();
     } catch (err) {
-      alert(`Error: ${err.message}`);
+      toast.error(`Error: ${err.message}`);
     }
   };
 
@@ -244,7 +259,7 @@ const AcademicYears = () => {
                           <Pencil size={18} />
                         </button>
                         <button 
-                          onClick={() => handleDeleteClick(item.id)}
+                          onClick={() => handleDeleteClick(item)}
                           className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                           title="Delete Session"
                         >
@@ -359,6 +374,38 @@ const AcademicYears = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
+          <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+            <div className="p-8 text-center flex flex-col items-center">
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+                <MdDelete size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Confirm Removal</h3>
+              <p className="text-slate-500 text-sm leading-relaxed mb-8">
+                Are you sure you want to delete <span className="font-bold text-slate-900">"{deleteTarget?.year_name}"</span>? This action cannot be reversed.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button 
+                  className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-500/20 transition-all"
+                  onClick={handleDeleteConfirm}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from 'react-toastify';
 import { 
   ShieldCheck, 
   Plus, 
@@ -77,7 +78,7 @@ const Policies = () => {
   };
 
   const handleAdd = async () => {
-    if (!form.name) return alert('Policy name is required');
+    if (!form.name) return toast.warning('Policy name is required');
     try {
       const token = localStorage.getItem('token');
       const res = await fetch('http://localhost:8080/api/master-policies', {
@@ -85,17 +86,22 @@ const Policies = () => {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(form)
       });
-      if (!res.ok) throw new Error('Save failed');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Save failed');
+      }
+      const result = await res.json();
+      toast.success(result.message || 'Policy added successfully!');
       setShowAddModal(false);
       setForm({ name: '', description: '' });
       fetchData();
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
     }
   };
 
   const handleUpdate = async () => {
-    if (!form.name) return alert('Policy name is required');
+    if (!form.name) return toast.warning('Policy name is required');
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`http://localhost:8080/api/master-policies/${selected.id}`, {
@@ -103,13 +109,18 @@ const Policies = () => {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(form)
       });
-      if (!res.ok) throw new Error('Update failed');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Update failed');
+      }
+      const result = await res.json();
+      toast.success(result.message || 'Policy updated successfully!');
       setShowEditModal(false);
       setSelected(null);
       setForm({ name: '', description: '' });
       fetchData();
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
     }
   };
 
@@ -140,7 +151,7 @@ const Policies = () => {
       setDeleteTarget(null);
       fetchData();
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
     }
   };
 

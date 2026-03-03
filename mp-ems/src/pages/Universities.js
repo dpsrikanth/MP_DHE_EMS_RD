@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import Select, { components } from 'react-select';
 import { 
@@ -45,6 +46,8 @@ const Universities = () => {
   const [academicYears, setAcademicYears] = useState([]);
   const [programForm, setProgramForm] = useState({ name: '', duration_years: 1 });
   const [yearForm, setYearForm] = useState({ year_name: '' });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const availableColumns = [
     { key: 'id', label: 'ID' },
@@ -168,7 +171,7 @@ const Universities = () => {
       setSelectedSemesters(semesterOptions.filter(opt => configData.semesters.includes(opt.value)));
     } catch (err) {
       console.error(err);
-      alert('Error loading configuration: ' + err.message);
+      toast.error('Error loading configuration: ' + err.message);
     } finally {
       setConfigLoading(false);
     }
@@ -193,7 +196,7 @@ const Universities = () => {
   // Removed handleAddCollege and handleDeleteCollege as they are now handled in Colleges.js
 
   const handleAddProgram = async () => {
-    if (!programForm.name || !programForm.duration_years) return alert('Name and duration are required');
+    if (!programForm.name || !programForm.duration_years) return toast.warning('Name and duration are required');
     try {
       const token = localStorage.getItem('token');
       const res = await fetch('http://localhost:8080/api/programs', {
@@ -203,10 +206,11 @@ const Universities = () => {
       });
       if (!res.ok) throw new Error('Failed to add program');
       const newProgram = await res.json();
-      setPrograms([...programs, newProgram]);
+      toast.success(newProgram.message || 'Program added successfully!');
+      setPrograms([...programs, newProgram.data || newProgram]);
       setProgramForm({ name: '', duration_years: 1 });
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
     }
   };
 
@@ -221,12 +225,12 @@ const Universities = () => {
       if (!res.ok) throw new Error('Failed to delete');
       setPrograms(programs.filter(p => p.id !== programId));
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
     }
   };
 
   const handleAddYear = async () => {
-    if (!yearForm.year_name) return alert('Year name is required');
+    if (!yearForm.year_name) return toast.warning('Year name is required');
     try {
       const token = localStorage.getItem('token');
       const res = await fetch('http://localhost:8080/api/academic-years', {
@@ -236,10 +240,11 @@ const Universities = () => {
       });
       if (!res.ok) throw new Error('Failed to add year');
       const newYear = await res.json();
-      setAcademicYears([...academicYears, newYear]);
+      toast.success(newYear.message || 'Academic year added successfully!');
+      setAcademicYears([...academicYears, newYear.data || newYear]);
       setYearForm({ year_name: '' });
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
     }
   };
 
@@ -254,7 +259,7 @@ const Universities = () => {
       if (!res.ok) throw new Error('Failed to delete');
       setAcademicYears(academicYears.filter(y => y.id !== yearId));
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
     }
   };
 
@@ -279,9 +284,9 @@ const Universities = () => {
     try {
       setSavingConfig(true);
       await submitConfigPayload(selected.id);
-      alert('Configuration updated successfully!');
+      toast.success('Configuration updated successfully!');
     } catch (err) {
-      alert('Error updating configuration: ' + err.message);
+      toast.error('Error updating configuration: ' + err.message);
     } finally {
       setSavingConfig(false);
     }
@@ -290,8 +295,9 @@ const Universities = () => {
   const handleSave = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!form.name) return alert('Name is required');
+      if (!form.name) return toast.warning('Name is required');
       let finalUniversityId = null;
+      let toastMessage = '';
 
       if (selected) {
         const res = await fetch(`http://localhost:8080/api/universities/${selected.id}`, {
@@ -300,6 +306,8 @@ const Universities = () => {
           body: JSON.stringify(form)
         });
         if (!res.ok) { const t = await res.text(); throw new Error(t || 'Update failed'); }
+        const updatedUniv = await res.json();
+        toastMessage = updatedUniv.message || 'University updated successfully!';
         finalUniversityId = selected.id;
       } else {
         const res = await fetch('http://localhost:8080/api/universities', {
@@ -309,28 +317,37 @@ const Universities = () => {
         });
         if (!res.ok) { const t = await res.text(); throw new Error(t || 'Create failed'); }
         const createdUniv = await res.json();
-        finalUniversityId = createdUniv.id;
+        finalUniversityId = createdUniv.data ? createdUniv.data.id : createdUniv.id;
+        toastMessage = createdUniv.message || 'University added successfully!';
         
         // Colleges are now handled separately on the Colleges page
         await submitConfigPayload(finalUniversityId);
       }
+      toast.success(toastMessage);
       setShowModal(false);
       setSelected(null);
       await fetchData();
     } catch (err) {
-      alert('Error: ' + (err.message || err));
+      toast.error('Error: ' + (err.message || err));
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this university?')) return;
+  const handleDelete = (item) => {
+    setDeleteTarget(item);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/universities/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`http://localhost:8080/api/universities/${deleteTarget.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) { const t = await res.text(); throw new Error(t || 'Delete failed'); }
+      setShowDeleteModal(false);
+      setDeleteTarget(null);
       await fetchData();
     } catch (err) {
-      alert('Error: ' + (err.message || err));
+      toast.error('Error: ' + (err.message || err));
     }
   };
 
@@ -363,7 +380,7 @@ const Universities = () => {
       setDetailsModal(true);
     } catch (err) {
       console.error('Error in showDetails:', err);
-      alert('Error: ' + (err.message || err));
+      toast.error('Error: ' + (err.message || err));
     }
   };
 
@@ -463,7 +480,7 @@ const Universities = () => {
                           <Pencil size={18} />
                         </button>
                         <button 
-                          onClick={() => handleDelete(item.id)}
+                          onClick={() => handleDelete(item)}
                           className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                           title="Delete University"
                         >
@@ -687,6 +704,38 @@ const Universities = () => {
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
+          <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+            <div className="p-8 text-center flex flex-col items-center">
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+                <MdDelete size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Confirm Removal</h3>
+              <p className="text-slate-500 text-sm leading-relaxed mb-8">
+                Are you sure you want to delete <span className="font-bold text-slate-900">"{deleteTarget?.name}"</span>? This action cannot be reversed.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button 
+                  className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-500/20 transition-all"
+                  onClick={handleDeleteConfirm}
+                >
+                  Remove
+                </button>
+              </div>
             </div>
           </div>
         </div>

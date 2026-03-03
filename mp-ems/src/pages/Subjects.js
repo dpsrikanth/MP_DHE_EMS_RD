@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from 'react-toastify';
 import { 
   Book, 
   Plus, 
@@ -78,7 +79,7 @@ const Subjects = () => {
   };
 
   const handleAdd = async () => {
-    if (!form.name || !form.subject_code) return alert('Both fields are required');
+    if (!form.name || !form.subject_code) return toast.warning('Both fields are required');
     try {
       const token = localStorage.getItem('token');
       const res = await fetch('http://localhost:8080/api/master-subjects', {
@@ -86,17 +87,22 @@ const Subjects = () => {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(form)
       });
-      if (!res.ok) throw new Error('Save failed');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Save failed');
+      }
+      const result = await res.json();
+      toast.success(result.message || 'Subject added successfully!');
       setShowAddModal(false);
       setForm({ name: '', subject_code: '' });
       fetchData();
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
     }
   };
 
   const handleUpdate = async () => {
-    if (!form.name || !form.subject_code) return alert('Both fields are required');
+    if (!form.name || !form.subject_code) return toast.warning('Both fields are required');
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`http://localhost:8080/api/master-subjects/${selected.id}`, {
@@ -104,13 +110,18 @@ const Subjects = () => {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(form)
       });
-      if (!res.ok) throw new Error('Update failed');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Update failed');
+      }
+      const result = await res.json();
+      toast.success(result.message || 'Subject updated successfully!');
       setShowEditModal(false);
       setSelected(null);
       setForm({ name: '', subject_code: '' });
       fetchData();
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
     }
   };
 
@@ -141,7 +152,7 @@ const Subjects = () => {
       setDeleteTarget(null);
       fetchData();
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
     }
   };
 
@@ -398,32 +409,31 @@ const Subjects = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/20 backdrop-blur-md animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
-          <div className="relative bg-white rounded-3xl shadow-3xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 p-8 text-center space-y-6">
-            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto">
-              <MdDelete size={32} />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-slate-900">Remove Subject?</h3>
-              <p className="text-sm text-slate-500 mt-2">
-                Delete <span className="font-bold text-slate-900 font-mono italic">"{deleteTarget?.name || deleteTarget?.subject_code}"</span>? 
-                This will remove all associated data mappings.
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
+          <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+            <div className="p-8 text-center flex flex-col items-center">
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+                <MdDelete size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Confirm Removal</h3>
+              <p className="text-slate-500 text-sm leading-relaxed mb-8">
+                Are you sure you want to delete <span className="font-bold text-slate-900">"{deleteTarget?.name || deleteTarget?.subject_code}"</span>? This action cannot be reversed.
               </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button 
-                className="flex-1 px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-2xl transition-all"
-                onClick={() => setShowDeleteModal(false)}
-              >
-                Cancel
-              </button>
-              <button 
-                className="flex-1 px-6 py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl shadow-lg shadow-red-500/20 transition-all"
-                onClick={handleDeleteConfirm}
-              >
-                Yes, Delete
-              </button>
+              <div className="flex gap-3 w-full">
+                <button 
+                  className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-500/20 transition-all"
+                  onClick={handleDeleteConfirm}
+                >
+                  Remove
+                </button>
+              </div>
             </div>
           </div>
         </div>

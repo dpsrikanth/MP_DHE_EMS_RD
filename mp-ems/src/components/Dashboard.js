@@ -35,6 +35,7 @@ const Dashboard = () => {
   const [semestersCount, setSemestersCount] = useState(0);
   const [subjectsCount, setSubjectsCount] = useState(0);
   const [policiesCount, setPoliciesCount] = useState(0);
+  const [teachersCount, setTeachersCount] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -50,7 +51,7 @@ const Dashboard = () => {
         const data = await response.json();
 
         setStats({
-          totalUsers: data.totalUsers || 0,
+          totalTeachers: data.totalTeachers || 0,
           activeExams: data.activeExams || 0,
           totalPrograms: data.totalPrograms || 0,
           totalSemesters: data.totalSemesters || 0,
@@ -64,9 +65,10 @@ const Dashboard = () => {
         setSemestersCount(data.totalSemesters || 0);
         setSubjectsCount(data.totalSubjects || 0);
         setPoliciesCount(data.totalPolicies || 0);
+        setTeachersCount(data.totalTeachers || 0);
 
         const [tRes, sRes, cRes, uRes] = await Promise.all([
-          fetch("http://localhost:8080/api/teachers", authHeader),
+          fetch("http://localhost:8080/api/master-teachers", authHeader),
           fetch("http://localhost:8080/api/students", authHeader),
           fetch("http://localhost:8080/api/colleges", authHeader),
           fetch("http://localhost:8080/api/universities", authHeader)
@@ -108,7 +110,7 @@ const Dashboard = () => {
   const gradeCounts = gradeLabels.map((_, i) => Math.floor(totalStudents / gradeLabels.length) + (i < (totalStudents % gradeLabels.length) ? 1 : 0));
 
   const dashboardStats = [
-    { label: 'Total Teachers', value: teachers.length, icon: <Users size={24} />, color: 'bg-blue-500', shadow: 'shadow-blue-500/20' },
+    { label: 'Total Teachers', value: teachersCount, icon: <Users size={24} />, color: 'bg-blue-500', shadow: 'shadow-blue-500/20' },
     { label: 'Total Students', value: totalStudents, icon: <GraduationCap size={24} />, color: 'bg-emerald-500', shadow: 'shadow-emerald-500/20' },
     { label: 'Programs', value: programsCount, icon: <BookOpen size={24} />, color: 'bg-amber-500', shadow: 'shadow-amber-500/20' },
     { label: 'Exams', value: examsCount, icon: <FileText size={24} />, color: 'bg-purple-500', shadow: 'shadow-purple-500/20' },

@@ -1,5 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import "./App.css";
 import AppRoutes from "./routes";
 import SessionMonitor from "./components/SessionMonitor";
@@ -57,6 +59,18 @@ const App = () => {
   return(
     <SessionMonitor>
       <AppRoutes />
+      <ToastContainer 
+        position="top-right" 
+        autoClose={3000} 
+        hideProgressBar={false} 
+        newestOnTop 
+        closeOnClick 
+        rtl={false} 
+        pauseOnFocusLoss 
+        draggable 
+        pauseOnHover 
+        theme="colored" 
+      />
     </SessionMonitor>
   );
 };

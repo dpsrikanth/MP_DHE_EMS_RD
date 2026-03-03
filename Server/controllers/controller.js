@@ -59,7 +59,7 @@ const register = async (req, res) => {
 const getDashboardStats = async (req, res) => {
   try {
     const statsQueries = {
-      totalUsers: "SELECT COUNT(*) FROM users",
+      totalTeachers: "SELECT COUNT(*) FROM master_teachers",
       activeExams: "SELECT COUNT(*) FROM exams",
       totalPrograms: "SELECT COUNT(*) FROM master_programs",
       totalSemesters: "SELECT COUNT(*) FROM master_semesters",
@@ -968,7 +968,7 @@ const deleteMasterProgram = async (req, res) => {
 
 const getMasterPolicies = async (req, res) => {
   try {
-    const result = await client.query("SELECT id, name FROM master_policies ORDER BY id");
+    const result = await client.query('SELECT id, name, description, status, created_at FROM master_policies ORDER BY id');
     res.json(result.rows);
   } catch (error) {
     console.error("Get master policies error:", error);
@@ -980,7 +980,7 @@ const createMasterPolicy = async (req, res) => {
   try {
     const { name, description } = req.body;
     if (!name) return res.status(400).json({ message: "Policy name is required" });
-    const result = await client.query("INSERT INTO master_policies (name, description) VALUES ($1, $2) RETURNING id, name, description, created_at", [name, description]);
+    const result = await client.query("INSERT INTO master_policies (name, description, status) VALUES ($1, $2, true) RETURNING id, name, description, status, created_at", [name, description]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error("Create master policy error:", error);
@@ -991,7 +991,7 @@ const createMasterPolicy = async (req, res) => {
 const getMasterPolicy = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query("SELECT id, name, description, created_at FROM master_policies WHERE id = $1", [id]);
+    const result = await client.query("SELECT id, name, description, status, created_at FROM master_policies WHERE id = $1", [id]);
     if (result.rows.length === 0) return res.status(404).json({ message: "Master policy not found" });
     res.json(result.rows[0]);
   } catch (error) {
@@ -1006,7 +1006,7 @@ const updateMasterPolicy = async (req, res) => {
     const { name, description } = req.body;
     if (!name) return res.status(400).json({ message: "Policy name is required" });
     const result = await client.query(
-      "UPDATE master_policies SET name = $1, description = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, name, description, created_at",
+      "UPDATE master_policies SET name = $1, description = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, name, description, status, created_at",
       [name, description, id]
     );
     if (result.rows.length === 0) return res.status(404).json({ message: "Master policy not found" });
@@ -1020,7 +1020,7 @@ const updateMasterPolicy = async (req, res) => {
 const deleteMasterPolicy = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query("DELETE FROM master_policies WHERE id = $1 RETURNING id", [id]);
+    const result = await client.query("UPDATE master_policies SET status = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id", [id]);
     if (result.rows.length === 0) return res.status(404).json({ message: "Master policy not found" });
     res.json({ message: "Deleted successfully" });
   } catch (error) {

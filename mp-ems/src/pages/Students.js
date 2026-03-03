@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import { 
   GraduationCap, 
   Plus, 
@@ -244,10 +245,14 @@ const Students = () => {
         },
         body: JSON.stringify(addForm)
       });
+      const text = await resp.text();
+      let respData = {};
+      try { respData = JSON.parse(text); } catch (e) {}
+
       if (!resp.ok) {
-        const text = await resp.text();
-        throw new Error(text || 'Failed to enroll student');
+        throw new Error(respData.message || text || 'Failed to enroll student');
       }
+      toast.success(respData.message || 'Student enrolled successfully!');
       await fetchData();
       setShowAddModal(false);
     } catch (err) {
@@ -326,10 +331,14 @@ const Students = () => {
           collageName: editForm.collageName
         })
       });
+      const text = await resp.text();
+      let respData = {};
+      try { respData = JSON.parse(text); } catch (e) {}
+
       if (!resp.ok) {
-        const text = await resp.text();
-        throw new Error(text || 'Failed to update student');
+        throw new Error(respData.message || text || 'Failed to update student');
       }
+      toast.success(respData.message || 'Student updated successfully!');
       await fetchData();
       setShowEditModal(false);
     } catch (err) {
@@ -1282,63 +1291,44 @@ const Students = () => {
 
       {/* ===== Delete Confirmation Modal ===== */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeDeleteModal} />
-          
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
-            {/* Header */}
-            <div className="px-10 py-8 border-b border-red-100 bg-red-50">
-              <h2 className="text-2xl font-black text-red-600 tracking-tight leading-none">
-                Delete Student
-              </h2>
-              <p className="text-[10px] font-black text-red-400 uppercase tracking-widest opacity-70 mt-2">
-                Confirmation Required
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={closeDeleteModal} />
+          <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+            <div className="p-8 text-center flex flex-col items-center">
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+                <MdDelete size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Confirm Removal</h3>
+              <p className="text-slate-500 text-sm leading-relaxed mb-6">
+                Are you sure you want to delete <span className="font-bold text-slate-900">"{studentToDelete?.name}"</span>? This action cannot be reversed.
               </p>
-            </div>
-            
-            {/* Body */}
-            <div className="p-10 space-y-4">
+              
               {deleteError && (
-                <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-bold flex items-center gap-2">
-                  <ShieldAlert size={18} /> {deleteError}
+                <div className="mb-6 p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-xs font-bold flex items-center gap-2 w-full text-left">
+                  <ShieldAlert size={16} className="shrink-0" /> {deleteError}
                 </div>
               )}
               
-              <div className="bg-red-50 border border-red-100 rounded-2xl p-6 text-center">
-                <p className="text-sm text-slate-700 font-bold mb-3">
-                  Are you sure you want to remove:
-                </p>
-                <div className="bg-white rounded-xl p-4 border border-red-100 mb-4">
-                  <p className="text-lg font-black text-slate-900">{studentToDelete?.name}</p>
-                  <p className="text-xs text-slate-500 mt-1">Student ID: {studentToDelete?.id}</p>
-                </div>
-                <p className="text-xs text-red-600 font-bold">
-                  This action will soft-delete the record. It cannot be immediately undone.
-                </p>
+              <div className="flex gap-3 w-full">
+                <button 
+                  className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all"
+                  onClick={closeDeleteModal}
+                  disabled={deleteLoading}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-500/20 transition-all flex items-center justify-center disabled:opacity-50"
+                  onClick={handleDeleteConfirm}
+                  disabled={deleteLoading}
+                >
+                  {deleteLoading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <span>Remove</span>
+                  )}
+                </button>
               </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-5">
-              <button 
-                className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
-                onClick={closeDeleteModal}
-                disabled={deleteLoading}
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleDeleteConfirm}
-                disabled={deleteLoading}
-                className="px-10 py-4 bg-red-600 hover:bg-red-700 text-white font-black rounded-2xl shadow-xl shadow-red-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm uppercase tracking-widest flex items-center gap-3 disabled:opacity-50 disabled:scale-100"
-              >
-                {deleteLoading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <MdDelete size={20} />
-                )}
-                <span>Delete Student</span>
-              </button>
             </div>
           </div>
         </div>

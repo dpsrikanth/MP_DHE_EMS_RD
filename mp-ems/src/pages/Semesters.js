@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from 'react-toastify';
 import { 
   Layers, 
   Plus, 
@@ -77,7 +78,7 @@ const Semesters = () => {
   };
 
   const handleAdd = async () => {
-    if (!form.semester_name) return alert('Semester name is required');
+    if (!form.semester_name) return toast.warning('Semester name is required');
     try {
       const token = localStorage.getItem('token');
       const res = await fetch('http://localhost:8080/api/master-semesters', {
@@ -85,17 +86,22 @@ const Semesters = () => {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(form)
       });
-      if (!res.ok) throw new Error('Save failed');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Save failed');
+      }
+      const result = await res.json();
+      toast.success(result.message || 'Semester added successfully!');
       setShowAddModal(false);
       setForm({ semester_name: '' });
       fetchData();
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
     }
   };
 
   const handleUpdate = async () => {
-    if (!form.semester_name) return alert('Semester name is required');
+    if (!form.semester_name) return toast.warning('Semester name is required');
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`http://localhost:8080/api/master-semesters/${selected.id}`, {
@@ -103,13 +109,18 @@ const Semesters = () => {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(form)
       });
-      if (!res.ok) throw new Error('Update failed');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Update failed');
+      }
+      const result = await res.json();
+      toast.success(result.message || 'Semester updated successfully!');
       setShowEditModal(false);
       setSelected(null);
       setForm({ semester_name: '' });
       fetchData();
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
     }
   };
 
@@ -140,7 +151,7 @@ const Semesters = () => {
       setDeleteTarget(null);
       fetchData();
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
     }
   };
 

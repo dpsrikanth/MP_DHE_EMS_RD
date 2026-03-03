@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { useLocation } from 'react-router-dom';
 import Select, { components } from 'react-select';
 import { 
@@ -39,7 +40,9 @@ const Colleges = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [form, setForm] = useState({ name: '', college_code: '', address: '', university_id: '' });
 
   const availableColumns = [
@@ -205,7 +208,7 @@ const Colleges = () => {
     try {
       const token = localStorage.getItem('token');
       if (!form.name || !form.university_id) {
-        return alert('College name and university are required');
+        return toast.warning('College name and university are required');
       }
 
       const url = selected 
@@ -229,28 +232,37 @@ const Colleges = () => {
         body: JSON.stringify(selectedConfig)
       });
       
+      toast.success(savedCollege.message || (selected ? 'College updated successfully!' : 'College added successfully!'));
       setShowModal(false);
       setSelected(null);
       setForm({ name: '', college_code: '', address: '', university_id: '' });
       setSelectedConfig({ policies: [], programs: [], academicYears: [], semesters: [] });
       fetchData();
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this college?')) return;
+  const handleDelete = (item) => {
+    setDeleteTarget(item);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/colleges/${id}`, {
+      const response = await fetch(`http://localhost:8080/api/colleges/${deleteTarget.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Delete failed');
+      setShowDeleteModal(false);
+      setDeleteTarget(null);
+      fetchData();
       fetchData();
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
     }
   };
 
@@ -387,7 +399,7 @@ const Colleges = () => {
                           <Pencil size={18} />
                         </button>
                         <button 
-                          onClick={() => handleDelete(item.id)}
+                          onClick={() => handleDelete(item)}
                           className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                           title="Delete College"
                         >
@@ -566,6 +578,38 @@ const Colleges = () => {
                 <Check size={20} />
                 <span>{selected ? 'Update Record' : 'Create College'}</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
+          <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+            <div className="p-8 text-center flex flex-col items-center">
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+                <MdDelete size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Confirm Removal</h3>
+              <p className="text-slate-500 text-sm leading-relaxed mb-8">
+                Are you sure you want to delete <span className="font-bold text-slate-900">"{deleteTarget?.college_name || deleteTarget?.name}"</span>? This action cannot be reversed.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button 
+                  className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-500/20 transition-all"
+                  onClick={handleDeleteConfirm}
+                >
+                  Remove
+                </button>
+              </div>
             </div>
           </div>
         </div>

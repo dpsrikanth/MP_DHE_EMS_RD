@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import '../styles/DataTable.css';
 
@@ -25,7 +26,7 @@ const DropdownTest = () => {
     const token = localStorage.getItem('token');
     if (!token) {
       console.warn("No authentication token found. Redirecting to login.");
-      alert("Please login to access this page");
+      toast.error("Please login to access this page");
       navigate('/');
       return;
     }
@@ -77,7 +78,7 @@ const DropdownTest = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Selected values:", selectedValues);
-    alert(`Selected:\n${JSON.stringify(selectedValues, null, 2)}`);
+    toast.info(`Selected:\n${JSON.stringify(selectedValues, null, 2)}`);
   };
 
   const handleReset = () => {
