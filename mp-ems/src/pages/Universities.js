@@ -125,7 +125,8 @@ const Universities = () => {
         throw new Error(`HTTP ${response.status}: ${text}`);
       }
       const data = await response.json();
-      setData(data || []);
+      const activeData = (data || []).filter(item => item.status === true || item.status === 1 || item.status === '1' || item.status === 'true');
+      setData(activeData);
       setLoading(false);
     } catch (err) {
       setError(err.message);

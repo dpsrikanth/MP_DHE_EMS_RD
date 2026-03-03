@@ -305,7 +305,7 @@ const updateUniversity = async (req, res) => {
 const deleteUniversity = async (req, res) => {
   try {
     const id = req.params.id;
-    await client.query('DELETE FROM universities WHERE id=$1', [id]);
+    await client.query('UPDATE universities SET status=false WHERE id=$1', [id]);
     res.json({ message: 'Deleted' });
   } catch (err) {
     console.error('Delete university error:', err);
@@ -347,7 +347,7 @@ const updateCollege = async (req, res) => {
 const deleteCollege = async (req, res) => {
   try {
     const id = req.params.id;
-    await client.query('DELETE FROM colleges WHERE id=$1', [id]);
+    await client.query('UPDATE colleges SET status=false WHERE id=$1', [id]);
     res.json({ message: 'Deleted' });
   } catch (err) {
     console.error('Delete college error:', err);
@@ -812,7 +812,7 @@ const deleteMasterProgram = async (req, res) => {
 
 const getMasterPolicies = async (req, res) => {
   try {
-    const result = await client.query("SELECT id, name FROM master_policies ORDER BY id");
+    const result = await client.query("SELECT id, name, description, status, created_at FROM master_policies ORDER BY id");
     res.json(result.rows);
   } catch (error) {
     console.error("Get master policies error:", error);
@@ -835,7 +835,7 @@ const createMasterPolicy = async (req, res) => {
 const getMasterPolicy = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query("SELECT id, name, description, created_at FROM master_policies WHERE id = $1", [id]);
+    const result = await client.query("SELECT id, name, description, status, created_at FROM master_policies WHERE id = $1", [id]);
     if (result.rows.length === 0) return res.status(404).json({ message: "Master policy not found" });
     res.json(result.rows[0]);
   } catch (error) {
@@ -864,7 +864,7 @@ const updateMasterPolicy = async (req, res) => {
 const deleteMasterPolicy = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query("DELETE FROM master_policies WHERE id = $1 RETURNING id", [id]);
+    const result = await client.query("UPDATE master_policies SET status = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id", [id]);
     if (result.rows.length === 0) return res.status(404).json({ message: "Master policy not found" });
     res.json({ message: "Deleted successfully" });
   } catch (error) {

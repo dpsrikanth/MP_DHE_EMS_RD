@@ -176,7 +176,8 @@ const Colleges = () => {
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      setData(data || []);
+      const activeData = (data || []).filter(item => item.status === true || item.status === 1 || item.status === '1' || item.status === 'true');
+      setData(activeData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -192,7 +193,8 @@ const Colleges = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setUniversities(data || []);
+        const activeUniversities = (data || []).filter(u => u.status === true || u.status === 1 || u.status === '1' || u.status === 'true');
+        setUniversities(activeUniversities);
       }
     } catch (err) {
       console.error('Error fetching universities:', err);

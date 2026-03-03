@@ -67,7 +67,8 @@ const Policies = () => {
         throw new Error(`HTTP ${response.status}: ${text}`);
       }
       const result = await response.json();
-      setData(result || []);
+      const activeData = (result || []).filter(item => item.status === true || item.status === 1 || item.status === '1' || item.status === 'true');
+      setData(activeData);
     } catch (err) {
       setError(err.message);
     } finally {
