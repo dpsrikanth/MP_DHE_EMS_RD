@@ -208,6 +208,14 @@ const Students = () => {
     if (!form.programName || !form.programName.trim()) errs.programName = 'Program is required';
     if (!form.admission_year) errs.admission_year = 'Admission year is required';
     if (!form.semister || !form.semister.trim()) errs.semister = 'Semester is required';
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Invalid email format';
+    if (form.contactNumber && !/^\d{10}$/.test(form.contactNumber)) errs.contactNumber = 'Contact number must be 10 digits';  
+    if (form.adharnumber && !/^\d{12}$/.test(form.adharnumber)) errs.adharnumber = 'Aadhar number must be 12 digits';
+    if (form.bloodgroup && !['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].includes(form.bloodgroup)) errs.bloodgroup = 'Invalid blood group';
+    if (form.rollnumber && !/^\d+$/.test(form.rollnumber)) errs.rollnumber = 'Roll number must be numeric';
+    if (form.collageName && !form.collageName.trim()) errs.collageName = 'College name cannot be empty';
+    if (form.fatherName && !form.fatherName.trim()) errs.fatherName = 'Father name cannot be empty';
+    if (form.address && !form.address.trim()) errs.address = 'Address cannot be empty';
     return errs;
   };
 
