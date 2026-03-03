@@ -10,7 +10,15 @@ import {
   Calendar,
   Layers,
   FileText,
-  ShieldAlert
+  ShieldAlert,
+  Building2,
+  Eye,
+  Mail,
+  Phone,
+  MapPin,
+  IdCard,
+  Droplet,
+  Hash
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
@@ -57,10 +65,18 @@ const Students = () => {
   const [addError, setAddError] = useState('');
   const [addForm, setAddForm] = useState({
     name: '',
+    rollnumber: '',
+    email: '',
+    contactNumber: '',
+    address: '',
+    fatherName: '',
+    adharnumber: '',
+    bloodgroup: '',
     policies: '',
     programName: '',
     admission_year: '',
-    semister: ''
+    semister: '',
+    collageName: ''
   });
   const [addErrors, setAddErrors] = useState({});
 
@@ -71,12 +87,24 @@ const Students = () => {
   const [editForm, setEditForm] = useState({
     id: null,
     name: '',
+    rollnumber: '',
+    email: '',
+    contactNumber: '',
+    address: '',
+    fatherName: '',
+    adharnumber: '',
+    bloodgroup: '',
     policies: '',
     programName: '',
     admission_year: '',
-    semister: ''
+    semister: '',
+    collageName: ''
   });
   const [editErrors, setEditErrors] = useState({});
+
+  // ---- View Student Modal State ----
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewStudent, setViewStudent] = useState(null);
 
   // ---- Delete Confirmation Modal State ----
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -89,6 +117,8 @@ const Students = () => {
   const [policies, setPolicies] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [semesters, setSemesters] = useState([]);
+  const [colleges, setColleges] = useState([]);
+  const [bloodGroups] = useState(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
   const [dropdownLoading, setDropdownLoading] = useState(true);
 
   useEffect(() => {
@@ -120,7 +150,7 @@ const Students = () => {
       const token = localStorage.getItem('token');
       
       // Fetch all dropdown data in parallel
-      const [yearRes, policyRes, programRes, semesterRes] = await Promise.all([
+      const [yearRes, policyRes, programRes, semesterRes, collegeRes] = await Promise.all([
         fetch('http://localhost:8080/api/academic-years', {
           headers: { Authorization: `Bearer ${token}` }
         }),
@@ -131,6 +161,9 @@ const Students = () => {
           headers: { Authorization: `Bearer ${token}` }
         }),
         fetch('http://localhost:8080/api/master-semesters', {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch('http://localhost:8080/api/colleges', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -154,6 +187,11 @@ const Students = () => {
         const sems = await semesterRes.json();
         setSemesters(sems || []);
       }
+
+      if (collegeRes.ok) {
+        const cols = await collegeRes.json();
+        setColleges(cols || []);
+      }
     } catch (err) {
       console.error('Error fetching dropdown data:', err);
     } finally {
@@ -174,7 +212,10 @@ const Students = () => {
 
   // ---- Add Modal Handlers ----
   const openAddModal = () => {
-    setAddForm({ name: '', policies: '', programName: '', admission_year: '', semister: '' });
+    setAddForm({ 
+      name: '', rollnumber: '', email: '', contactNumber: '', address: '', fatherName: '', 
+      adharnumber: '', bloodgroup: '', policies: '', programName: '', admission_year: '', semister: '', collageName: '' 
+    });
     setAddErrors({});
     setAddError('');
     setShowAddModal(true);
@@ -220,11 +261,19 @@ const Students = () => {
   const openEditModal = (student) => {
     setEditForm({
       id: student.id,
-      name: student.name,
+      name: student.name || '',
+      rollnumber: student.rollnumber || '',
+      email: student.email || '',
+      contactNumber: student.contactNumber || '',
+      address: student.address || '',
+      fatherName: student.fatherName || '',
+      adharnumber: student.adharnumber || '',
+      bloodgroup: student.bloodgroup || '',
       policies: student.policies || '',
       programName: student.programName || '',
       admission_year: student.admission_year || '',
-      semister: student.semister || ''
+      semister: student.semister || '',
+      collageName: student.collageName || ''
     });
     setEditErrors({});
     setEditError('');
@@ -232,6 +281,14 @@ const Students = () => {
   };
 
   const closeEditModal = () => setShowEditModal(false);
+
+  // ---- View Modal Handlers ----
+  const openViewModal = (student) => {
+    setViewStudent(student);
+    setShowViewModal(true);
+  };
+
+  const closeViewModal = () => setShowViewModal(false);
 
   const handleEditChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -255,10 +312,18 @@ const Students = () => {
         },
         body: JSON.stringify({
           name: editForm.name,
+          rollnumber: editForm.rollnumber,
+          email: editForm.email,
+          contactNumber: editForm.contactNumber,
+          address: editForm.address,
+          fatherName: editForm.fatherName,
+          adharnumber: editForm.adharnumber,
+          bloodgroup: editForm.bloodgroup,
           policies: editForm.policies,
           programName: editForm.programName,
           admission_year: editForm.admission_year,
-          semister: editForm.semister
+          semister: editForm.semister,
+          collageName: editForm.collageName
         })
       });
       if (!resp.ok) {
@@ -434,7 +499,7 @@ const Students = () => {
                     )}
                     {visibleColumns.admission_year && (
                       <td className="px-4 py-5">
-                        <div className="flex items-center gap-1.5">
+                        <div className="}flex items-center gap-1.5">
                           <Calendar size={14} className="text-slate-400" />
                           <span className="text-xs font-bold text-slate-700">{item.admission_year || '—'}</span>
                         </div>
@@ -450,6 +515,13 @@ const Students = () => {
                     )}
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => openViewModal(item)}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                          title="View Details"
+                        >
+                          <Eye size={18} />
+                        </button>
                         <button 
                           onClick={() => openEditModal(item)}
                           className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
@@ -634,6 +706,137 @@ const Students = () => {
                   {addErrors.semister && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.semister}</p>}
                 </div>
 
+                {/* College */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">College Name</label>
+                  <div className="relative">
+                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
+                      name="collageName" 
+                      value={addForm.collageName} 
+                      onChange={handleAddChange}
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer"
+                    >
+                      <option value="">-- Select College --</option>
+                      {colleges.map((college) => (
+                        <option key={college.id} value={college.college_name || college.name}>
+                          {college.college_name || college.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Roll Number */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Roll Number</label>
+                  <div className="relative">
+                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="rollnumber" 
+                      value={addForm.rollnumber} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. 101"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="email" 
+                      type="email"
+                      value={addForm.email} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. student@example.com"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Contact Number */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Contact Number</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="contactNumber" 
+                      value={addForm.contactNumber} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. 9876543210"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Father Name */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father's Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="fatherName" 
+                      value={addForm.fatherName} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Raj Kumar"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Aadhar Number */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Aadhar Number</label>
+                  <div className="relative">
+                    <IdCard className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="adharnumber" 
+                      value={addForm.adharnumber} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. 1234-5678-9012"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Blood Group */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Blood Group</label>
+                  <div className="relative">
+                    <Droplet className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
+                      name="bloodgroup" 
+                      value={addForm.bloodgroup} 
+                      onChange={handleAddChange}
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer"
+                    >
+                      <option value="">-- Select Blood Group --</option>
+                      {bloodGroups.map((bg) => (
+                        <option key={bg} value={bg}>{bg}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Address */}
+                <div className="space-y-2 col-span-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Address</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-4 text-slate-400" size={18} />
+                    <textarea 
+                      name="address" 
+                      value={addForm.address} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. 123 Main Street, City, State 12345"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold resize-none"
+                      rows="3"
+                    />
+                  </div>
+                </div>
 
               </div>
             </div>
@@ -800,6 +1003,138 @@ const Students = () => {
                   </div>
                   {editErrors.semister && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.semister}</p>}
                 </div>
+
+                {/* College */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">College Name</label>
+                  <div className="relative">
+                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
+                      name="collageName" 
+                      value={editForm.collageName} 
+                      onChange={handleEditChange}
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer"
+                    >
+                      <option value="">-- Select College --</option>
+                      {colleges.map((college) => (
+                        <option key={college.id} value={college.college_name || college.name}>
+                          {college.college_name || college.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Roll Number */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Roll Number</label>
+                  <div className="relative">
+                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="rollnumber" 
+                      value={editForm.rollnumber} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. 101"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="email" 
+                      type="email"
+                      value={editForm.email} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. student@example.com"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Contact Number */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Contact Number</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="contactNumber" 
+                      value={editForm.contactNumber} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. 9876543210"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Father Name */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father's Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="fatherName" 
+                      value={editForm.fatherName} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Raj Kumar"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Aadhar Number */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Aadhar Number</label>
+                  <div className="relative">
+                    <IdCard className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="adharnumber" 
+                      value={editForm.adharnumber} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. 1234-5678-9012"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Blood Group */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Blood Group</label>
+                  <div className="relative">
+                    <Droplet className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
+                      name="bloodgroup" 
+                      value={editForm.bloodgroup} 
+                      onChange={handleEditChange}
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer"
+                    >
+                      <option value="">-- Select Blood Group --</option>
+                      {bloodGroups.map((bg) => (
+                        <option key={bg} value={bg}>{bg}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Address */}
+                <div className="space-y-2 col-span-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Address</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-4 text-slate-400" size={18} />
+                    <textarea 
+                      name="address" 
+                      value={editForm.address} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. 123 Main Street, City, State 12345"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold resize-none"
+                      rows="3"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -823,6 +1158,122 @@ const Students = () => {
                   <Check size={20} />
                 )}
                 <span>Update Record</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== View Student Modal ===== */}
+      {showViewModal && viewStudent && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeViewModal} />
+          
+          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50 to-emerald-50">
+              <div>
+                <h2 className="text-2xl font-black tracking-tight leading-none mb-1 text-slate-900">
+                  Student Details
+                </h2>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70 flex items-center gap-2">
+                  <GraduationCap size={12} /> ID: {viewStudent.id}
+                </p>
+              </div>
+              <button 
+                onClick={closeViewModal}
+                className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-2xl transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            {/* Body */}
+            <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Personal Information */}
+                <div className="col-span-2">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6 pb-4 border-b-2 border-slate-200">Personal Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Full Name</p>
+                      <p className="text-sm font-bold text-slate-900">{viewStudent.name || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Roll Number</p>
+                      <p className="text-sm font-bold text-slate-900">{viewStudent.rollnumber || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Father's Name</p>
+                      <p className="text-sm font-bold text-slate-900">{viewStudent.fatherName || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Blood Group</p>
+                      <p className="text-sm font-bold text-slate-900">{viewStudent.bloodgroup || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Aadhar Number</p>
+                      <p className="text-sm font-bold text-slate-900">{viewStudent.adharnumber || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact Information */}
+                <div className="col-span-2">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6 pb-4 border-b-2 border-slate-200">Contact Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Email Address</p>
+                      <p className="text-sm font-bold text-slate-900 break-all">{viewStudent.email || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Contact Number</p>
+                      <p className="text-sm font-bold text-slate-900">{viewStudent.contactNumber || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4 col-span-2">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Address</p>
+                      <p className="text-sm font-bold text-slate-900">{viewStudent.address || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Academic Information */}
+                <div className="col-span-2">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6 pb-4 border-b-2 border-slate-200">Academic Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">College</p>
+                      <p className="text-sm font-bold text-slate-900">{viewStudent.collageName || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Program</p>
+                      <p className="text-sm font-bold text-slate-900">{viewStudent.programName || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Policy</p>
+                      <p className="text-sm font-bold text-slate-900">{viewStudent.policies || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Admission Year</p>
+                      <p className="text-sm font-bold text-slate-900">{viewStudent.admission_year || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Semester</p>
+                      <p className="text-sm font-bold text-slate-900">{viewStudent.semister || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-5">
+              <button 
+                className="px-10 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm uppercase tracking-widest flex items-center gap-3"
+                onClick={closeViewModal}
+              >
+                <Check size={20} />
+                <span>Close</span>
               </button>
             </div>
           </div>

@@ -411,12 +411,46 @@ ORDER BY id ASC;`);
 
 const createStudent = async (req, res) => {
   try {
-    const { name, policies, programName, admission_year, semister } = req.body;
+    const {
+      name,
+      policies,
+      programName,
+      admission_year,
+      semister,
+      collageName,
+      rollnumber,
+      email,
+      contactNumber,
+      address,
+      fatherName,
+      adharnumber,
+      bloodgroup
+    } = req.body;
+
     if (!name) return res.status(400).json({ message: 'Student name is required' });
+
     const result = await client.query(
-      `INSERT INTO students (name, policies, "programName", admission_year, semister, created_at, updated_at, "deleteStatus")
-       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true) RETURNING *`,
-      [name, policies || null, programName || null, admission_year || null, semister || null]
+      `INSERT INTO students (
+        name, policies, "programName", admission_year, semister, "collageName",
+        rollnumber, email, "contactNumber", address, "fatherName", adharnumber,
+        bloodgroup, created_at, updated_at, "deleteStatus"
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true)
+      RETURNING *`,
+      [
+        name,
+        policies || null,
+        programName || null,
+        admission_year || null,
+        semister || null,
+        collageName || null,
+        rollnumber || null,
+        email || null,
+        contactNumber || null,
+        address || null,
+        fatherName || null,
+        adharnumber || null,
+        bloodgroup || null
+      ]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -428,34 +462,66 @@ const createStudent = async (req, res) => {
 const updateStudent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, policies, programName, admission_year, semister } = req.body;
-    
+    const {
+      name,
+      policies,
+      programName,
+      admission_year,
+      semister,
+      collageName,
+      rollnumber,
+      email,
+      contactNumber,
+      address,
+      fatherName,
+      adharnumber,
+      bloodgroup
+    } = req.body;
+
     if (!name) return res.status(400).json({ message: 'Student name is required' });
-    
+
     // Check if student exists
     const checkResult = await client.query(
       'SELECT id FROM students WHERE id = $1 AND "deleteStatus" = true',
       [id]
     );
-    
+
     if (checkResult.rows.length === 0) {
       return res.status(404).json({ message: 'Student not found' });
     }
-    
+
     const result = await client.query(
-      `UPDATE students 
-       SET name = $1, policies = $2, "programName" = $3, admission_year = $4, semister = $5, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $6 AND "deleteStatus" = true
+      `UPDATE students
+       SET name = $1, policies = $2, "programName" = $3, admission_year = $4, semister = $5,
+           "collageName" = $6, rollnumber = $7, email = $8, "contactNumber" = $9, address = $10,
+           "fatherName" = $11, adharnumber = $12, bloodgroup = $13, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $14 AND "deleteStatus" = true
        RETURNING *`,
-      [name, policies || null, programName || null, admission_year || null, semister || null, id]
+      [
+        name,
+        policies || null,
+        programName || null,
+        admission_year || null,
+        semister || null,
+        collageName || null,
+        rollnumber || null,
+        email || null,
+        contactNumber || null,
+        address || null,
+        fatherName || null,
+        adharnumber || null,
+        bloodgroup || null,
+        id
+      ]
     );
-    
+
     res.json({ message: 'Student updated successfully', data: result.rows[0] });
   } catch (err) {
     console.error('Update student error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
+    
 
 const deleteStudent = async (req, res) => {
   try {
@@ -1079,7 +1145,7 @@ const createMasterTeacher = async (req, res) => {
 
 const updateMasterTeacher = async (req, res) => {
   const { id } = req.params;
-  const { name, email, college_id, department_id, designation_id, experience, qualification, specialization, pan_no, aadhaar_no, dob, gender, joining_date, phone, address, status } = req.body;
+  const { name, email, college_id, department_id, designation_id, experience, status } = req.body;
 
   try {
     // Get existing teacher
@@ -1124,7 +1190,7 @@ const updateMasterTeacher = async (req, res) => {
            status = COALESCE($15, status),
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $1`,
-      [id, college_id || null, department_id || null, designation_id || null, qualification || null, experience || null, specialization || null, pan_no || null, aadhaar_no || null, dob || null, gender || null, joining_date || null, phone || null, address || null, status || null]
+      [id, college_id || null, department_id || null, designation_id || null, experience || null, status || null]
     );
 
     // Fetch the complete updated record with all joins
