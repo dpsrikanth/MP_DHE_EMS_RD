@@ -66,9 +66,9 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col md:flex-row font-sans overflow-hidden">
+    <div className="h-screen bg-white flex flex-col md:flex-row font-sans overflow-hidden">
       {/* Left Panel: Brand & Stats */}
-      <div className="relative flex-1 bg-slate-900 overflow-hidden hidden lg:flex flex-col justify-center p-16 xl:p-24 overflow-y-auto">
+      <div className="relative flex-1 bg-slate-900 overflow-hidden hidden lg:flex flex-col justify-center p-8 xl:p-16">
         {/* Abstract Background Design */}
         <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
           <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-sky-500 rounded-full blur-[120px]" />
@@ -86,32 +86,32 @@ const Login = () => {
             </div>
           </div>
 
-          <h2 className="text-5xl font-black text-white leading-[1.1] mb-8 tracking-tight">
+          <h2 className="text-4xl xl:text-5xl font-black text-white leading-[1.1] mb-6 tracking-tight">
             Streamlining <span className="text-sky-400">Academic</span> Governance and Management.
           </h2>
           
-          <p className="text-lg text-slate-400 font-medium mb-12 leading-relaxed">
+          <p className="text-base xl:text-lg text-slate-400 font-medium mb-8 leading-relaxed">
             The next generation of Educational Management Systems. Intuitive, robust, and designed for high-performance administrative excellence.
           </p>
 
-          <div className="grid grid-cols-2 gap-8 mb-16">
-            <div className="space-y-4 p-6 bg-slate-800/40 rounded-[2rem] border border-slate-700/50 backdrop-blur-sm">
+          <div className="grid grid-cols-2 gap-6 mb-10">
+            <div className="space-y-3 p-5 bg-slate-800/40 rounded-[2rem] border border-slate-700/50 backdrop-blur-sm">
               <div className="w-10 h-10 bg-sky-500/10 rounded-xl flex items-center justify-center text-sky-400">
                 <Calendar size={20} />
               </div>
-              <h3 className="text-white font-bold text-lg leading-none">Smart Scheduling</h3>
-              <p className="text-slate-500 text-sm font-medium leading-relaxed">Automated timetables and exam planning engines.</p>
+              <h3 className="text-white font-bold text-base xl:text-lg leading-none">Smart Scheduling</h3>
+              <p className="text-slate-500 text-xs xl:text-sm font-medium leading-relaxed">Automated timetables and exam planning engines.</p>
             </div>
-            <div className="space-y-4 p-6 bg-slate-800/40 rounded-[2rem] border border-slate-700/50 backdrop-blur-sm">
+            <div className="space-y-3 p-5 bg-slate-800/40 rounded-[2rem] border border-slate-700/50 backdrop-blur-sm">
               <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400">
                 <Award size={20} />
               </div>
-              <h3 className="text-white font-bold text-lg leading-none">Result Analytics</h3>
-              <p className="text-slate-500 text-sm font-medium leading-relaxed">In-depth performance tracking and reporting.</p>
+              <h3 className="text-white font-bold text-base xl:text-lg leading-none">Result Analytics</h3>
+              <p className="text-slate-500 text-xs xl:text-sm font-medium leading-relaxed">In-depth performance tracking and reporting.</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-12 border-t border-slate-800 pt-12">
+          <div className="flex items-center gap-8 xl:gap-12 border-t border-slate-800 pt-8">
             <div className="text-center">
               <p className="text-3xl font-black text-white leading-none mb-2">500+</p>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Colleges</p>
@@ -129,9 +129,9 @@ const Login = () => {
       </div>
 
       {/* Right Panel: Login Form */}
-      <div className="w-full lg:w-[540px] bg-white flex flex-col justify-center p-8 sm:p-12 lg:p-20 relative overflow-hidden">
+      <div className="w-full lg:w-[540px] bg-white flex flex-col justify-center p-6 sm:p-8 lg:p-12 xl:p-16 relative">
         {/* Mobile Header (Only visible on small screens) */}
-        <div className="lg:hidden flex items-center gap-3 mb-12">
+        <div className="lg:hidden flex items-center gap-3 mb-8">
           <div className="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center text-white">
             <School size={24} />
           </div>
@@ -139,12 +139,12 @@ const Login = () => {
         </div>
 
         <div className="max-w-sm mx-auto lg:mx-0 w-full">
-          <div className="mb-10 text-center lg:text-left">
-            <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Portal Access</h2>
-            <p className="text-slate-500 font-medium">Please enter your administrative credentials</p>
+          <div className="mb-8 text-center lg:text-left">
+            <h2 className="text-2xl xl:text-3xl font-black text-slate-900 mb-2 tracking-tight">Portal Access</h2>
+            <p className="text-slate-500 font-medium text-sm xl:text-base">Please enter your administrative credentials</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
               <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
               <div className="relative group">
@@ -221,7 +221,7 @@ const Login = () => {
             </button>
           </form>
 
-          <p className="mt-12 text-center text-slate-500 text-sm font-medium">
+          <p className="mt-8 xl:mt-10 text-center text-slate-500 text-sm font-medium">
             New to the system?{' '}
             <button 
               onClick={() => navigate("/register")}
@@ -232,7 +232,7 @@ const Login = () => {
           </p>
 
           {/* Social Proof / Security Badge */}
-          <div className="mt-16 pt-8 border-t border-slate-50 flex items-center justify-center gap-2 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+          <div className="mt-8 xl:mt-12 pt-6 xl:pt-8 border-t border-slate-50 flex items-center justify-center gap-2 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
             <CheckCircle2 size={16} className="text-sky-500" />
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Secured by EMS-Cloud Architecture</span>
           </div>

@@ -25,7 +25,7 @@ const Layout = ({ children }) => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex overflow-hidden">
+    <div className="min-h-screen bg-slate-50 flex">
       {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div 
@@ -42,7 +42,7 @@ const Layout = ({ children }) => {
         <Navbar toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen} />
         
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-8 pb-12 animate-in fade-in slide-in-from-bottom-2 duration-500 overflow-y-auto">
+        <main className="flex-1 p-4 lg:p-8 pb-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
