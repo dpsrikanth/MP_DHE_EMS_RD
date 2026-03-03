@@ -585,7 +585,7 @@ const Teachers = () => {
                   onSort={handleSort}
                   visible={visibleColumns.designation}
                 />
-                <th className={`${visibleColumns.qualification ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Qualification</th>
+                {/* <th className={`${visibleColumns.qualification ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Qualification</th>
                 <SortHeader
                   label="Experience"
                   field="experience"
@@ -600,9 +600,9 @@ const Teachers = () => {
                 <th className={`${visibleColumns.gender ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Gender</th>
                 <th className={`${visibleColumns.joining_date ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Joining Date</th>
                 <th className={`${visibleColumns.phone ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Phone</th>
-                <th className={`${visibleColumns.address ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Address</th>
+                <th className={`${visibleColumns.address ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Address</th> */}
                 <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center`}>Status</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Settings</th>
+                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -648,7 +648,7 @@ const Teachers = () => {
                         <p className="text-[11px] text-slate-700">{safeDisplay(item.designation)}</p>
                       </td>
                     )}
-                    {visibleColumns.qualification && (
+                    {/* {visibleColumns.qualification && (
                       <td className="px-4 py-5">
                         <p className="text-[11px] text-slate-700">{item.qualification ?? '-'}</p>
                       </td>
@@ -697,7 +697,7 @@ const Teachers = () => {
                       <td className="px-4 py-5">
                         <p className="text-[11px] text-slate-700 max-w-xs truncate">{item.address ?? '-'}</p>
                       </td>
-                    )}
+                    )} */}
                     {visibleColumns.status && (
                       <td className="px-4 py-5 text-center">
                         {(item.status === 'Active' || item.status === true) ? (

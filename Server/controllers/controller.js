@@ -1208,7 +1208,25 @@ const createMasterTeacher = async (req, res) => {
 
 const updateMasterTeacher = async (req, res) => {
   const { id } = req.params;
-  const { name, email, college_id, department_id, designation_id, experience, status } = req.body;
+  // pull every possible field from the body; some may be undefined
+  const {
+    name,
+    email,
+    college_id,
+    department_id,
+    designation_id,
+    qualification,
+    experience,
+    specialization,
+    pan_no,
+    aadhaar_no,
+    dob,
+    gender,
+    joining_date,
+    phone,
+    address,
+    status
+  } = req.body;
 
   try {
     // Get existing teacher
@@ -1253,7 +1271,23 @@ const updateMasterTeacher = async (req, res) => {
            status = COALESCE($15, status),
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $1`,
-      [id, college_id || null, department_id || null, designation_id || null, experience || null, status || null]
+      [
+        id,
+        college_id || null,
+        department_id || null,
+        designation_id || null,
+        qualification || null,
+        experience || null,
+        specialization || null,
+        pan_no || null,
+        aadhaar_no || null,
+        dob || null,
+        gender || null,
+        joining_date || null,
+        phone || null,
+        address || null,
+        status || null
+      ]
     );
 
     // Fetch the complete updated record with all joins
