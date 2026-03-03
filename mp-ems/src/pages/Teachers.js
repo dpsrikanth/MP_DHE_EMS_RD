@@ -29,7 +29,16 @@ const Teachers = () => {
     { key: 'college_name', label: 'College' },
     { key: 'department', label: 'Department' },
     { key: 'designation', label: 'Designation' },
+    { key: 'qualification', label: 'Qualification' },
     { key: 'experience', label: 'Experience' },
+    { key: 'specialization', label: 'Specialization' },
+    { key: 'pan_no', label: 'PAN Number' },
+    { key: 'aadhaar_no', label: 'Aadhaar Number' },
+    { key: 'dob', label: 'Date of Birth' },
+    { key: 'gender', label: 'Gender' },
+    { key: 'joining_date', label: 'Joining Date' },
+    { key: 'phone', label: 'Phone' },
+    { key: 'address', label: 'Address' },
     { key: 'status', label: 'Status' }
   ];
 
@@ -81,7 +90,16 @@ const Teachers = () => {
     college_id: '',
     designation_id: '',
     department_id: '',
+    qualification: '',
     experience: '',
+    specialization: '',
+    pan_no: '',
+    aadhaar_no: '',
+    dob: '',
+    gender: '',
+    joining_date: '',
+    phone: '',
+    address: '',
     status: true
   });
   const [addErrors, setAddErrors] = useState({});
@@ -96,7 +114,16 @@ const Teachers = () => {
     college_id: '',
     designation_id: '',
     department_id: '',
+    qualification: '',
     experience: '',
+    specialization: '',
+    pan_no: '',
+    aadhaar_no: '',
+    dob: '',
+    gender: '',
+    joining_date: '',
+    phone: '',
+    address: '',
     status: true
   });
   const [editErrors, setEditErrors] = useState({});
@@ -153,6 +180,38 @@ const Teachers = () => {
     if (!form.designation_id) errs.designation_id = 'Designation is required';
     if (!form.college_id) errs.college_id = 'College is required';
     if (!form.department_id) errs.department_id = 'Department is required';
+
+    if (!form.qualification) errs.qualification = 'Qualification is required';
+    if (form.experience === '' || form.experience === null) errs.experience = 'Experience is required';
+    if (!form.specialization) errs.specialization = 'Specialization is required';
+
+    if (!form.pan_no) {
+      errs.pan_no = 'PAN is required';
+    } else {
+      const pan = form.pan_no.toString().toUpperCase();
+      if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) {
+        errs.pan_no = 'PAN must be 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F)';
+      }
+    }
+
+    if (!form.aadhaar_no) {
+      errs.aadhaar_no = 'Aadhaar is required';
+    } else if (!/^\d{12}$/.test(form.aadhaar_no)) {
+      errs.aadhaar_no = 'Aadhaar must be 12 digits';
+    }
+
+    if (!form.dob) errs.dob = 'Date of birth is required';
+    if (!form.gender) errs.gender = 'Gender is required';
+    if (!form.joining_date) errs.joining_date = 'Joining date is required';
+
+    if (!form.phone) {
+      errs.phone = 'Phone number is required';
+    } else if (!/^(\+91[-\s]?|0)?[6-9]\d{9}$/.test(form.phone)) {
+      errs.phone = 'Invalid Indian phone number';
+    }
+
+    if (!form.address) errs.address = 'Address is required';
+
     return errs;
   };
 
@@ -178,8 +237,11 @@ const Teachers = () => {
   }, [fetchData]);
 
   const openAddModal = () => {
+    // clear any previous edit errors
+    setEditErrors({});
+
     fetchDropdownOptions();
-    setAddForm({ name: '', email: '', college_id: '', designation_id: '', department_id: '', experience: '', status: true });
+    setAddForm({ name: '', email: '', college_id: '', designation_id: '', department_id: '', qualification: '', experience: '', specialization: '', pan_no: '', aadhaar_no: '', dob: '', gender: '', joining_date: '', phone: '', address: '', status: true });
     setAddErrors({});
     setAddError('');
     setShowAddModal(true);
@@ -188,7 +250,26 @@ const Teachers = () => {
 
   const handleAddChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setAddForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    let val = type === 'checkbox' ? checked : value;
+    if (name === 'pan_no') {
+      val = val.toUpperCase();
+    }
+    if (name === 'aadhaar_no') {
+      // allow only digits
+      val = val.replace(/\D/g, '');
+    }
+    if (name === 'phone') {
+      // strip invalid characters but keep + and digits
+      val = val.replace(/[^\d\+\-\s]/g, '');
+    }
+    setAddForm(prev => ({ ...prev, [name]: val }));
+    // clear error for this field when user modifies it
+    if (addErrors[name]) {
+      setAddErrors(prev => {
+        const { [name]: omit, ...rest } = prev;
+        return rest;
+      });
+    }
   };
 
   const handleAddSubmit = async (e) => {
@@ -233,6 +314,9 @@ const Teachers = () => {
 
   const openEditModal = async (item) => {
     try {
+      // clear any add‑modal errors so they don't bleed through
+      setAddErrors({});
+
       // Fetch dropdown options and full teacher record in parallel
       await fetchDropdownOptions();
       
@@ -244,6 +328,8 @@ const Teachers = () => {
       const teacherData = await resp.json();
       
       // Populate form with fetched data
+      // helper to convert timestamp/ISO string to YYYY-MM-DD for date input
+      const formatDate = d => d ? d.toString().slice(0,10) : '';
       setEditForm({ 
         id: teacherData.id,
         name: teacherData.name,
@@ -251,7 +337,16 @@ const Teachers = () => {
         college_id: teacherData.college_id || '',
         designation_id: teacherData.designation_id || '',
         department_id: teacherData.department_id || '',
+        qualification: teacherData.qualification || '',
         experience: teacherData.experience_years || teacherData.experience || '',
+        specialization: teacherData.specialization || '',
+        pan_no: teacherData.pan_no || '',
+        aadhaar_no: teacherData.aadhaar_no || '',
+        dob: formatDate(teacherData.dob),
+        gender: teacherData.gender || '',
+        joining_date: formatDate(teacherData.joining_date),
+        phone: teacherData.phone || '',
+        address: teacherData.address || '',
         status: teacherData.status === 'Active' || teacherData.status === true
       });
       setEditErrors({});
@@ -266,7 +361,23 @@ const Teachers = () => {
 
   const handleEditChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setEditForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    let val = type === 'checkbox' ? checked : value;
+    if (name === 'pan_no') {
+      val = val.toUpperCase();
+    }
+    if (name === 'aadhaar_no') {
+      val = val.replace(/\D/g, '');
+    }
+    if (name === 'phone') {
+      val = val.replace(/[^\d\+\-\s]/g, '');
+    }
+    setEditForm(prev => ({ ...prev, [name]: val }));
+    if (editErrors[name]) {
+      setEditErrors(prev => {
+        const { [name]: omit, ...rest } = prev;
+        return rest;
+      });
+    }
   };
 
   const handleEditSubmit = async (e) => {
@@ -283,7 +394,16 @@ const Teachers = () => {
         college_id: editForm.college_id ? parseInt(editForm.college_id) : null,
         designation_id: editForm.designation_id ? parseInt(editForm.designation_id) : null,
         department_id: editForm.department_id ? parseInt(editForm.department_id) : null,
+        qualification: editForm.qualification || null,
         experience: editForm.experience ? parseInt(editForm.experience) : 0,
+        specialization: editForm.specialization || null,
+        pan_no: editForm.pan_no || null,
+        aadhaar_no: editForm.aadhaar_no || null,
+        dob: editForm.dob || null,
+        gender: editForm.gender || null,
+        joining_date: editForm.joining_date || null,
+        phone: editForm.phone || null,
+        address: editForm.address || null,
         status: editForm.status ? 'Active' : 'Inactive'
       };
       const resp = await fetch(`http://localhost:8080/api/master-teachers/${editForm.id}`, {
@@ -458,6 +578,7 @@ const Teachers = () => {
                   onSort={handleSort}
                   visible={visibleColumns.designation}
                 />
+                <th className={`${visibleColumns.qualification ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Qualification</th>
                 <SortHeader
                   label="Experience"
                   field="experience"
@@ -465,6 +586,14 @@ const Teachers = () => {
                   onSort={handleSort}
                   visible={visibleColumns.experience}
                 />
+                <th className={`${visibleColumns.specialization ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Specialization</th>
+                <th className={`${visibleColumns.pan_no ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>PAN</th>
+                <th className={`${visibleColumns.aadhaar_no ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Aadhaar</th>
+                <th className={`${visibleColumns.dob ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>DOB</th>
+                <th className={`${visibleColumns.gender ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Gender</th>
+                <th className={`${visibleColumns.joining_date ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Joining Date</th>
+                <th className={`${visibleColumns.phone ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Phone</th>
+                <th className={`${visibleColumns.address ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Address</th>
                 <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center`}>Status</th>
                 <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Settings</th>
               </tr>
@@ -512,9 +641,54 @@ const Teachers = () => {
                         <p className="text-[11px] text-slate-700">{safeDisplay(item.designation)}</p>
                       </td>
                     )}
+                    {visibleColumns.qualification && (
+                      <td className="px-4 py-5">
+                        <p className="text-[11px] text-slate-700">{item.qualification ?? '-'}</p>
+                      </td>
+                    )}
                     {visibleColumns.experience && (
                       <td className="px-4 py-5">
                         <p className="text-[11px] text-slate-700">{item.experience ?? '-'}</p>
+                      </td>
+                    )}
+                    {visibleColumns.specialization && (
+                      <td className="px-4 py-5">
+                        <p className="text-[11px] text-slate-700">{item.specialization ?? '-'}</p>
+                      </td>
+                    )}
+                    {visibleColumns.pan_no && (
+                      <td className="px-4 py-5">
+                        <p className="text-[11px] text-slate-700 font-mono">{item.pan_no ?? '-'}</p>
+                      </td>
+                    )}
+                    {visibleColumns.aadhaar_no && (
+                      <td className="px-4 py-5">
+                        <p className="text-[11px] text-slate-700 font-mono">{item.aadhaar_no ?? '-'}</p>
+                      </td>
+                    )}
+                    {visibleColumns.dob && (
+                      <td className="px-4 py-5">
+                        <p className="text-[11px] text-slate-700">{item.dob ? new Date(item.dob).toLocaleDateString('en-IN') : '-'}</p>
+                      </td>
+                    )}
+                    {visibleColumns.gender && (
+                      <td className="px-4 py-5">
+                        <p className="text-[11px] text-slate-700">{item.gender ?? '-'}</p>
+                      </td>
+                    )}
+                    {visibleColumns.joining_date && (
+                      <td className="px-4 py-5">
+                        <p className="text-[11px] text-slate-700">{item.joining_date ? new Date(item.joining_date).toLocaleDateString('en-IN') : '-'}</p>
+                      </td>
+                    )}
+                    {visibleColumns.phone && (
+                      <td className="px-4 py-5">
+                        <p className="text-[11px] text-slate-700 font-mono">{item.phone ?? '-'}</p>
+                      </td>
+                    )}
+                    {visibleColumns.address && (
+                      <td className="px-4 py-5">
+                        <p className="text-[11px] text-slate-700 max-w-xs truncate">{item.address ?? '-'}</p>
                       </td>
                     )}
                     {visibleColumns.status && (
@@ -651,7 +825,7 @@ const Teachers = () => {
                       name="college_id" 
                       value={showAddModal ? addForm.college_id : editForm.college_id} 
                       onChange={showAddModal ? handleAddChange : handleEditChange}
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.college_id || editErrors.college_id) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
                     >
                       <option value="">Select college</option>
                       {collegeOptions.map(college => (
@@ -659,6 +833,7 @@ const Teachers = () => {
                       ))}
                     </select>
                   </div>
+                  { (addErrors.college_id || editErrors.college_id) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.college_id || editErrors.college_id}</p> }
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -688,7 +863,7 @@ const Teachers = () => {
                       name="department_id"
                       value={showAddModal ? addForm.department_id : editForm.department_id}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.department_id || editErrors.department_id) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
                     >
                       <option value="">Select department</option>
                       {departmentOptions.map(opt => (
@@ -696,6 +871,23 @@ const Teachers = () => {
                       ))}
                     </select>
                   </div>
+                  { (addErrors.department_id || editErrors.department_id) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.department_id || editErrors.department_id}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Qualification</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="qualification"
+                      type="text"
+                      value={showAddModal ? addForm.qualification : editForm.qualification}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. M.Sc., Ph.D."
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.qualification || editErrors.qualification) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.qualification || editErrors.qualification) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.qualification || editErrors.qualification}</p> }
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -709,9 +901,165 @@ const Teachers = () => {
                       value={showAddModal ? addForm.experience : editForm.experience}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="0"
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.experience || editErrors.experience) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
                     />
                   </div>
+                  { (addErrors.experience || editErrors.experience) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.experience || editErrors.experience}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Specialization</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="specialization"
+                      type="text"
+                      value={showAddModal ? addForm.specialization : editForm.specialization}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. Computer Science"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.specialization || editErrors.specialization) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.specialization || editErrors.specialization) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.specialization || editErrors.specialization}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">PAN Number</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="pan_no"
+                      type="text"
+                      value={showAddModal ? addForm.pan_no : editForm.pan_no}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="AAAAA0000A"
+                      pattern="[A-Z]{5}[0-9]{4}[A-Z]"
+                      maxLength={10}
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.pan_no || editErrors.pan_no) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.pan_no || editErrors.pan_no) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.pan_no || editErrors.pan_no}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Aadhaar Number</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="aadhaar_no"
+                      type="text"
+                      value={showAddModal ? addForm.aadhaar_no : editForm.aadhaar_no}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="XXXX XXXX XXXX"
+                      pattern="\d{12}"
+                      maxLength={12}
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.aadhaar_no || editErrors.aadhaar_no) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.aadhaar_no || editErrors.aadhaar_no) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.aadhaar_no || editErrors.aadhaar_no}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Date of Birth</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="dob"
+                      type="date"
+                      value={showAddModal ? addForm.dob : editForm.dob}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.dob || editErrors.dob) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.dob || editErrors.dob) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.dob || editErrors.dob}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Gender</label>
+                  <div className="flex items-center gap-8 h-[62px] px-6 bg-slate-50 rounded-2xl border-2 ${ (addErrors.gender || editErrors.gender) ? 'border-red-200' : 'border-slate-100'}">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="gender"
+                        value="Male"
+                        checked={(showAddModal ? addForm.gender : editForm.gender) === 'Male'}
+                        onChange={showAddModal ? handleAddChange : handleEditChange}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                      <span className="text-sm font-bold text-slate-700">Male</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="gender"
+                        value="Female"
+                        checked={(showAddModal ? addForm.gender : editForm.gender) === 'Female'}
+                        onChange={showAddModal ? handleAddChange : handleEditChange}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                      <span className="text-sm font-bold text-slate-700">Female</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="gender"
+                        value="Other"
+                        checked={(showAddModal ? addForm.gender : editForm.gender) === 'Other'}
+                        onChange={showAddModal ? handleAddChange : handleEditChange}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                      <span className="text-sm font-bold text-slate-700">Other</span>
+                    </label>
+                  </div>
+                  { (addErrors.gender || editErrors.gender) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.gender || editErrors.gender}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Joining Date</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="joining_date"
+                      type="date"
+                      value={showAddModal ? addForm.joining_date : editForm.joining_date}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.joining_date || editErrors.joining_date) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.joining_date || editErrors.joining_date) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.joining_date || editErrors.joining_date}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mobile Number</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="phone"
+                      type="tel"
+                      value={showAddModal ? addForm.phone : editForm.phone}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="+91 XXXXX XXXXX"
+                      pattern="(\+91[-\s]?|0)?[6-9]\d{9}"
+                      maxLength={14}
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.phone || editErrors.phone) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.phone || editErrors.phone) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.phone || editErrors.phone}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Address</label>
+                  <div className="relative">
+                    <textarea
+                      name="address"
+                      value={showAddModal ? addForm.address : editForm.address}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="Enter complete address..."
+                      rows="3"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.address || editErrors.address) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl px-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold resize-none`}
+                    />
+                  </div>
+                  { (addErrors.address || editErrors.address) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.address || editErrors.address}</p> }
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">

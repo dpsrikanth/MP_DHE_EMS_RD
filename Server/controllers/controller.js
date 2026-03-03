@@ -911,8 +911,17 @@ const getMasterTeachers = async (req, res) => {
         c.name AS college_name,
         md.department_name AS department,
         mdes.designation_name AS designation,
+        mt.qualification,
         mt.experience_years AS experience,
-        mt.status
+        mt.specialization,
+        mt.pan_no,
+        mt.aadhaar_no,
+        mt.dob,
+        mt.gender,
+        mt.status,
+        mt.joining_date,
+        mt.phone,
+        mt.address
       FROM master_teachers mt
       LEFT JOIN users u ON mt.user_id = u.id
       LEFT JOIN colleges c ON mt.college_id = c.id
@@ -940,7 +949,16 @@ const getMasterTeacher = async (req, res) => {
         mt.department_id,
         mt.designation_id,
         mt.experience_years,
+        mt.specialization,
+        mt.pan_no,
+        mt.aadhaar_no,
+        mt.dob,
+        mt.gender,
+        mt.joining_date,
+        mt.phone,
+        mt.address,
         mt.status,
+        mt.qualification,
         c.name AS college_name,
         md.department_name AS department,
         mdes.designation_name AS designation
@@ -963,7 +981,7 @@ const getMasterTeacher = async (req, res) => {
 };
 
 const createMasterTeacher = async (req, res) => {
-  const { name, email, college_id, department_id, designation_id, employee_code, experience, status } = req.body;
+  const { name, email, college_id, department_id, designation_id, employee_code, experience, qualification, specialization, pan_no, aadhaar_no, dob, gender, joining_date, phone, address, status } = req.body;
 
   try {
     // Validate required fields
@@ -1006,10 +1024,10 @@ const createMasterTeacher = async (req, res) => {
 
     // Create master teacher
     const result = await client.query(
-      `INSERT INTO master_teachers (user_id, employee_code, college_id, department_id, designation_id, experience_years, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, user_id, employee_code, college_id, department_id, designation_id, experience_years, status`,
-      [userId, finalEmployeeCode, college_id, department_id, designation_id, experience || 0, status || 'Active']
+      `INSERT INTO master_teachers (user_id, employee_code, college_id, department_id, designation_id, qualification, experience_years, specialization, pan_no, aadhaar_no, dob, gender, joining_date, phone, address, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+       RETURNING id, user_id, employee_code, college_id, department_id, designation_id, qualification, experience_years, specialization, pan_no, aadhaar_no, dob, gender, joining_date, phone, address, status`,
+      [userId, finalEmployeeCode, college_id, department_id, designation_id, qualification || null, experience || 0, specialization || null, pan_no || null, aadhaar_no || null, dob || null, gender || null, joining_date || null, phone || null, address || null, status || 'Active']
     );
 
     const teacherId = result.rows[0].id;
@@ -1023,7 +1041,16 @@ const createMasterTeacher = async (req, res) => {
         c.name AS college_name,
         md.department_name AS department,
         mdes.designation_name AS designation,
+        mt.qualification,
         mt.experience_years AS experience,
+        mt.specialization,
+        mt.pan_no,
+        mt.aadhaar_no,
+        mt.dob,
+        mt.gender,
+        mt.joining_date,
+        mt.phone,
+        mt.address,
         mt.status,
         mt.college_id,
         mt.department_id,
@@ -1052,7 +1079,7 @@ const createMasterTeacher = async (req, res) => {
 
 const updateMasterTeacher = async (req, res) => {
   const { id } = req.params;
-  const { name, email, college_id, department_id, designation_id, experience, status } = req.body;
+  const { name, email, college_id, department_id, designation_id, experience, qualification, specialization, pan_no, aadhaar_no, dob, gender, joining_date, phone, address, status } = req.body;
 
   try {
     // Get existing teacher
@@ -1084,11 +1111,20 @@ const updateMasterTeacher = async (req, res) => {
        SET college_id = COALESCE($2, college_id),
            department_id = COALESCE($3, department_id),
            designation_id = COALESCE($4, designation_id),
-           experience_years = COALESCE($5, experience_years),
-           status = COALESCE($6, status),
+           qualification = COALESCE($5, qualification),
+           experience_years = COALESCE($6, experience_years),
+           specialization = COALESCE($7, specialization),
+           pan_no = COALESCE($8, pan_no),
+           aadhaar_no = COALESCE($9, aadhaar_no),
+           dob = COALESCE($10, dob),
+           gender = COALESCE($11, gender),
+           joining_date = COALESCE($12, joining_date),
+           phone = COALESCE($13, phone),
+           address = COALESCE($14, address),
+           status = COALESCE($15, status),
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $1`,
-      [id, college_id || null, department_id || null, designation_id || null, experience || null, status || null]
+      [id, college_id || null, department_id || null, designation_id || null, qualification || null, experience || null, specialization || null, pan_no || null, aadhaar_no || null, dob || null, gender || null, joining_date || null, phone || null, address || null, status || null]
     );
 
     // Fetch the complete updated record with all joins
@@ -1100,7 +1136,16 @@ const updateMasterTeacher = async (req, res) => {
         c.name AS college_name,
         md.department_name AS department,
         mdes.designation_name AS designation,
+        mt.qualification,
         mt.experience_years AS experience,
+        mt.specialization,
+        mt.pan_no,
+        mt.aadhaar_no,
+        mt.dob,
+        mt.gender,
+        mt.joining_date,
+        mt.phone,
+        mt.address,
         mt.status,
         mt.college_id,
         mt.department_id,

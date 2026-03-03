@@ -81,6 +81,15 @@ CREATE TABLE IF NOT EXISTS master_teachers (
 
     qualification VARCHAR(255),
 
+    specialization VARCHAR(255),
+
+    pan_no VARCHAR(20),
+
+    aadhaar_no VARCHAR(20),
+    dob DATE,
+    gender VARCHAR(20),
+    
+
     experience_years INT,
 
     joining_date DATE,
