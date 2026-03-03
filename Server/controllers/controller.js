@@ -1029,6 +1029,32 @@ const deleteMasterPolicy = async (req, res) => {
   }
 };
 
+// Get College Master Policy - Get policy ID for a college
+const getCollegeMasterPolicy = async (req, res) => {
+  try {
+    const { collegeId } = req.params;
+    
+    if (!collegeId) {
+      return res.status(400).json({ message: "College ID is required" });
+    }
+
+    // Query the college_master_policies table to get the policy_id for this college
+    const result = await client.query(
+      `SELECT policy_id FROM college_master_policies WHERE college_id = $1 LIMIT 1`,
+      [collegeId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "No policy found for this college" });
+    }
+
+    res.json({ policy_id: result.rows[0].policy_id });
+  } catch (error) {
+    console.error("Get college master policy error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 // Master Teachers Functions
 const getMasterTeachers = async (req, res) => {
   try {
@@ -1503,6 +1529,7 @@ module.exports = {
   getMasterPolicy,
   updateMasterPolicy,
   deleteMasterPolicy,
+  getCollegeMasterPolicy,
  // master teachers
   getMasterTeachers,
   getMasterTeacher,

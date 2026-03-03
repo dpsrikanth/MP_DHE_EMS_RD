@@ -200,22 +200,87 @@ const Students = () => {
     }
   };
 
+  // ---- Fetch Policy by College ----
+  const fetchPolicyByCollege = async (collegeName) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // First, find the college ID from the college name
+      const collegeObj = colleges.find(col => (col.college_name || col.name) === collegeName);
+      if (!collegeObj) return;
+
+      // Fetch policy for this college from collage_master_policies table
+      const response = await fetch(`http://localhost:8080/api/collage-master-policies/${collegeObj.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const policyData = await response.json();
+        // policyData should contain policy_id, use it to get the policy name
+        if (policyData && policyData.policy_id) {
+          // Find the policy name from the policies state
+          const policyObj = policies.find(p => p.id === policyData.policy_id);
+          if (policyObj) {
+            return policyObj.name;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching policy by college:', err);
+    }
+    return null;
+  };
+
   // ---- Validation ----
   const validate = (form) => {
     const errs = {};
+    
+    // Required fields
     if (!form.name || !form.name.trim()) errs.name = 'Student name is required';
+    else if (form.name.trim().length < 2) errs.name = 'Name must be at least 2 characters';
+    
     if (!form.policies || !form.policies.trim()) errs.policies = 'Policy is required';
     if (!form.programName || !form.programName.trim()) errs.programName = 'Program is required';
     if (!form.admission_year) errs.admission_year = 'Admission year is required';
     if (!form.semister || !form.semister.trim()) errs.semister = 'Semester is required';
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Invalid email format';
-    if (form.contactNumber && !/^\d{10}$/.test(form.contactNumber)) errs.contactNumber = 'Contact number must be 10 digits';  
-    if (form.adharnumber && !/^\d{12}$/.test(form.adharnumber)) errs.adharnumber = 'Aadhar number must be 12 digits';
-    if (form.bloodgroup && !['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].includes(form.bloodgroup)) errs.bloodgroup = 'Invalid blood group';
-    if (form.rollnumber && !/^\d+$/.test(form.rollnumber)) errs.rollnumber = 'Roll number must be numeric';
-    if (form.collageName && !form.collageName.trim()) errs.collageName = 'College name cannot be empty';
-    if (form.fatherName && !form.fatherName.trim()) errs.fatherName = 'Father name cannot be empty';
-    if (form.address && !form.address.trim()) errs.address = 'Address cannot be empty';
+    
+    // Optional fields - only validate if has value
+    if (form.email) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+        errs.email = 'Invalid email format (e.g., student@example.com)';
+      }
+    }
+    
+    if (form.contactNumber) {
+      if (!/^\d{10}$/.test(form.contactNumber)) {
+        errs.contactNumber = 'Contact must be exactly 10 digits';
+      }
+    }
+    
+    if (form.rollnumber) {
+      if (!/^[a-zA-Z0-9]+$/.test(form.rollnumber)) {
+        errs.rollnumber = 'Roll number: letters and numbers only';
+      }
+    }
+    
+    if (form.adharnumber) {
+      if (!/^(\d{4}-\d{4}-\d{4}|\d{12})$/.test(form.adharnumber)) {
+        errs.adharnumber = 'Aadhar: XXXX-XXXX-XXXX or 12 digits';
+      }
+    }
+    
+    if (form.fatherName) {
+      if (form.fatherName.trim().length < 2) {
+        errs.fatherName = 'Father name: minimum 2 characters';
+      }
+    }
+    
+    if (form.address) {
+      if (form.address.trim().length < 5) {
+        errs.address = 'Address: minimum 5 characters';
+      }
+    }
+    
     return errs;
   };
 
@@ -231,9 +296,17 @@ const Students = () => {
   };
   const closeAddModal = () => setShowAddModal(false);
 
-  const handleAddChange = (e) => {
+  const handleAddChange = async (e) => {
     const { name, value, type, checked } = e.target;
     setAddForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    
+    // Auto-populate policy when college is selected
+    if (name === 'collageName' && value) {
+      const policyName = await fetchPolicyByCollege(value);
+      if (policyName) {
+        setAddForm(prev => ({ ...prev, policies: policyName }));
+      }
+    }
   };
 
   const handleAddSubmit = async (e) => {
@@ -303,9 +376,17 @@ const Students = () => {
 
   const closeViewModal = () => setShowViewModal(false);
 
-  const handleEditChange = (e) => {
+  const handleEditChange = async (e) => {
     const { name, value, type, checked } = e.target;
     setEditForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    
+    // Auto-populate policy when college is selected
+    if (name === 'collageName' && value) {
+      const policyName = await fetchPolicyByCollege(value);
+      if (policyName) {
+        setEditForm(prev => ({ ...prev, policies: policyName }));
+      }
+    }
   };
 
   const handleEditSubmit = async (e) => {
@@ -635,6 +716,27 @@ const Students = () => {
                   {addErrors.name && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.name}</p>}
                 </div>
 
+                  {/* College */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">College Name</label>
+                  <div className="relative">
+                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
+                      name="collageName" 
+                      value={addForm.collageName} 
+                      onChange={handleAddChange}
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer"
+                    >
+                      <option value="">-- Select College --</option>
+                      {colleges.map((college) => (
+                        <option key={college.id} value={college.college_name || college.name}>
+                          {college.college_name || college.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 {/* Policy */}
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Policy</label>
@@ -723,26 +825,7 @@ const Students = () => {
                   {addErrors.semister && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.semister}</p>}
                 </div>
 
-                {/* College */}
-                <div className="space-y-2 col-span-2 md:col-span-1">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">College Name</label>
-                  <div className="relative">
-                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="collageName" 
-                      value={addForm.collageName} 
-                      onChange={handleAddChange}
-                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer"
-                    >
-                      <option value="">-- Select College --</option>
-                      {colleges.map((college) => (
-                        <option key={college.id} value={college.college_name || college.name}>
-                          {college.college_name || college.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+              
 
                 {/* Roll Number */}
                 <div className="space-y-2 col-span-2 md:col-span-1">
