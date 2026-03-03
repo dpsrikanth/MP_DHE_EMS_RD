@@ -632,7 +632,9 @@ const getMarks = async (req, res) => {
 
 const getMasterSemesters = async (req, res) => {
   try {
-    const result = await client.query("SELECT id, semester_name, created_at FROM master_semesters ORDER BY id");
+    const result = await client.query(
+      `SELECT id, semester_name, status, created_at FROM master_semesters WHERE status IS NULL OR status = 'Active' ORDER BY id`
+    );
     res.json(result.rows);
   } catch (error) {
     console.error("Get master semesters error:", error);
@@ -644,7 +646,7 @@ const createMasterSemester = async (req, res) => {
   try {
     const { semester_name } = req.body;
     if (!semester_name) return res.status(400).json({ message: "Semester name is required" });
-    const result = await client.query("INSERT INTO master_semesters (semester_name) VALUES ($1) RETURNING id, semester_name, created_at", [semester_name]);
+    const result = await client.query("INSERT INTO master_semesters (semester_name, status) VALUES ($1, 'Active') RETURNING id, semester_name, status, created_at", [semester_name]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error("Create master semester error:", error);
@@ -669,19 +671,26 @@ const updateMasterSemester = async (req, res) => {
 const deleteMasterSemester = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query("DELETE FROM master_semesters WHERE id = $1 RETURNING id", [id]);
-    if (result.rows.length === 0) return res.status(404).json({ message: "Master semester not found" });
-    res.json({ message: "Deleted successfully" });
+    // Soft delete: Update status to 'Inactive' instead of deleting the record
+    const result = await client.query(
+      `UPDATE master_semesters
+       SET status = 'Inactive', updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1
+       RETURNING id`,
+      [id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, message: "Master semester not found" });
+    res.json({ success: true, message: "Semester record deleted successfully", data: { id: result.rows[0].id } });
   } catch (error) {
     console.error("Delete master semester error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
 
 const getMasterSemester = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query("SELECT id, semester_name, created_at FROM master_semesters WHERE id = $1", [id]);
+    const result = await client.query("SELECT id, semester_name, status, created_at FROM master_semesters WHERE id = $1", [id]);
     if (result.rows.length === 0) return res.status(404).json({ message: "Master semester not found" });
     res.json(result.rows[0]);
   } catch (error) {
@@ -692,7 +701,9 @@ const getMasterSemester = async (req, res) => {
 
 const getMasterSubjects = async (req, res) => {
   try {
-    const result = await client.query("SELECT id, subject_code, name, created_at FROM master_subjects ORDER BY id");
+    const result = await client.query(
+      `SELECT id, subject_code, name, status, created_at FROM master_subjects WHERE status IS NULL OR status = 'Active' ORDER BY id`
+    );
     res.json(result.rows);
   } catch (error) {
     console.error("Get master subjects error:", error);
@@ -704,7 +715,7 @@ const createMasterSubject = async (req, res) => {
   try {
     const { subject_code, name } = req.body;
     if (!subject_code || !name) return res.status(400).json({ message: "Subject code and name are required" });
-    const result = await client.query("INSERT INTO master_subjects (subject_code, name) VALUES ($1, $2) RETURNING id, subject_code, name, created_at", [subject_code, name]);
+    const result = await client.query("INSERT INTO master_subjects (subject_code, name, status) VALUES ($1, $2, 'Active') RETURNING id, subject_code, name, status, created_at", [subject_code, name]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error("Create master subject error:", error);
@@ -715,7 +726,7 @@ const createMasterSubject = async (req, res) => {
 const getMasterSubject = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query("SELECT id, subject_code, name, created_at FROM master_subjects WHERE id = $1", [id]);
+    const result = await client.query("SELECT id, subject_code, name, status, created_at FROM master_subjects WHERE id = $1", [id]);
     if (result.rows.length === 0) return res.status(404).json({ message: "Master subject not found" });
     res.json(result.rows[0]);
   } catch (error) {
@@ -741,18 +752,27 @@ const updateMasterSubject = async (req, res) => {
 const deleteMasterSubject = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query("DELETE FROM master_subjects WHERE id = $1 RETURNING id", [id]);
-    if (result.rows.length === 0) return res.status(404).json({ message: "Master subject not found" });
-    res.json({ message: "Deleted successfully" });
+    // Soft delete: Update status to 'Inactive' instead of deleting the record
+    const result = await client.query(
+      `UPDATE master_subjects
+       SET status = 'Inactive', updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1
+       RETURNING id`,
+      [id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, message: "Master subject not found" });
+    res.json({ success: true, message: "Subject record deleted successfully", data: { id: result.rows[0].id } });
   } catch (error) {
     console.error("Delete master subject error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
 
 const getMasterPrograms = async (req, res) => {
   try {
-    const result = await client.query("SELECT id, name, duration_years, created_at FROM master_programs ORDER BY id");
+    const result = await client.query(
+      `SELECT id, name, duration_years, status, created_at FROM master_programs WHERE status IS NULL OR status = 'Active' ORDER BY id`
+    );
     res.json(result.rows);
   } catch (error) {
     console.error("Get master programs error:", error);
@@ -764,7 +784,7 @@ const createMasterProgram = async (req, res) => {
   try {
     const { name, duration_years } = req.body;
     if (!name || !duration_years) return res.status(400).json({ message: "Program name and duration are required" });
-    const result = await client.query("INSERT INTO master_programs (name, duration_years) VALUES ($1, $2) RETURNING id, name, duration_years, created_at", [name, duration_years]);
+    const result = await client.query("INSERT INTO master_programs (name, duration_years, status) VALUES ($1, $2, 'Active') RETURNING id, name, duration_years, status, created_at", [name, duration_years]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error("Create master program error:", error);
@@ -775,7 +795,7 @@ const createMasterProgram = async (req, res) => {
 const getMasterProgram = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query("SELECT id, name, duration_years, created_at FROM master_programs WHERE id = $1", [id]);
+    const result = await client.query("SELECT id, name, duration_years, status, created_at FROM master_programs WHERE id = $1", [id]);
     if (result.rows.length === 0) return res.status(404).json({ message: "Master program not found" });
     res.json(result.rows[0]);
   } catch (error) {
@@ -801,18 +821,25 @@ const updateMasterProgram = async (req, res) => {
 const deleteMasterProgram = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query("DELETE FROM master_programs WHERE id = $1 RETURNING id", [id]);
-    if (result.rows.length === 0) return res.status(404).json({ message: "Master program not found" });
-    res.json({ message: "Deleted successfully" });
+    // Soft delete: Update status to 'Inactive' instead of deleting the record
+    const result = await client.query(
+      `UPDATE master_programs
+       SET status = 'Inactive', updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1
+       RETURNING id`,
+      [id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, message: "Master program not found" });
+    res.json({ success: true, message: "Program record deleted successfully", data: { id: result.rows[0].id } });
   } catch (error) {
     console.error("Delete master program error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
 
 const getMasterPolicies = async (req, res) => {
   try {
-    const result = await client.query("SELECT id, name, description, status, created_at FROM master_policies ORDER BY id");
+    const result = await client.query("SELECT id, name FROM master_policies ORDER BY id");
     res.json(result.rows);
   } catch (error) {
     console.error("Get master policies error:", error);
@@ -835,7 +862,7 @@ const createMasterPolicy = async (req, res) => {
 const getMasterPolicy = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query("SELECT id, name, description, status, created_at FROM master_policies WHERE id = $1", [id]);
+    const result = await client.query("SELECT id, name, description, created_at FROM master_policies WHERE id = $1", [id]);
     if (result.rows.length === 0) return res.status(404).json({ message: "Master policy not found" });
     res.json(result.rows[0]);
   } catch (error) {
@@ -864,7 +891,7 @@ const updateMasterPolicy = async (req, res) => {
 const deleteMasterPolicy = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query("UPDATE master_policies SET status = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id", [id]);
+    const result = await client.query("DELETE FROM master_policies WHERE id = $1 RETURNING id", [id]);
     if (result.rows.length === 0) return res.status(404).json({ message: "Master policy not found" });
     res.json({ message: "Deleted successfully" });
   } catch (error) {

@@ -6,7 +6,9 @@ import {
   X, 
   Check,
   Calendar,
-  Hash
+  Hash,
+  ShieldCheck,
+  ShieldAlert
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
@@ -27,6 +29,7 @@ const Programs = () => {
     { key: 'id', label: 'ID' },
     { key: 'name', label: 'Program Name' },
     { key: 'duration_years', label: 'Duration' },
+    { key: 'status', label: 'Status' },
     { key: 'created_at', label: 'Created On' }
   ];
 
@@ -215,6 +218,7 @@ const Programs = () => {
                   onSort={handleSort} 
                   visible={visibleColumns.duration_years}
                 />
+                <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center`}>Status</th>
                 <th className={`${visibleColumns.created_at ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Created On</th>
                 <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
               </tr>
@@ -234,6 +238,19 @@ const Programs = () => {
                         <span className="bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
                           {item.duration_years} Years
                         </span>
+                      </td>
+                    )}
+                    {visibleColumns.status && (
+                      <td className="px-4 py-5 text-center">
+                        {(item.status === 'Active' || item.status === true) ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase border border-emerald-100 tracking-tighter shadow-sm">
+                            <ShieldCheck size={12} /> Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase border border-slate-200 tracking-tighter">
+                            <ShieldAlert size={12} /> Inactive
+                          </span>
+                        )}
                       </td>
                     )}
                     {visibleColumns.created_at && (

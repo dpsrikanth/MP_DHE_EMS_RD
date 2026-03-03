@@ -6,7 +6,9 @@ import {
   X, 
   Check,
   Hash,
-  Activity
+  Activity,
+  ShieldCheck,
+  ShieldAlert
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
@@ -26,6 +28,7 @@ const Semesters = () => {
   const availableColumns = [
     { key: 'id', label: 'ID Reference' },
     { key: 'semester_name', label: 'Semester Title' },
+    { key: 'status', label: 'Status' },
     { key: 'log', label: 'System Log' }
   ];
 
@@ -208,6 +211,7 @@ const Semesters = () => {
                   onSort={handleSort} 
                   visible={visibleColumns.semester_name}
                 />
+                <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center`}>Status</th>
                 <th className={`${visibleColumns.log ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>System Log</th>
                 <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Settings</th>
               </tr>
@@ -231,6 +235,19 @@ const Semesters = () => {
                           </div>
                           {item.semester_name}
                         </div>
+                      </td>
+                    )}
+                    {visibleColumns.status && (
+                      <td className="px-4 py-5 text-center">
+                        {(item.status === 'Active' || item.status === true) ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase border border-emerald-100 tracking-tighter shadow-sm">
+                            <ShieldCheck size={12} /> Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase border border-slate-200 tracking-tighter">
+                            <ShieldAlert size={12} /> Inactive
+                          </span>
+                        )}
                       </td>
                     )}
                     {visibleColumns.log && (

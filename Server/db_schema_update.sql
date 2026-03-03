@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS master_programs (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
     duration_years INTEGER,
+    status VARCHAR(20) DEFAULT 'Active'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -17,6 +18,7 @@ CREATE TABLE IF NOT EXISTS master_subjects (
     id SERIAL PRIMARY KEY,
     subject_code VARCHAR(100) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
+    status VARCHAR(20) DEFAULT 'Active'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -29,6 +31,7 @@ CREATE TABLE IF NOT EXISTS master_academic_years (
 CREATE TABLE IF NOT EXISTS master_semesters (
     id SERIAL PRIMARY KEY,
     semester_name VARCHAR(100) NOT NULL UNIQUE,
+    status VARCHAR(20) DEFAULT 'Active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
