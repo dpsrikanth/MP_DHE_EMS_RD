@@ -9,7 +9,11 @@ const originalFetch = window.fetch;
 window.fetch = async function () {
   const response = await originalFetch.apply(this, arguments);
 
-  let isUnauthorized = response.status === 401;
+  const url = arguments[0];
+  const isLoginRequest = typeof url === 'string' && url.includes('/login');
+  const isChangePasswordRequest = typeof url === 'string' && url.includes('/change-password');
+
+  let isUnauthorized = response.status === 401 && !isLoginRequest && !isChangePasswordRequest;
 
   if (response.status === 400) {
     // Clone to read the body without consuming the original response stream

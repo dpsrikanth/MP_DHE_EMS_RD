@@ -19,9 +19,11 @@ const Login = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "", rememberMe: false });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
+    if (error) setError(null);
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -51,15 +53,15 @@ const Login = () => {
         if (authUtils.isAdmin()) {
           navigate("/dashboard");
         } else {
-          alert("Access denied. Admin role required.");
+          setError("Access denied. Admin role required.");
           authUtils.logout();
         }
       } else {
-        alert(data.message || "Login failed");
+        setError(data.message || "Invalid credentials");
       }
     } catch (error) {
       console.error("Login error:", error);
-      alert("Network error. Please try again.");
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -145,6 +147,12 @@ const Login = () => {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-sm font-medium rounded-xl">
+                {error}
+              </div>
+            )}
+            
             <div className="space-y-2">
               <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
               <div className="relative group">

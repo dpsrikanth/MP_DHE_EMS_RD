@@ -210,11 +210,25 @@ const Login = async (req, res) => {
   try {
     const { email, password, rememberMe } = req.body;
     const user = await client.query(
-      `SELECT u.id, u.name, u.email, u.password, r.role_name FROM public.users u JOIN public.roles r ON u.role_id = r.id WHERE u.email = $1`,
+      `SELECT u.id, u.name, u.email, u.password, u.password_hash, r.role_name FROM public.users u JOIN public.roles r ON u.role_id = r.id WHERE u.email = $1`,
       [email]
     );
     if (user.rows.length === 0) return res.status(400).json({ message: "User not found" });
+    
     const result = user.rows[0];
+    const { password: plainPassword, password_hash: hashedPassword } = result;
+
+    // Verify password
+    let isMatch = false;
+    if (hashedPassword) {
+      isMatch = await bcrypt.compare(password, hashedPassword);
+    } else if (plainPassword) {
+      isMatch = password === plainPassword;
+    }
+
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
     const payload = { id: result.id, email: result.email, role: result.role_name };
     const accessToken = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: "15m" });
     const refreshToken = jwt.sign(payload, process.env.REFRESH_SECRET, { expiresIn: "30d" });
@@ -244,6 +258,55 @@ const refreshToken = async (req, res) => {
   } catch (err) {
     console.log("Refresh Error:", err.message);
     return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const userId = req.user.id; // from verifyToken
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ message: "Old and new passwords are required" });
+    }
+
+    const checkUser = await client.query(
+      "SELECT password, password_hash FROM public.users WHERE id = $1",
+      [userId]
+    );
+
+    if (checkUser.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const { password: plainPassword, password_hash: hashedPassword } = checkUser.rows[0];
+
+    // Verify old password
+    let isMatch = false;
+    if (hashedPassword) {
+      isMatch = await bcrypt.compare(oldPassword, hashedPassword);
+    } else if (plainPassword) {
+      // Legacy unhashed password
+      isMatch = oldPassword === plainPassword;
+    }
+
+    if (!isMatch) {
+      return res.status(401).json({ message: "Incorrect old password" });
+    }
+
+    // Hash new password
+    const newHashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the password
+    await client.query(
+      "UPDATE public.users SET password_hash = $1, password = NULL WHERE id = $2",
+      [newHashedPassword, userId]
+    );
+
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Change Password Error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -1353,6 +1416,7 @@ const createMasterDepartment = async (req, res) => {
 
 module.exports = {
   register,
+  changePassword,
   getDashboardStats,
   getUsers,
   getPrograms,

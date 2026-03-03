@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Menu
 } from 'lucide-react';
+import ChangePasswordModal from './ChangePasswordModal';
 
 /**
  * TopBar (Navbar) component with Tailwind CSS styling.
@@ -18,6 +19,7 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   const roleName = localStorage.getItem('roleName') || 'Guest';
 
@@ -50,6 +52,7 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
   };
 
   return (
+    <>
     <header className="sticky top-0 z-30 w-full h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 lg:px-8 flex items-center justify-between transition-all duration-300">
       {/* Left: Dynamic Title */}
       <div className="flex items-center gap-4">
@@ -132,9 +135,15 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
                     <User size={18} />
                     <span>My Profile</span>
                   </button>
-                  <button className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-sky-600 rounded-xl transition-colors">
+                  <button 
+                    onClick={() => {
+                      setShowDropdown(false);
+                      setIsPasswordModalOpen(true);
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-sky-600 rounded-xl transition-colors"
+                  >
                     <Settings size={18} />
-                    <span>Account Settings</span>
+                    <span>Change Password</span>
                   </button>
                 </div>
 
@@ -153,6 +162,12 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
         </div>
       </div>
     </header>
+      
+    <ChangePasswordModal 
+      isOpen={isPasswordModalOpen} 
+      onClose={() => setIsPasswordModalOpen(false)} 
+    />
+    </>
   );
 };
 
