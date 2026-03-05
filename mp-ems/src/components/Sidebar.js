@@ -44,9 +44,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     { id: 7, name: 'Subjects', path: '/subjects', icon: <Book size={20} /> },
     { id: 8, name: 'Departments', path: '/departments', icon: <Building size={20} /> },
     { id: 9, name: 'Teachers', path: '/teachers', icon: <Users size={20} /> },
-    { id: 10, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
-    { id: 11, name: 'Marks', path: '/marks', icon: <BarChart3 size={20} /> },
-    { id: 12, name: 'Policies', path: '/policies', icon: <ShieldCheck size={20} /> },
+    { id: 10, name: 'Students', path: '/students', icon: <UserCircle size={20} /> },
+    { id: 11, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
+    { id: 12, name: 'Marks', path: '/marks', icon: <BarChart3 size={20} /> },
+    { id: 13, name: 'Policies', path: '/policies', icon: <ShieldCheck size={20} /> },
   ];
 
   return (
