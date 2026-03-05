@@ -122,6 +122,17 @@ const Students = () => {
   const [bloodGroups] = useState(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
   const [dropdownLoading, setDropdownLoading] = useState(true);
 
+  // ---- College-Specific Cascading Data State ----
+  const [addCollegeSemesters, setAddCollegeSemesters] = useState([]);
+  const [addCollegePrograms, setAddCollegePrograms] = useState([]);
+  const [addCollegePolicies, setAddCollegePolicies] = useState([]);
+  const [addCollegeAcademicYears, setAddCollegeAcademicYears] = useState([]);
+  const [editCollegeSemesters, setEditCollegeSemesters] = useState([]);
+  const [editCollegePrograms, setEditCollegePrograms] = useState([]);
+  const [editCollegePolicies, setEditCollegePolicies] = useState([]);
+  const [editCollegeAcademicYears, setEditCollegeAcademicYears] = useState([]);
+  const [cascadingLoading, setCascadingLoading] = useState(false);
+
   useEffect(() => {
     fetchData();
     fetchDropdownData();
@@ -197,6 +208,86 @@ const Students = () => {
       console.error('Error fetching dropdown data:', err);
     } finally {
       setDropdownLoading(false);
+    }
+  };
+
+  // Fetch college-specific cascading data
+  const fetchCollegeData = async (collegeId, isEditForm = false) => {
+    try {
+      if (!collegeId) {
+        // Reset college-specific data if no college selected
+        if (isEditForm) {
+          setEditCollegeSemesters([]);
+          setEditCollegePrograms([]);
+          setEditCollegePolicies([]);
+          setEditCollegeAcademicYears([]);
+        } else {
+          setAddCollegeSemesters([]);
+          setAddCollegePrograms([]);
+          setAddCollegePolicies([]);
+          setAddCollegeAcademicYears([]);
+        }
+        return;
+      }
+
+      setCascadingLoading(true);
+      const token = localStorage.getItem('token');
+
+      // Fetch all college-specific data in parallel
+      const [semesterRes, programRes, policyRes, yearRes] = await Promise.all([
+        fetch(`http://localhost:8080/api/colleges/${collegeId}/semesters`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`http://localhost:8080/api/colleges/${collegeId}/programs`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`http://localhost:8080/api/colleges/${collegeId}/policies`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`http://localhost:8080/api/colleges/${collegeId}/academic-years`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+
+      if (semesterRes.ok) {
+        const sems = await semesterRes.json();
+        if (isEditForm) {
+          setEditCollegeSemesters(sems || []);
+        } else {
+          setAddCollegeSemesters(sems || []);
+        }
+      }
+
+      if (programRes.ok) {
+        const progs = await programRes.json();
+        if (isEditForm) {
+          setEditCollegePrograms(progs || []);
+        } else {
+          setAddCollegePrograms(progs || []);
+        }
+      }
+
+      if (policyRes.ok) {
+        const pols = await policyRes.json();
+        if (isEditForm) {
+          setEditCollegePolicies(pols || []);
+        } else {
+          setAddCollegePolicies(pols || []);
+        }
+      }
+
+      if (yearRes.ok) {
+        const years = await yearRes.json();
+        if (isEditForm) {
+          setEditCollegeAcademicYears(years || []);
+        } else {
+          setAddCollegeAcademicYears(years || []);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching college data:', err);
+    } finally {
+      setCascadingLoading(false);
     }
   };
 
@@ -300,11 +391,19 @@ const Students = () => {
     const { name, value, type, checked } = e.target;
     setAddForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     
-    // Auto-populate policy when college is selected
+    // When college is selected, fetch college-specific data and reset dependent fields
     if (name === 'collageName' && value) {
-      const policyName = await fetchPolicyByCollege(value);
-      if (policyName) {
-        setAddForm(prev => ({ ...prev, policies: policyName }));
+      const collegeObj = colleges.find(col => (col.college_name || col.name) === value);
+      if (collegeObj) {
+        await fetchCollegeData(collegeObj.id, false);
+        // Reset dependent fields
+        setAddForm(prev => ({
+          ...prev,
+          policies: '',
+          programName: '',
+          admission_year: '',
+          semister: ''
+        }));
       }
     }
   };
@@ -344,7 +443,7 @@ const Students = () => {
   };
 
   // ---- Edit Modal Handlers ----
-  const openEditModal = (student) => {
+  const openEditModal = async (student) => {
     setEditForm({
       id: student.id,
       name: student.name || '',
@@ -363,6 +462,15 @@ const Students = () => {
     });
     setEditErrors({});
     setEditError('');
+    
+    // If college is already selected, load college-specific data
+    if (student.collageName) {
+      const collegeObj = colleges.find(col => (col.college_name || col.name) === student.collageName);
+      if (collegeObj) {
+        await fetchCollegeData(collegeObj.id, true);
+      }
+    }
+    
     setShowEditModal(true);
   };
 
@@ -380,11 +488,19 @@ const Students = () => {
     const { name, value, type, checked } = e.target;
     setEditForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     
-    // Auto-populate policy when college is selected
+    // When college is selected, fetch college-specific data and reset dependent fields
     if (name === 'collageName' && value) {
-      const policyName = await fetchPolicyByCollege(value);
-      if (policyName) {
-        setEditForm(prev => ({ ...prev, policies: policyName }));
+      const collegeObj = colleges.find(col => (col.college_name || col.name) === value);
+      if (collegeObj) {
+        await fetchCollegeData(collegeObj.id, true);
+        // Reset dependent fields
+        setEditForm(prev => ({
+          ...prev,
+          policies: '',
+          programName: '',
+          admission_year: '',
+          semister: ''
+        }));
       }
     }
   };
@@ -746,10 +862,11 @@ const Students = () => {
                       name="policies" 
                       value={addForm.policies} 
                       onChange={handleAddChange}
-                      className={`w-full bg-slate-50 border-2 ${addErrors.policies ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer`}
+                      disabled={!addForm.collageName}
+                      className={`w-full bg-slate-50 border-2 ${addErrors.policies ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                      <option value="">-- Select Policy --</option>
-                      {policies.map((policy) => (
+                      <option value="">{addForm.collageName ? '-- Select Policy --' : '-- Select College First --'}</option>
+                      {addCollegePolicies.map((policy) => (
                         <option key={policy.id} value={policy.name}>
                           {policy.name}
                         </option>
@@ -768,10 +885,11 @@ const Students = () => {
                       name="programName" 
                       value={addForm.programName} 
                       onChange={handleAddChange}
-                      className={`w-full bg-slate-50 border-2 ${addErrors.programName ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer`}
+                      disabled={!addForm.collageName}
+                      className={`w-full bg-slate-50 border-2 ${addErrors.programName ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                      <option value="">-- Select Program --</option>
-                      {programs.map((program) => (
+                      <option value="">{addForm.collageName ? '-- Select Program --' : '-- Select College First --'}</option>
+                      {addCollegePrograms.map((program) => (
                         <option key={program.id} value={program.name}>
                           {program.name}
                         </option>
@@ -790,10 +908,11 @@ const Students = () => {
                       name="admission_year" 
                       value={addForm.admission_year} 
                       onChange={handleAddChange}
-                      className={`w-full bg-slate-50 border-2 ${addErrors.admission_year ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer`}
+                      disabled={!addForm.collageName}
+                      className={`w-full bg-slate-50 border-2 ${addErrors.admission_year ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                      <option value="">-- Select Academic Year --</option>
-                      {academicYears.map((year) => (
+                      <option value="">{addForm.collageName ? '-- Select Academic Year --' : '-- Select College First --'}</option>
+                      {addCollegeAcademicYears.map((year) => (
                         <option key={year.id} value={year.year_name}>
                           {year.year_name}
                         </option>
@@ -812,10 +931,11 @@ const Students = () => {
                       name="semister" 
                       value={addForm.semister} 
                       onChange={handleAddChange}
-                      className={`w-full bg-slate-50 border-2 ${addErrors.semister ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer`}
+                      disabled={!addForm.collageName}
+                      className={`w-full bg-slate-50 border-2 ${addErrors.semister ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                      <option value="">-- Select Semester --</option>
-                      {semesters.map((semester) => (
+                      <option value="">{addForm.collageName ? '-- Select Semester --' : '-- Select College First --'}</option>
+                      {addCollegeSemesters.map((semester) => (
                         <option key={semester.id} value={semester.semester_name}>
                           {semester.semester_name}
                         </option>
@@ -1016,94 +1136,6 @@ const Students = () => {
                   {editErrors.name && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.name}</p>}
                 </div>
 
-                {/* Policy */}
-                <div className="space-y-2 col-span-2 md:col-span-1">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Policy</label>
-                  <div className="relative">
-                    <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="policies" 
-                      value={editForm.policies} 
-                      onChange={handleEditChange}
-                      className={`w-full bg-slate-50 border-2 ${editErrors.policies ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer`}
-                    >
-                      <option value="">-- Select Policy --</option>
-                      {policies.map((policy) => (
-                        <option key={policy.id} value={policy.name}>
-                          {policy.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {editErrors.policies && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.policies}</p>}
-                </div>
-
-                {/* Program */}
-                <div className="space-y-2 col-span-2 md:col-span-1">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Program</label>
-                  <div className="relative">
-                    <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="programName" 
-                      value={editForm.programName} 
-                      onChange={handleEditChange}
-                      className={`w-full bg-slate-50 border-2 ${editErrors.programName ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer`}
-                    >
-                      <option value="">-- Select Program --</option>
-                      {programs.map((program) => (
-                        <option key={program.id} value={program.name}>
-                          {program.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {editErrors.programName && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.programName}</p>}
-                </div>
-
-                {/* Admission Year */}
-                <div className="space-y-2 col-span-2 md:col-span-1">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Admission Year</label>
-                  <div className="relative">
-                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="admission_year" 
-                      value={editForm.admission_year} 
-                      onChange={handleEditChange}
-                      className={`w-full bg-slate-50 border-2 ${editErrors.admission_year ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer`}
-                    >
-                      <option value="">-- Select Academic Year --</option>
-                      {academicYears.map((year) => (
-                        <option key={year.id} value={year.year_name}>
-                          {year.year_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {editErrors.admission_year && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.admission_year}</p>}
-                </div>
-
-                {/* Semester */}
-                <div className="space-y-2 col-span-2 md:col-span-1">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Semester</label>
-                  <div className="relative">
-                    <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="semister" 
-                      value={editForm.semister} 
-                      onChange={handleEditChange}
-                      className={`w-full bg-slate-50 border-2 ${editErrors.semister ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer`}
-                    >
-                      <option value="">-- Select Semester --</option>
-                      {semesters.map((semester) => (
-                        <option key={semester.id} value={semester.semester_name}>
-                          {semester.semester_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {editErrors.semister && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.semister}</p>}
-                </div>
-
                 {/* College */}
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">College Name</label>
@@ -1124,6 +1156,100 @@ const Students = () => {
                     </select>
                   </div>
                 </div>
+
+                {/* Policy */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Policy</label>
+                  <div className="relative">
+                    <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
+                      name="policies" 
+                      value={editForm.policies} 
+                      onChange={handleEditChange}
+                      disabled={!editForm.collageName}
+                      className={`w-full bg-slate-50 border-2 ${editErrors.policies ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      <option value="">{editForm.collageName ? '-- Select Policy --' : '-- Select College First --'}</option>
+                      {editCollegePolicies.map((policy) => (
+                        <option key={policy.id} value={policy.name}>
+                          {policy.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {editErrors.policies && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.policies}</p>}
+                </div>
+
+                {/* Program */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Program</label>
+                  <div className="relative">
+                    <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
+                      name="programName" 
+                      value={editForm.programName} 
+                      onChange={handleEditChange}
+                      disabled={!editForm.collageName}
+                      className={`w-full bg-slate-50 border-2 ${editErrors.programName ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      <option value="">{editForm.collageName ? '-- Select Program --' : '-- Select College First --'}</option>
+                      {editCollegePrograms.map((program) => (
+                        <option key={program.id} value={program.name}>
+                          {program.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {editErrors.programName && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.programName}</p>}
+                </div>
+
+                {/* Admission Year */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Admission Year</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
+                      name="admission_year" 
+                      value={editForm.admission_year} 
+                      onChange={handleEditChange}
+                      disabled={!editForm.collageName}
+                      className={`w-full bg-slate-50 border-2 ${editErrors.admission_year ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      <option value="">{editForm.collageName ? '-- Select Academic Year --' : '-- Select College First --'}</option>
+                      {editCollegeAcademicYears.map((year) => (
+                        <option key={year.id} value={year.year_name}>
+                          {year.year_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {editErrors.admission_year && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.admission_year}</p>}
+                </div>
+
+                {/* Semester */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Semester</label>
+                  <div className="relative">
+                    <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <select 
+                      name="semister" 
+                      value={editForm.semister} 
+                      onChange={handleEditChange}
+                      disabled={!editForm.collageName}
+                      className={`w-full bg-slate-50 border-2 ${editErrors.semister ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      <option value="">{editForm.collageName ? '-- Select Semester --' : '-- Select College First --'}</option>
+                      {editCollegeSemesters.map((semester) => (
+                        <option key={semester.id} value={semester.semester_name}>
+                          {semester.semester_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {editErrors.semister && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.semister}</p>}
+                </div>
+
+                
 
                 {/* Roll Number */}
                 <div className="space-y-2 col-span-2 md:col-span-1">

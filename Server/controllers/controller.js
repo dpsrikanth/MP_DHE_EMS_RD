@@ -1474,6 +1474,103 @@ const createMasterDepartment = async (req, res) => {
   }
 };
 
+// College-specific Cascading Data Functions
+const getCollegeSemesters = async (req, res) => {
+  try {
+    const { collegeId } = req.params;
+    
+    if (!collegeId) {
+      return res.status(400).json({ message: "College ID is required" });
+    }
+
+    const result = await client.query(
+      `SELECT DISTINCT ms.id, ms.semester_name
+       FROM master_semesters ms
+       INNER JOIN college_master_semesters cms ON ms.id = cms.semester_id
+       WHERE cms.college_id = $1 AND (ms.status = 'Active' OR ms.status IS NULL)
+       ORDER BY ms.id ASC`,
+      [collegeId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get college semesters error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getCollegePrograms = async (req, res) => {
+  try {
+    const { collegeId } = req.params;
+    
+    if (!collegeId) {
+      return res.status(400).json({ message: "College ID is required" });
+    }
+
+    const result = await client.query(
+      `SELECT DISTINCT mp.id, mp.name
+       FROM master_programs mp
+       INNER JOIN college_master_programs cmp ON mp.id = cmp.program_id
+       WHERE cmp.college_id = $1 AND (mp.status = 'Active' OR mp.status IS NULL)
+       ORDER BY mp.id ASC`,
+      [collegeId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get college programs error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getCollegePolicies = async (req, res) => {
+  try {
+    const { collegeId } = req.params;
+    
+    if (!collegeId) {
+      return res.status(400).json({ message: "College ID is required" });
+    }
+
+    const result = await client.query(
+      `SELECT DISTINCT mp.id, mp.name
+       FROM master_policies mp
+       INNER JOIN college_master_policies cmp ON mp.id = cmp.policy_id
+       WHERE cmp.college_id = $1 AND mp.status = true
+       ORDER BY mp.id ASC`,
+      [collegeId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get college policies error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getCollegeAcademicYears = async (req, res) => {
+  try {
+    const { collegeId } = req.params;
+    
+    if (!collegeId) {
+      return res.status(400).json({ message: "College ID is required" });
+    }
+
+    const result = await client.query(
+      `SELECT DISTINCT may.id, may.year_name
+       FROM master_academic_years may
+       INNER JOIN college_master_academic_years cmay ON may.id = cmay.academic_year_id
+       WHERE cmay.college_id = $1 AND may.deleteflag = true
+       ORDER BY may.id ASC`,
+      [collegeId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get college academic years error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   register,
   changePassword,
@@ -1541,5 +1638,10 @@ module.exports = {
   createMasterDesignation,
   // master departments
   getMasterDepartments,
-  createMasterDepartment
+  createMasterDepartment,
+  // college cascading data
+  getCollegeSemesters,
+  getCollegePrograms,
+  getCollegePolicies,
+  getCollegeAcademicYears
 };
