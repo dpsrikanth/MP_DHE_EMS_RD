@@ -1,7 +1,6 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
-import Navbar from "./components/Navbar";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import ViewStudentsAndUniversities from "./pages/viewStudentsAndUniversitys"
@@ -17,6 +16,7 @@ import Students from "./pages/Students";
 import Exams from "./pages/Exams";
 import Marks from "./pages/Marks";
 import Policies from "./pages/Policies";
+import Departments from "./pages/Departments";
 
 import Layout from "./components/Layout";
 
@@ -40,6 +40,7 @@ const AppRoutes = () => {
       <Route path="/exams" element={<Layout><ProtectedRoute element={<Exams />} /></Layout>} />
       <Route path="/marks" element={<Layout><ProtectedRoute element={<Marks />} /></Layout>} />
       <Route path="/policies" element={<Layout><ProtectedRoute element={<Policies />} /></Layout>} />
+      <Route path="/departments" element={<Layout><ProtectedRoute element={<Departments />} /></Layout>} />
     </Routes>
   );
 };

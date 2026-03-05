@@ -1571,6 +1571,68 @@ const getCollegeAcademicYears = async (req, res) => {
   }
 };
 
+const getMasterDepartment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await client.query(
+      "SELECT id, department_name, department_code, college_id, status FROM master_departments WHERE id = $1", 
+      [id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: "Master department not found" });
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Get master department error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const updateMasterDepartment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { department_name, department_code, college_id, status } = req.body;
+    
+    if (!department_name || !college_id) {
+      return res.status(400).json({ message: "Department name and college are required" });
+    }
+
+    const result = await client.query(
+      `UPDATE master_departments 
+       SET department_name = $1, department_code = $2, college_id = $3, status = $4, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $5 
+       RETURNING id, department_name, department_code, college_id, status`, 
+      [department_name, department_code, college_id, status, id]
+    );
+
+    if (result.rows.length === 0) return res.status(404).json({ message: "Master department not found" });
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Update master department error:", error);
+    if (error.code === '23505') {
+      return res.status(400).json({ message: "Department code or name already exists" });
+    }
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const deleteMasterDepartment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await client.query(
+      `UPDATE master_departments 
+       SET status = 'Inactive', updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $1 
+       RETURNING id`, 
+      [id]
+    );
+    
+    if (result.rows.length === 0) return res.status(404).json({ success: false, message: "Master department not found" });
+    res.json({ success: true, message: "Department record deleted successfully", data: { id: result.rows[0].id } });
+  } catch (error) {
+    console.error("Delete master department error:", error);
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   register,
   changePassword,
@@ -1643,5 +1705,8 @@ module.exports = {
   getCollegeSemesters,
   getCollegePrograms,
   getCollegePolicies,
-  getCollegeAcademicYears
+  getCollegeAcademicYears,
+  getMasterDepartment,
+  updateMasterDepartment,
+  deleteMasterDepartment
 };
