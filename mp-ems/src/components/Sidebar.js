@@ -1,16 +1,16 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  School, 
-  GraduationCap, 
-  BookOpen, 
-  Calendar, 
-  Layers, 
-  Book, 
-  Users, 
+import {
+  LayoutDashboard,
+  School,
+  GraduationCap,
+  BookOpen,
+  Calendar,
+  Layers,
+  Book,
+  Users,
   UserCircle,
-  FileText, 
+  FileText,
   BarChart3,
   ChevronRight,
   ShieldCheck,
@@ -34,21 +34,45 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     }
   };
 
-  const menuItems = [
-    { id: 1, name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
-    { id: 2, name: 'Universities', path: '/universities', icon: <School size={20} /> },
-    { id: 3, name: 'Colleges', path: '/colleges', icon: <GraduationCap size={20} /> },
-    { id: 4, name: 'Programs', path: '/programs', icon: <BookOpen size={20} /> },
-    { id: 5, name: 'Academic Years', path: '/academic-years', icon: <Calendar size={20} /> },
-    { id: 6, name: 'Semesters', path: '/semesters', icon: <Layers size={20} /> },
-    { id: 7, name: 'Subjects', path: '/subjects', icon: <Book size={20} /> },
-    { id: 8, name: 'Departments', path: '/departments', icon: <Building size={20} /> },
-    { id: 9, name: 'Teachers', path: '/teachers', icon: <Users size={20} /> },
-    { id: 10, name: 'Students', path: '/students', icon: <UserCircle size={20} /> },
-    { id: 11, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
-    { id: 12, name: 'Marks', path: '/marks', icon: <BarChart3 size={20} /> },
-    { id: 13, name: 'Policies', path: '/policies', icon: <ShieldCheck size={20} /> },
-  ];
+  const renderMenuByRole = () => {
+    const roleName = localStorage.getItem('roleName');
+
+    // Default Admin / SuperAdmin Menu
+    let menuItems = [
+      { id: 1, name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
+      { id: 2, name: 'Universities', path: '/universities', icon: <School size={20} /> },
+      { id: 3, name: 'Colleges', path: '/colleges', icon: <GraduationCap size={20} /> },
+      { id: 4, name: 'Programs', path: '/programs', icon: <BookOpen size={20} /> },
+      { id: 5, name: 'Academic Years', path: '/academic-years', icon: <Calendar size={20} /> },
+      { id: 6, name: 'Semesters', path: '/semesters', icon: <Layers size={20} /> },
+      { id: 7, name: 'Subjects', path: '/subjects', icon: <Book size={20} /> },
+      { id: 8, name: 'Departments', path: '/departments', icon: <Building size={20} /> },
+      { id: 9, name: 'Teachers', path: '/teachers', icon: <Users size={20} /> },
+      { id: 10, name: 'Students', path: '/students', icon: <UserCircle size={20} /> },
+      { id: 11, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
+      { id: 12, name: 'Marks', path: '/marks', icon: <BarChart3 size={20} /> },
+      { id: 13, name: 'Policies', path: '/policies', icon: <ShieldCheck size={20} /> },
+    ];
+
+    if (roleName === 'college_admin') {
+      menuItems = [
+        { id: 1, name: 'Dashboard', path: '/college-admin/dashboard', icon: <LayoutDashboard size={20} /> },
+        { id: 2, name: 'Policy Config', path: '/college-admin/policies', icon: <ShieldCheck size={20} /> },
+        { id: 3, name: 'Marks Structure', path: '/college-admin/marks-config', icon: <BarChart3 size={20} /> },
+        { id: 4, name: 'Faculty Assign', path: '/college-admin/faculty-assign', icon: <Users size={20} /> },
+        { id: 5, name: 'Marks Approval', path: '/college-admin/marks-approval', icon: <FileText size={20} /> },
+      ];
+    } else if (roleName === 'Faculty' || roleName === 'Teacher') {
+      menuItems = [
+        { id: 1, name: 'Dashboard', path: '/faculty/dashboard', icon: <LayoutDashboard size={20} /> },
+        { id: 2, name: 'Marks Entry', path: '/faculty/marks-entry', icon: <BarChart3 size={20} /> },
+      ]
+    }
+
+    return menuItems;
+  };
+
+  const menuItems = renderMenuByRole();
 
   return (
     <aside className={`fixed left-0 top-0 h-screen w-64 bg-slate-900 text-slate-300 flex flex-col shadow-2xl z-50 transition-transform duration-300 overflow-hidden border-r border-slate-800 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -62,7 +86,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             EMS<span className="text-sky-500 not-italic ml-1">Admin</span>
           </h1>
         </div>
-        <button 
+        <button
           onClick={() => setIsOpen(!isOpen)}
           className="text-slate-400 hover:text-white transition-colors"
         >
@@ -79,11 +103,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             <button
               key={item.id}
               onClick={() => handleLinkClick(item.path)}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${
-                isActive 
-                  ? 'bg-sky-500/10 text-sky-400 font-semibold' 
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
+                  ? 'bg-sky-500/10 text-sky-400 font-semibold'
                   : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
                 <span className={`${isActive ? 'text-sky-400' : 'text-slate-500 group-hover:text-slate-300'} transition-colors`}>

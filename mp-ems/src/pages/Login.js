@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  LogIn, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
+import {
+  LogIn,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
   CheckCircle2,
   School,
   Calendar,
@@ -48,12 +48,16 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        authUtils.setAuth(data.token, data.user.role || "", data.user.id || "");
-        
+        authUtils.setAuth(data.token, data.user.role || "", data.user.id || "", data.user.college_id || "");
+
         if (authUtils.isAdmin()) {
           navigate("/dashboard");
+        } else if (authUtils.isCollegeAdmin()) {
+          navigate("/college-admin/dashboard");
+        } else if (authUtils.isFaculty()) {
+          navigate("/faculty/dashboard");
         } else {
-          setError("Access denied. Admin role required.");
+          setError("Access denied. Appropriate role required.");
           authUtils.logout();
         }
       } else {
@@ -91,7 +95,7 @@ const Login = () => {
           <h2 className="text-4xl xl:text-5xl font-black text-white leading-[1.1] mb-6 tracking-tight">
             Streamlining <span className="text-sky-400">Academic</span> Governance and Management.
           </h2>
-          
+
           <p className="text-base xl:text-lg text-slate-400 font-medium mb-8 leading-relaxed">
             The next generation of Educational Management Systems. Intuitive, robust, and designed for high-performance administrative excellence.
           </p>
@@ -152,7 +156,7 @@ const Login = () => {
                 {error}
               </div>
             )}
-            
+
             <div className="space-y-2">
               <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
               <div className="relative group">
@@ -200,7 +204,7 @@ const Login = () => {
             </div>
 
             <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100/50">
-              <button 
+              <button
                 type="button"
                 onClick={() => setFormData({ ...formData, rememberMe: !formData.rememberMe })}
                 className={`w-10 h-6 rounded-full transition-all duration-300 relative ${formData.rememberMe ? 'bg-sky-500' : 'bg-slate-300'}`}
@@ -231,7 +235,7 @@ const Login = () => {
 
           <p className="mt-8 xl:mt-10 text-center text-slate-500 text-sm font-medium">
             New to the system?{' '}
-            <button 
+            <button
               onClick={() => navigate("/register")}
               className="text-sky-500 font-black hover:text-sky-600 underline underline-offset-4 decoration-sky-200"
             >

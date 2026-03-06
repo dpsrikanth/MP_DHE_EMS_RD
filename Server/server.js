@@ -5,11 +5,13 @@ const cookieParser = require('cookie-parser');
 const app = express();
 const port = 8080;
 const routes = require('./routes/routes');
+const collegeAdminRoutes = require('./routes/collegeAdminRoutes');
+const facultyMarksRoutes = require('./routes/facultyMarksRoutes');
 
 const corsOptions = {
-  origin: 'http://localhost:3000', 
+  origin: 'http://localhost:3000',
   optionsSuccessStatus: 200,
-   credentials: true
+  credentials: true
 };
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -18,6 +20,8 @@ app.use(cookieParser());
 
 // Routes
 app.use('/api', routes);
+app.use('/api/college-admin', collegeAdminRoutes);
+app.use('/api/faculty-marks', facultyMarksRoutes);
 
 app.get('/api', (req, res) => {
   res.json({ message: 'API is running' });

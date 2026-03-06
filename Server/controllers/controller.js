@@ -210,11 +210,11 @@ const Login = async (req, res) => {
   try {
     const { email, password, rememberMe } = req.body;
     const user = await client.query(
-      `SELECT u.id, u.name, u.email, u.password, u.password_hash, r.role_name FROM public.users u JOIN public.roles r ON u.role_id = r.id WHERE u.email = $1`,
+      `SELECT u.id, u.name, u.email, u.password, u.password_hash, u.college_id, r.role_name FROM public.users u JOIN public.roles r ON u.role_id = r.id WHERE u.email = $1`,
       [email]
     );
     if (user.rows.length === 0) return res.status(400).json({ message: "User not found" });
-    
+
     const result = user.rows[0];
     const { password: plainPassword, password_hash: hashedPassword } = result;
 
@@ -229,16 +229,16 @@ const Login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    const payload = { id: result.id, email: result.email, role: result.role_name };
+    const payload = { id: result.id, email: result.email, role: result.role_name, college_id: result.college_id };
     const accessToken = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: "15m" });
     const refreshToken = jwt.sign(payload, process.env.REFRESH_SECRET, { expiresIn: "30d" });
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: false,
       sameSite: "Lax",
-      maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : undefined 
+      maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : undefined
     });
-    res.json({ token: accessToken, user: { id: result.id, name: result.name, email: result.email, role: result.role_name } });
+    res.json({ token: accessToken, user: { id: result.id, name: result.name, email: result.email, role: result.role_name, college_id: result.college_id } });
   } catch (error) {
     console.error("Login Error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -584,28 +584,28 @@ const updateStudent = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
-    
+
 
 const deleteStudent = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Check if student exists
     const checkResult = await client.query(
       'SELECT id FROM students WHERE id = $1 AND "deleteStatus" = true',
       [id]
     );
-    
+
     if (checkResult.rows.length === 0) {
       return res.status(404).json({ message: 'Student not found' });
     }
-    
+
     // Soft delete: set deleteStatus to false
     await client.query(
       'UPDATE students SET "deleteStatus" = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
       [id]
     );
-    
+
     res.json({ message: 'Student deleted successfully' });
   } catch (err) {
     console.error('Delete student error:', err);
@@ -799,7 +799,7 @@ const updateExam = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id } = req.body;
-    
+
     // Check if exists
     const checkResult = await client.query('SELECT id FROM exams WHERE id = $1', [id]);
     if (checkResult.rows.length === 0) return res.status(404).json({ message: "Exam not found" });
@@ -854,14 +854,14 @@ const getMarks = async (req, res) => {
 
 const getStudentsForMarks = async (req, res) => {
   try {
-    const { 
-      college_id, 
-      department_id, 
-      program_id, 
-      academic_year_id, 
-      semester_id, 
-      subject_id, 
-      exam_id 
+    const {
+      college_id,
+      department_id,
+      program_id,
+      academic_year_id,
+      semester_id,
+      subject_id,
+      exam_id
     } = req.query;
 
     if (!college_id || !department_id || !program_id || !semester_id || !subject_id) {
@@ -909,23 +909,23 @@ const getStudentsForMarks = async (req, res) => {
     const semRegex = `%${semesterNameText.replace(/semester /i, '').trim()}%`;
 
     const values = [
-      `%${collegeNameText}%`, 
-      `%${programNameText}%`, 
-      semRegex, 
-      subject_id, 
-      exam_id || null, 
+      `%${collegeNameText}%`,
+      `%${programNameText}%`,
+      semRegex,
+      subject_id,
+      exam_id || null,
       academic_year_id || null
     ];
 
     let result;
     try {
       result = await client.query(query, values);
-    } catch(err) {
+    } catch (err) {
       // IFNULL isn't native to pg, we should use COALESCE
       const safeQuery = query.replace("IFNULL(s.semister, '')", "COALESCE(s.semister, '')");
       result = await client.query(safeQuery, values);
     }
-    
+
     res.json(result.rows);
   } catch (error) {
     console.error("Get students for marks error:", error);
@@ -940,7 +940,7 @@ const saveTeacherMarks = async (req, res) => {
     const teacher_id = req.user.id; // From verifyToken middleware, assuming req.user.id is the teacher's user ID.
     // NOTE: Ideally, we should look up the primary key from the teachers table using req.user.id.
     // For simplicity, we query the teacher ID first if needed, otherwise rely on the payload passing the correct teacher_id.
-    
+
     // Attempt to lookup the real teacher record ID
     const teacherCheck = await client.query('SELECT id FROM teachers WHERE user_id = $1', [req.user.id]);
     const actual_teacher_id = teacherCheck.rows.length > 0 ? teacherCheck.rows[0].id : null;
@@ -953,7 +953,7 @@ const saveTeacherMarks = async (req, res) => {
 
     for (const record of marksData) {
       if (!record.student_id) continue;
-      
+
       const internal = record.internal_marks !== undefined && record.internal_marks !== '' ? parseFloat(record.internal_marks) : null;
       const external = record.external_marks !== undefined && record.external_marks !== '' ? parseFloat(record.external_marks) : null;
       const computedTotal = (internal || 0) + (external || 0);
@@ -999,7 +999,7 @@ const saveTeacherMarks = async (req, res) => {
 const getMarksForApproval = async (req, res) => {
   try {
     const { college_id, department_id } = req.query;
-    
+
     let collegeNameText = '';
     if (college_id) {
       const collegeRes = await client.query('SELECT name FROM colleges WHERE id = $1', [college_id]);
@@ -1027,7 +1027,7 @@ const getMarksForApproval = async (req, res) => {
       LEFT JOIN users tu ON t.user_id = tu.id
       WHERE m.status = 'Pending Approval'
     `;
-    
+
     const values = [];
     if (college_id) {
       values.push(`%${collegeNameText}%`);
@@ -1048,8 +1048,8 @@ const getMarksForApproval = async (req, res) => {
 const approveRejectMarks = async (req, res) => {
   try {
     // action should be 'Approve' or 'Reject'
-    const { mark_ids, action } = req.body; 
-    
+    const { mark_ids, action } = req.body;
+
     if (!mark_ids || !Array.isArray(mark_ids) || mark_ids.length === 0) {
       return res.status(400).json({ message: "No records provided." });
     }
@@ -1058,7 +1058,7 @@ const approveRejectMarks = async (req, res) => {
     }
 
     const newStatus = action === 'Approve' ? 'Approved' : 'Draft';
-    
+
     // Find HOD id
     const hodCheck = await client.query('SELECT id FROM teachers WHERE user_id = $1', [req.user.id]);
     const hod_id = hodCheck.rows.length > 0 ? hodCheck.rows[0].id : null;
@@ -1354,7 +1354,7 @@ const deleteMasterPolicy = async (req, res) => {
 const getCollegeMasterPolicy = async (req, res) => {
   try {
     const { collegeId } = req.params;
-    
+
     if (!collegeId) {
       return res.status(400).json({ message: "College ID is required" });
     }
@@ -1541,8 +1541,8 @@ const createMasterTeacher = async (req, res) => {
     );
 
     await client.query('COMMIT');
-    res.status(201).json({ 
-      success: true, 
+    res.status(201).json({
+      success: true,
       message: "Teacher record created successfully",
       data: completeRecord.rows[0]
     });
@@ -1670,8 +1670,8 @@ const updateMasterTeacher = async (req, res) => {
     );
 
     await client.query('COMMIT');
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "Teacher record updated successfully",
       data: result.rows[0]
     });
@@ -1699,8 +1699,8 @@ const deleteMasterTeacher = async (req, res) => {
       return res.status(404).json({ success: false, message: "Master teacher not found" });
     }
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "Teacher record deleted successfully",
       data: { id: result.rows[0].id }
     });
@@ -1799,7 +1799,7 @@ const createMasterDepartment = async (req, res) => {
 const getCollegeSemesters = async (req, res) => {
   try {
     const { collegeId } = req.params;
-    
+
     if (!collegeId) {
       return res.status(400).json({ message: "College ID is required" });
     }
@@ -1823,7 +1823,7 @@ const getCollegeSemesters = async (req, res) => {
 const getCollegePrograms = async (req, res) => {
   try {
     const { collegeId } = req.params;
-    
+
     if (!collegeId) {
       return res.status(400).json({ message: "College ID is required" });
     }
@@ -1847,7 +1847,7 @@ const getCollegePrograms = async (req, res) => {
 const getCollegePolicies = async (req, res) => {
   try {
     const { collegeId } = req.params;
-    
+
     if (!collegeId) {
       return res.status(400).json({ message: "College ID is required" });
     }
@@ -1871,7 +1871,7 @@ const getCollegePolicies = async (req, res) => {
 const getCollegeAcademicYears = async (req, res) => {
   try {
     const { collegeId } = req.params;
-    
+
     if (!collegeId) {
       return res.status(400).json({ message: "College ID is required" });
     }
@@ -1896,7 +1896,7 @@ const getMasterDepartment = async (req, res) => {
   try {
     const { id } = req.params;
     const result = await client.query(
-      "SELECT id, department_name, department_code, college_id, status FROM master_departments WHERE id = $1", 
+      "SELECT id, department_name, department_code, college_id, status FROM master_departments WHERE id = $1",
       [id]
     );
     if (result.rows.length === 0) return res.status(404).json({ message: "Master department not found" });
@@ -1911,7 +1911,7 @@ const updateMasterDepartment = async (req, res) => {
   try {
     const { id } = req.params;
     const { department_name, department_code, college_id, status } = req.body;
-    
+
     if (!department_name || !college_id) {
       return res.status(400).json({ message: "Department name and college are required" });
     }
@@ -1920,7 +1920,7 @@ const updateMasterDepartment = async (req, res) => {
       `UPDATE master_departments 
        SET department_name = $1, department_code = $2, college_id = $3, status = $4, updated_at = CURRENT_TIMESTAMP 
        WHERE id = $5 
-       RETURNING id, department_name, department_code, college_id, status`, 
+       RETURNING id, department_name, department_code, college_id, status`,
       [department_name, department_code, college_id, status, id]
     );
 
@@ -1942,10 +1942,10 @@ const deleteMasterDepartment = async (req, res) => {
       `UPDATE master_departments 
        SET status = 'Inactive', updated_at = CURRENT_TIMESTAMP 
        WHERE id = $1 
-       RETURNING id`, 
+       RETURNING id`,
       [id]
     );
-    
+
     if (result.rows.length === 0) return res.status(404).json({ success: false, message: "Master department not found" });
     res.json({ success: true, message: "Department record deleted successfully", data: { id: result.rows[0].id } });
   } catch (error) {
@@ -2013,7 +2013,7 @@ module.exports = {
   updateMasterPolicy,
   deleteMasterPolicy,
   getCollegeMasterPolicy,
- // master teachers
+  // master teachers
   getMasterTeachers,
   getMasterTeacher,
   createMasterTeacher,

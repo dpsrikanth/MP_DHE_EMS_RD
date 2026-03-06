@@ -2,18 +2,60 @@ const client = require("../db");
 
 const getMasters = async (req, res) => {
   try {
-    const policies = await client.query("SELECT id, name FROM master_policies ORDER BY id");
-    const programs = await client.query("SELECT id, name FROM master_programs ORDER BY id");
+    const user = req.user;
+
+    let policies, programs, academicYears, semesters, departments;
     const subjects = await client.query("SELECT id, name, subject_code FROM master_subjects ORDER BY id");
-    const academicYears = await client.query("SELECT id, year_name FROM master_academic_years ORDER BY id");
-    const semesters = await client.query("SELECT id, semester_name FROM master_semesters ORDER BY id");
-    
+
+    if (user && user.college_id) {
+      policies = await client.query(`
+        SELECT p.id, p.name 
+        FROM master_policies p
+        JOIN college_master_policies cmp ON p.id = cmp.policy_id
+        WHERE cmp.college_id = $1 ORDER BY p.id
+      `, [user.college_id]);
+
+      programs = await client.query(`
+        SELECT p.id, p.name 
+        FROM master_programs p
+        JOIN college_master_programs cmp ON p.id = cmp.program_id
+        WHERE cmp.college_id = $1 ORDER BY p.id
+      `, [user.college_id]);
+
+      academicYears = await client.query(`
+        SELECT a.id, a.year_name 
+        FROM master_academic_years a
+        JOIN college_master_academic_years cma ON a.id = cma.academic_year_id
+        WHERE cma.college_id = $1 ORDER BY a.id
+      `, [user.college_id]);
+
+      semesters = await client.query(`
+        SELECT s.id, s.semester_name 
+        FROM master_semesters s
+        JOIN college_master_semesters cms ON s.id = cms.semester_id
+        WHERE cms.college_id = $1 ORDER BY s.id
+      `, [user.college_id]);
+
+      departments = await client.query(`
+        SELECT id, department_name as name 
+        FROM master_departments 
+        WHERE college_id = $1 AND status = 'Active' ORDER BY id
+      `, [user.college_id]);
+    } else {
+      policies = await client.query("SELECT id, name FROM master_policies ORDER BY id");
+      programs = await client.query("SELECT id, name FROM master_programs ORDER BY id");
+      academicYears = await client.query("SELECT id, year_name FROM master_academic_years ORDER BY id");
+      semesters = await client.query("SELECT id, semester_name FROM master_semesters ORDER BY id");
+      departments = await client.query("SELECT id, department_name as name FROM master_departments WHERE status = 'Active' ORDER BY id");
+    }
+
     res.json({
       policies: policies.rows,
       programs: programs.rows,
       subjects: subjects.rows,
       academicYears: academicYears.rows,
-      semesters: semesters.rows
+      semesters: semesters.rows,
+      departments: departments.rows
     });
   } catch (error) {
     console.error("Get masters error:", error);
@@ -24,31 +66,31 @@ const getMasters = async (req, res) => {
 const getUniversityConfig = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Fetch mapped policies
     const policies = await client.query(
       "SELECT policy_id FROM university_master_policies WHERE university_id = $1",
       [id]
     );
-    
+
     // Fetch mapped programs
     const programs = await client.query(
       "SELECT program_id FROM university_master_programs WHERE university_id = $1",
       [id]
     );
-    
+
     // Fetch mapped academic years
     const academicYears = await client.query(
       "SELECT academic_year_id FROM university_master_academic_years WHERE university_id = $1",
       [id]
     );
-    
+
     // Fetch mapped semesters
     const semesters = await client.query(
       "SELECT semester_id FROM university_master_semesters WHERE university_id = $1",
       [id]
     );
-    
+
     res.json({
       policies: policies.rows.map(r => r.policy_id),
       programs: programs.rows.map(r => r.program_id),
@@ -65,9 +107,9 @@ const updateUniversityConfig = async (req, res) => {
   try {
     const { id } = req.params;
     const { policies, programs, academicYears, semesters } = req.body;
-    
+
     await client.query("BEGIN");
-    
+
     // Update Policies
     if (policies !== undefined) {
       await client.query("DELETE FROM university_master_policies WHERE university_id = $1", [id]);
@@ -78,7 +120,7 @@ const updateUniversityConfig = async (req, res) => {
         );
       }
     }
-    
+
     // Update Programs
     if (programs !== undefined) {
       await client.query("DELETE FROM university_master_programs WHERE university_id = $1", [id]);
@@ -89,7 +131,7 @@ const updateUniversityConfig = async (req, res) => {
         );
       }
     }
-    
+
     // Update Academic Years
     if (academicYears !== undefined) {
       await client.query("DELETE FROM university_master_academic_years WHERE university_id = $1", [id]);
@@ -100,7 +142,7 @@ const updateUniversityConfig = async (req, res) => {
         );
       }
     }
-    
+
     // Update Semesters
     if (semesters !== undefined) {
       await client.query("DELETE FROM university_master_semesters WHERE university_id = $1", [id]);
@@ -111,16 +153,16 @@ const updateUniversityConfig = async (req, res) => {
         );
       }
     }
-    
+
     // Sync to corresponding college (university as a college)
     const collegeRes = await client.query(
       "SELECT id FROM colleges WHERE university_id = $1 AND name = (SELECT name FROM universities WHERE id = $1)",
       [id]
     );
-    
+
     if (collegeRes.rows.length > 0) {
       const collegeId = collegeRes.rows[0].id;
-      
+
       // Update College Policies
       if (policies !== undefined) {
         await client.query("DELETE FROM college_master_policies WHERE college_id = $1", [collegeId]);
@@ -128,7 +170,7 @@ const updateUniversityConfig = async (req, res) => {
           await client.query("INSERT INTO college_master_policies (college_id, policy_id) VALUES ($1, $2)", [collegeId, policyId]);
         }
       }
-      
+
       // Update College Programs
       if (programs !== undefined) {
         await client.query("DELETE FROM college_master_programs WHERE college_id = $1", [collegeId]);
@@ -136,7 +178,7 @@ const updateUniversityConfig = async (req, res) => {
           await client.query("INSERT INTO college_master_programs (college_id, program_id) VALUES ($1, $2)", [collegeId, programId]);
         }
       }
-      
+
       // Update College Academic Years
       if (academicYears !== undefined) {
         await client.query("DELETE FROM college_master_academic_years WHERE college_id = $1", [collegeId]);
@@ -144,7 +186,7 @@ const updateUniversityConfig = async (req, res) => {
           await client.query("INSERT INTO college_master_academic_years (college_id, academic_year_id) VALUES ($1, $2)", [collegeId, yearId]);
         }
       }
-      
+
       // Update College Semesters
       if (semesters !== undefined) {
         await client.query("DELETE FROM college_master_semesters WHERE college_id = $1", [collegeId]);
@@ -153,7 +195,7 @@ const updateUniversityConfig = async (req, res) => {
         }
       }
     }
-    
+
     await client.query("COMMIT");
     res.json({ message: "Configuration updated successfully" });
   } catch (error) {
@@ -166,12 +208,12 @@ const updateUniversityConfig = async (req, res) => {
 const getCollegeConfig = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const policies = await client.query("SELECT policy_id FROM college_master_policies WHERE college_id = $1", [id]);
     const programs = await client.query("SELECT program_id FROM college_master_programs WHERE college_id = $1", [id]);
     const academicYears = await client.query("SELECT academic_year_id FROM college_master_academic_years WHERE college_id = $1", [id]);
     const semesters = await client.query("SELECT semester_id FROM college_master_semesters WHERE college_id = $1", [id]);
-    
+
     res.json({
       policies: policies.rows.map(r => r.policy_id),
       programs: programs.rows.map(r => r.program_id),
@@ -188,37 +230,37 @@ const updateCollegeConfig = async (req, res) => {
   try {
     const { id } = req.params;
     const { policies, programs, academicYears, semesters } = req.body;
-    
+
     await client.query("BEGIN");
-    
+
     if (policies !== undefined) {
       await client.query("DELETE FROM college_master_policies WHERE college_id = $1", [id]);
       for (const policyId of policies) {
         await client.query("INSERT INTO college_master_policies (college_id, policy_id) VALUES ($1, $2)", [id, policyId]);
       }
     }
-    
+
     if (programs !== undefined) {
       await client.query("DELETE FROM college_master_programs WHERE college_id = $1", [id]);
       for (const programId of programs) {
         await client.query("INSERT INTO college_master_programs (college_id, program_id) VALUES ($1, $2)", [id, programId]);
       }
     }
-    
+
     if (academicYears !== undefined) {
       await client.query("DELETE FROM college_master_academic_years WHERE college_id = $1", [id]);
       for (const yearId of academicYears) {
         await client.query("INSERT INTO college_master_academic_years (college_id, academic_year_id) VALUES ($1, $2)", [id, yearId]);
       }
     }
-    
+
     if (semesters !== undefined) {
       await client.query("DELETE FROM college_master_semesters WHERE college_id = $1", [id]);
       for (const semId of semesters) {
         await client.query("INSERT INTO college_master_semesters (college_id, semester_id) VALUES ($1, $2)", [id, semId]);
       }
     }
-    
+
     await client.query("COMMIT");
     res.json({ message: "College configuration updated successfully" });
   } catch (error) {
