@@ -741,7 +741,36 @@ const createTeacher = async (req, res) => {
 
 const getExams = async (req, res) => {
   try {
-    const result = await client.query("SELECT id, name as exam_name, semester_id, college_id, exam_type, exam_date, status FROM exams");
+    const result = await client.query(`
+      SELECT 
+        e.id, 
+        e.name as exam_name, 
+        e.semester_id, 
+        ms.semester_name,
+        e.college_id, 
+        c.name as college_name,
+        e.exam_type, 
+        et.type_name as exam_type_name,
+        e.department_id,
+        md.department_name,
+        e.program_id,
+        mp.name as program_name,
+        e.academic_year_id,
+        ay.year_name,
+        e.subject_id,
+        sub.name as subject_name,
+        e.exam_date, 
+        e.status 
+      FROM exams e
+      LEFT JOIN master_semesters ms ON e.semester_id = ms.id
+      LEFT JOIN colleges c ON e.college_id = c.id
+      LEFT JOIN exam_types et ON e.exam_type = et.id
+      LEFT JOIN master_departments md ON e.department_id = md.id
+      LEFT JOIN master_programs mp ON e.program_id = mp.id
+      LEFT JOIN master_academic_years ay ON e.academic_year_id = ay.id
+      LEFT JOIN master_subjects sub ON e.subject_id = sub.id
+      ORDER BY e.created_at DESC
+    `);
     res.json(result.rows);
   } catch (error) {
     console.error("Get exams error:", error);
@@ -749,13 +778,305 @@ const getExams = async (req, res) => {
   }
 };
 
+const createExam = async (req, res) => {
+  try {
+    const { name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id } = req.body;
+    if (!name || !semester_id || !college_id || !exam_type || !exam_date) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    const result = await client.query(
+      "INSERT INTO exams (name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *",
+      [name, semester_id, college_id, exam_type, exam_date, status ?? true, department_id || null, program_id || null, academic_year_id || null, subject_id || null]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("Create exam error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const updateExam = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id } = req.body;
+    
+    // Check if exists
+    const checkResult = await client.query('SELECT id FROM exams WHERE id = $1', [id]);
+    if (checkResult.rows.length === 0) return res.status(404).json({ message: "Exam not found" });
+
+    const result = await client.query(
+      `UPDATE exams 
+       SET name = COALESCE($1, name), 
+           semester_id = COALESCE($2, semester_id), 
+           college_id = COALESCE($3, college_id), 
+           exam_type = COALESCE($4, exam_type), 
+           exam_date = COALESCE($5, exam_date), 
+           status = COALESCE($6, status),
+           department_id = COALESCE($7, department_id),
+           program_id = COALESCE($8, program_id),
+           academic_year_id = COALESCE($9, academic_year_id),
+           subject_id = COALESCE($10, subject_id)
+       WHERE id = $11 RETURNING *`,
+      [name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, id]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Update exam error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const deleteExam = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const checkResult = await client.query('SELECT id FROM exams WHERE id = $1', [id]);
+    if (checkResult.rows.length === 0) return res.status(404).json({ message: "Exam not found" });
+
+    await client.query("DELETE FROM exams WHERE id = $1", [id]);
+    res.json({ message: "Exam deleted successfully" });
+  } catch (error) {
+    console.error("Delete exam error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 const getMarks = async (req, res) => {
   try {
-    const result = await client.query(`SELECT m.id, m.student_id, u.name as student_name, m.subject_id, sub.name as subject_name, m.exam_id, m.marks_obtained, m.max_marks FROM marks m LEFT JOIN students s ON m.student_id = s.id LEFT JOIN users u ON s.user_id = u.id LEFT JOIN subjects sub ON m.subject_id = sub.id`);
+    const result = await client.query(`SELECT m.id, m.student_id, TRIM(s.name) as student_name, m.subject_id, sub.name as subject_name, m.exam_id, m.total_marks as marks_obtained, 100 as max_marks FROM marks m LEFT JOIN students s ON m.student_id = s.id LEFT JOIN master_subjects sub ON m.subject_id = sub.id`);
     res.json(result.rows);
   } catch (error) {
     console.error("Get marks error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// --- MARKS MANAGEMENT MODULE ---
+
+const getStudentsForMarks = async (req, res) => {
+  try {
+    const { 
+      college_id, 
+      department_id, 
+      program_id, 
+      academic_year_id, 
+      semester_id, 
+      subject_id, 
+      exam_id 
+    } = req.query;
+
+    if (!college_id || !department_id || !program_id || !semester_id || !subject_id) {
+      return res.status(400).json({ message: "Missing required query parameters to fetch students." });
+    }
+
+    // First, lookup the actual string names for college, program, and semester
+    // since the students table only stores them as raw text.
+    const collegeRes = await client.query('SELECT name FROM colleges WHERE id = $1', [college_id]);
+    const programRes = await client.query('SELECT name FROM master_programs WHERE id = $1', [program_id]);
+    const semRes = await client.query('SELECT semester_name FROM master_semesters WHERE id = $1', [semester_id]);
+
+    const collegeNameText = collegeRes.rows[0]?.name || '';
+    const programNameText = programRes.rows[0]?.name || '';
+    const semesterNameText = semRes.rows[0]?.semester_name || '';
+
+    // This fetches all students matching the criteria, and LEFT JOINs the marks table
+    // so we get existing marks if any, or null if they haven't been entered yet.
+    // Notice how students table uses string columns like "collageName" instead of foreign keys
+    const query = `
+      SELECT 
+        s.id as student_id,
+        TRIM(s.name) as student_name,
+        TRIM(s.rollnumber) as enrollment_number,
+        m.id as mark_id,
+        m.internal_marks,
+        m.external_marks,
+        m.total_marks,
+        m.status,
+        m.teacher_id,
+        m.hod_id
+      FROM students s
+      LEFT JOIN marks m ON s.id = m.student_id 
+        AND m.subject_id = $4 
+        AND (m.exam_id = $5 OR $5 IS NULL)
+        AND (m.academic_year_id = $6 OR $6 IS NULL)
+      WHERE s."collageName" ILIKE $1 
+        AND s."programName" ILIKE $2 
+        AND IFNULL(s.semister, '') ILIKE $3 
+        AND s."deleteStatus" = true
+      ORDER BY s.rollnumber ASC NULLS LAST, s.name ASC
+    `;
+
+    // Try a broad match since the student data is hand-typed varying text
+    const semRegex = `%${semesterNameText.replace(/semester /i, '').trim()}%`;
+
+    const values = [
+      `%${collegeNameText}%`, 
+      `%${programNameText}%`, 
+      semRegex, 
+      subject_id, 
+      exam_id || null, 
+      academic_year_id || null
+    ];
+
+    let result;
+    try {
+      result = await client.query(query, values);
+    } catch(err) {
+      // IFNULL isn't native to pg, we should use COALESCE
+      const safeQuery = query.replace("IFNULL(s.semister, '')", "COALESCE(s.semister, '')");
+      result = await client.query(safeQuery, values);
+    }
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get students for marks error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const saveTeacherMarks = async (req, res) => {
+  try {
+    // Expected body: { subject_id, exam_id, academic_year_id, marksData: [{ student_id, internal_marks, external_marks, status }] }
+    const { subject_id, exam_id, academic_year_id, marksData } = req.body;
+    const teacher_id = req.user.id; // From verifyToken middleware, assuming req.user.id is the teacher's user ID.
+    // NOTE: Ideally, we should look up the primary key from the teachers table using req.user.id.
+    // For simplicity, we query the teacher ID first if needed, otherwise rely on the payload passing the correct teacher_id.
+    
+    // Attempt to lookup the real teacher record ID
+    const teacherCheck = await client.query('SELECT id FROM teachers WHERE user_id = $1', [req.user.id]);
+    const actual_teacher_id = teacherCheck.rows.length > 0 ? teacherCheck.rows[0].id : null;
+
+    if (!subject_id || !marksData || !Array.isArray(marksData)) {
+      return res.status(400).json({ message: "Invalid payload format." });
+    }
+
+    await client.query("BEGIN"); // Start transaction
+
+    for (const record of marksData) {
+      if (!record.student_id) continue;
+      
+      const internal = record.internal_marks !== undefined && record.internal_marks !== '' ? parseFloat(record.internal_marks) : null;
+      const external = record.external_marks !== undefined && record.external_marks !== '' ? parseFloat(record.external_marks) : null;
+      const computedTotal = (internal || 0) + (external || 0);
+      const rowStatus = record.status || 'Draft'; // 'Draft' or 'Pending Approval'
+
+      // Check if marks record exists for this student/subject/exam combination
+      const checkResult = await client.query(
+        `SELECT id FROM marks 
+         WHERE student_id = $1 AND subject_id = $2 
+         AND (exam_id = $3 OR ($3 IS NULL AND exam_id IS NULL))
+         AND (academic_year_id = $4 OR ($4 IS NULL AND academic_year_id IS NULL))`,
+        [record.student_id, subject_id, exam_id || null, academic_year_id || null]
+      );
+
+      if (checkResult.rows.length > 0) {
+        // Update existing record
+        // Only allow update if status is Draft or Rejected (represented as Draft again). Don't let teacher overwrite Approved marks.
+        await client.query(
+          `UPDATE marks 
+           SET internal_marks = $1, external_marks = $2, total_marks = $3, status = $4, teacher_id = $5 
+           WHERE id = $6 AND status != 'Approved'`,
+          [internal, external, computedTotal, rowStatus, actual_teacher_id, checkResult.rows[0].id]
+        );
+      } else {
+        // Insert new record
+        await client.query(
+          `INSERT INTO marks (student_id, subject_id, exam_id, academic_year_id, internal_marks, external_marks, total_marks, status, teacher_id) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [record.student_id, subject_id, exam_id || null, academic_year_id || null, internal, external, computedTotal, rowStatus, actual_teacher_id]
+        );
+      }
+    }
+
+    await client.query("COMMIT");
+    res.json({ message: "Marks saved successfully." });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Save teacher marks error:", error);
+    res.status(500).json({ message: "Failed to save marks", error: error.message });
+  }
+};
+
+const getMarksForApproval = async (req, res) => {
+  try {
+    const { college_id, department_id } = req.query;
+    
+    let collegeNameText = '';
+    if (college_id) {
+      const collegeRes = await client.query('SELECT name FROM colleges WHERE id = $1', [college_id]);
+      collegeNameText = collegeRes.rows[0]?.name || '';
+    }
+
+    // Fetch all marks that are pending approval for a specific department
+    let query = `
+      SELECT 
+        m.id as mark_id,
+        s.id as student_id,
+        TRIM(s.name) as student_name,
+        TRIM(s.rollnumber) as enrollment_number,
+        sub.name as subject_name,
+        sub.subject_code,
+        m.internal_marks,
+        m.external_marks,
+        m.total_marks,
+        m.status,
+        tu.name as submitted_by
+      FROM marks m
+      JOIN students s ON m.student_id = s.id
+      JOIN master_subjects sub ON m.subject_id = sub.id
+      LEFT JOIN teachers t ON m.teacher_id = t.id
+      LEFT JOIN users tu ON t.user_id = tu.id
+      WHERE m.status = 'Pending Approval'
+    `;
+    
+    const values = [];
+    if (college_id) {
+      values.push(`%${collegeNameText}%`);
+      query += ` AND s."collageName" ILIKE $${values.length}`;
+    }
+    // We ignore department_id since students don't have a department string directly
+
+    query += ` ORDER BY sub.name, TRIM(s.name)`;
+
+    const result = await client.query(query, values);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get marks for approval error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const approveRejectMarks = async (req, res) => {
+  try {
+    // action should be 'Approve' or 'Reject'
+    const { mark_ids, action } = req.body; 
+    
+    if (!mark_ids || !Array.isArray(mark_ids) || mark_ids.length === 0) {
+      return res.status(400).json({ message: "No records provided." });
+    }
+    if (action !== 'Approve' && action !== 'Reject') {
+      return res.status(400).json({ message: "Invalid action." });
+    }
+
+    const newStatus = action === 'Approve' ? 'Approved' : 'Draft';
+    
+    // Find HOD id
+    const hodCheck = await client.query('SELECT id FROM teachers WHERE user_id = $1', [req.user.id]);
+    const hod_id = hodCheck.rows.length > 0 ? hodCheck.rows[0].id : null;
+
+    // Build parameterized array string: $3, $4, $5...
+    const placeholders = mark_ids.map((_, i) => `$${i + 3}`).join(',');
+
+    await client.query(
+      `UPDATE marks 
+       SET status = $1, hod_id = $2 
+       WHERE id IN (${placeholders}) AND status = 'Pending Approval'`,
+      [newStatus, hod_id, ...mark_ids]
+    );
+
+    res.json({ message: `Successfully ${action.toLowerCase()}ed ${mark_ids.length} records.` });
+  } catch (error) {
+    console.error("Approve/Reject marks error:", error);
+    res.status(500).json({ message: "Failed to process marks approval", error: error.message });
   }
 };
 
@@ -1667,6 +1988,9 @@ module.exports = {
   getTeachers,
   updateTeacher,
   getExams,
+  createExam,
+  updateExam,
+  deleteExam,
   getMarks,
   getMasterSemesters,
   createMasterSemester,
@@ -1708,5 +2032,10 @@ module.exports = {
   getCollegeAcademicYears,
   getMasterDepartment,
   updateMasterDepartment,
-  deleteMasterDepartment
+  deleteMasterDepartment,
+  // mark module additions
+  getStudentsForMarks,
+  saveTeacherMarks,
+  getMarksForApproval,
+  approveRejectMarks
 };

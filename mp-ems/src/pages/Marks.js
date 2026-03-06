@@ -13,6 +13,7 @@ import {
   AlertCircle,
   CheckCircle2
 } from "lucide-react";
+import { toast } from 'react-toastify';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 
@@ -21,9 +22,153 @@ import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } fr
  * Designed for high-performance academic record tracking.
  */
 const Marks = () => {
+  const [activeTab, setActiveTab] = useState('teacher'); // 'teacher' or 'hod'
+  
+  // Data States
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Filter States
+  const [colleges, setColleges] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [programs, setPrograms] = useState([]);
+  const [academicYears, setAcademicYears] = useState([]);
+  const [semesters, setSemesters] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [exams, setExams] = useState([]);
+
+  // Selected Filters
+  const [selectedCollege, setSelectedCollege] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedProgram, setSelectedProgram] = useState('');
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState('');
+  const [selectedSemester, setSelectedSemester] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [selectedExam, setSelectedExam] = useState('');
+
+  const [saving, setSaving] = useState(false);
+
+  // Clear selected exam and data if parent filters change
+  useEffect(() => {
+    setSelectedExam('');
+    setData([]);
+  }, [selectedCollege, selectedDepartment, selectedProgram, selectedAcademicYear, selectedSemester, selectedSubject]);
+
+  // Fetch initial dropdown data (Colleges, Depts, etc)
+  useEffect(() => {
+    fetchFilterData();
+  }, []);
+
+  const handleMarkChange = (id, field, value) => {
+    setData(prev => prev.map(item => {
+      // id passed from inputs is always item.student_id
+      if (item.student_id === id) {
+        const val = value === '' ? '' : Math.min(Math.max(0, Number(value)), field === 'internal_marks' ? 40 : 60);
+        
+        const newItem = { ...item, [field]: val };
+        const intMarks = Number(newItem.internal_marks) || 0;
+        const extMarks = Number(newItem.external_marks) || 0;
+        newItem.total_marks = intMarks + extMarks;
+        
+        // Let's modify the item so it marks as edited
+        newItem._edited = true;
+        return newItem;
+      }
+      return item;
+    }));
+  };
+
+  const saveSelectedMarks = async (status = 'Draft') => {
+    const editedRecords = data.filter(d => d._edited || status === 'Pending Approval');
+    if (editedRecords.length === 0) return;
+
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('token');
+      const payload = {
+        subject_id: selectedSubject,
+        exam_id: selectedExam,
+        academic_year_id: selectedAcademicYear,
+        marksData: editedRecords.map(r => ({
+          student_id: r.student_id,
+          internal_marks: r.internal_marks,
+          external_marks: r.external_marks,
+          status: status
+        }))
+      };
+
+      const res = await fetch('http://localhost:8080/api/marks/teacher-save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!res.ok) throw new Error('Failed to save marks');
+      
+      alert(status === 'Draft' ? 'Drafts saved successfully' : 'Submitted for approval successfully');
+      fetchData(); // reload
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleHodAction = async (mark_id, action) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8080/api/marks/approve-reject', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          mark_ids: [mark_id],
+          action: action
+        })
+      });
+      
+      if (!res.ok) throw new Error(`Failed to ${action} mark`);
+      
+      alert(`Mark ${action}d successfully`);
+      fetchData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const fetchFilterData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+
+      // Example calls - mapping to the actual API endpoints
+      const [colRes, deptRes, progRes, yrRes, semRes, subRes, exRes] = await Promise.all([
+        fetch('http://localhost:8080/api/colleges', { headers }),
+        fetch('http://localhost:8080/api/master-departments', { headers }),
+        fetch('http://localhost:8080/api/master-programs', { headers }),
+        fetch('http://localhost:8080/api/academic-years', { headers }),
+        fetch('http://localhost:8080/api/master-semesters', { headers }),
+        fetch('http://localhost:8080/api/master-subjects', { headers }),
+        fetch('http://localhost:8080/api/exams', { headers })
+      ]);
+
+      if (colRes.ok) setColleges(await colRes.json());
+      if (deptRes.ok) setDepartments(await deptRes.json());
+      if (progRes.ok) setPrograms(await progRes.json());
+      if (yrRes.ok) setAcademicYears(await yrRes.json());
+      if (semRes.ok) setSemesters(await semRes.json());
+      if (subRes.ok) setSubjects(await subRes.json());
+      if (exRes.ok) setExams(await exRes.json());
+    } catch (err) {
+      console.error("Error fetching filters", err);
+    }
+  };
 
   const availableColumns = [
     { key: 'id', label: 'ID' },
@@ -54,21 +199,55 @@ const Marks = () => {
   });
 
   useEffect(() => {
-    fetchData();
+    // Intentionally left blank. We don't want to auto-fetch on mount 
+    // because all dropdowns are empty, which would just throw a validation warning.
   }, []);
 
   const fetchData = async () => {
+    if (activeTab === 'teacher') {
+      if (!selectedCollege || !selectedDepartment || !selectedProgram || !selectedSemester || !selectedSubject || !selectedExam) {
+        setData([]);
+        toast.warning('Please select College, Department, Program, Semester, Subject, and Exam to load students.');
+        return;
+      }
+    } else {
+      // HOD Approval Tab
+      if (!selectedCollege || !selectedDepartment) {
+         setData([]);
+         toast.warning('Please select College and Department to load approvals.');
+         return;
+      }
+    }
+
+    setLoading(true);
+    setError(null);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/marks', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`HTTP ${response.status}: ${text}`);
+      const params = new URLSearchParams();
+      if (selectedCollege) params.append('college_id', selectedCollege);
+      if (selectedDepartment) params.append('department_id', selectedDepartment);
+      
+      if (activeTab === 'teacher') {
+        if (selectedProgram) params.append('program_id', selectedProgram);
+        if (selectedAcademicYear) params.append('academic_year_id', selectedAcademicYear);
+        if (selectedSemester) params.append('semester_id', selectedSemester);
+        if (selectedSubject) params.append('subject_id', selectedSubject);
+        if (selectedExam) params.append('exam_id', selectedExam);
+
+        const response = await fetch(`http://localhost:8080/api/marks/students?${params}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+        const data = await response.json();
+        setData(data || []);
+      } else {
+        const response = await fetch(`http://localhost:8080/api/marks/approvals?${params}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+        const data = await response.json();
+        setData(data || []);
       }
-      const data = await response.json();
-      setData(data || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -98,20 +277,145 @@ const Marks = () => {
             <BarChart3 size={32} />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Academic <span className="text-indigo-600">Records</span></h1>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Marks <span className="text-indigo-600">Management</span></h1>
             <p className="text-slate-500 font-bold text-sm tracking-widest uppercase flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              Marks & Performance Metrics
+              60/40 Split & Approvals
             </p>
           </div>
         </div>
-        <button className="group relative overflow-hidden bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.15em] shadow-xl shadow-slate-900/10 hover:shadow-indigo-500/20 active:scale-[0.98] transition-all">
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-sky-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="relative flex items-center gap-2">
-            <Plus size={18} />
-            <span>Record New Marks</span>
-          </div>
-        </button>
+        
+        {/* Role Tabs */}
+        <div className="flex bg-slate-100 p-1.5 rounded-2xl">
+          <button 
+            onClick={() => { setActiveTab('teacher'); setData([]); }}
+            className={`px-6 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'teacher' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Teacher Entry
+          </button>
+          <button 
+            onClick={() => { setActiveTab('hod'); setData([]); }}
+            className={`px-6 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'hod' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            HOD Approvals
+          </button>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-4">
+          {activeTab === 'teacher' && data.length > 0 && (
+             <>
+               <button 
+                 onClick={() => saveSelectedMarks('Draft')}
+                 disabled={saving}
+                 className="px-6 py-3 bg-white text-indigo-600 border-2 border-indigo-100 rounded-xl font-black text-sm uppercase tracking-widest hover:border-indigo-600 transition-all disabled:opacity-50"
+               >
+                 Save Drafts
+               </button>
+               <button 
+                 onClick={() => saveSelectedMarks('Pending Approval')}
+                 disabled={saving}
+                 className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
+               >
+                 Submit to HOD
+               </button>
+             </>
+          )}
+        </div>
+      </div>
+
+      {/* Filter Section */}
+      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">College</label>
+          <select 
+            value={selectedCollege} onChange={(e) => setSelectedCollege(e.target.value)}
+            className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
+          >
+            <option value="">Select College...</option>
+            {colleges.map(c => <option key={c.id} value={c.id}>{c.college_name || c.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Department</label>
+          <select 
+            value={selectedDepartment} onChange={(e) => setSelectedDepartment(e.target.value)}
+            className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
+          >
+            <option value="">Select Department...</option>
+            {departments.map(d => <option key={d.id} value={d.id}>{d.department_name}</option>)}
+          </select>
+        </div>
+        {activeTab === 'teacher' && (
+          <>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Program</label>
+              <select 
+                value={selectedProgram} onChange={(e) => setSelectedProgram(e.target.value)}
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
+              >
+                <option value="">Select Program...</option>
+                {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Academic Year</label>
+              <select 
+                value={selectedAcademicYear} onChange={(e) => setSelectedAcademicYear(e.target.value)}
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
+              >
+                <option value="">Select Year...</option>
+                {academicYears.map(y => <option key={y.id} value={y.id}>{y.year_name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Semester</label>
+              <select 
+                value={selectedSemester} onChange={(e) => setSelectedSemester(e.target.value)}
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
+              >
+                <option value="">Select Semester...</option>
+                {semesters.map(s => <option key={s.id} value={s.id}>{s.semester_name || `Semester ${s.id}`}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Subject</label>
+              <select 
+                value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)}
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
+              >
+                <option value="">Select Subject...</option>
+                {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Exam</label>
+              <select 
+                value={selectedExam} onChange={(e) => setSelectedExam(e.target.value)}
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
+              >
+                <option value="">Select Exam...</option>
+                {exams.filter(e => {
+                  if (selectedDepartment && e.department_id && e.department_id.toString() !== selectedDepartment.toString()) return false;
+                  if (selectedProgram && e.program_id && e.program_id.toString() !== selectedProgram.toString()) return false;
+                  if (selectedAcademicYear && e.academic_year_id && e.academic_year_id.toString() !== selectedAcademicYear.toString()) return false;
+                  if (selectedSemester && e.semester_id && e.semester_id.toString() !== selectedSemester.toString()) return false;
+                  if (selectedSubject && e.subject_id && e.subject_id.toString() !== selectedSubject.toString()) return false;
+                  return true;
+                }).map(e => <option key={e.id} value={e.id}>{e.exam_name || e.name}</option>)}
+              </select>
+            </div>
+          </>
+        )}
+        <div className="flex items-end">
+          <button 
+            onClick={fetchData}
+            className="w-full bg-indigo-600 text-white px-8 py-3.5 rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+          >
+            <Search size={18} />
+            <span>Load Data</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Content Card */}
@@ -159,8 +463,8 @@ const Marks = () => {
               <thead>
                 <tr className="bg-slate-50/50">
                   <SortHeader 
-                    label="ID" 
-                    field="id" 
+                    label="Enrollment No" 
+                    field="enrollment_number" 
                     currentSort={sortConfig} 
                     onSort={handleSort} 
                     className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-100" 
@@ -168,37 +472,36 @@ const Marks = () => {
                   />
                   <SortHeader 
                     label="Student Info" 
-                    field="student_id" 
+                    field="student_name" 
                     currentSort={sortConfig} 
                     onSort={handleSort} 
                     className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-100" 
                     visible={visibleColumns.student}
                   />
-                  <SortHeader 
-                    label="Exam Details" 
-                    field="exam_id" 
-                    currentSort={sortConfig} 
-                    onSort={handleSort} 
-                    className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-100" 
-                    visible={visibleColumns.exam}
-                  />
-                  <SortHeader 
-                    label="Performance" 
-                    field="marks_obtained" 
-                    currentSort={sortConfig} 
-                    onSort={handleSort} 
-                    className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-100" 
-                    visible={visibleColumns.performance}
-                  />
-                  <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Actions</th>
+                  {activeTab === 'teacher' ? (
+                    <>
+                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Internal (40)</th>
+                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">External (60)</th>
+                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Total (100)</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Subject</th>
+                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Total Marks</th>
+                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Submitted By</th>
+                    </>
+                  )}
+                  <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {paginatedData.map((item) => (
-                  <tr key={item.id} className="group hover:bg-slate-50/50 transition-colors">
+                  <tr key={item.mark_id || item.student_id} className="group hover:bg-slate-50/50 transition-colors">
                     {visibleColumns.id && (
-                      <td className="px-8 py-6">
-                        <span className="text-sm font-bold text-slate-400 tabular-nums">#{item.id}</span>
+                      <td className="px-8 py-6 whitespace-nowrap">
+                        <span className="text-sm font-bold text-slate-500 tabular-nums">
+                          {item.enrollment_number || 'N/A'}
+                        </span>
                       </td>
                     )}
                     {visibleColumns.student && (
@@ -208,49 +511,72 @@ const Marks = () => {
                             <GraduationCap size={18} />
                           </div>
                           <div>
-                            <p className="text-sm font-black text-slate-900 uppercase">Student Ref</p>
+                            <p className="text-sm font-black text-slate-900">{item.student_name}</p>
                             <p className="text-xs font-bold text-slate-500">ID: {item.student_id}</p>
                           </div>
                         </div>
                       </td>
                     )}
-                    {visibleColumns.exam && (
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-500 group-hover:text-white transition-all">
-                            <FileText size={18} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-black text-slate-900 uppercase">Exam Ref</p>
-                            <p className="text-xs font-bold text-slate-500">Code: {item.exam_id}</p>
-                          </div>
-                        </div>
-                      </td>
+                    
+                    {activeTab === 'teacher' ? (
+                      <>
+                        <td className="px-8 py-6">
+                           <input 
+                              type="number" 
+                              min="0" max="40"
+                              value={item.internal_marks ?? ''}
+                              onChange={(e) => handleMarkChange(item.student_id, 'internal_marks', e.target.value)}
+                              disabled={item.status === 'Approved' || item.status === 'Pending Approval'}
+                              className="w-20 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 text-center focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-400"
+                           />
+                        </td>
+                        <td className="px-8 py-6">
+                           <input 
+                              type="number" 
+                              min="0" max="60"
+                              value={item.external_marks ?? ''}
+                              onChange={(e) => handleMarkChange(item.student_id, 'external_marks', e.target.value)}
+                              disabled={item.status === 'Approved' || item.status === 'Pending Approval'}
+                              className="w-20 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 text-center focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-400"
+                           />
+                        </td>
+                        <td className="px-8 py-6">
+                          <span className={`text-sm font-black tabular-nums ${getPerformanceColor(item.total_marks || 0, 100)} px-3 py-1.5 rounded-lg border`}>
+                            {item.total_marks || 0}
+                          </span>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-8 py-6 text-sm font-bold text-slate-700">{item.subject_name}</td>
+                        <td className="px-8 py-6">
+                          <span className={`text-sm font-black tabular-nums ${getPerformanceColor(item.total_marks || 0, 100)} px-3 py-1.5 rounded-lg border`}>
+                            {item.total_marks || 0}
+                          </span>
+                        </td>
+                        <td className="px-8 py-6 text-sm font-bold text-slate-600">{item.submitted_by}</td>
+                      </>
                     )}
-                    {visibleColumns.performance && (
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-4">
-                          <div className={`px-4 py-2 rounded-xl border text-sm font-black tabular-nums transition-all ${getPerformanceColor(item.marks_obtained, item.max_marks)} shadow-sm`}>
-                            {item.marks_obtained} / {item.max_marks}
+                    
+                    <td className="px-8 py-6 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-3">
+                        <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-md border
+                          ${item.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                            item.status === 'Pending Approval' ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                            'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                          {item.status || 'Not Entered'}
+                        </span>
+                        
+                        {activeTab === 'hod' && (
+                          <div className="flex items-center gap-1 ml-2">
+                             <button onClick={() => handleHodAction(item.mark_id, 'Approve')} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors border border-transparent hover:border-emerald-200" title="Approve">
+                               <CheckCircle2 size={18} />
+                             </button>
+                             <button onClick={() => handleHodAction(item.mark_id, 'Reject')} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200" title="Reject">
+                               <AlertCircle size={18} />
+                             </button>
                           </div>
-                          <div className="flex flex-col">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Score</p>
-                            <p className="text-xs font-bold text-slate-800 tabular-nums">{Math.round((item.marks_obtained / item.max_marks) * 100)}%</p>
-                          </div>
-                        </div>
-                      </td>
-                    )}
-                    <td className="px-8 py-6 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                        <button className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all" aria-label="Edit Record">
-                          <Pencil size={18} />
-                        </button>
-                        <button className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" aria-label="Delete Record">
-                          <Trash2 size={18} />
-                        </button>
-                        <button className="p-2.5 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all" aria-label="Deep Analysis">
-                          <ArrowUpRight size={18} />
-                        </button>
+                        )}
                       </div>
                     </td>
                   </tr>
