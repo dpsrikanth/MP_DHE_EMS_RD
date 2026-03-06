@@ -788,7 +788,7 @@ const Students = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeAddModal} />
           
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col">
             {/* Header */}
             <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
               <div>
@@ -1092,7 +1092,7 @@ const Students = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeEditModal} />
           
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col">
             {/* Header */}
             <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
               <div>
