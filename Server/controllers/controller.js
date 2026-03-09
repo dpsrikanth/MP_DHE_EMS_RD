@@ -252,7 +252,7 @@ const refreshToken = async (req, res) => {
     jwt.verify(refreshTokenCookie, process.env.REFRESH_SECRET, async (err, decoded) => {
       if (err) return res.status(403).json({ message: "Invalid refresh token" });
       const payload = { id: decoded.id, email: decoded.email, role: decoded.role };
-      const newAccessToken = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: "1m" });
+      const newAccessToken = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: "15m" });
       res.json({ token: newAccessToken });
     });
   } catch (err) {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
-import { ShieldCheck, Save } from "lucide-react";
+import { ShieldCheck, Save, Pencil, Trash2, X } from "lucide-react";
 
 const PolicyConfig = () => {
     const [policies, setPolicies] = useState([]);
@@ -9,12 +9,19 @@ const PolicyConfig = () => {
     const [semesters, setSemesters] = useState([]);
     const [subjects, setSubjects] = useState([]);
     const [departments, setDepartments] = useState([]);
+    const [savedMappings, setSavedMappings] = useState([]);
 
     const [selectedPolicy, setSelectedPolicy] = useState(null);
     const [selectedDepartment, setSelectedDepartment] = useState(null);
     const [selectedProgram, setSelectedProgram] = useState(null);
     const [selectedSemester, setSelectedSemester] = useState(null);
     const [selectedSubjects, setSelectedSubjects] = useState([]);
+
+    const [editingMapping, setEditingMapping] = useState(null);
+    const [showEditModal, setShowEditModal] = useState(false);
+
+    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     const filteredPrograms = React.useMemo(() => {
         if (!selectedDepartment) return programs;
@@ -55,7 +62,23 @@ const PolicyConfig = () => {
 
     useEffect(() => {
         fetchMasterData();
+        fetchSavedMappings();
     }, []);
+
+    const fetchSavedMappings = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:8080/api/college-admin/policy-mappings', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setSavedMappings(data);
+            }
+        } catch (err) {
+            console.error('Failed to load saved mappings', err);
+        }
+    };
 
     const fetchMasterData = async () => {
         try {
@@ -121,11 +144,66 @@ const PolicyConfig = () => {
             }
 
             toast.success("Policy mapping saved successfully!");
-            // Reset form or refetch existing mappings (implement based on need)
             setSelectedSubjects([]);
+            fetchSavedMappings(); // Refresh the table after saving
 
         } catch (err) {
             toast.error("Failed to save mapping");
+        }
+    };
+
+    const handleDeleteClick = (mapping) => {
+        setDeleteTarget(mapping);
+        setShowDeleteModal(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!deleteTarget) return;
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:8080/api/college-admin/policy-mappings/${deleteTarget.id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                toast.success("Mapping deleted successfully");
+                fetchSavedMappings();
+            } else {
+                toast.error("Failed to delete mapping");
+            }
+        } catch (err) {
+            toast.error("An error occurred while deleting");
+        } finally {
+            setShowDeleteModal(false);
+            setDeleteTarget(null);
+        }
+    };
+
+    const handleEditClick = (mapping) => {
+        setEditingMapping(mapping);
+        setShowEditModal(true);
+    };
+
+    const handleUpdateMapping = async () => {
+        if (!editingMapping.policy_id || !editingMapping.program_id || !editingMapping.semester_id || !editingMapping.department_id || !editingMapping.subject_id) {
+            return toast.warning("Please ensure all fields are selected");
+        }
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:8080/api/college-admin/policy-mappings/${editingMapping.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify(editingMapping)
+            });
+            if (res.ok) {
+                toast.success("Mapping updated successfully");
+                setShowEditModal(false);
+                fetchSavedMappings();
+            } else {
+                toast.error("Failed to update mapping");
+            }
+        } catch (err) {
+            toast.error("An error occurred while updating");
         }
     };
 
@@ -226,6 +304,198 @@ const PolicyConfig = () => {
                     </div>
                 )}
             </div>
+
+            {/* Saved Mappings Table */}
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mt-8">
+                <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                        <h2 className="text-lg font-bold text-slate-900">Configured Mappings</h2>
+                        <p className="text-sm text-slate-500 mt-1">Currently saved policies and subject combinations</p>
+                    </div>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-slate-50/50 border-y border-slate-100/60">
+                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Policy</th>
+                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Department</th>
+                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Program & Sem</th>
+                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Subject</th>
+                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {savedMappings.length > 0 ? (
+                                savedMappings.map((map) => (
+                                    <tr key={map.id} className="hover:bg-slate-50/50 transition-colors">
+                                        <td className="py-4 px-6 text-sm font-semibold text-slate-800">{map.policy_name}</td>
+                                        <td className="py-4 px-6 text-sm text-slate-600 font-medium bg-amber-50/30">{map.department_name}</td>
+                                        <td className="py-4 px-6">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-semibold text-sky-700">{map.program_name}</span>
+                                                <span className="text-xs font-bold text-slate-400 uppercase mt-0.5">{map.semester_name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-6">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-semibold text-slate-800">{map.subject_name}</span>
+                                                <span className="text-xs font-bold text-slate-400 mt-0.5">{map.subject_code}</span>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-6 text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button 
+                                                    onClick={() => handleEditClick({
+                                                        id: map.id,
+                                                        policy_id: policies.find(p => p.name === map.policy_name)?.id,
+                                                        department_id: departments.find(d => d.name === map.department_name)?.id,
+                                                        program_id: programs.find(p => p.name === map.program_name)?.id,
+                                                        semester_id: semesters.find(s => s.semester_name === map.semester_name)?.id,
+                                                        subject_id: subjects.find(s => s.subject_code === map.subject_code)?.id
+                                                    })}
+                                                    className="p-2 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-xl transition-all"
+                                                    title="Edit Mapping"
+                                                >
+                                                    <Pencil size={18} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleDeleteClick(map)}
+                                                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                                    title="Delete Mapping"
+                                                >
+                                                    <Trash2 size={20} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="5" className="py-12 px-6 text-center">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <ShieldCheck size={32} className="text-slate-200" />
+                                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">No mappings found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Edit Modal */}
+            {showEditModal && editingMapping && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowEditModal(false)} />
+                    <div className="relative bg-white rounded-3xl shadow-xl w-full max-w-xl overflow-hidden pointer-events-auto">
+                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900">Edit Policy Mapping</h3>
+                                <p className="text-xs text-slate-500 font-medium">Update the subject to policy relationship</p>
+                            </div>
+                            <button onClick={() => setShowEditModal(false)} className="p-2 bg-white hover:bg-slate-200 text-slate-400 rounded-xl transition-colors border border-slate-200 shadow-sm">
+                                <X size={16} />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 ml-1">Policy</label>
+                                    <select 
+                                        value={editingMapping.policy_id} 
+                                        onChange={(e) => setEditingMapping({...editingMapping, policy_id: e.target.value})}
+                                        className="w-full mt-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none"
+                                    >
+                                        <option value="">Select Policy</option>
+                                        {policies.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 ml-1">Department</label>
+                                    <select 
+                                        value={editingMapping.department_id} 
+                                        onChange={(e) => setEditingMapping({...editingMapping, department_id: e.target.value})}
+                                        className="w-full mt-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none"
+                                    >
+                                        <option value="">Select Department</option>
+                                        {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 ml-1">Program</label>
+                                    <select 
+                                        value={editingMapping.program_id} 
+                                        onChange={(e) => setEditingMapping({...editingMapping, program_id: e.target.value})}
+                                        className="w-full mt-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none"
+                                    >
+                                        <option value="">Select Program</option>
+                                        {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 ml-1">Semester</label>
+                                    <select 
+                                        value={editingMapping.semester_id} 
+                                        onChange={(e) => setEditingMapping({...editingMapping, semester_id: e.target.value})}
+                                        className="w-full mt-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none"
+                                    >
+                                        <option value="">Select Semester</option>
+                                        {semesters.map(s => <option key={s.id} value={s.id}>{s.semester_name}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 ml-1">Subject</label>
+                                <select 
+                                    value={editingMapping.subject_id} 
+                                    onChange={(e) => setEditingMapping({...editingMapping, subject_id: e.target.value})}
+                                    className="w-full mt-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none"
+                                >
+                                    <option value="">Select Subject</option>
+                                    {subjects.map(s => <option key={s.id} value={s.id}>{s.subject_code} - {s.name}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                            <button onClick={() => setShowEditModal(false)} className="px-5 py-2 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">Cancel</button>
+                            <button onClick={handleUpdateMapping} className="px-5 py-2 text-sm font-bold bg-sky-600 hover:bg-sky-700 text-white rounded-xl shadow-md transition-all">Update Mapping</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
+                    <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden">
+                        <div className="p-8 text-center flex flex-col items-center">
+                            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+                                <Trash2 size={32} />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">Confirm Removal</h3>
+                            <p className="text-slate-500 text-sm leading-relaxed mb-8">
+                                Are you sure you want to delete this mapping? This action cannot be reversed.
+                            </p>
+                            <div className="flex gap-3 w-full">
+                                <button 
+                                    className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all"
+                                    onClick={() => setShowDeleteModal(false)}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-500/20 transition-all"
+                                    onClick={handleDeleteConfirm}
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

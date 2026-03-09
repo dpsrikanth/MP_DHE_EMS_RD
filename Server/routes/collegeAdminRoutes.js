@@ -19,14 +19,22 @@ router.use(isCollegeAdmin);
 // Policy mapping routes
 router.post('/map-policy', collegeAdminController.mapPolicyToProgramSemester);
 router.post('/map-subject', collegeAdminController.mapSubjectsToPolicy);
+router.get('/policy-mappings', collegeAdminController.getPolicyMappings);
+router.put('/policy-mappings/:id', collegeAdminController.editPolicyMapping);
+router.delete('/policy-mappings/:id', collegeAdminController.deletePolicyMapping);
 
 // Marks structure routes
 router.post('/marks-structure', collegeAdminController.configureMarksStructure);
 router.get('/marks-structure/:subject_id', collegeAdminController.getMarksStructure);
+router.get('/all-marks-structures', collegeAdminController.getAllMarksStructures);
+router.put('/marks-structure/:id', collegeAdminController.editMarksStructure);
+router.delete('/marks-structure/:id', collegeAdminController.deleteMarksStructure);
 
 // Faculty assigned subjects routes
 router.post('/assign-faculty', collegeAdminController.assignFacultyToSubject);
 router.get('/faculty-assignments/:college_id', collegeAdminController.getFacultyAssignments);
+router.put('/faculty-assignments/:id', collegeAdminController.editFacultyAssignment);
+router.delete('/faculty-assignments/:id', collegeAdminController.deleteFacultyAssignment);
 
 // Marks workflow routes
 router.get('/workflow-status', collegeAdminController.getMarksWorkflowStatus);
