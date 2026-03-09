@@ -1152,7 +1152,15 @@ const getMasterSemester = async (req, res) => {
 const getMasterSubjects = async (req, res) => {
   try {
     const result = await client.query(
-      `SELECT id, subject_code, name, status, created_at FROM master_subjects WHERE status IS NULL OR status = 'Active' ORDER BY id`
+      `SELECT ms.id, ms.subject_code, ms.name, ms.status, ms.created_at, 
+              COALESCE(
+                (SELECT json_agg(department_id) 
+                 FROM master_subject_departments 
+                 WHERE subject_id = ms.id), 
+              '[]'::json) as department_ids
+       FROM master_subjects ms 
+       WHERE ms.status IS NULL OR ms.status = 'Active' 
+       ORDER BY ms.id`
     );
     res.json(result.rows);
   } catch (error) {
@@ -1163,11 +1171,20 @@ const getMasterSubjects = async (req, res) => {
 
 const createMasterSubject = async (req, res) => {
   try {
-    const { subject_code, name } = req.body;
+    const { subject_code, name, department_ids } = req.body;
     if (!subject_code || !name) return res.status(400).json({ message: "Subject code and name are required" });
+    await client.query('BEGIN');
     const result = await client.query("INSERT INTO master_subjects (subject_code, name, status) VALUES ($1, $2, 'Active') RETURNING id, subject_code, name, status, created_at", [subject_code, name]);
+    const subjectId = result.rows[0].id;
+    if (department_ids && Array.isArray(department_ids) && department_ids.length > 0) {
+      for (const deptId of department_ids) {
+        await client.query("INSERT INTO master_subject_departments (subject_id, department_id) VALUES ($1, $2)", [subjectId, deptId]);
+      }
+    }
+    await client.query('COMMIT');
     res.status(201).json(result.rows[0]);
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error("Create master subject error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -1188,12 +1205,24 @@ const getMasterSubject = async (req, res) => {
 const updateMasterSubject = async (req, res) => {
   try {
     const { id } = req.params;
-    const { subject_code, name } = req.body;
+    const { subject_code, name, department_ids } = req.body;
     if (!subject_code || !name) return res.status(400).json({ message: "Subject code and name are required" });
+    await client.query('BEGIN');
     const result = await client.query("UPDATE master_subjects SET subject_code = $1, name = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, subject_code, name, created_at", [subject_code, name, id]);
-    if (result.rows.length === 0) return res.status(404).json({ message: "Master subject not found" });
+    if (result.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ message: "Master subject not found" });
+    }
+    if (department_ids && Array.isArray(department_ids)) {
+      await client.query("DELETE FROM master_subject_departments WHERE subject_id = $1", [id]);
+      for (const deptId of department_ids) {
+        await client.query("INSERT INTO master_subject_departments (subject_id, department_id) VALUES ($1, $2)", [id, deptId]);
+      }
+    }
+    await client.query('COMMIT');
     res.json(result.rows[0]);
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error("Update master subject error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -1221,7 +1250,15 @@ const deleteMasterSubject = async (req, res) => {
 const getMasterPrograms = async (req, res) => {
   try {
     const result = await client.query(
-      `SELECT id, name, duration_years, status, created_at FROM master_programs WHERE status IS NULL OR status = 'Active' ORDER BY id`
+      `SELECT mp.id, mp.name, mp.duration_years, mp.status, mp.created_at, 
+              COALESCE(
+                (SELECT json_agg(department_id) 
+                 FROM master_program_departments 
+                 WHERE program_id = mp.id), 
+              '[]'::json) as department_ids
+       FROM master_programs mp 
+       WHERE mp.status IS NULL OR mp.status = 'Active' 
+       ORDER BY mp.id`
     );
     res.json(result.rows);
   } catch (error) {
@@ -1232,11 +1269,20 @@ const getMasterPrograms = async (req, res) => {
 
 const createMasterProgram = async (req, res) => {
   try {
-    const { name, duration_years } = req.body;
+    const { name, duration_years, department_ids } = req.body;
     if (!name || !duration_years) return res.status(400).json({ message: "Program name and duration are required" });
+    await client.query('BEGIN');
     const result = await client.query("INSERT INTO master_programs (name, duration_years, status) VALUES ($1, $2, 'Active') RETURNING id, name, duration_years, status, created_at", [name, duration_years]);
+    const programId = result.rows[0].id;
+    if (department_ids && Array.isArray(department_ids) && department_ids.length > 0) {
+      for (const deptId of department_ids) {
+        await client.query("INSERT INTO master_program_departments (program_id, department_id) VALUES ($1, $2)", [programId, deptId]);
+      }
+    }
+    await client.query('COMMIT');
     res.status(201).json(result.rows[0]);
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error("Create master program error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -1257,12 +1303,24 @@ const getMasterProgram = async (req, res) => {
 const updateMasterProgram = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, duration_years } = req.body;
+    const { name, duration_years, department_ids } = req.body;
     if (!name || !duration_years) return res.status(400).json({ message: "Program name and duration are required" });
+    await client.query('BEGIN');
     const result = await client.query("UPDATE master_programs SET name = $1, duration_years = $2 WHERE id = $3 RETURNING id, name, duration_years, created_at", [name, duration_years, id]);
-    if (result.rows.length === 0) return res.status(404).json({ message: "Master program not found" });
+    if (result.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ message: "Master program not found" });
+    }
+    if (department_ids && Array.isArray(department_ids)) {
+      await client.query("DELETE FROM master_program_departments WHERE program_id = $1", [id]);
+      for (const deptId of department_ids) {
+        await client.query("INSERT INTO master_program_departments (program_id, department_id) VALUES ($1, $2)", [id, deptId]);
+      }
+    }
+    await client.query('COMMIT');
     res.json(result.rows[0]);
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error("Update master program error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }

@@ -5,7 +5,15 @@ const getMasters = async (req, res) => {
     const user = req.user;
 
     let policies, programs, academicYears, semesters, departments;
-    const subjects = await client.query("SELECT id, name, subject_code FROM master_subjects ORDER BY id");
+    const subjects = await client.query(`
+      SELECT s.id, s.name, s.subject_code,
+             COALESCE(
+               (SELECT json_agg(department_id) 
+                FROM master_subject_departments 
+                WHERE subject_id = s.id), 
+             '[]'::json) as department_ids
+      FROM master_subjects s ORDER BY s.id
+    `);
 
     if (user && user.college_id) {
       policies = await client.query(`
@@ -16,7 +24,12 @@ const getMasters = async (req, res) => {
       `, [user.college_id]);
 
       programs = await client.query(`
-        SELECT p.id, p.name 
+        SELECT p.id, p.name, p.duration_years,
+               COALESCE(
+                 (SELECT json_agg(department_id) 
+                  FROM master_program_departments 
+                  WHERE program_id = p.id), 
+               '[]'::json) as department_ids
         FROM master_programs p
         JOIN college_master_programs cmp ON p.id = cmp.program_id
         WHERE cmp.college_id = $1 ORDER BY p.id
@@ -43,7 +56,15 @@ const getMasters = async (req, res) => {
       `, [user.college_id]);
     } else {
       policies = await client.query("SELECT id, name FROM master_policies ORDER BY id");
-      programs = await client.query("SELECT id, name FROM master_programs ORDER BY id");
+      programs = await client.query(`
+        SELECT p.id, p.name, p.duration_years,
+               COALESCE(
+                 (SELECT json_agg(department_id) 
+                  FROM master_program_departments 
+                  WHERE program_id = p.id), 
+               '[]'::json) as department_ids
+        FROM master_programs p ORDER BY p.id
+      `);
       academicYears = await client.query("SELECT id, year_name FROM master_academic_years ORDER BY id");
       semesters = await client.query("SELECT id, semester_name FROM master_semesters ORDER BY id");
       departments = await client.query("SELECT id, department_name as name FROM master_departments WHERE status = 'Active' ORDER BY id");

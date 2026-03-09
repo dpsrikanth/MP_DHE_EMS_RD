@@ -12,8 +12,25 @@ import {
   ShieldAlert
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
+import Select, { components } from "react-select";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+
+const Option = (props) => {
+  return (
+    <div>
+      <components.Option {...props}>
+        <input
+          type="checkbox"
+          checked={props.isSelected}
+          onChange={() => null}
+          className="mr-2 rounded border-emerald-500 text-emerald-600 focus:ring-emerald-500"
+        />{" "}
+        <label>{props.label}</label>
+      </components.Option>
+    </div>
+  );
+};
 
 const Programs = () => {
   const [data, setData] = useState([]);
@@ -24,7 +41,8 @@ const Programs = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selected, setSelected] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [form, setForm] = useState({ name: '', duration_years: '' });
+  const [departments, setDepartments] = useState([]);
+  const [form, setForm] = useState({ name: '', duration_years: '', department_ids: [] });
 
   const availableColumns = [
     { key: 'id', label: 'ID' },
@@ -57,7 +75,23 @@ const Programs = () => {
 
   useEffect(() => {
     fetchData();
+    fetchDepartments();
   }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8080/api/master-departments', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const result = await res.json();
+        setDepartments(result.map(d => ({ value: d.id, label: d.department_name })));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -85,7 +119,11 @@ const Programs = () => {
       const res = await fetch('http://localhost:8080/api/master-programs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: form.name, duration_years: parseInt(form.duration_years) })
+        body: JSON.stringify({ 
+          name: form.name, 
+          duration_years: parseInt(form.duration_years),
+          department_ids: form.department_ids.map(d => d.value)
+        })
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -94,7 +132,7 @@ const Programs = () => {
       const result = await res.json();
       toast.success(result.message || 'Program added successfully!');
       setShowAddModal(false);
-      setForm({ name: '', duration_years: '' });
+      setForm({ name: '', duration_years: '', department_ids: [] });
       fetchData();
     } catch (err) {
       toast.error('Error: ' + err.message);
@@ -108,7 +146,11 @@ const Programs = () => {
       const res = await fetch(`http://localhost:8080/api/master-programs/${selected.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: form.name, duration_years: parseInt(form.duration_years) })
+        body: JSON.stringify({ 
+          name: form.name, 
+          duration_years: parseInt(form.duration_years),
+          department_ids: form.department_ids.map(d => d.value)
+        })
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -118,7 +160,7 @@ const Programs = () => {
       toast.success(result.message || 'Program updated successfully!');
       setShowEditModal(false);
       setSelected(null);
-      setForm({ name: '', duration_years: '' });
+      setForm({ name: '', duration_years: '', department_ids: [] });
       fetchData();
     } catch (err) {
       toast.error('Error: ' + err.message);
@@ -129,7 +171,10 @@ const Programs = () => {
     const item = data.find(x => x.id === id);
     if (item) {
       setSelected(item);
-      setForm({ name: item.name, duration_years: item.duration_years });
+      const selectedDepts = item.department_ids && departments.length > 0
+        ? departments.filter(d => item.department_ids.includes(d.value))
+        : [];
+      setForm({ name: item.name, duration_years: item.duration_years, department_ids: selectedDepts });
       setShowEditModal(true);
     }
   };
@@ -193,7 +238,7 @@ const Programs = () => {
               onToggle={toggleColumn} 
             />
             <button 
-              onClick={() => { setSelected(null); setForm({ name: '', duration_years: '' }); setShowAddModal(true); }}
+              onClick={() => { setSelected(null); setForm({ name: '', duration_years: '', department_ids: [] }); setShowAddModal(true); }}
               className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
             >
               <Plus size={20} />
@@ -374,6 +419,44 @@ const Programs = () => {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Departments</label>
+                <div className="relative">
+                  <Select
+                    isMulti
+                    options={[{value: 'all', label: 'Select All'}, ...departments]}
+                    value={form.department_ids}
+                    onChange={(selected) => {
+                      if (selected && selected.some(option => option.value === 'all')) {
+                         setForm({ ...form, department_ids: departments });
+                      } else {
+                         setForm({ ...form, department_ids: selected || [] });
+                      }
+                    }}
+                    components={{ Option }}
+                    hideSelectedOptions={false}
+                    closeMenuOnSelect={false}
+                    className="react-select-container text-sm font-semibold"
+                    classNamePrefix="react-select"
+                    placeholder="Select Departments..."
+                    styles={{
+                      control: (base, state) => ({
+                        ...base,
+                        padding: '0.4rem',
+                        borderRadius: '1rem',
+                        borderColor: state.isFocused ? '#10b981' : '#f1f5f9',
+                        borderWidth: '2px',
+                        backgroundColor: state.isFocused ? '#ffffff' : '#f8fafc',
+                        boxShadow: 'none',
+                        '&:hover': {
+                          borderColor: state.isFocused ? '#10b981' : '#f1f5f9'
+                        }
+                      })
+                    }}
+                  />
+                </div>
+              </div>
+
               {showEditModal && selected && (
                 <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                   <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 shadow-sm border border-slate-100">
@@ -391,7 +474,7 @@ const Programs = () => {
             <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
               <button 
                 className="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-800"
-                onClick={() => { setShowAddModal(false); setShowEditModal(false); setSelected(null); }}
+                onClick={() => { setShowAddModal(false); setShowEditModal(false); setSelected(null); setForm({ name: '', duration_years: '', department_ids: [] }); }}
               >
                 Discard
               </button>

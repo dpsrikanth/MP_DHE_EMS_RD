@@ -3,14 +3,14 @@ const client = require('./db');
 async function runMigration() {
   try {
     await client.connect();
-  } catch(e) { /* ignore if already connected by db.js */ }
+  } catch(e) { }
   
   try {
     const res = await client.query(`
-      CREATE TABLE IF NOT EXISTS master_program_departments (
-          program_id INTEGER REFERENCES master_programs(id) ON DELETE CASCADE,
+      CREATE TABLE IF NOT EXISTS master_subject_departments (
+          subject_id INTEGER REFERENCES master_subjects(id) ON DELETE CASCADE,
           department_id INTEGER REFERENCES master_departments(id) ON DELETE CASCADE,
-          PRIMARY KEY (program_id, department_id)
+          PRIMARY KEY (subject_id, department_id)
       );
     `);
     console.log("Migration successful");

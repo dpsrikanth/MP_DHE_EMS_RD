@@ -11,10 +11,45 @@ const MarksConfig = () => {
     const [departments, setDepartments] = useState([]);
 
     const [selectedPolicy, setSelectedPolicy] = useState(null);
+    const [selectedDepartment, setSelectedDepartment] = useState(null);
     const [selectedProgram, setSelectedProgram] = useState(null);
     const [selectedSemester, setSelectedSemester] = useState(null);
-    const [selectedDepartment, setSelectedDepartment] = useState(null);
     const [selectedSubject, setSelectedSubject] = useState(null);
+
+    const filteredPrograms = React.useMemo(() => {
+        if (!selectedDepartment) return programs;
+        return programs.filter(p => p.department_ids && p.department_ids.includes(selectedDepartment.value));
+    }, [programs, selectedDepartment]);
+
+    const filteredSemesters = React.useMemo(() => {
+        if (!selectedProgram || !selectedProgram.duration_years) return semesters;
+        const maxSemesters = selectedProgram.duration_years * 2;
+        // Sort semesters by the number in their name (e.g., "Semester 1" -> 1)
+        const sortedSemesters = [...semesters].sort((a, b) => {
+            const numA = parseInt(a.semester_name.replace(/[^0-9]/g, ''), 10) || 0;
+            const numB = parseInt(b.semester_name.replace(/[^0-9]/g, ''), 10) || 0;
+            return numA - numB;
+        });
+        return sortedSemesters.slice(0, maxSemesters);
+    }, [semesters, selectedProgram]);
+
+    const filteredSubjects = React.useMemo(() => {
+        if (!selectedDepartment) return subjects;
+        return subjects.filter(s => s.department_ids && s.department_ids.includes(selectedDepartment.value));
+    }, [subjects, selectedDepartment]);
+
+    useEffect(() => {
+        if (selectedDepartment) {
+            setSelectedProgram(null);
+            setSelectedSubject(null);
+        }
+    }, [selectedDepartment]);
+
+    useEffect(() => {
+        if (selectedProgram) {
+            setSelectedSemester(null);
+        }
+    }, [selectedProgram]);
 
     const [components, setComponents] = useState([
         { id: Date.now(), name: '', maxMarks: '', passingMarks: '' }
@@ -131,16 +166,6 @@ const MarksConfig = () => {
                         />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-slate-700 ml-1">Program</label>
-                        <Select
-                            options={programs.map(p => ({ value: p.id, label: p.name }))}
-                            value={selectedProgram}
-                            onChange={setSelectedProgram}
-                            placeholder="Program"
-                            styles={{ control: (base) => ({ ...base, borderRadius: '1rem', borderColor: '#e2e8f0' }) }}
-                        />
-                    </div>
-                    <div className="space-y-2">
                         <label className="text-sm font-bold text-slate-700 ml-1">Department</label>
                         <Select
                             options={departments.map(d => ({ value: d.id, label: d.name }))}
@@ -151,19 +176,31 @@ const MarksConfig = () => {
                         />
                     </div>
                     <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Program</label>
+                        <Select
+                            options={filteredPrograms.map(p => ({ value: p.id, label: p.name, duration_years: p.duration_years }))}
+                            value={selectedProgram}
+                            onChange={setSelectedProgram}
+                            placeholder="Program"
+                            styles={{ control: (base) => ({ ...base, borderRadius: '1rem', borderColor: '#e2e8f0' }) }}
+                            isDisabled={!selectedDepartment}
+                        />
+                    </div>
+                    <div className="space-y-2">
                         <label className="text-sm font-bold text-slate-700 ml-1">Semester</label>
                         <Select
-                            options={semesters.map(s => ({ value: s.id, label: s.semester_name }))}
+                            options={filteredSemesters.map(s => ({ value: s.id, label: s.semester_name }))}
                             value={selectedSemester}
                             onChange={setSelectedSemester}
                             placeholder="Semester"
                             styles={{ control: (base) => ({ ...base, borderRadius: '1rem', borderColor: '#e2e8f0' }) }}
+                            isDisabled={!selectedProgram}
                         />
                     </div>
                     <div className="space-y-2">
                         <label className="text-sm font-bold text-slate-700 ml-1">Subject</label>
                         <Select
-                            options={subjects.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}` }))}
+                            options={filteredSubjects.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}` }))}
                             value={selectedSubject}
                             onChange={setSelectedSubject}
                             placeholder="Subject"

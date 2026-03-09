@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Select, { components } from "react-select";
 import { toast } from 'react-toastify';
 import { 
   Book, 
@@ -24,7 +25,8 @@ const Subjects = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selected, setSelected] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [form, setForm] = useState({ name: '', subject_code: '' });
+  const [form, setForm] = useState({ name: '', subject_code: '', department_ids: [] });
+  const [departments, setDepartments] = useState([]);
 
   const availableColumns = [
     { key: 'id', label: 'ID' },
@@ -57,7 +59,23 @@ const Subjects = () => {
 
   useEffect(() => {
     fetchData();
+    fetchDepartments();
   }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/master-departments', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setDepartments(result);
+      }
+    } catch (err) {
+      console.error('Error fetching departments:', err);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -82,10 +100,14 @@ const Subjects = () => {
     if (!form.name || !form.subject_code) return toast.warning('Both fields are required');
     try {
       const token = localStorage.getItem('token');
+      const payload = {
+        ...form,
+        department_ids: form.department_ids?.map(d => d.value) || []
+      };
       const res = await fetch('http://localhost:8080/api/master-subjects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
+        body: JSON.stringify(payload)
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -94,7 +116,7 @@ const Subjects = () => {
       const result = await res.json();
       toast.success(result.message || 'Subject added successfully!');
       setShowAddModal(false);
-      setForm({ name: '', subject_code: '' });
+      setForm({ name: '', subject_code: '', department_ids: [] });
       fetchData();
     } catch (err) {
       toast.error('Error: ' + err.message);
@@ -105,10 +127,14 @@ const Subjects = () => {
     if (!form.name || !form.subject_code) return toast.warning('Both fields are required');
     try {
       const token = localStorage.getItem('token');
+      const payload = {
+        ...form,
+        department_ids: form.department_ids?.map(d => d.value) || []
+      };
       const res = await fetch(`http://localhost:8080/api/master-subjects/${selected.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
+        body: JSON.stringify(payload)
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -118,7 +144,7 @@ const Subjects = () => {
       toast.success(result.message || 'Subject updated successfully!');
       setShowEditModal(false);
       setSelected(null);
-      setForm({ name: '', subject_code: '' });
+      setForm({ name: '', subject_code: '', department_ids: [] });
       fetchData();
     } catch (err) {
       toast.error('Error: ' + err.message);
@@ -129,7 +155,13 @@ const Subjects = () => {
     const item = data.find(x => x.id === id);
     if (item) {
       setSelected(item);
-      setForm({ name: item.name, subject_code: item.subject_code });
+      let ds = [];
+      if (item.department_ids && item.department_ids.length > 0) {
+        ds = departments
+          .filter(d => item.department_ids.includes(d.id))
+          .map(d => ({ value: d.id, label: d.department_name }));
+      }
+      setForm({ name: item.name, subject_code: item.subject_code, department_ids: ds });
       setShowEditModal(true);
     }
   };
@@ -193,7 +225,7 @@ const Subjects = () => {
               onToggle={toggleColumn} 
             />
             <button 
-              onClick={() => { setSelected(null); setForm({ subject_code: '', name: '' }); setShowAddModal(true); }}
+              onClick={() => { setSelected(null); setForm({ subject_code: '', name: '', department_ids: [] }); setShowAddModal(true); }}
               className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-2xl shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
             >
               <Plus size={20} />
@@ -372,6 +404,82 @@ const Subjects = () => {
                     className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-amber-500 outline-none transition-all font-semibold"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2 relative z-50">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Departments</label>
+                  <Select
+                      isMulti
+                      options={[
+                          { label: "Select All", value: "all" },
+                          ...departments.map(d => ({ value: d.id, label: d.department_name }))
+                      ]}
+                      value={form.department_ids}
+                      onChange={(selectedOptions, actionMeta) => {
+                          if (actionMeta.action === 'select-option' && actionMeta.option.value === 'all') {
+                              setForm({ ...form, department_ids: departments.map(d => ({ value: d.id, label: d.department_name })) });
+                          } else if (actionMeta.action === 'deselect-option' && actionMeta.option.value === 'all') {
+                              setForm({ ...form, department_ids: [] });
+                          } else {
+                              const newValues = selectedOptions.filter(o => o.value !== 'all');
+                              setForm({ ...form, department_ids: newValues });
+                          }
+                      }}
+                      components={{
+                          Option: (props) => (
+                              <components.Option {...props}>
+                                  <div className="flex items-center gap-2">
+                                      <input 
+                                          type="checkbox" 
+                                          checked={props.isSelected || (props.data.value === 'all' && form.department_ids?.length === departments.length && departments.length > 0)} 
+                                          onChange={() => null} 
+                                          className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                                      />
+                                      <span className={props.data.value === 'all' ? "font-bold" : ""}>{props.label}</span>
+                                  </div>
+                              </components.Option>
+                          )
+                      }}
+                      closeMenuOnSelect={false}
+                      hideSelectedOptions={false}
+                      placeholder="Assign to departments..."
+                      styles={{
+                          control: (base) => ({
+                              ...base,
+                              backgroundColor: '#f8fafc',
+                              borderColor: '#f1f5f9',
+                              borderWidth: '2px',
+                              borderRadius: '1rem',
+                              padding: '0.2rem',
+                              paddingLeft: '0.8rem',
+                              transition: 'all 0.2s ease',
+                              minHeight: '56px',
+                              '&:hover': {
+                                  borderColor: '#e2e8f0',
+                                  backgroundColor: '#fff'
+                              }
+                          }),
+                          multiValue: (base) => ({
+                              ...base,
+                              backgroundColor: '#fffbeb',
+                              borderRadius: '0.5rem',
+                              border: '1px solid #fde68a'
+                          }),
+                          multiValueLabel: (base) => ({
+                              ...base,
+                              color: '#b45309',
+                              fontWeight: '600'
+                          }),
+                          multiValueRemove: (base) => ({
+                              ...base,
+                              color: '#b45309',
+                              ':hover': {
+                                  backgroundColor: '#fde68a',
+                                  color: '#92400e',
+                              },
+                          }),
+                      }}
+                  />
               </div>
 
               {showEditModal && selected && (
