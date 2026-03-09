@@ -73,7 +73,7 @@ const MarksEntry = () => {
             setMarksStructure(structureData);
 
             // 2. Fetch Students for this subject
-            const studentsRes = await fetch(`http://localhost:8080/api/faculty-marks/students?college_id=${assignment.college_id}&semester_id=${assignment.semester_id}`, {
+            const studentsRes = await fetch(`http://localhost:8080/api/faculty-marks/students?college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&program_id=${assignment.program_id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             let studentsData = [];
@@ -352,10 +352,10 @@ const MarksEntry = () => {
                                                                 disabled={draft.isAbsent}
                                                                 onChange={(e) => handleMarkChange(student.id, comp.id, 'marks', e.target.value)}
                                                                 className={`w-20 text-center px-2 py-1.5 border rounded-lg font-bold outline-none transition-all ${draft.isAbsent
-                                                                        ? 'bg-slate-100 border-slate-200 text-slate-400'
-                                                                        : isFailedComp
-                                                                            ? 'border-red-300 bg-red-50 text-red-600 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-                                                                            : 'border-slate-200 bg-white text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'
+                                                                    ? 'bg-slate-100 border-slate-200 text-slate-400'
+                                                                    : isFailedComp
+                                                                        ? 'border-red-300 bg-red-50 text-red-600 focus:border-red-500 focus:ring-2 focus:ring-red-200'
+                                                                        : 'border-slate-200 bg-white text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'
                                                                     }`}
                                                                 placeholder={draft.isAbsent ? "AB" : "00"}
                                                             />

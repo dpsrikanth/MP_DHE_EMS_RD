@@ -78,7 +78,7 @@ exports.deletePolicyMapping = async (req, res) => {
 
         const query = `DELETE FROM policy_program_subjects WHERE id = $1 AND college_id = $2 RETURNING *`;
         const result = await db.query(query, [id, college_id]);
-        
+
         if (result.rowCount === 0) return res.status(404).json({ error: "Mapping not found or unauthorized" });
         res.status(200).json({ message: "Policy mapping deleted successfully" });
     } catch (error) {
@@ -188,7 +188,7 @@ exports.deleteMarksStructure = async (req, res) => {
 
         const query = `DELETE FROM internal_marks_structure WHERE id = $1 AND college_id = $2 RETURNING *`;
         const result = await db.query(query, [id, college_id]);
-        
+
         if (result.rowCount === 0) return res.status(404).json({ error: "Marks structure not found or unauthorized" });
         res.status(200).json({ message: "Marks structure deleted successfully" });
     } catch (error) {
@@ -263,7 +263,7 @@ exports.editFacultyAssignment = async (req, res) => {
         const { teacher_id, subject_id, semester_id, academic_year_id, section } = req.body;
         // The token verification middleware should put the user object, but since the assignment is cross-checked 
         // we omit college_id for a simple update, or we can require it
-        
+
         const query = `
             UPDATE faculty_subjects 
             SET teacher_id = $1, subject_id = $2, semester_id = $3, academic_year_id = $4, section = $5
@@ -285,7 +285,7 @@ exports.deleteFacultyAssignment = async (req, res) => {
         const { id } = req.params;
         const query = `DELETE FROM faculty_subjects WHERE id = $1 RETURNING *;`;
         const result = await db.query(query, [id]);
-        
+
         if (result.rowCount === 0) return res.status(404).json({ error: "Faculty assignment not found" });
         res.status(200).json({ message: "Assignment deleted successfully" });
     } catch (error) {
@@ -343,12 +343,13 @@ exports.getMarksTracking = async (req, res) => {
     try {
         const { college_id, semester_id } = req.query;
         let query = `
-            SELECT mws.*, s.name as subject_name, ay.year_name as academic_year, sem.semester_name as semester, ms.name as program_name
+            SELECT DISTINCT mws.*, s.name as subject_name, ay.year_name as academic_year, sem.semester_name as semester, mp.name as program_name
             FROM marks_workflow_status mws
             LEFT JOIN master_subjects s ON mws.subject_id = s.id
             LEFT JOIN master_academic_years ay ON mws.academic_year_id = ay.id
             LEFT JOIN master_semesters sem ON mws.semester_id = sem.id
-            LEFT JOIN master_programs ms ON s.program_id = ms.id
+            LEFT JOIN policy_program_subjects pps ON mws.subject_id = pps.subject_id AND mws.college_id = pps.college_id AND mws.semester_id = pps.semester_id
+            LEFT JOIN master_programs mp ON pps.program_id = mp.id
             WHERE mws.college_id = $1
         `;
         let params = [college_id];
@@ -375,11 +376,11 @@ exports.reviewMarks = async (req, res) => {
             WHERE sim.subject_id = $1
         `;
         const result = await db.query(query, [subject_id]);
-        
+
         // Structure the response grouped by student, computing Best of 3 draft here if needed
         let studentsObj = {};
-        for(let row of result.rows) {
-            if(!studentsObj[row.student_id]) {
+        for (let row of result.rows) {
+            if (!studentsObj[row.student_id]) {
                 studentsObj[row.student_id] = { student_id: row.student_id, student_name: row.student_name, rollnumber: row.rollnumber, marks: [] };
             }
             studentsObj[row.student_id].marks.push({
@@ -388,7 +389,7 @@ exports.reviewMarks = async (req, res) => {
                 is_absent: row.is_absent
             });
         }
-        
+
         res.status(200).json(Object.values(studentsObj));
     } catch (error) {
         console.error(error);
@@ -404,10 +405,10 @@ exports.lockMarks = async (req, res) => {
         const client = await db.connect();
         try {
             await client.query('BEGIN');
-            
+
             // 1. Fetch passing marks from structure
             const structReq = await client.query('SELECT component_name, passing_marks FROM internal_marks_structure WHERE subject_id = $1', [subject_id]);
-            const passMarkEntry = structReq.rows.find(r => r.component_name === 'Total' || r.component_name === 'Best_of_3') || {passing_marks: 40}; // Default 40
+            const passMarkEntry = structReq.rows.find(r => r.component_name === 'Total' || r.component_name === 'Best_of_3') || { passing_marks: 40 }; // Default 40
             const passMarks = parseFloat(passMarkEntry.passing_marks);
 
             // 2. Fetch all marks and structure config
@@ -415,24 +416,24 @@ exports.lockMarks = async (req, res) => {
             const components = await client.query('SELECT id, component_name FROM internal_marks_structure WHERE subject_id = $1', [subject_id]);
             const compMap = {};
             components.rows.forEach(c => compMap[c.id] = c.component_name);
-            
+
             // Group by student
             let studentsScores = {};
             marksData.rows.forEach(row => {
-                if(!studentsScores[row.student_id]) studentsScores[row.student_id] = { ia: [], practical: 0 };
+                if (!studentsScores[row.student_id]) studentsScores[row.student_id] = { ia: [], practical: 0 };
                 let score = row.is_absent ? 0 : parseFloat(row.marks_obtained);
                 let cname = compMap[row.component_id];
-                if(cname && cname.toUpperCase().includes('IA')) {
+                if (cname && cname.toUpperCase().includes('IA')) {
                     studentsScores[row.student_id].ia.push(score);
-                } else if(cname && cname.toUpperCase().includes('PRACTICAL')) {
+                } else if (cname && cname.toUpperCase().includes('PRACTICAL')) {
                     studentsScores[row.student_id].practical = score;
                 }
             });
 
-            // Calculate Best of 3
+            // Calculate Best of 2 out of 3 IAs
             for (let sid in studentsScores) {
                 let s = studentsScores[sid];
-                s.ia.sort((a,b) => b - a);
+                s.ia.sort((a, b) => b - a);
                 // Sum top 2 of IA
                 let bestOf3 = (s.ia[0] || 0) + (s.ia[1] || 0);
                 let total = bestOf3 + s.practical;
@@ -458,9 +459,9 @@ exports.lockMarks = async (req, res) => {
             `, [college_id, subject_id, semester_id, academic_year_id, section, approved_by]);
 
             // 4. Audit Log
-            if(approved_by) {
+            if (approved_by) {
                 await client.query(`INSERT INTO audit_logs (user_id, action, entity_type, entity_id) VALUES ($1, 'MARKS_LOCKED', 'MARKS_WORKFLOW', $2)`,
-                [approved_by, subject_id]);
+                    [approved_by, subject_id]);
             }
 
             await client.query('COMMIT');
@@ -480,7 +481,7 @@ exports.lockMarks = async (req, res) => {
 exports.getMarksReport = async (req, res) => {
     try {
         const { college_id, semester_id, subject_id, academic_year_id } = req.query;
-        
+
         let query = `
             SELECT 
                 cim.*, 

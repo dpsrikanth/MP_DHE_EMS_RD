@@ -5,12 +5,12 @@ const db = require('../db');
 exports.getAssignedSubjects = async (req, res) => {
     try {
         const { teacher_id } = req.params;
-        // Includes joined subject and semester data
         const query = `
-            SELECT fs.*, ms.name as subject_name, ms.subject_code, sem.semester_name 
+            SELECT fs.*, ms.name as subject_name, ms.subject_code, pps.program_id, sem.semester_name 
             FROM faculty_subjects fs
             JOIN master_subjects ms ON fs.subject_id = ms.id
             JOIN master_semesters sem ON fs.semester_id = sem.id
+            LEFT JOIN policy_program_subjects pps ON fs.subject_id = pps.subject_id AND fs.college_id = pps.college_id AND fs.semester_id = pps.semester_id
             WHERE fs.teacher_id = $1 AND fs.status = 'Active'
         `;
         const result = await db.query(query, [teacher_id]);
@@ -117,15 +117,15 @@ exports.enterStudentMarks = async (req, res) => {
 exports.submitMarks = async (req, res) => {
     try {
         const { subject_id, section, faculty_id, college_id, semester_id, academic_year_id } = req.body;
-        
+
         const client = await db.connect();
         try {
             await client.query('BEGIN');
-            
+
             // Check if entry exists for this subject/section
             const checkQuery = `SELECT id FROM marks_workflow_status WHERE subject_id = $1 AND section = $2`;
             const checkRes = await client.query(checkQuery, [subject_id, section]);
-            
+
             if (checkRes.rows.length > 0) {
                 // Update existing
                 await client.query(`UPDATE marks_workflow_status SET status = 'Submitted', updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [checkRes.rows[0].id]);
@@ -137,11 +137,11 @@ exports.submitMarks = async (req, res) => {
                     VALUES ($1, $2, $3, $4, $5, 'Submitted')
                 `, [college_id, subject_id, semester_id, academic_year_id, section]);
             }
-            
+
             await client.query('COMMIT');
-            
+
             await db.query(`INSERT INTO audit_logs (user_id, action, entity_type, entity_id) VALUES ($1, 'MARKS_SUBMITTED', 'MARKS_WORKFLOW', $2)`, [faculty_id, subject_id]);
-            
+
             res.status(200).json({ message: "Marks submitted successfully" });
         } catch (innerError) {
             await client.query('ROLLBACK');

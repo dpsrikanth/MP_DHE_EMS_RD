@@ -48,7 +48,7 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        authUtils.setAuth(data.token, data.user.role || "", data.user.id || "", data.user.college_id || "");
+        authUtils.setAuth(data.token, data.user.role || "", data.user.id || "", data.user.college_id || "", data.user);
 
         if (authUtils.isAdmin()) {
           navigate("/dashboard");

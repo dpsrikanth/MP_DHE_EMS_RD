@@ -210,7 +210,7 @@ const Login = async (req, res) => {
   try {
     const { email, password, rememberMe } = req.body;
     const user = await client.query(
-      `SELECT u.id, u.name, u.email, u.password, u.password_hash, u.college_id, r.role_name, mt.id as teacher_id 
+      `SELECT u.id, u.name, u.email, u.password, u.password_hash, COALESCE(mt.college_id, u.college_id) as college_id, r.role_name, mt.id as teacher_id 
        FROM public.users u 
        JOIN public.roles r ON u.role_id = r.id 
        LEFT JOIN public.master_teachers mt ON mt.user_id = u.id
@@ -233,12 +233,12 @@ const Login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    const payload = { 
-        id: result.id, 
-        email: result.email, 
-        role: result.role_name, 
-        college_id: result.college_id,
-        teacher_id: result.teacher_id
+    const payload = {
+      id: result.id,
+      email: result.email,
+      role: result.role_name,
+      college_id: result.college_id,
+      teacher_id: result.teacher_id
     };
     const accessToken = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: "15m" });
     const refreshToken = jwt.sign(payload, process.env.REFRESH_SECRET, { expiresIn: "30d" });
@@ -248,16 +248,16 @@ const Login = async (req, res) => {
       sameSite: "Lax",
       maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : undefined
     });
-    res.json({ 
-        token: accessToken, 
-        user: { 
-            id: result.id, 
-            name: result.name, 
-            email: result.email, 
-            role: result.role_name, 
-            college_id: result.college_id,
-            teacher_id: result.teacher_id
-        } 
+    res.json({
+      token: accessToken,
+      user: {
+        id: result.id,
+        name: result.name,
+        email: result.email,
+        role: result.role_name,
+        college_id: result.college_id,
+        teacher_id: result.teacher_id
+      }
     });
   } catch (error) {
     console.error("Login Error:", error);

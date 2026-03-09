@@ -1,12 +1,12 @@
 // Authentication utility functions
 
 export const authUtils = {
-  // Store authentication data
-  setAuth: (token, roleName, userId, collegeId) => {
+  setAuth: (token, roleName, userId, collegeId, userObj) => {
     localStorage.setItem("token", token);
     localStorage.setItem("roleName", roleName);
     localStorage.setItem("userId", userId);
     if (collegeId) localStorage.setItem("collegeId", collegeId);
+    if (userObj) localStorage.setItem("user", JSON.stringify(userObj));
   },
 
   // Get authentication data
@@ -46,6 +46,7 @@ export const authUtils = {
     localStorage.removeItem("roleName");
     localStorage.removeItem("userId");
     localStorage.removeItem("collegeId");
+    localStorage.removeItem("user");
   },
 
   // Get authorization header
