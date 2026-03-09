@@ -21,7 +21,11 @@ import PolicyConfig from "./pages/CollegeAdmin/PolicyConfig";
 import MarksConfig from "./pages/CollegeAdmin/MarksConfig";
 import FacultyAssignment from "./pages/CollegeAdmin/FacultyAssignment";
 import MarksApproval from "./pages/CollegeAdmin/MarksApproval";
+import FacultyDashboard from "./pages/Faculty/Dashboard";
 import MarksEntry from "./pages/Faculty/MarksEntry";
+import MarksVerification from "./pages/CollegeAdmin/MarksVerification";
+import MarksReview from "./pages/CollegeAdmin/MarksReview";
+import MarksReports from "./pages/CollegeAdmin/MarksReports";
 import Layout from "./components/Layout";
 
 const AppRoutes = () => {
@@ -54,8 +58,13 @@ const AppRoutes = () => {
       <Route path="/college-admin/marks-approval" element={<Layout><ProtectedRoute element={<MarksApproval />} /></Layout>} />
 
       {/* Faculty Routes */}
-      <Route path="/faculty/dashboard" element={<Layout><ProtectedRoute element={<div className="p-6"><h1 className="text-2xl font-bold">Faculty Dashboard</h1></div>} /></Layout>} />
+      <Route path="/faculty/dashboard" element={<Layout><ProtectedRoute element={<FacultyDashboard />} /></Layout>} />
       <Route path="/faculty/marks-entry" element={<Layout><ProtectedRoute element={<MarksEntry />} /></Layout>} />
+
+      {/* New Marks Verification Routes */}
+      <Route path="/admin/marks-verification" element={<Layout><ProtectedRoute element={<MarksVerification />} /></Layout>} />
+      <Route path="/admin/marks-review/:subjectId/:section" element={<Layout><ProtectedRoute element={<MarksReview />} /></Layout>} />
+      <Route path="/admin/marks-reports" element={<Layout><ProtectedRoute element={<MarksReports />} /></Layout>} />
     </Routes>
   );
 };

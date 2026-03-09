@@ -23,4 +23,7 @@ router.get('/entered-marks', facultyMarksController.getEnteredMarks);
 // Save marks 
 router.post('/enter-marks', facultyMarksController.enterStudentMarks);
 
+// Submit marks
+router.post('/submit-marks', facultyMarksController.submitMarks);
+
 module.exports = router;

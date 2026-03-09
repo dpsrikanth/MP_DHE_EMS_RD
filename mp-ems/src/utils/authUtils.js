@@ -35,7 +35,9 @@ export const authUtils = {
 
   isFaculty: () => {
     const roleName = localStorage.getItem("roleName");
-    return roleName === "Faculty" || roleName === "Teacher";
+    if (!roleName) return false;
+    const normalizedRole = roleName.toLowerCase();
+    return normalizedRole === "faculty" || normalizedRole === "teacher";
   },
 
   // Logout and clear auth data

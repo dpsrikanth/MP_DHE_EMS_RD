@@ -39,5 +39,9 @@ router.delete('/faculty-assignments/:id', collegeAdminController.deleteFacultyAs
 // Marks workflow routes
 router.get('/workflow-status', collegeAdminController.getMarksWorkflowStatus);
 router.post('/workflow-status', collegeAdminController.updateWorkflowStatus);
+router.get('/marks-tracking', collegeAdminController.getMarksTracking);
+router.get('/review-marks', collegeAdminController.reviewMarks);
+router.post('/lock-marks', collegeAdminController.lockMarks);
+router.get('/marks-report', collegeAdminController.getMarksReport);
 
 module.exports = router;

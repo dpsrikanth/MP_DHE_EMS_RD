@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
 import { BookOpen, Users, Save, CheckCircle } from "lucide-react";
+import { useLocation } from 'react-router-dom';
 
 const MarksEntry = () => {
+    const location = useLocation();
     const [assignedSubjects, setAssignedSubjects] = useState([]);
     const [students, setStudents] = useState([]);
     const [marksStructure, setMarksStructure] = useState([]);
@@ -20,6 +22,20 @@ const MarksEntry = () => {
     useEffect(() => {
         fetchAssignedSubjects();
     }, []);
+
+    useEffect(() => {
+        if (assignedSubjects.length > 0 && location.state?.assignmentId) {
+            const assignment = assignedSubjects.find(a => a.id === location.state.assignmentId);
+            if (assignment) {
+                const option = {
+                    value: assignment.id,
+                    label: `${assignment.subject_code} - ${assignment.subject_name} (Sec: ${assignment.section})`
+                };
+                setSelectedAssignment(option);
+                fetchSubjectDetails(assignment);
+            }
+        }
+    }, [assignedSubjects, location.state]);
 
     const fetchAssignedSubjects = async () => {
         try {
@@ -56,7 +72,7 @@ const MarksEntry = () => {
             if (structureRes.ok) structureData = await structureRes.json();
             setMarksStructure(structureData);
 
-            // 2. Fetch Students for this subject (assuming fetched by program/semester/college)
+            // 2. Fetch Students for this subject
             const studentsRes = await fetch(`http://localhost:8080/api/faculty-marks/students?college_id=${assignment.college_id}&semester_id=${assignment.semester_id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -160,11 +176,9 @@ const MarksEntry = () => {
             const userStr = localStorage.getItem('user');
             const teacherId = userStr ? JSON.parse(userStr).teacher_id : 1;
 
-            // Transform draft into flat array format for the backend
             const payload = [];
             Object.entries(marksDraft).forEach(([studentId, components]) => {
                 Object.entries(components).forEach(([componentId, data]) => {
-                    // Only send if it has a value or is marked absent
                     if (data.marks !== '' || data.isAbsent) {
                         payload.push({
                             student_id: parseInt(studentId),
@@ -196,7 +210,6 @@ const MarksEntry = () => {
 
             if (res.ok) {
                 toast.success("Marks saved successfully!");
-                // Optionally refetch to get updated "entered marks" state
                 fetchSubjectDetails(assignmentStr);
             } else {
                 toast.error(responseData.error || "Failed to save marks");
@@ -208,6 +221,46 @@ const MarksEntry = () => {
         }
     };
 
+
+    const handleSubmitMarks = async () => {
+        const assignmentStr = assignedSubjects.find(a => a.id === selectedAssignment.value);
+        if (!assignmentStr) return;
+
+        if (!window.confirm("Are you sure you want to submit these marks? You won't be able to edit them afterwards.")) return;
+
+        setIsSaving(true);
+        try {
+            const token = localStorage.getItem('token');
+            const userStr = localStorage.getItem('user');
+            const teacherId = userStr ? JSON.parse(userStr).teacher_id : 1;
+
+            const res = await fetch('http://localhost:8080/api/faculty-marks/submit-marks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({
+                    subject_id: assignmentStr.subject_id,
+                    section: assignmentStr.section,
+                    college_id: assignmentStr.college_id,
+                    semester_id: assignmentStr.semester_id,
+                    academic_year_id: assignmentStr.academic_year_id,
+                    faculty_id: teacherId
+                })
+            });
+
+            const responseData = await res.json();
+
+            if (res.ok) {
+                toast.success("Marks submitted successfully!");
+                fetchSubjectDetails(assignmentStr);
+            } else {
+                toast.error(responseData.error || "Failed to submit marks");
+            }
+        } catch (err) {
+            toast.error("Error submitting marks");
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const options = assignedSubjects.map(a => ({
         value: a.id,
@@ -337,10 +390,19 @@ const MarksEntry = () => {
                         </table>
                     </div>
 
-                    <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end sticky bottom-0 z-20">
+                    <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-4 sticky bottom-0 z-20">
                         <button
                             disabled={isSaving}
                             onClick={handleSaveMarks}
+                            className={`inline-flex items-center gap-2 px-6 py-2.5 text-slate-700 font-bold bg-white border border-slate-200 rounded-xl shadow-sm transition-all text-sm
+                                ${isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50 hover:border-slate-300'}`}
+                        >
+                            <Save size={18} />
+                            Save Draft
+                        </button>
+                        <button
+                            disabled={isSaving}
+                            onClick={handleSubmitMarks}
                             className={`inline-flex items-center gap-2 px-10 py-3.5 text-white font-black rounded-xl shadow-xl transition-all uppercase tracking-widest text-sm
                                 ${isSaving ? 'bg-indigo-400 cursor-not-allowed shadow-none' : 'bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] shadow-indigo-600/20 active:scale-[0.98]'}`}
                         >
@@ -349,7 +411,7 @@ const MarksEntry = () => {
                             ) : (
                                 <CheckCircle size={20} />
                             )}
-                            <span>{isSaving ? 'Saving...' : 'Submit Records'}</span>
+                            <span>{isSaving ? 'Processing...' : 'Submit Records'}</span>
                         </button>
                     </div>
                 </div>

@@ -338,3 +338,196 @@ exports.updateWorkflowStatus = async (req, res) => {
         res.status(500).json({ error: "Failed to update workflow status" });
     }
 };
+
+exports.getMarksTracking = async (req, res) => {
+    try {
+        const { college_id, semester_id } = req.query;
+        let query = `
+            SELECT mws.*, s.name as subject_name, ay.year_name as academic_year, sem.semester_name as semester, ms.name as program_name
+            FROM marks_workflow_status mws
+            LEFT JOIN master_subjects s ON mws.subject_id = s.id
+            LEFT JOIN master_academic_years ay ON mws.academic_year_id = ay.id
+            LEFT JOIN master_semesters sem ON mws.semester_id = sem.id
+            LEFT JOIN master_programs ms ON s.program_id = ms.id
+            WHERE mws.college_id = $1
+        `;
+        let params = [college_id];
+        if (semester_id) {
+            query += ` AND mws.semester_id = $2`;
+            params.push(semester_id);
+        }
+        const result = await db.query(query, params);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to fetch marks tracking overview" });
+    }
+};
+
+exports.reviewMarks = async (req, res) => {
+    try {
+        const { subject_id, section, college_id } = req.query;
+        // Fetch raw marks for all students for this subject
+        const query = `
+            SELECT sim.*, s.name as student_name, s.rollnumber
+            FROM student_internal_marks sim
+            JOIN students s ON sim.student_id = s.id
+            WHERE sim.subject_id = $1
+        `;
+        const result = await db.query(query, [subject_id]);
+        
+        // Structure the response grouped by student, computing Best of 3 draft here if needed
+        let studentsObj = {};
+        for(let row of result.rows) {
+            if(!studentsObj[row.student_id]) {
+                studentsObj[row.student_id] = { student_id: row.student_id, student_name: row.student_name, rollnumber: row.rollnumber, marks: [] };
+            }
+            studentsObj[row.student_id].marks.push({
+                component_id: row.component_id,
+                marks_obtained: row.marks_obtained,
+                is_absent: row.is_absent
+            });
+        }
+        
+        res.status(200).json(Object.values(studentsObj));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to fetch marks for review" });
+    }
+};
+
+exports.lockMarks = async (req, res) => {
+    try {
+        const { subject_id, section, college_id, semester_id, academic_year_id } = req.body;
+        const approved_by = req.user ? req.user.id : null;
+
+        const client = await db.connect();
+        try {
+            await client.query('BEGIN');
+            
+            // 1. Fetch passing marks from structure
+            const structReq = await client.query('SELECT component_name, passing_marks FROM internal_marks_structure WHERE subject_id = $1', [subject_id]);
+            const passMarkEntry = structReq.rows.find(r => r.component_name === 'Total' || r.component_name === 'Best_of_3') || {passing_marks: 40}; // Default 40
+            const passMarks = parseFloat(passMarkEntry.passing_marks);
+
+            // 2. Fetch all marks and structure config
+            const marksData = await client.query('SELECT * FROM student_internal_marks WHERE subject_id = $1', [subject_id]);
+            const components = await client.query('SELECT id, component_name FROM internal_marks_structure WHERE subject_id = $1', [subject_id]);
+            const compMap = {};
+            components.rows.forEach(c => compMap[c.id] = c.component_name);
+            
+            // Group by student
+            let studentsScores = {};
+            marksData.rows.forEach(row => {
+                if(!studentsScores[row.student_id]) studentsScores[row.student_id] = { ia: [], practical: 0 };
+                let score = row.is_absent ? 0 : parseFloat(row.marks_obtained);
+                let cname = compMap[row.component_id];
+                if(cname && cname.toUpperCase().includes('IA')) {
+                    studentsScores[row.student_id].ia.push(score);
+                } else if(cname && cname.toUpperCase().includes('PRACTICAL')) {
+                    studentsScores[row.student_id].practical = score;
+                }
+            });
+
+            // Calculate Best of 3
+            for (let sid in studentsScores) {
+                let s = studentsScores[sid];
+                s.ia.sort((a,b) => b - a);
+                // Sum top 2 of IA
+                let bestOf3 = (s.ia[0] || 0) + (s.ia[1] || 0);
+                let total = bestOf3 + s.practical;
+                let passStatus = total >= passMarks ? 'Pass' : 'Fail';
+
+                await client.query(`
+                    INSERT INTO calculated_internal_marks 
+                    (student_id, subject_id, best_of_3_score, practical_score, total_internal, passing_status)
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                    ON CONFLICT (student_id, subject_id) 
+                    DO UPDATE SET best_of_3_score = EXCLUDED.best_of_3_score, practical_score = EXCLUDED.practical_score, 
+                    total_internal = EXCLUDED.total_internal, passing_status = EXCLUDED.passing_status, updated_at = CURRENT_TIMESTAMP
+                `, [sid, subject_id, bestOf3, s.practical, total, passStatus]);
+            }
+
+            // 3. Update Workflow Status
+            await client.query(`
+                INSERT INTO marks_workflow_status 
+                (college_id, subject_id, semester_id, academic_year_id, section, status, approved_by) 
+                VALUES ($1, $2, $3, $4, $5, 'Locked', $6) 
+                ON CONFLICT (college_id, subject_id, semester_id, academic_year_id, section) 
+                DO UPDATE SET status = 'Locked', approved_by = EXCLUDED.approved_by, updated_at = CURRENT_TIMESTAMP
+            `, [college_id, subject_id, semester_id, academic_year_id, section, approved_by]);
+
+            // 4. Audit Log
+            if(approved_by) {
+                await client.query(`INSERT INTO audit_logs (user_id, action, entity_type, entity_id) VALUES ($1, 'MARKS_LOCKED', 'MARKS_WORKFLOW', $2)`,
+                [approved_by, subject_id]);
+            }
+
+            await client.query('COMMIT');
+            res.status(200).json({ message: "Marks successfully locked and Best of 3 calculated!" });
+        } catch (innerError) {
+            await client.query('ROLLBACK');
+            throw innerError;
+        } finally {
+            client.release();
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to lock marks and calculate Best of 3" });
+    }
+};
+
+exports.getMarksReport = async (req, res) => {
+    try {
+        const { college_id, semester_id, subject_id, academic_year_id } = req.query;
+        
+        let query = `
+            SELECT 
+                cim.*, 
+                s.name as student_name, 
+                s.rollnumber, 
+                s."enrollmentNo",
+                sub.name as subject_name, 
+                sub.subject_code,
+                sem.semester_name,
+                ay.year_name as academic_year
+            FROM calculated_internal_marks cim
+            JOIN students s ON cim.student_id = s.id
+            JOIN master_subjects sub ON cim.subject_id = sub.id
+            JOIN (
+                SELECT DISTINCT subject_id, college_id, semester_id, academic_year_id 
+                FROM marks_workflow_status
+                WHERE status = 'Locked'
+            ) mws ON cim.subject_id = mws.subject_id
+            JOIN master_semesters sem ON mws.semester_id = sem.id
+            JOIN master_academic_years ay ON mws.academic_year_id = ay.id
+            WHERE mws.college_id = $1
+        `;
+        let params = [college_id];
+        let paramCount = 1;
+
+        if (semester_id) {
+            paramCount++;
+            query += ` AND mws.semester_id = $${paramCount}`;
+            params.push(semester_id);
+        }
+        if (subject_id) {
+            paramCount++;
+            query += ` AND cim.subject_id = $${paramCount}`;
+            params.push(subject_id);
+        }
+        if (academic_year_id) {
+            paramCount++;
+            query += ` AND mws.academic_year_id = $${paramCount}`;
+            params.push(academic_year_id);
+        }
+
+        query += ` ORDER BY sub.subject_code, s.rollnumber`;
+
+        const result = await db.query(query, params);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("Error fetching marks report:", error);
+        res.status(500).json({ error: "Failed to fetch marks report" });
+    }
+};

@@ -24,12 +24,25 @@ exports.getAssignedSubjects = async (req, res) => {
 exports.getStudentsForSubject = async (req, res) => {
     try {
         const { college_id, program_id, semester_id } = req.query;
-        // Example query, depends slightly on how students are mapped to sections/subjects in reality
+
+        // Fetch string names for matching with students table
+        const colRes = await db.query('SELECT name FROM colleges WHERE id = $1', [college_id]);
+        const progRes = await db.query('SELECT name FROM master_programs WHERE id = $1', [program_id]);
+        const semRes = await db.query('SELECT semester_name FROM master_semesters WHERE id = $1', [semester_id]);
+
+        if (colRes.rowCount === 0 || progRes.rowCount === 0 || semRes.rowCount === 0) {
+            return res.status(400).json({ error: "Invalid college, program, or semester ID" });
+        }
+
+        const collageName = colRes.rows[0].name;
+        const programName = progRes.rows[0].name;
+        const semister = semRes.rows[0].semester_name;
+
         const query = `
             SELECT * FROM students 
-            WHERE college_id = $1 AND program_id = $2 AND current_semester_id = $3 AND status = true
+            WHERE "collageName" = $1 AND "programName" = $2 AND "semister" = $3
         `;
-        const result = await db.query(query, [college_id, program_id, semester_id]);
+        const result = await db.query(query, [collageName, programName, semister]);
         res.status(200).json(result.rows);
     } catch (error) {
         console.error(error);
@@ -100,3 +113,45 @@ exports.enterStudentMarks = async (req, res) => {
         res.status(500).json({ error: "Failed to save marks" });
     }
 };
+
+exports.submitMarks = async (req, res) => {
+    try {
+        const { subject_id, section, faculty_id, college_id, semester_id, academic_year_id } = req.body;
+        
+        const client = await db.connect();
+        try {
+            await client.query('BEGIN');
+            
+            // Check if entry exists for this subject/section
+            const checkQuery = `SELECT id FROM marks_workflow_status WHERE subject_id = $1 AND section = $2`;
+            const checkRes = await client.query(checkQuery, [subject_id, section]);
+            
+            if (checkRes.rows.length > 0) {
+                // Update existing
+                await client.query(`UPDATE marks_workflow_status SET status = 'Submitted', updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [checkRes.rows[0].id]);
+            } else {
+                // Insert new
+                await client.query(`
+                    INSERT INTO marks_workflow_status 
+                    (college_id, subject_id, semester_id, academic_year_id, section, status) 
+                    VALUES ($1, $2, $3, $4, $5, 'Submitted')
+                `, [college_id, subject_id, semester_id, academic_year_id, section]);
+            }
+            
+            await client.query('COMMIT');
+            
+            await db.query(`INSERT INTO audit_logs (user_id, action, entity_type, entity_id) VALUES ($1, 'MARKS_SUBMITTED', 'MARKS_WORKFLOW', $2)`, [faculty_id, subject_id]);
+            
+            res.status(200).json({ message: "Marks submitted successfully" });
+        } catch (innerError) {
+            await client.query('ROLLBACK');
+            throw innerError;
+        } finally {
+            client.release();
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to submit marks" });
+    }
+};
+
