@@ -406,38 +406,74 @@ exports.lockMarks = async (req, res) => {
         try {
             await client.query('BEGIN');
 
-            // 1. Fetch passing marks from structure
-            const structReq = await client.query('SELECT component_name, passing_marks FROM internal_marks_structure WHERE subject_id = $1', [subject_id]);
-            const passMarkEntry = structReq.rows.find(r => r.component_name === 'Total' || r.component_name === 'Best_of_3') || { passing_marks: 40 }; // Default 40
-            const passMarks = parseFloat(passMarkEntry.passing_marks);
-
-            // 2. Fetch all marks and structure config
+            // 1. Fetch all marks and structure config
             const marksData = await client.query('SELECT * FROM student_internal_marks WHERE subject_id = $1', [subject_id]);
-            const components = await client.query('SELECT id, component_name FROM internal_marks_structure WHERE subject_id = $1', [subject_id]);
+            const components = await client.query('SELECT id, component_name, passing_marks FROM internal_marks_structure WHERE subject_id = $1', [subject_id]);
             const compMap = {};
-            components.rows.forEach(c => compMap[c.id] = c.component_name);
+            const compPassMap = {};
+            components.rows.forEach(c => {
+                compMap[c.id] = c.component_name;
+                compPassMap[c.id] = parseFloat(c.passing_marks) || 0;
+            });
 
             // Group by student
             let studentsScores = {};
             marksData.rows.forEach(row => {
-                if (!studentsScores[row.student_id]) studentsScores[row.student_id] = { ia: [], practical: 0 };
+                if (!studentsScores[row.student_id]) studentsScores[row.student_id] = { ia: [], practical: 0, hasFailedComponent: false };
                 let score = row.is_absent ? 0 : parseFloat(row.marks_obtained);
                 let cname = compMap[row.component_id];
-                if (cname && cname.toUpperCase().includes('IA')) {
-                    studentsScores[row.student_id].ia.push(score);
-                } else if (cname && cname.toUpperCase().includes('PRACTICAL')) {
-                    studentsScores[row.student_id].practical = score;
+                let pMark = compPassMap[row.component_id] || 0;
+
+                if (cname) {
+                    let upperCname = cname.toUpperCase();
+                    if (upperCname.includes('IA')) {
+                        studentsScores[row.student_id].ia.push({ score, pMark });
+                    } else if (upperCname.includes('PRACTICAL')) {
+                        studentsScores[row.student_id].practical += score;
+                        if (score < pMark) {
+                            studentsScores[row.student_id].hasFailedComponent = true;
+                        }
+                    } else if (!upperCname.includes('TOTAL') && !upperCname.includes('BEST_OF_3')) {
+                        if (score < pMark) {
+                            studentsScores[row.student_id].hasFailedComponent = true;
+                        }
+                    }
                 }
             });
 
-            // Calculate Best of 2 out of 3 IAs
+            // Calculate Best of 2 out of 3 IAs and determine Pass/Fail
             for (let sid in studentsScores) {
                 let s = studentsScores[sid];
-                s.ia.sort((a, b) => b - a);
-                // Sum top 2 of IA
-                let bestOf3 = (s.ia[0] || 0) + (s.ia[1] || 0);
-                let total = bestOf3 + s.practical;
-                let passStatus = total >= passMarks ? 'Pass' : 'Fail';
+
+                // Cumulative Pass Calculation setup
+                let cumulativePassMarks = 0;
+                let hasExplicitTotal = false;
+                let iaPassMarks = [];
+                let otherPassMarks = 0;
+
+                components.rows.forEach(c => {
+                    let cname = c.component_name ? c.component_name.toUpperCase() : '';
+                    if (cname.includes('TOTAL') || cname.includes('BEST_OF_3')) {
+                        cumulativePassMarks = parseFloat(c.passing_marks) || 0;
+                        hasExplicitTotal = true;
+                    } else if (cname.includes('IA')) {
+                        iaPassMarks.push(parseFloat(c.passing_marks) || 0);
+                    } else {
+                        otherPassMarks += parseFloat(c.passing_marks) || 0;
+                    }
+                });
+
+                if (!hasExplicitTotal) {
+                    iaPassMarks.sort((a, b) => b - a);
+                    cumulativePassMarks = (iaPassMarks[0] || 0) + (iaPassMarks[1] || 0) + otherPassMarks;
+                }
+
+                // Process Student's specific IA scores
+                s.ia.sort((a, b) => b.score - a.score);
+                let bestOf2Score = (s.ia[0]?.score || 0) + (s.ia[1]?.score || 0);
+
+                let total = bestOf2Score + s.practical;
+                let passStatus = total >= cumulativePassMarks ? 'Pass' : 'Fail';
 
                 await client.query(`
                     INSERT INTO calculated_internal_marks 
@@ -446,7 +482,7 @@ exports.lockMarks = async (req, res) => {
                     ON CONFLICT (student_id, subject_id) 
                     DO UPDATE SET best_of_3_score = EXCLUDED.best_of_3_score, practical_score = EXCLUDED.practical_score, 
                     total_internal = EXCLUDED.total_internal, passing_status = EXCLUDED.passing_status, updated_at = CURRENT_TIMESTAMP
-                `, [sid, subject_id, bestOf3, s.practical, total, passStatus]);
+                `, [sid, subject_id, bestOf2Score, s.practical, total, passStatus]);
             }
 
             // 3. Update Workflow Status

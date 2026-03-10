@@ -132,37 +132,75 @@ const MarksEntry = () => {
 
     const calculateTotal = (studentId) => {
         if (!marksDraft[studentId]) return 0;
-        let total = 0;
-        Object.values(marksDraft[studentId]).forEach(comp => {
-            if (!comp.isAbsent && comp.marks) {
-                total += parseFloat(comp.marks) || 0;
+        let iaMarks = [];
+        let otherMarksTotal = 0;
+
+        marksStructure.forEach(comp => {
+            const entry = marksDraft[studentId][comp.id];
+            if (entry) {
+                let score = entry.isAbsent ? 0 : parseFloat(entry.marks) || 0;
+                let cname = comp.component_name ? comp.component_name.toUpperCase() : '';
+                if (cname.includes('IA')) {
+                    iaMarks.push(score);
+                } else if (!cname.includes('TOTAL') && !cname.includes('BEST_OF_3')) {
+                    otherMarksTotal += score;
+                }
             }
         });
-        return total;
+
+        iaMarks.sort((a, b) => b - a);
+        let bestOf2 = (iaMarks[0] || 0) + (iaMarks[1] || 0);
+
+        return bestOf2 + otherMarksTotal;
     };
 
     const determineStatus = (studentId) => {
         if (!marksDraft[studentId] || marksStructure.length === 0) return { label: 'Pending', style: 'text-slate-400' };
 
-        let hasFailedComponent = false;
         let isFullyAbsent = true;
         let isPartiallyPending = false;
 
+        // Cumulative Pass Calculation
+        let cumulativePassMarks = 0;
+        let hasExplicitTotal = false;
+        let iaPassMarks = [];
+        let otherPassMarks = 0;
+
         marksStructure.forEach(comp => {
             const entry = marksDraft[studentId][comp.id];
+            let cname = comp.component_name ? comp.component_name.toUpperCase() : '';
+
+            if (cname.includes('TOTAL') || cname.includes('BEST_OF_3')) {
+                cumulativePassMarks = parseFloat(comp.passing_marks) || 0;
+                hasExplicitTotal = true;
+            } else if (cname.includes('IA')) {
+                iaPassMarks.push(parseFloat(comp.passing_marks) || 0);
+            } else {
+                otherPassMarks += parseFloat(comp.passing_marks) || 0;
+            }
+
             if (!entry || (entry.marks === '' && !entry.isAbsent)) {
                 isPartiallyPending = true;
             } else {
                 isFullyAbsent = isFullyAbsent && entry.isAbsent;
-                if (!entry.isAbsent && parseFloat(entry.marks) < parseFloat(comp.passing_marks)) {
-                    hasFailedComponent = true;
-                }
             }
         });
 
         if (isPartiallyPending) return { label: 'Incomplete', style: 'text-yellow-500' };
         if (isFullyAbsent) return { label: 'Absent', style: 'text-red-500' };
-        if (hasFailedComponent) return { label: 'Fail', style: 'text-red-500' };
+
+        if (!hasExplicitTotal) {
+            // Sort IA pass marks and take top 2 to estimate required IA pass total
+            iaPassMarks.sort((a, b) => b - a);
+            cumulativePassMarks = (iaPassMarks[0] || 0) + (iaPassMarks[1] || 0) + otherPassMarks;
+        }
+
+        const totalScore = calculateTotal(studentId);
+
+        if (totalScore < cumulativePassMarks) {
+            return { label: 'Fail', style: 'text-red-500' };
+        }
+
         return { label: 'Pass', style: 'text-green-500' };
     };
 
