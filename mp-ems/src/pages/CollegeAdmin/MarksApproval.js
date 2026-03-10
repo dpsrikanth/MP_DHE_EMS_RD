@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
-import { FileText, CheckCircle2, XCircle, Search, Lock } from "lucide-react";
+import { FileText, CheckCircle2, XCircle, Search, Lock, Eye } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
 
 const MarksApproval = () => {
     const [workflows, setWorkflows] = useState([]);
@@ -9,6 +10,7 @@ const MarksApproval = () => {
 
     const [selectedSemester, setSelectedSemester] = useState(null);
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchSemesters();
@@ -156,10 +158,10 @@ const MarksApproval = () => {
                             {workflows.map((wf) => (
                                 <tr key={wf.id} className="hover:bg-slate-50/50">
                                     <td className="px-6 py-4 text-sm font-semibold text-slate-900">
-                                        Sub #{wf.subject_id}
+                                        {wf.subject_name || `Sub #${wf.subject_id}`}
                                     </td>
                                     <td className="px-6 py-4 text-sm text-slate-600">
-                                        Sem {wf.semester_id} <span className="text-slate-400">|</span> Sec {wf.section}
+                                        {wf.semester || `Sem ${wf.semester_id}`} <span className="text-slate-400">|</span> Sec {wf.section}
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase ${getStatusStyle(wf.status)}`}>
@@ -174,10 +176,15 @@ const MarksApproval = () => {
                                             <div className="flex items-center justify-end gap-2">
                                                 {wf.status === 'Submitted' && (
                                                     <button
-                                                        onClick={() => updateStatus(wf.id, 'Verified')}
-                                                        className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold transition-colors"
+                                                        onClick={() => navigate(`/admin/marks-review/${wf.subject_id}/${wf.section}`, {
+                                                            state: { 
+                                                                semester_id: wf.semester_id, 
+                                                                academic_year_id: wf.academic_year_id 
+                                                            }
+                                                        })}
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors"
                                                     >
-                                                        Verify
+                                                        <Eye size={12} /> Verify
                                                     </button>
                                                 )}
                                                 {wf.status === 'Verified' && (

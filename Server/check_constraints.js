@@ -1,18 +1,26 @@
-const db = require('./db');
-async function check() {
+const client = require('./db');
+
+async function run() {
     try {
-        console.log("--- Constraints for marks_workflow_status ---");
-        const res1 = await db.query("SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid = 'marks_workflow_status'::regclass");
-        console.log(JSON.stringify(res1.rows, null, 2));
-
-        console.log("\n--- Constraints for audit_logs ---");
-        const res2 = await db.query("SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid = 'audit_logs'::regclass");
-        console.log(JSON.stringify(res2.rows, null, 2));
-
+        const res = await client.query(`
+            SELECT
+                conname AS constraint_name,
+                pg_get_constraintdef(con.oid) AS constraint_definition
+            FROM
+                pg_constraint con
+                JOIN pg_class rel ON rel.oid = con.conrelid
+                JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+            WHERE
+                rel.relname = 'student_internal_marks';
+        `);
+        console.log("Constraints for student_internal_marks:");
+        res.rows.forEach(r => {
+            console.log(`${r.constraint_name}: ${r.constraint_definition}`);
+        });
     } catch (e) {
         console.error(e);
     } finally {
-        process.exit(0);
+        client.end();
     }
 }
-check();
+run();

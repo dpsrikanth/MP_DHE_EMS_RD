@@ -1,16 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { useParams, useNavigate } from 'react-router-dom';
-import { CheckCircle, ArrowLeft, ShieldCheck, AlertCircle } from 'lucide-react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { CheckCircle, ArrowLeft, ShieldCheck, AlertCircle, MessageSquare, X, Send } from 'lucide-react';
 
 const MarksReview = () => {
     const { subjectId, section } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Context from navigation state
+    const semesterId = location.state?.semester_id || 1;
+    const academicYearId = location.state?.academic_year_id || 1;
     
     const [marksData, setMarksData] = useState([]);
     const [marksStructure, setMarksStructure] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isLocking, setIsLocking] = useState(false);
+    const [isRejecting, setIsRejecting] = useState(false);
+    
+    // Review Modal States
+    const [isReviewOpen, setIsReviewOpen] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState(null);
+    const [reviewComment, setReviewComment] = useState('');
+    const [isSavingReview, setIsSavingReview] = useState(false);
     
     // Extracted subject metadata
     const [subjectMeta, setSubjectMeta] = useState(null);
@@ -35,7 +47,7 @@ const MarksReview = () => {
             setMarksStructure(structData);
 
             // 2. Fetch Review Marks (Raw data grouped by student)
-            const reviewRes = await fetch(`http://localhost:8080/api/college-admin/review-marks?subject_id=${subjectId}&section=${section}&college_id=${collegeId}`, {
+            const reviewRes = await fetch(`http://localhost:8080/api/college-admin/review-marks?subject_id=${subjectId}&section=${section}&college_id=${collegeId}&semester_id=${semesterId}&academic_year_id=${academicYearId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -55,36 +67,104 @@ const MarksReview = () => {
     };
 
     const handleLockMarks = async () => {
-        if (!window.confirm("WARNING: Locking marks will freeze this section and determine Pass/Fail statuses permanently. Are you sure you want to proceed?")) {
-            return;
-        }
+        if (!window.confirm("Are you sure you want to PERMANENTLY lock these marks and calculate results? This action cannot be undone.")) return;
 
         setIsLocking(true);
         try {
             const token = localStorage.getItem('token');
-            // Assuming academic_year and semester_id are needed, could be fetched or hardcoded for now if not in route
             const res = await fetch(`http://localhost:8080/api/college-admin/lock-marks`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
-                    subject_id: subjectMeta.id,
-                    section: subjectMeta.section,
+                    subject_id: subjectId,
+                    section: section,
                     college_id: subjectMeta.collegeId,
-                    semester_id: 1, // Placeholder
-                    academic_year_id: 1 // Placeholder
+                    semester_id: semesterId,
+                    academic_year_id: academicYearId
                 })
             });
 
             if (res.ok) {
-                toast.success("Marks Locked Successfully! Best of 3 generated.");
+                toast.success("Marks locked and results calculated successfully!");
                 navigate('/admin/marks-verification');
             } else {
-                toast.error("Failed to lock marks");
+                const errorData = await res.json();
+                toast.error(errorData.error || "Failed to lock marks");
             }
         } catch (err) {
-            toast.error("An error occurred while locking marks");
+            toast.error("Error locking marks");
         } finally {
             setIsLocking(false);
+        }
+    };
+
+    const handleRejectWorkflow = async () => {
+        if (!window.confirm("Are you sure you want to reject this entire section and send it back to the faculty for corrections?")) return;
+
+        setIsRejecting(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:8080/api/college-admin/reject-workflow-section`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({
+                    subject_id: subjectId,
+                    section: section,
+                    college_id: subjectMeta.collegeId,
+                    semester_id: semesterId,
+                    academic_year_id: academicYearId
+                })
+            });
+
+            if (res.ok) {
+                toast.success("Section rejected and sent back to faculty.");
+                navigate('/admin/marks-verification');
+            } else {
+                toast.error("Failed to reject section");
+            }
+        } catch (err) {
+            toast.error("Error rejecting section");
+        } finally {
+            setIsRejecting(false);
+        }
+    };
+
+    const handleOpenReview = (student) => {
+        setSelectedStudent(student);
+        setReviewComment(student.review_comment || '');
+        setIsReviewOpen(true);
+    };
+
+    const handleSaveReview = async (status) => {
+        setIsSavingReview(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:8080/api/college-admin/save-student-review`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({
+                    subject_id: subjectId,
+                    section: section,
+                    student_id: selectedStudent.student_id,
+                    college_id: subjectMeta.collegeId,
+                    semester_id: semesterId,
+                    academic_year_id: academicYearId,
+                    status: status,
+                    comment: reviewComment
+                })
+            });
+
+            if (res.ok) {
+                toast.success(`Student marks marked as ${status}`);
+                setIsReviewOpen(false);
+                fetchReviewData(); // Refresh
+            } else {
+                toast.error("Failed to save review");
+            }
+        } catch (err) {
+            toast.error("Error saving review");
+        } finally {
+            setIsSavingReview(false);
         }
     };
 
@@ -92,8 +172,8 @@ const MarksReview = () => {
     const calculatePreview = (studentMarks) => {
         let iaScores = [];
         let practicalScore = 0;
-        let passMarkEntry = marksStructure.find(c => c.component_name === 'Total' || c.component_name === 'Best_of_3');
-        let passMark = passMarkEntry ? parseFloat(passMarkEntry.passing_marks) : 40;
+        let iaPassMarks = [];
+        let practicalPassMark = 0;
 
         studentMarks.forEach(m => {
             const struct = marksStructure.find(s => s.id === m.component_id);
@@ -103,10 +183,16 @@ const MarksReview = () => {
             
             if (struct.component_name.toUpperCase().includes('IA')) {
                 iaScores.push(score);
+                iaPassMarks.push(parseFloat(struct.passing_marks || 0));
             } else if (struct.component_name.toUpperCase().includes('PRACTICAL')) {
                 practicalScore = score;
+                practicalPassMark = parseFloat(struct.passing_marks || 0);
             }
         });
+
+        // Best of IA passing marks (usually same, but for robustness)
+        iaPassMarks.sort((a,b) => b - a);
+        const passMark = (iaPassMarks[0] || 0) + (iaPassMarks[1] || 0) + practicalPassMark;
 
         iaScores.sort((a,b) => b - a);
         const bestOf3 = (iaScores[0] || 0) + (iaScores[1] || 0);
@@ -162,6 +248,7 @@ const MarksReview = () => {
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Practical</th>
                                     <th className="px-6 py-4 text-xs font-black text-slate-800 uppercase tracking-widest text-center border-l border-slate-200">Total</th>
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Result Status</th>
+                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Review</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -209,6 +296,19 @@ const MarksReview = () => {
                                                     {preview.isPass ? 'PASS' : 'FAIL'}
                                                 </span>
                                             </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <button 
+                                                    onClick={() => handleOpenReview(student)}
+                                                    className={`p-2 rounded-lg transition-colors flex flex-col items-center gap-1 ${
+                                                        student.review_status === 'Rejected' ? 'bg-red-50 text-red-600' : 
+                                                        student.review_status === 'Approved' ? 'bg-emerald-50 text-emerald-600' : 
+                                                        'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                                    }`}
+                                                >
+                                                    <MessageSquare size={16} />
+                                                    <span className="text-[8px] font-black">{student.review_status || 'REVIEW'}</span>
+                                                </button>
+                                            </td>
                                         </tr>
                                     );
                                 })}
@@ -217,10 +317,20 @@ const MarksReview = () => {
                     </div>
 
                     <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-between items-center z-20 sticky bottom-0">
-                         <div className="text-sm text-slate-500 max-w-xl">
-                            <span className="font-bold text-amber-600 block mb-1">Important Note</span>
-                            Once you lock these marks, they cannot be modified by the faculty. The system will permanently write the Best of 3 calculations to the database.
-                        </div>
+                         <div className="flex flex-col gap-2">
+                            <div className="text-sm text-slate-500 max-w-xl">
+                                <span className="font-bold text-amber-600 block mb-1">Important Note</span>
+                                Once you lock these marks, they cannot be modified by the faculty. The system will permanently write the Best of 3 calculations to the database.
+                            </div>
+                            <button
+                                disabled={isRejecting}
+                                onClick={handleRejectWorkflow}
+                                className="inline-flex items-center gap-2 text-red-500 font-bold text-xs hover:underline"
+                            >
+                                <AlertCircle size={14} />
+                                Reject Section & Send Back to Faculty
+                            </button>
+                         </div>
                         <button
                             disabled={isLocking}
                             onClick={handleLockMarks}
@@ -234,6 +344,71 @@ const MarksReview = () => {
                             )}
                             <span>{isLocking ? 'Locking...' : 'Lock Marks & Process'}</span>
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Review Modal */}
+            {isReviewOpen && selectedStudent && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-slate-900">Review Student Marks</h3>
+                            <button onClick={() => setIsReviewOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-6">
+                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                <p className="text-sm text-slate-500 font-medium">Student Details</p>
+                                <p className="text-lg font-bold text-slate-900">{selectedStudent.student_name}</p>
+                                <p className="text-xs text-slate-500">Roll No: {selectedStudent.rollnumber}</p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                {selectedStudent.marks.map(m => {
+                                    const struct = marksStructure.find(s => s.id === m.component_id);
+                                    return (
+                                        <div key={m.component_id} className="p-3 bg-white border border-slate-200 rounded-xl">
+                                            <span className="text-[10px] uppercase font-bold text-slate-400 block">{struct?.component_name}</span>
+                                            <span className={`text-sm font-black ${m.is_absent ? 'text-red-500' : 'text-slate-800'}`}>
+                                                {m.is_absent ? 'AB' : m.marks_obtained}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700 ml-1 flex items-center gap-2">
+                                    <MessageSquare size={16} className="text-indigo-500" />
+                                    Review Comments
+                                </label>
+                                <textarea 
+                                    className="w-full h-24 p-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-sm resize-none"
+                                    placeholder="Enter your observations or reason for rejection..."
+                                    value={reviewComment}
+                                    onChange={(e) => setReviewComment(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="p-6 bg-slate-50 flex gap-3">
+                            <button 
+                                onClick={() => handleSaveReview('Rejected')}
+                                disabled={isSavingReview}
+                                className="flex-1 py-3.5 bg-white border-2 border-red-500 text-red-600 font-black rounded-xl hover:bg-red-50 transition-all uppercase tracking-widest text-xs"
+                            >
+                                {isSavingReview ? 'Saving...' : 'Reject Marks'}
+                            </button>
+                            <button 
+                                onClick={() => handleSaveReview('Approved')}
+                                disabled={isSavingReview}
+                                className="flex-1 py-3.5 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all uppercase tracking-widest text-xs flex items-center justify-center gap-2"
+                            >
+                                <CheckCircle size={16} />
+                                {isSavingReview ? 'Saving...' : 'Approve Marks'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

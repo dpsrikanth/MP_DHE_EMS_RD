@@ -52,16 +52,33 @@ exports.getStudentsForSubject = async (req, res) => {
 
 exports.getEnteredMarks = async (req, res) => {
     try {
-        const { subject_id, component_id } = req.query;
+        const { subject_id, section, college_id, semester_id, academic_year_id } = req.query;
         let query = `SELECT * FROM student_internal_marks WHERE subject_id = $1`;
         let params = [subject_id];
 
-        if (component_id) {
-            query += ` AND component_id = $2`;
-            params.push(component_id);
+        const marksRes = await db.query(query, params);
+
+        // Fetch individual student review statuses
+        const reviewQuery = `
+            SELECT student_id, status, comment FROM student_marks_review
+            WHERE subject_id = $1 AND section = $2 AND college_id = $3 AND semester_id = $4 AND academic_year_id = $5
+        `;
+        const reviewRes = await db.query(reviewQuery, [subject_id, section, college_id, semester_id, academic_year_id]);
+        const reviews = {};
+        reviewRes.rows.forEach(r => { reviews[r.student_id] = r; });
+
+        // Also fetch workflow status
+        let status = 'Pending';
+        const statusQuery = `
+            SELECT status FROM marks_workflow_status 
+            WHERE subject_id = $1 AND section = $2 AND college_id = $3 AND semester_id = $4 AND academic_year_id = $5
+        `;
+        const statusRes = await db.query(statusQuery, [subject_id, section, college_id, semester_id, academic_year_id]);
+        if (statusRes.rows.length > 0) {
+            status = statusRes.rows[0].status;
         }
-        const result = await db.query(query, params);
-        res.status(200).json(result.rows);
+
+        res.status(200).json({ marks: marksRes.rows, workflowStatus: status, reviews });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Failed to fetch marks" });
@@ -70,16 +87,55 @@ exports.getEnteredMarks = async (req, res) => {
 
 exports.enterStudentMarks = async (req, res) => {
     try {
-        const { marksData, faculty_id } = req.body;
+        const { marksData, faculty_id, college_id, semester_id, academic_year_id, section } = req.body;
         // marksData = [{ student_id, subject_id, component_id, marks_obtained, is_absent }]
 
         // Basic validation: Check if marks are locked
         if (marksData.length > 0) {
             const { subject_id } = marksData[0];
-            const checkQuery = `SELECT status FROM marks_workflow_status WHERE subject_id = $1 LIMIT 1`;
-            const checkRes = await db.query(checkQuery, [subject_id]);
-            if (checkRes.rows.length > 0 && ['Approved', 'Locked'].includes(checkRes.rows[0].status)) {
-                return res.status(403).json({ error: "Marks entry is locked for this subject." });
+            
+            // Look up the workflow status for this specific section/college/semester
+            const checkQuery = `
+                SELECT status FROM marks_workflow_status 
+                WHERE subject_id = $1 AND college_id = $2 
+                AND semester_id = $3 AND academic_year_id = $4 AND section = $5
+            `;
+            const checkRes = await db.query(checkQuery, [subject_id, college_id, semester_id, academic_year_id, section]);
+            const globalStatus = checkRes.rows.length > 0 ? checkRes.rows[0].status : 'Pending';
+
+            if (['Approved', 'Locked', 'Submitted', 'Rejected'].includes(globalStatus)) {
+                // Check if EACH student in the batch is allowed to be edited
+                for (let data of marksData) {
+                    const studentReviewQuery = `
+                        SELECT status FROM student_marks_review 
+                        WHERE subject_id = $1 AND student_id = $2 AND college_id = $3 
+                        AND semester_id = $4 AND academic_year_id = $5 AND section = $6
+                    `;
+                    const studentReviewRes = await db.query(studentReviewQuery, 
+                        [subject_id, data.student_id, college_id, semester_id, academic_year_id, section]);
+                    const studentStatus = studentReviewRes.rows.length > 0 ? studentReviewRes.rows[0].status : 'Pending';
+
+                    if (studentStatus !== 'Rejected') {
+                        // Leniency check: If not rejected, only error if we are actually CHANGING existing data
+                        const existingRes = await db.query(
+                            `SELECT marks_obtained, is_absent FROM student_internal_marks 
+                             WHERE student_id = $1 AND subject_id = $2 AND component_id = $3`,
+                            [data.student_id, subject_id, data.component_id]
+                        );
+
+                        if (existingRes.rows.length > 0) {
+                            const existing = existingRes.rows[0];
+                            const isMarksSame = parseFloat(existing.marks_obtained) === parseFloat(data.marks_obtained);
+                            const isAbsentSame = existing.is_absent === data.is_absent;
+                            
+                            if (isMarksSame && isAbsentSame) {
+                                continue; // No change for this locked student, proceed to next
+                            }
+                        }
+
+                        return res.status(403).json({ error: `Marks entry is locked for student ID ${data.student_id}. Only rejected students can be modified.` });
+                    }
+                }
             }
         }
 

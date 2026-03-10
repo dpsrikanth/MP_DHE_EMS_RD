@@ -299,10 +299,16 @@ exports.deleteFacultyAssignment = async (req, res) => {
 exports.getMarksWorkflowStatus = async (req, res) => {
     try {
         const { college_id, semester_id } = req.query;
-        let query = `SELECT * FROM marks_workflow_status WHERE college_id = $1`;
+        let query = `
+            SELECT ws.*, s.name as subject_name, sem.semester_name as semester
+            FROM marks_workflow_status ws
+            LEFT JOIN master_subjects s ON ws.subject_id = s.id
+            LEFT JOIN master_semesters sem ON ws.semester_id = sem.id
+            WHERE ws.college_id = $1
+        `;
         let params = [college_id];
         if (semester_id) {
-            query += ` AND semester_id = $2`;
+            query += ` AND ws.semester_id = $2`;
             params.push(semester_id);
         }
         const result = await db.query(query, params);
@@ -367,21 +373,35 @@ exports.getMarksTracking = async (req, res) => {
 
 exports.reviewMarks = async (req, res) => {
     try {
-        const { subject_id, section, college_id } = req.query;
+        const { subject_id, section, college_id, semester_id, academic_year_id } = req.query;
         // Fetch raw marks for all students for this subject
         const query = `
-            SELECT sim.*, s.name as student_name, s.rollnumber
+            SELECT sim.*, s.name as student_name, s.rollnumber, 
+                   smr.status as review_status, smr.comment as review_comment
             FROM student_internal_marks sim
             JOIN students s ON sim.student_id = s.id
+            LEFT JOIN student_marks_review smr ON sim.student_id = smr.student_id 
+                AND sim.subject_id = smr.subject_id 
+                AND smr.section = $2 
+                AND smr.college_id = $3
+                AND smr.semester_id = $4
+                AND smr.academic_year_id = $5
             WHERE sim.subject_id = $1
         `;
-        const result = await db.query(query, [subject_id]);
+        const result = await db.query(query, [subject_id, section, college_id, semester_id, academic_year_id]);
 
-        // Structure the response grouped by student, computing Best of 3 draft here if needed
+        // Structure the response grouped by student
         let studentsObj = {};
         for (let row of result.rows) {
             if (!studentsObj[row.student_id]) {
-                studentsObj[row.student_id] = { student_id: row.student_id, student_name: row.student_name, rollnumber: row.rollnumber, marks: [] };
+                studentsObj[row.student_id] = { 
+                    student_id: row.student_id, 
+                    student_name: row.student_name, 
+                    rollnumber: row.rollnumber, 
+                    review_status: row.review_status || 'Pending',
+                    review_comment: row.review_comment || '',
+                    marks: [] 
+                };
             }
             studentsObj[row.student_id].marks.push({
                 component_id: row.component_id,
@@ -397,6 +417,53 @@ exports.reviewMarks = async (req, res) => {
     }
 };
 
+exports.saveStudentReview = async (req, res) => {
+    try {
+        const { college_id, subject_id, semester_id, academic_year_id, section, student_id, status, comment } = req.body;
+        const reviewed_by = req.user ? req.user.id : null;
+
+        const query = `
+            INSERT INTO student_marks_review 
+            (college_id, subject_id, semester_id, academic_year_id, section, student_id, status, comment, reviewed_by)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            ON CONFLICT (college_id, subject_id, semester_id, academic_year_id, section, student_id)
+            DO UPDATE SET status = EXCLUDED.status, comment = EXCLUDED.comment, reviewed_by = EXCLUDED.reviewed_by, updated_at = CURRENT_TIMESTAMP
+            RETURNING *;
+        `;
+        const result = await db.query(query, [college_id, subject_id, semester_id, academic_year_id, section, student_id, status, comment, reviewed_by]);
+        
+        res.status(200).json({ message: "Student review saved", data: result.rows[0] });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to save student review" });
+    }
+};
+
+exports.rejectWorkflow = async (req, res) => {
+    try {
+        const { college_id, subject_id, semester_id, academic_year_id, section } = req.body;
+        const rejected_by = req.user ? req.user.id : null;
+
+        const query = `
+            UPDATE marks_workflow_status 
+            SET status = 'Rejected', updated_at = CURRENT_TIMESTAMP 
+            WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5
+            RETURNING *;
+        `;
+        const result = await db.query(query, [college_id, subject_id, semester_id, academic_year_id, section]);
+
+        if (rejected_by) {
+            await db.query(`INSERT INTO audit_logs (user_id, action, entity_type, entity_id) VALUES ($1, 'MARKS_REJECTED', 'MARKS_WORKFLOW', $2)`,
+                [rejected_by, subject_id]);
+        }
+
+        res.status(200).json({ message: "Workflow rejected and sent back to faculty", data: result.rows[0] });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to reject workflow" });
+    }
+};
+
 exports.lockMarks = async (req, res) => {
     try {
         const { subject_id, section, college_id, semester_id, academic_year_id } = req.body;
@@ -406,7 +473,49 @@ exports.lockMarks = async (req, res) => {
         try {
             await client.query('BEGIN');
 
-            // 1. Fetch all marks and structure config
+            // 1. Check review statuses for all students in this section
+            const reviewStatusQuery = `
+                SELECT status FROM student_marks_review 
+                WHERE subject_id = $1 AND section = $2 AND college_id = $3 
+                AND semester_id = $4 AND academic_year_id = $5
+            `;
+            const reviewStatusRes = await client.query(reviewStatusQuery, [subject_id, section, college_id, semester_id, academic_year_id]);
+            
+            const rejections = reviewStatusRes.rows.filter(r => r.status === 'Rejected');
+            const totalReviewed = reviewStatusRes.rows.length;
+
+            // Fetch total student count to ensure everyone is reviewed
+            const studentCountRes = await client.query(`
+                SELECT COUNT(DISTINCT student_id) FROM student_internal_marks 
+                WHERE subject_id = $1
+            `, [subject_id]);
+            const totalStudents = parseInt(studentCountRes.rows[0].count);
+
+            if (rejections.length > 0) {
+                // If any rejection exists, set global status to Rejected and DON'T calculate
+                await client.query(`
+                    INSERT INTO marks_workflow_status 
+                    (college_id, subject_id, semester_id, academic_year_id, section, status, approved_by) 
+                    VALUES ($1, $2, $3, $4, $5, 'Rejected', $6) 
+                    ON CONFLICT (college_id, subject_id, semester_id, academic_year_id, section) 
+                    DO UPDATE SET status = 'Rejected', approved_by = EXCLUDED.approved_by, updated_at = CURRENT_TIMESTAMP
+                `, [college_id, subject_id, semester_id, academic_year_id, section, approved_by]);
+
+                await client.query('COMMIT');
+                return res.status(200).json({ 
+                    message: "Section rejected due to student-wise rejections. Faculty can now edit rejected records.",
+                    status: 'Rejected'
+                });
+            }
+
+            if (totalReviewed < totalStudents) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: "Please review all student records before locking." });
+            }
+
+            // If we reach here, all students are Approved. Proceed with Locking and Calculation.
+
+            // Fetch all marks and structure config
             const marksData = await client.query('SELECT * FROM student_internal_marks WHERE subject_id = $1', [subject_id]);
             const components = await client.query('SELECT id, component_name, passing_marks FROM internal_marks_structure WHERE subject_id = $1', [subject_id]);
             const compMap = {};
@@ -477,15 +586,15 @@ exports.lockMarks = async (req, res) => {
 
                 await client.query(`
                     INSERT INTO calculated_internal_marks 
-                    (student_id, subject_id, best_of_3_score, practical_score, total_internal, passing_status)
-                    VALUES ($1, $2, $3, $4, $5, $6)
-                    ON CONFLICT (student_id, subject_id) 
+                    (student_id, subject_id, college_id, semester_id, academic_year_id, best_of_3_score, practical_score, total_internal, passing_status)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                    ON CONFLICT (student_id, subject_id, college_id, semester_id, academic_year_id) 
                     DO UPDATE SET best_of_3_score = EXCLUDED.best_of_3_score, practical_score = EXCLUDED.practical_score, 
                     total_internal = EXCLUDED.total_internal, passing_status = EXCLUDED.passing_status, updated_at = CURRENT_TIMESTAMP
-                `, [sid, subject_id, bestOf2Score, s.practical, total, passStatus]);
+                `, [sid, subject_id, college_id, semester_id, academic_year_id, bestOf2Score, s.practical, total, passStatus]);
             }
 
-            // 3. Update Workflow Status
+            // 3. Update Workflow Status to Locked
             await client.query(`
                 INSERT INTO marks_workflow_status 
                 (college_id, subject_id, semester_id, academic_year_id, section, status, approved_by) 
@@ -501,7 +610,7 @@ exports.lockMarks = async (req, res) => {
             }
 
             await client.query('COMMIT');
-            res.status(200).json({ message: "Marks successfully locked and Best of 3 calculated!" });
+            res.status(200).json({ message: "All student records approved. Marks locked and Best of 3 calculated!", status: 'Locked' });
         } catch (innerError) {
             await client.query('ROLLBACK');
             throw innerError;
@@ -509,8 +618,8 @@ exports.lockMarks = async (req, res) => {
             client.release();
         }
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Failed to lock marks and calculate Best of 3" });
+        console.error("Lock Marks Error:", error);
+        res.status(500).json({ error: "Failed to lock marks and calculate Best of 3", details: error.message });
     }
 };
 

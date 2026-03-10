@@ -42,6 +42,8 @@ router.post('/workflow-status', collegeAdminController.updateWorkflowStatus);
 router.get('/marks-tracking', collegeAdminController.getMarksTracking);
 router.get('/review-marks', collegeAdminController.reviewMarks);
 router.post('/lock-marks', collegeAdminController.lockMarks);
+router.post('/save-student-review', collegeAdminController.saveStudentReview);
+router.post('/reject-workflow-section', collegeAdminController.rejectWorkflow);
 router.get('/marks-report', collegeAdminController.getMarksReport);
 
 module.exports = router;

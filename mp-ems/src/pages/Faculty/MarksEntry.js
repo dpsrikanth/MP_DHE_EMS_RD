@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
-import { BookOpen, Users, Save, CheckCircle } from "lucide-react";
+import { BookOpen, Users, Save, CheckCircle, ShieldAlert } from "lucide-react";
 import { useLocation } from 'react-router-dom';
 
 const MarksEntry = () => {
@@ -10,14 +10,12 @@ const MarksEntry = () => {
     const [students, setStudents] = useState([]);
     const [marksStructure, setMarksStructure] = useState([]);
     const [enteredMarks, setEnteredMarks] = useState([]);
-
+    const [workflowStatus, setWorkflowStatus] = useState('Pending'); // New Status
     const [selectedAssignment, setSelectedAssignment] = useState(null);
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-
-    // This state holds the current unsaved edits in a structured way: 
-    // { studentId: { componentId: { marks: value, isAbsent: boolean } } }
     const [marksDraft, setMarksDraft] = useState({});
+    const [reviews, setReviews] = useState({}); // Per-student review statuses/comments
 
     useEffect(() => {
         fetchAssignedSubjects();
@@ -80,13 +78,22 @@ const MarksEntry = () => {
             if (studentsRes.ok) studentsData = await studentsRes.json();
             setStudents(studentsData);
 
-            // 3. Fetch already entered marks
-            const marksRes = await fetch(`http://localhost:8080/api/faculty-marks/entered-marks?subject_id=${assignment.subject_id}`, {
+            // 3. Fetch already entered marks and status
+            const marksRes = await fetch(`http://localhost:8080/api/faculty-marks/entered-marks?subject_id=${assignment.subject_id}&section=${assignment.section}&college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&academic_year_id=${assignment.academic_year_id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             let existingMarks = [];
-            if (marksRes.ok) existingMarks = await marksRes.json();
+            let status = 'Pending';
+            let reviewsData = {};
+            if (marksRes.ok) {
+                const data = await marksRes.json();
+                existingMarks = data.marks || [];
+                status = data.workflowStatus || 'Pending';
+                reviewsData = data.reviews || {};
+            }
             setEnteredMarks(existingMarks);
+            setWorkflowStatus(status);
+            setReviews(reviewsData);
 
             // Populate draft state with existing marks
             const draft = {};
@@ -204,7 +211,10 @@ const MarksEntry = () => {
         return { label: 'Pass', style: 'text-green-500' };
     };
 
+    const isReadOnly = ['Submitted', 'Approved', 'Locked', 'Rejected'].includes(workflowStatus);
+
     const handleSaveMarks = async () => {
+        if (isReadOnly && workflowStatus !== 'Rejected') return;
         const assignmentStr = assignedSubjects.find(a => a.id === selectedAssignment.value);
         if (!assignmentStr) return;
 
@@ -240,7 +250,11 @@ const MarksEntry = () => {
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
                     marksData: payload,
-                    faculty_id: teacherId
+                    faculty_id: teacherId,
+                    college_id: assignmentStr.college_id,
+                    semester_id: assignmentStr.semester_id,
+                    academic_year_id: assignmentStr.academic_year_id,
+                    section: assignmentStr.section
                 })
             });
 
@@ -262,7 +276,7 @@ const MarksEntry = () => {
 
     const handleSubmitMarks = async () => {
         const assignmentStr = assignedSubjects.find(a => a.id === selectedAssignment.value);
-        if (!assignmentStr) return;
+        if (!assignmentStr || (isReadOnly && workflowStatus !== 'Rejected')) return;
 
         if (!window.confirm("Are you sure you want to submit these marks? You won't be able to edit them afterwards.")) return;
 
@@ -272,6 +286,44 @@ const MarksEntry = () => {
             const userStr = localStorage.getItem('user');
             const teacherId = userStr ? JSON.parse(userStr).teacher_id : 1;
 
+            // 1. First Save the marks as draft
+            const payload = [];
+            Object.entries(marksDraft).forEach(([studentId, components]) => {
+                Object.entries(components).forEach(([componentId, data]) => {
+                    if (data.marks !== '' || data.isAbsent) {
+                        payload.push({
+                            student_id: parseInt(studentId),
+                            subject_id: assignmentStr.subject_id,
+                            component_id: parseInt(componentId),
+                            marks_obtained: data.isAbsent ? 0 : parseFloat(data.marks || 0),
+                            is_absent: data.isAbsent
+                        });
+                    }
+                });
+            });
+
+            // Even if payload is empty, we proceed to submit if some marks exist in DB, 
+            // but usually we want to save current state.
+            if (payload.length > 0) {
+                const saveRes = await fetch('http://localhost:8080/api/faculty-marks/enter-marks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({ 
+                        marksData: payload, 
+                        faculty_id: teacherId,
+                        college_id: assignmentStr.college_id,
+                        semester_id: assignmentStr.semester_id,
+                        academic_year_id: assignmentStr.academic_year_id,
+                        section: assignmentStr.section
+                    })
+                });
+                if (!saveRes.ok) {
+                    const errorData = await saveRes.json();
+                    throw new Error(errorData.error || "Failed to save marks before submission");
+                }
+            }
+
+            // 2. Then Submit
             const res = await fetch('http://localhost:8080/api/faculty-marks/submit-marks', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -313,7 +365,18 @@ const MarksEntry = () => {
                 </div>
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 leading-none">Internal Marks Entry</h1>
-                    <p className="text-sm text-slate-500 mt-1 font-medium">Select a subject to enter student internal assessment marks.</p>
+                    <div className="flex items-center gap-3 mt-1.5">
+                        <p className="text-sm text-slate-500 font-medium">Select a subject to enter student internal assessment marks.</p>
+                        {selectedAssignment && (
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${workflowStatus === 'Pending' ? 'bg-slate-50 text-slate-500 border-slate-200' :
+                                workflowStatus === 'Submitted' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                                    workflowStatus === 'Rejected' ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' :
+                                        'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                }`}>
+                                {workflowStatus}
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -367,12 +430,27 @@ const MarksEntry = () => {
                                 {students.map((student) => {
                                     const total = calculateTotal(student.id);
                                     const status = determineStatus(student.id);
+                                    const review = reviews[student.id];
+                                    const isStudentReadOnly = isReadOnly && review?.status !== 'Rejected';
 
                                     return (
                                         <tr key={student.id} className="hover:bg-indigo-50/30 transition-colors group">
                                             <td className="px-6 py-4 sticky left-0 bg-white group-hover:bg-indigo-50/30 z-10 border-r border-slate-100">
-                                                <p className="text-sm font-bold text-slate-800">{student.name || `Student ${student.id}`}</p>
-                                                <p className="text-xs text-slate-500">ID: {student.id}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <div>
+                                                        <p className="text-sm font-bold text-slate-800">{student.name || `Student ${student.id}`}</p>
+                                                        <p className="text-xs text-slate-500">Reg: {student.rollnumber || student.id}</p>
+                                                    </div>
+                                                    {review?.status === 'Rejected' && (
+                                                        <div className="relative group/tooltip">
+                                                            <ShieldAlert size={16} className="text-red-500 animate-pulse" />
+                                                            <div className="absolute left-full ml-2 top-0 invisible group-hover/tooltip:visible bg-red-600 text-white p-2 rounded-lg text-[10px] w-48 z-50 shadow-xl">
+                                                                <p className="font-bold border-b border-red-500 mb-1">REJECTED BY ADMIN</p>
+                                                                {review.comment || "Please correct and re-submit."}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </td>
 
                                             {marksStructure.map(comp => {
@@ -387,7 +465,7 @@ const MarksEntry = () => {
                                                                 max={comp.max_marks}
                                                                 min={0}
                                                                 value={draft.marks}
-                                                                disabled={draft.isAbsent}
+                                                                disabled={draft.isAbsent || isStudentReadOnly}
                                                                 onChange={(e) => handleMarkChange(student.id, comp.id, 'marks', e.target.value)}
                                                                 className={`w-20 text-center px-2 py-1.5 border rounded-lg font-bold outline-none transition-all ${draft.isAbsent
                                                                     ? 'bg-slate-100 border-slate-200 text-slate-400'
@@ -402,6 +480,7 @@ const MarksEntry = () => {
                                                                     type="checkbox"
                                                                     checked={draft.isAbsent}
                                                                     onChange={(e) => handleMarkChange(student.id, comp.id, 'isAbsent', e.target.checked)}
+                                                                    disabled={isStudentReadOnly}
                                                                     className="w-3.5 h-3.5 rounded text-red-500 focus:ring-red-500 border-slate-300"
                                                                 />
                                                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Absent</span>
@@ -429,20 +508,26 @@ const MarksEntry = () => {
                     </div>
 
                     <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-4 sticky bottom-0 z-20">
+                        {isReadOnly && (
+                            <div className="flex-1 flex items-center gap-2 text-amber-600 font-bold text-sm bg-amber-50 px-4 py-2 rounded-xl border border-amber-200">
+                                <ShieldAlert size={18} />
+                                Marks are submitted and in read-only mode till college admin review.
+                            </div>
+                        )}
                         <button
-                            disabled={isSaving}
+                            disabled={isSaving || (isReadOnly && workflowStatus !== 'Rejected')}
                             onClick={handleSaveMarks}
                             className={`inline-flex items-center gap-2 px-6 py-2.5 text-slate-700 font-bold bg-white border border-slate-200 rounded-xl shadow-sm transition-all text-sm
-                                ${isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50 hover:border-slate-300'}`}
+                                ${isSaving || (isReadOnly && workflowStatus !== 'Rejected') ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50 hover:border-slate-300'}`}
                         >
                             <Save size={18} />
                             Save Draft
                         </button>
                         <button
-                            disabled={isSaving}
+                            disabled={isSaving || (isReadOnly && workflowStatus !== 'Rejected')}
                             onClick={handleSubmitMarks}
                             className={`inline-flex items-center gap-2 px-10 py-3.5 text-white font-black rounded-xl shadow-xl transition-all uppercase tracking-widest text-sm
-                                ${isSaving ? 'bg-indigo-400 cursor-not-allowed shadow-none' : 'bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] shadow-indigo-600/20 active:scale-[0.98]'}`}
+                                ${isSaving || (isReadOnly && workflowStatus !== 'Rejected') ? 'bg-slate-400 cursor-not-allowed shadow-none' : 'bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] shadow-indigo-600/20 active:scale-[0.98]'}`}
                         >
                             {isSaving ? (
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

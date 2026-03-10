@@ -33,13 +33,19 @@ const MarksVerification = () => {
         }
     };
 
-    const handleReviewClick = (subjectId, section) => {
-        navigate(`/admin/marks-review/${subjectId}/${section}`);
+    const handleReviewClick = (item) => {
+        navigate(`/admin/marks-review/${item.subject_id}/${item.section}`, {
+            state: {
+                semester_id: item.semester_id,
+                academic_year_id: item.academic_year_id
+            }
+        });
     };
 
     const getStatusConfig = (status) => {
         switch (status) {
             case 'Submitted': return { color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', icon: Clock, label: 'Ready for Review' };
+            case 'Rejected': return { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', icon: ShieldAlert, label: 'Rejected - Sent Back' };
             case 'Locked': return { color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', icon: CheckCircle, label: 'Locked & Verified' };
             default: return { color: 'text-slate-500', bg: 'bg-slate-50', border: 'border-slate-200', icon: ShieldAlert, label: 'Pending' };
         }
@@ -80,9 +86,9 @@ const MarksVerification = () => {
                                         <StatusIcon size={14} />
                                         {statusConfig.label}
                                     </span>
-                                    {item.status === 'Submitted' && (
+                                    {['Submitted', 'Rejected'].includes(item.status) && (
                                         <button 
-                                            onClick={() => handleReviewClick(item.subject_id, item.section)}
+                                            onClick={() => handleReviewClick(item)}
                                             className="text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 p-2 rounded-xl transition-colors"
                                             title="Review & Lock"
                                         >
