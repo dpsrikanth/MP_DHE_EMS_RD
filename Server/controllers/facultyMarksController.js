@@ -98,8 +98,10 @@ exports.enterStudentMarks = async (req, res) => {
             }
             await client.query('COMMIT');
 
-            // Log action if faculty_id is basically user_id
-            await db.query(`INSERT INTO audit_logs (user_id, action, entity_type) VALUES ($1, 'MARKS_ENTERED_OR_UPDATED', 'MARKS')`, [faculty_id]);
+            // Log action using the logged-in user's ID
+            if (req.user && req.user.id) {
+                await db.query(`INSERT INTO audit_logs (user_id, action, entity_type) VALUES ($1, 'MARKS_ENTERED_OR_UPDATED', 'MARKS')`, [req.user.id]);
+            }
 
             res.status(200).json({ message: "Marks saved successfully" });
         } catch (innerError) {
@@ -122,15 +124,12 @@ exports.submitMarks = async (req, res) => {
         try {
             await client.query('BEGIN');
 
-            // Check if entry exists for this subject/section
-            const checkQuery = `SELECT id FROM marks_workflow_status WHERE subject_id = $1 AND section = $2`;
-            const checkRes = await client.query(checkQuery, [subject_id, section]);
+            const checkQuery = `SELECT id FROM marks_workflow_status WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5`;
+            const checkRes = await client.query(checkQuery, [college_id, subject_id, semester_id, academic_year_id, section]);
 
             if (checkRes.rows.length > 0) {
-                // Update existing
                 await client.query(`UPDATE marks_workflow_status SET status = 'Submitted', updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [checkRes.rows[0].id]);
             } else {
-                // Insert new
                 await client.query(`
                     INSERT INTO marks_workflow_status 
                     (college_id, subject_id, semester_id, academic_year_id, section, status) 
@@ -140,7 +139,9 @@ exports.submitMarks = async (req, res) => {
 
             await client.query('COMMIT');
 
-            await db.query(`INSERT INTO audit_logs (user_id, action, entity_type, entity_id) VALUES ($1, 'MARKS_SUBMITTED', 'MARKS_WORKFLOW', $2)`, [faculty_id, subject_id]);
+            if (req.user && req.user.id) {
+                await db.query(`INSERT INTO audit_logs (user_id, action, entity_type, entity_id) VALUES ($1, 'MARKS_SUBMITTED', 'MARKS_WORKFLOW', $2)`, [req.user.id, subject_id]);
+            }
 
             res.status(200).json({ message: "Marks submitted successfully" });
         } catch (innerError) {
@@ -150,7 +151,7 @@ exports.submitMarks = async (req, res) => {
             client.release();
         }
     } catch (error) {
-        console.error(error);
+        console.error("Error in submitMarks:", error);
         res.status(500).json({ error: "Failed to submit marks" });
     }
 };

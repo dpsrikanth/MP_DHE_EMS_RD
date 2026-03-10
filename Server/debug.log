@@ -1,0 +1,56 @@
+[2026-03-10T07:08:47.358Z] Submit marks payload: {"subject_id":6,"section":"A","college_id":10,"semester_id":15,"academic_year_id":1,"faculty_id":22}
+[2026-03-10T07:08:47.362Z] User from token: {"id":10,"email":"nithin@gmail.com","role":"Faculty","college_id":10,"teacher_id":22,"iat":1773125899,"exp":1773126799}
+[2026-03-10T07:08:47.365Z] Error in submitMarks: Client has already been connected. You cannot reuse a client.
+Stack: Error: Client has already been connected. You cannot reuse a client.
+    at Client._connect (D:\MP_DHE_EMS_RD\Server\node_modules\pg\lib\client.js:136:19)
+    at D:\MP_DHE_EMS_RD\Server\node_modules\pg\lib\client.js:212:12
+    at new Promise (<anonymous>)
+    at Client.connect (D:\MP_DHE_EMS_RD\Server\node_modules\pg\lib\client.js:211:12)
+    at exports.submitMarks (D:\MP_DHE_EMS_RD\Server\controllers\facultyMarksController.js:133:33)
+    at Layer.handleRequest (D:\MP_DHE_EMS_RD\Server\node_modules\router\lib\layer.js:152:17)
+    at next (D:\MP_DHE_EMS_RD\Server\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\MP_DHE_EMS_RD\Server\node_modules\router\lib\route.js:117:3)
+    at handle (D:\MP_DHE_EMS_RD\Server\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\MP_DHE_EMS_RD\Server\node_modules\router\lib\layer.js:152:17)
+[2026-03-10T07:09:29.739Z] Submit marks payload: {"subject_id":6,"section":"A","college_id":10,"semester_id":15,"academic_year_id":1,"faculty_id":22}
+[2026-03-10T07:09:29.742Z] User from token: {"id":10,"email":"nithin@gmail.com","role":"Faculty","college_id":10,"teacher_id":22,"iat":1773126541,"exp":1773127441}
+[2026-03-10T07:09:29.746Z] Error in submitMarks: Client has already been connected. You cannot reuse a client.
+Stack: Error: Client has already been connected. You cannot reuse a client.
+    at Client._connect (D:\MP_DHE_EMS_RD\Server\node_modules\pg\lib\client.js:136:19)
+    at D:\MP_DHE_EMS_RD\Server\node_modules\pg\lib\client.js:212:12
+    at new Promise (<anonymous>)
+    at Client.connect (D:\MP_DHE_EMS_RD\Server\node_modules\pg\lib\client.js:211:12)
+    at exports.submitMarks (D:\MP_DHE_EMS_RD\Server\controllers\facultyMarksController.js:133:33)
+    at Layer.handleRequest (D:\MP_DHE_EMS_RD\Server\node_modules\router\lib\layer.js:152:17)
+    at next (D:\MP_DHE_EMS_RD\Server\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\MP_DHE_EMS_RD\Server\node_modules\router\lib\route.js:117:3)
+    at handle (D:\MP_DHE_EMS_RD\Server\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\MP_DHE_EMS_RD\Server\node_modules\router\lib\layer.js:152:17)
+[2026-03-10T07:13:30.911Z] Submit marks payload: {"subject_id":6,"section":"A","college_id":10,"semester_id":15,"academic_year_id":1,"faculty_id":22}
+[2026-03-10T07:13:30.914Z] User from token: {"id":10,"email":"nithin@gmail.com","role":"Faculty","college_id":10,"teacher_id":22,"iat":1773126541,"exp":1773127441}
+[2026-03-10T07:13:30.916Z] Error in submitMarks: Client has already been connected. You cannot reuse a client.
+Stack: Error: Client has already been connected. You cannot reuse a client.
+    at Client._connect (D:\MP_DHE_EMS_RD\Server\node_modules\pg\lib\client.js:136:19)
+    at D:\MP_DHE_EMS_RD\Server\node_modules\pg\lib\client.js:212:12
+    at new Promise (<anonymous>)
+    at Client.connect (D:\MP_DHE_EMS_RD\Server\node_modules\pg\lib\client.js:211:12)
+    at exports.submitMarks (D:\MP_DHE_EMS_RD\Server\controllers\facultyMarksController.js:133:33)
+    at Layer.handleRequest (D:\MP_DHE_EMS_RD\Server\node_modules\router\lib\layer.js:152:17)
+    at next (D:\MP_DHE_EMS_RD\Server\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\MP_DHE_EMS_RD\Server\node_modules\router\lib\route.js:117:3)
+    at handle (D:\MP_DHE_EMS_RD\Server\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\MP_DHE_EMS_RD\Server\node_modules\router\lib\layer.js:152:17)
+[2026-03-10T07:14:05.579Z] Submit marks payload: {"subject_id":6,"section":"A","college_id":10,"semester_id":15,"academic_year_id":1,"faculty_id":22}
+[2026-03-10T07:14:05.583Z] User from token: {"id":10,"email":"nithin@gmail.com","role":"Faculty","college_id":10,"teacher_id":22,"iat":1773126819,"exp":1773127719}
+[2026-03-10T07:14:05.588Z] Error in submitMarks: Client has already been connected. You cannot reuse a client.
+Stack: Error: Client has already been connected. You cannot reuse a client.
+    at Client._connect (D:\MP_DHE_EMS_RD\Server\node_modules\pg\lib\client.js:136:19)
+    at D:\MP_DHE_EMS_RD\Server\node_modules\pg\lib\client.js:212:12
+    at new Promise (<anonymous>)
+    at Client.connect (D:\MP_DHE_EMS_RD\Server\node_modules\pg\lib\client.js:211:12)
+    at exports.submitMarks (D:\MP_DHE_EMS_RD\Server\controllers\facultyMarksController.js:133:33)
+    at Layer.handleRequest (D:\MP_DHE_EMS_RD\Server\node_modules\router\lib\layer.js:152:17)
+    at next (D:\MP_DHE_EMS_RD\Server\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\MP_DHE_EMS_RD\Server\node_modules\router\lib\route.js:117:3)
+    at handle (D:\MP_DHE_EMS_RD\Server\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\MP_DHE_EMS_RD\Server\node_modules\router\lib\layer.js:152:17)
