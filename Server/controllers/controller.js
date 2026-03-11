@@ -1456,6 +1456,78 @@ const deleteMasterProgram = async (req, res) => {
   }
 };
 
+const getMasterBatches = async (req, res) => {
+  try {
+    const result = await client.query(
+      `SELECT mb.*, mp.name as program_name 
+       FROM master_batches mb
+       LEFT JOIN master_programs mp ON mb.program_id = mp.id
+       WHERE mb.status = 'Active' OR mb.status IS NULL
+       ORDER BY mb.id DESC`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get master batches error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const createMasterBatch = async (req, res) => {
+  try {
+    const { batch_name, start_date, end_date, academic_year, import_fees_flag, program_id } = req.body;
+    if (!batch_name) return res.status(400).json({ message: "Batch name is required" });
+    
+    const result = await client.query(
+      `INSERT INTO master_batches (batch_name, start_date, end_date, academic_year, import_fees_flag, program_id, status)
+       VALUES ($1, $2, $3, $4, $5, $6, 'Active')
+       RETURNING *`,
+      [batch_name, start_date, end_date, academic_year, import_fees_flag, program_id]
+    );
+    res.status(201).json({ message: "Batch created successfully", data: result.rows[0] });
+  } catch (error) {
+    console.error("Create master batch error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const updateMasterBatch = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { batch_name, start_date, end_date, academic_year, import_fees_flag, program_id } = req.body;
+    
+    const result = await client.query(
+      `UPDATE master_batches 
+       SET batch_name = $1, start_date = $2, end_date = $3, academic_year = $4, 
+           import_fees_flag = $5, program_id = $6, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $7
+       RETURNING *`,
+      [batch_name, start_date, end_date, academic_year, import_fees_flag, program_id, id]
+    );
+    
+    if (result.rows.length === 0) return res.status(404).json({ message: "Batch not found" });
+    res.json({ message: "Batch updated successfully", data: result.rows[0] });
+  } catch (error) {
+    console.error("Update master batch error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const deleteMasterBatch = async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Soft delete
+    const result = await client.query(
+      `UPDATE master_batches SET status = 'Inactive', updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id`,
+      [id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: "Batch not found" });
+    res.json({ message: "Batch deleted successfully" });
+  } catch (error) {
+    console.error("Delete master batch error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 const getMasterPolicies = async (req, res) => {
   try {
     const result = await client.query('SELECT id, name, description, status, created_at FROM master_policies ORDER BY id');
@@ -2212,6 +2284,11 @@ module.exports = {
   getMasterDepartment,
   updateMasterDepartment,
   deleteMasterDepartment,
+  // master batches
+  getMasterBatches,
+  createMasterBatch,
+  updateMasterBatch,
+  deleteMasterBatch,
   // mark module additions
   getStudentsForMarks,
   saveTeacherMarks,

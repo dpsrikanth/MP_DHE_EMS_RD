@@ -8,6 +8,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Universities from "./pages/Universities";
 import Colleges from "./pages/Colleges";
 import Programs from "./pages/Programs";
+import Batches from "./pages/Batches";
 import AcademicYears from "./pages/AcademicYears";
 import Semesters from "./pages/Semesters";
 import Subjects from "./pages/Subjects";
@@ -40,6 +41,7 @@ const AppRoutes = () => {
       <Route path="/universities" element={<Layout><ProtectedRoute element={<Universities />} /></Layout>} />
       <Route path="/colleges" element={<Layout><ProtectedRoute element={<Colleges />} /></Layout>} />
       <Route path="/programs" element={<Layout><ProtectedRoute element={<Programs />} /></Layout>} />
+      <Route path="/batches" element={<Layout><ProtectedRoute element={<Batches />} /></Layout>} />
       <Route path="/academic-years" element={<Layout><ProtectedRoute element={<AcademicYears />} /></Layout>} />
       <Route path="/semesters" element={<Layout><ProtectedRoute element={<Semesters />} /></Layout>} />
       <Route path="/subjects" element={<Layout><ProtectedRoute element={<Subjects />} /></Layout>} />

@@ -43,6 +43,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       { id: 2, name: 'Universities', path: '/universities', icon: <School size={20} /> },
       { id: 3, name: 'Colleges', path: '/colleges', icon: <GraduationCap size={20} /> },
       { id: 4, name: 'Programs', path: '/programs', icon: <BookOpen size={20} /> },
+      { id: 14, name: 'Batches', path: '/batches', icon: <Layers size={20} /> },
       { id: 5, name: 'Academic Years', path: '/academic-years', icon: <Calendar size={20} /> },
       { id: 6, name: 'Semesters', path: '/semesters', icon: <Layers size={20} /> },
       { id: 7, name: 'Subjects', path: '/subjects', icon: <Book size={20} /> },
