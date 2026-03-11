@@ -19,7 +19,9 @@ import {
   MapPin,
   IdCard,
   Droplet,
-  Hash
+  Hash,
+  Activity,
+  Shield
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
@@ -77,7 +79,41 @@ const Students = () => {
     programName: '',
     admission_year: '',
     semister: '',
-    collageName: ''
+    collageName: '',
+    admission_no: '',
+    admission_date: '',
+    first_name: '',
+    middle_name: '',
+    last_name: '',
+    batch: '',
+    section: '',
+    date_of_birth: '',
+    gender: '',
+    student_status: '',
+    rte: '',
+    birth_place: '',
+    hostel_or_day_scholar: '',
+    country: '',
+    state: '',
+    city: '',
+    pin_code: '',
+    language: '',
+    phone: '',
+    sms_enabled: '',
+    ems_enabled: '',
+    address_line_1: '',
+    father_first_name: '',
+    father_last_name: '',
+    father_mobile_phone: '',
+    father_address_email: '',
+    father_state: '',
+    father_pin_code: '',
+    mother_first_name: '',
+    mother_last_name: '',
+    mother_mobile_phone: '',
+    mother_address_email: '',
+    mother_state: '',
+    mother_pin_code: ''
   });
   const [addErrors, setAddErrors] = useState({});
 
@@ -99,7 +135,41 @@ const Students = () => {
     programName: '',
     admission_year: '',
     semister: '',
-    collageName: ''
+    collageName: '',
+    admission_no: '',
+    admission_date: '',
+    first_name: '',
+    middle_name: '',
+    last_name: '',
+    batch: '',
+    section: '',
+    date_of_birth: '',
+    gender: '',
+    student_status: '',
+    rte: '',
+    birth_place: '',
+    hostel_or_day_scholar: '',
+    country: '',
+    state: '',
+    city: '',
+    pin_code: '',
+    language: '',
+    phone: '',
+    sms_enabled: '',
+    ems_enabled: '',
+    address_line_1: '',
+    father_first_name: '',
+    father_last_name: '',
+    father_mobile_phone: '',
+    father_address_email: '',
+    father_state: '',
+    father_pin_code: '',
+    mother_first_name: '',
+    mother_last_name: '',
+    mother_mobile_phone: '',
+    mother_address_email: '',
+    mother_state: '',
+    mother_pin_code: ''
   });
   const [editErrors, setEditErrors] = useState({});
 
@@ -327,9 +397,10 @@ const Students = () => {
     const errs = {};
     
     // Required fields
-    if (!form.name || !form.name.trim()) errs.name = 'Student name is required';
-    else if (form.name.trim().length < 2) errs.name = 'Name must be at least 2 characters';
+    if (!form.first_name || !form.first_name.trim()) errs.first_name = 'First name is required';
+    else if (form.first_name.trim().length < 2) errs.first_name = 'First name must be at least 2 characters';
     
+    if (!form.admission_no || !form.admission_no.trim()) errs.admission_no = 'Admission No is required';
     if (!form.policies || !form.policies.trim()) errs.policies = 'Policy is required';
     if (!form.programName || !form.programName.trim()) errs.programName = 'Program is required';
     if (!form.admission_year) errs.admission_year = 'Admission year is required';
@@ -379,7 +450,13 @@ const Students = () => {
   const openAddModal = () => {
     setAddForm({ 
       name: '', rollnumber: '', email: '', contactNumber: '', address: '', fatherName: '', 
-      adharnumber: '', bloodgroup: '', policies: '', programName: '', admission_year: '', semister: '', collageName: '' 
+      adharnumber: '', bloodgroup: '', policies: '', programName: '', admission_year: '', semister: '', collageName: '',
+      admission_no: '', admission_date: '', first_name: '', middle_name: '', last_name: '', batch: '', section: '',
+      date_of_birth: '', gender: '', student_status: '', rte: '', birth_place: '', hostel_or_day_scholar: '',
+      country: '', state: '', city: '', pin_code: '', language: '', phone: '', sms_enabled: '', ems_enabled: '',
+      address_line_1: '', father_first_name: '', father_last_name: '', father_mobile_phone: '', father_address_email: '',
+      father_state: '', father_pin_code: '', mother_first_name: '', mother_last_name: '', mother_mobile_phone: '',
+      mother_address_email: '', mother_state: '', mother_pin_code: ''
     });
     setAddErrors({});
     setAddError('');
@@ -458,7 +535,41 @@ const Students = () => {
       programName: student.programName || '',
       admission_year: student.admission_year || '',
       semister: student.semister || '',
-      collageName: student.collageName || ''
+      collageName: student.collageName || '',
+      admission_no: student.admission_no || '',
+      admission_date: student.admission_date ? new Date(student.admission_date).toISOString().split('T')[0] : '',
+      first_name: student.first_name || '',
+      middle_name: student.middle_name || '',
+      last_name: student.last_name || '',
+      batch: student.batch || '',
+      section: student.section || '',
+      date_of_birth: student.date_of_birth ? new Date(student.date_of_birth).toISOString().split('T')[0] : '',
+      gender: student.gender || '',
+      student_status: student.student_status || '',
+      rte: student.rte || '',
+      birth_place: student.birth_place || '',
+      hostel_or_day_scholar: student.hostel_or_day_scholar || '',
+      country: student.country || '',
+      state: student.state || '',
+      city: student.city || '',
+      pin_code: student.pin_code || '',
+      language: student.language || '',
+      phone: student.phone || '',
+      sms_enabled: student.sms_enabled || '',
+      ems_enabled: student.ems_enabled || '',
+      address_line_1: student.address_line_1 || '',
+      father_first_name: student.father_first_name || '',
+      father_last_name: student.father_last_name || '',
+      father_mobile_phone: student.father_mobile_phone || '',
+      father_address_email: student.father_address_email || '',
+      father_state: student.father_state || '',
+      father_pin_code: student.father_pin_code || '',
+      mother_first_name: student.mother_first_name || '',
+      mother_last_name: student.mother_last_name || '',
+      mother_mobile_phone: student.mother_mobile_phone || '',
+      mother_address_email: student.mother_address_email || '',
+      mother_state: student.mother_state || '',
+      mother_pin_code: student.mother_pin_code || ''
     });
     setEditErrors({});
     setEditError('');
@@ -533,7 +644,41 @@ const Students = () => {
           programName: editForm.programName,
           admission_year: editForm.admission_year,
           semister: editForm.semister,
-          collageName: editForm.collageName
+          collageName: editForm.collageName,
+          admission_no: editForm.admission_no,
+          admission_date: editForm.admission_date,
+          first_name: editForm.first_name,
+          middle_name: editForm.middle_name,
+          last_name: editForm.last_name,
+          batch: editForm.batch,
+          section: editForm.section,
+          date_of_birth: editForm.date_of_birth,
+          gender: editForm.gender,
+          student_status: editForm.student_status,
+          rte: editForm.rte,
+          birth_place: editForm.birth_place,
+          hostel_or_day_scholar: editForm.hostel_or_day_scholar,
+          country: editForm.country,
+          state: editForm.state,
+          city: editForm.city,
+          pin_code: editForm.pin_code,
+          language: editForm.language,
+          phone: editForm.phone,
+          sms_enabled: editForm.sms_enabled,
+          ems_enabled: editForm.ems_enabled,
+          address_line_1: editForm.address_line_1,
+          father_first_name: editForm.father_first_name,
+          father_last_name: editForm.father_last_name,
+          father_mobile_phone: editForm.father_mobile_phone,
+          father_address_email: editForm.father_address_email,
+          father_state: editForm.father_state,
+          father_pin_code: editForm.father_pin_code,
+          mother_first_name: editForm.mother_first_name,
+          mother_last_name: editForm.mother_last_name,
+          mother_mobile_phone: editForm.mother_mobile_phone,
+          mother_address_email: editForm.mother_address_email,
+          mother_state: editForm.mother_state,
+          mother_pin_code: editForm.mother_pin_code
         })
       });
       const text = await resp.text();
@@ -816,20 +961,112 @@ const Students = () => {
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Student Name */}
+                {/* First Name */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name (Req)</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="first_name" 
+                      value={addForm.first_name} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Sriram"
+                      className={`w-full bg-slate-50 border-2 ${addErrors.first_name ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  {addErrors.first_name && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.first_name}</p>}
+                </div>
+
+                {/* Last Name */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="last_name" 
+                      value={addForm.last_name} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Kumar"
+                      className={`w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                </div>
+
+                {/* Student Full Name (Legacy) */}
                 <div className="space-y-2 col-span-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Student Name</label>
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name (Legacy)</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input 
                       name="name" 
                       value={addForm.name} 
                       onChange={handleAddChange} 
-                      placeholder="e.g. Sriram"
+                      placeholder="e.g. Sriram Kumar"
                       className={`w-full bg-slate-50 border-2 ${addErrors.name ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
                   {addErrors.name && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.name}</p>}
+                </div>
+
+                {/* Admission No */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Admission No</label>
+                  <div className="relative">
+                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="admission_no" 
+                      value={addForm.admission_no} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. 25C00713"
+                      className={`w-full bg-slate-50 border-2 ${addErrors.admission_no ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  {addErrors.admission_no && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.admission_no}</p>}
+                </div>
+
+                   {/* Date of Birth */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Date of Birth</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <input 
+                      type="date"
+                      name="date_of_birth" 
+                      value={addForm.date_of_birth} 
+                      onChange={handleAddChange}
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Batch */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Batch</label>
+                  <div className="relative">
+                    <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <input 
+                      name="batch" 
+                      value={addForm.batch} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. I Year"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Section */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Section</label>
+                  <div className="relative">
+                    <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <input 
+                      name="section" 
+                      value={addForm.section} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Economics"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
                 </div>
 
                   {/* College */}
@@ -1042,6 +1279,438 @@ const Students = () => {
                   </div>
                 </div>
 
+                
+                {/* Middle Name */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Middle Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="middle_name" 
+                      value={addForm.middle_name} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Singh"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Gender */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Gender</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="gender" 
+                      value={addForm.gender} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Male/Female"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
+                  <div className="relative">
+                    <Activity className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="student_status" 
+                      value={addForm.student_status} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Active"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* RTE */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">RTE</label>
+                  <div className="relative">
+                    <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="rte" 
+                      value={addForm.rte} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Yes/No"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Birth Place */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Birth Place</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="birth_place" 
+                      value={addForm.birth_place} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Bhopal"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Hostel/Day Scholar */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Hostel/Day Scholar</label>
+                  <div className="relative">
+                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="hostel_or_day_scholar" 
+                      value={addForm.hostel_or_day_scholar} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Day/Hostel"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Language */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Language</label>
+                  <div className="relative">
+                    <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="language" 
+                      value={addForm.language} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Hindi"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Secondary Phone */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Secondary Phone</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="phone" 
+                      value={addForm.phone} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. 9876543210"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* SMS Enabled */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">SMS Enabled</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="sms_enabled" 
+                      value={addForm.sms_enabled} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Yes/No"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* EMS Enabled */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">EMS Enabled</label>
+                  <div className="relative">
+                    <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="ems_enabled" 
+                      value={addForm.ems_enabled} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Yes/No"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Address Line 1 */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Address Line 1</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="address_line_1" 
+                      value={addForm.address_line_1} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. 123 Main St"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* City */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">City</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="city" 
+                      value={addForm.city} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Bhopal"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* State */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">State</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="state" 
+                      value={addForm.state} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Madhya Pradesh"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Country */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Country</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="country" 
+                      value={addForm.country} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. India"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Pin Code */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Pin Code</label>
+                  <div className="relative">
+                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="pin_code" 
+                      value={addForm.pin_code} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. 462001"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Father First Name */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father First Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="father_first_name" 
+                      value={addForm.father_first_name} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Raj"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Father Last Name */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Last Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="father_last_name" 
+                      value={addForm.father_last_name} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Kumar"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Father Mobile */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Mobile</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="father_mobile_phone" 
+                      value={addForm.father_mobile_phone} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. 9876543210"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Father Email */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      type="email"
+                      name="father_address_email" 
+                      value={addForm.father_address_email} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. father@example.com"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Father State */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father State</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="father_state" 
+                      value={addForm.father_state} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. MP"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Father Pin Code */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Pin Code</label>
+                  <div className="relative">
+                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="father_pin_code" 
+                      value={addForm.father_pin_code} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. 462001"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Mother First Name */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother First Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="mother_first_name" 
+                      value={addForm.mother_first_name} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Sita"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Mother Last Name */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Last Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="mother_last_name" 
+                      value={addForm.mother_last_name} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. Devi"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Mother Mobile */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Mobile</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="mother_mobile_phone" 
+                      value={addForm.mother_mobile_phone} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. 9876543210"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Mother Email */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      type="email"
+                      name="mother_address_email" 
+                      value={addForm.mother_address_email} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. mother@example.com"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Mother State */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother State</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="mother_state" 
+                      value={addForm.mother_state} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. MP"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Mother Pin Code */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Pin Code</label>
+                  <div className="relative">
+                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="mother_pin_code" 
+                      value={addForm.mother_pin_code} 
+                      onChange={handleAddChange} 
+                      placeholder="e.g. 462001"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
                 {/* Address */}
                 <div className="space-y-2 col-span-2">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Address</label>
@@ -1120,20 +1789,112 @@ const Students = () => {
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Student Name */}
+                {/* First Name */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name (Req)</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="first_name" 
+                      value={editForm.first_name} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Sriram"
+                      className={`w-full bg-slate-50 border-2 ${editErrors.first_name ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  {editErrors.first_name && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.first_name}</p>}
+                </div>
+
+                {/* Last Name */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="last_name" 
+                      value={editForm.last_name} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Kumar"
+                      className={`w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                </div>
+
+                {/* Student Full Name (Legacy) */}
                 <div className="space-y-2 col-span-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Student Name</label>
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name (Legacy)</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input 
                       name="name" 
                       value={editForm.name} 
                       onChange={handleEditChange} 
-                      placeholder="e.g. Sriram"
+                      placeholder="e.g. Sriram Kumar"
                       className={`w-full bg-slate-50 border-2 ${editErrors.name ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
                   {editErrors.name && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.name}</p>}
+                </div>
+
+                {/* Admission No */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Admission No</label>
+                  <div className="relative">
+                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      name="admission_no" 
+                      value={editForm.admission_no} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. 25C00713"
+                      className={`w-full bg-slate-50 border-2 ${editErrors.admission_no ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  {editErrors.admission_no && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.admission_no}</p>}
+                </div>
+
+                   {/* Date of Birth */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Date of Birth</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <input 
+                      type="date"
+                      name="date_of_birth" 
+                      value={editForm.date_of_birth} 
+                      onChange={handleEditChange}
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Batch */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Batch</label>
+                  <div className="relative">
+                    <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <input 
+                      name="batch" 
+                      value={editForm.batch} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. I Year"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Section */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Section</label>
+                  <div className="relative">
+                    <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    <input 
+                      name="section" 
+                      value={editForm.section} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Economics"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
                 </div>
 
                 {/* College */}
@@ -1346,6 +2107,438 @@ const Students = () => {
                   </div>
                 </div>
 
+                
+                {/* Middle Name */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Middle Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="middle_name" 
+                      value={editForm.middle_name} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Singh"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Gender */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Gender</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="gender" 
+                      value={editForm.gender} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Male/Female"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
+                  <div className="relative">
+                    <Activity className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="student_status" 
+                      value={editForm.student_status} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Active"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* RTE */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">RTE</label>
+                  <div className="relative">
+                    <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="rte" 
+                      value={editForm.rte} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Yes/No"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Birth Place */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Birth Place</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="birth_place" 
+                      value={editForm.birth_place} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Bhopal"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Hostel/Day Scholar */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Hostel/Day Scholar</label>
+                  <div className="relative">
+                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="hostel_or_day_scholar" 
+                      value={editForm.hostel_or_day_scholar} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Day/Hostel"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Language */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Language</label>
+                  <div className="relative">
+                    <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="language" 
+                      value={editForm.language} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Hindi"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Secondary Phone */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Secondary Phone</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="phone" 
+                      value={editForm.phone} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. 9876543210"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* SMS Enabled */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">SMS Enabled</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="sms_enabled" 
+                      value={editForm.sms_enabled} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Yes/No"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* EMS Enabled */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">EMS Enabled</label>
+                  <div className="relative">
+                    <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="ems_enabled" 
+                      value={editForm.ems_enabled} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Yes/No"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Address Line 1 */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Address Line 1</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="address_line_1" 
+                      value={editForm.address_line_1} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. 123 Main St"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* City */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">City</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="city" 
+                      value={editForm.city} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Bhopal"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* State */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">State</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="state" 
+                      value={editForm.state} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Madhya Pradesh"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Country */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Country</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="country" 
+                      value={editForm.country} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. India"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Pin Code */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Pin Code</label>
+                  <div className="relative">
+                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="pin_code" 
+                      value={editForm.pin_code} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. 462001"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Father First Name */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father First Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="father_first_name" 
+                      value={editForm.father_first_name} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Raj"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Father Last Name */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Last Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="father_last_name" 
+                      value={editForm.father_last_name} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Kumar"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Father Mobile */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Mobile</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="father_mobile_phone" 
+                      value={editForm.father_mobile_phone} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. 9876543210"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Father Email */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      type="email"
+                      name="father_address_email" 
+                      value={editForm.father_address_email} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. father@example.com"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Father State */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father State</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="father_state" 
+                      value={editForm.father_state} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. MP"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Father Pin Code */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Pin Code</label>
+                  <div className="relative">
+                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="father_pin_code" 
+                      value={editForm.father_pin_code} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. 462001"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Mother First Name */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother First Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="mother_first_name" 
+                      value={editForm.mother_first_name} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Sita"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Mother Last Name */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Last Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="mother_last_name" 
+                      value={editForm.mother_last_name} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. Devi"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Mother Mobile */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Mobile</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="mother_mobile_phone" 
+                      value={editForm.mother_mobile_phone} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. 9876543210"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Mother Email */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      type="email"
+                      name="mother_address_email" 
+                      value={editForm.mother_address_email} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. mother@example.com"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Mother State */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother State</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="mother_state" 
+                      value={editForm.mother_state} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. MP"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Mother Pin Code */}
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Pin Code</label>
+                  <div className="relative">
+                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      
+                      name="mother_pin_code" 
+                      value={editForm.mother_pin_code} 
+                      onChange={handleEditChange} 
+                      placeholder="e.g. 462001"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
                 {/* Address */}
                 <div className="space-y-2 col-span-2">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Address</label>
@@ -1422,8 +2615,18 @@ const Students = () => {
                   <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6 pb-4 border-b-2 border-slate-200">Personal Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-slate-50 rounded-2xl p-4">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Full Name</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">First Name</p>
+                      <p className="text-sm font-bold text-slate-900">{viewStudent.first_name || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Full Name (Legacy)</p>
                       <p className="text-sm font-bold text-slate-900">{viewStudent.name || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Date of Birth</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {viewStudent.date_of_birth ? new Date(viewStudent.date_of_birth).toLocaleDateString() : '—'}
+                      </p>
                     </div>
                     <div className="bg-slate-50 rounded-2xl p-4">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Roll Number</p>
@@ -1486,6 +2689,18 @@ const Students = () => {
                     <div className="bg-slate-50 rounded-2xl p-4">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Semester</p>
                       <p className="text-sm font-bold text-slate-900">{viewStudent.semister || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Admission No</p>
+                      <p className="text-sm font-bold text-slate-900">{viewStudent.admission_no || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Batch</p>
+                      <p className="text-sm font-bold text-slate-900">{viewStudent.batch || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Section</p>
+                      <p className="text-sm font-bold text-slate-900">{viewStudent.section || '—'}</p>
                     </div>
                   </div>
                 </div>

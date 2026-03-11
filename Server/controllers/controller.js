@@ -495,32 +495,41 @@ ORDER BY id ASC;`);
 const createStudent = async (req, res) => {
   try {
     const {
-      name,
-      policies,
-      programName,
-      admission_year,
-      semister,
-      collageName,
-      rollnumber,
-      email,
-      contactNumber,
-      address,
-      fatherName,
-      adharnumber,
-      bloodgroup
+      name, policies, programName, admission_year, semister, collageName,
+      rollnumber, email, contactNumber, address, fatherName, adharnumber,
+      bloodgroup, admission_no, admission_date, first_name, middle_name,
+      last_name, batch, section, date_of_birth, gender, student_status,
+      rte, birth_place, hostel_or_day_scholar, country, state, city,
+      pin_code, language, phone, sms_enabled, ems_enabled, address_line_1,
+      father_first_name, father_last_name, father_mobile_phone,
+      father_address_email, father_state, father_pin_code, mother_first_name,
+      mother_last_name, mother_mobile_phone, mother_address_email,
+      mother_state, mother_pin_code
     } = req.body;
 
-    if (!name) return res.status(400).json({ message: 'Student name is required' });
+    if (!first_name) return res.status(400).json({ message: 'First name is required' });
 
     const result = await client.query(
       `INSERT INTO students (
         name, policies, "programName", admission_year, semister, "collageName",
         rollnumber, email, "contactNumber", address, "fatherName", adharnumber,
-        bloodgroup, created_at, updated_at, "deleteStatus"
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true)
+        bloodgroup, admission_no, admission_date, first_name, middle_name,
+        last_name, batch, section, date_of_birth, gender, student_status,
+        rte, birth_place, hostel_or_day_scholar, country, state, city,
+        pin_code, language, phone, sms_enabled, ems_enabled, address_line_1,
+        father_first_name, father_last_name, father_mobile_phone,
+        father_address_email, father_state, father_pin_code, mother_first_name,
+        mother_last_name, mother_mobile_phone, mother_address_email,
+        mother_state, mother_pin_code, created_at, updated_at, "deleteStatus"
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+        $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
+        $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37,
+        $38, $39, $40, $41, $42, $43, $44, $45, $46, $47,
+        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true)
       RETURNING *`,
       [
-        name,
+        name || null,
         policies || null,
         programName || null,
         admission_year || null,
@@ -532,7 +541,41 @@ const createStudent = async (req, res) => {
         address || null,
         fatherName || null,
         adharnumber || null,
-        bloodgroup || null
+        bloodgroup || null,
+        admission_no || null,
+        admission_date || null,
+        first_name || null,
+        middle_name || null,
+        last_name || null,
+        batch || null,
+        section || null,
+        date_of_birth || null,
+        gender || null,
+        student_status || null,
+        rte || null,
+        birth_place || null,
+        hostel_or_day_scholar || null,
+        country || null,
+        state || null,
+        city || null,
+        pin_code || null,
+        language || null,
+        phone || null,
+        sms_enabled || null,
+        ems_enabled || null,
+        address_line_1 || null,
+        father_first_name || null,
+        father_last_name || null,
+        father_mobile_phone || null,
+        father_address_email || null,
+        father_state || null,
+        father_pin_code || null,
+        mother_first_name || null,
+        mother_last_name || null,
+        mother_mobile_phone || null,
+        mother_address_email || null,
+        mother_state || null,
+        mother_pin_code || null
       ]
     );
     res.status(201).json(result.rows[0]);
@@ -546,22 +589,19 @@ const updateStudent = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      name,
-      policies,
-      programName,
-      admission_year,
-      semister,
-      collageName,
-      rollnumber,
-      email,
-      contactNumber,
-      address,
-      fatherName,
-      adharnumber,
-      bloodgroup
+      name, policies, programName, admission_year, semister, collageName,
+      rollnumber, email, contactNumber, address, fatherName, adharnumber,
+      bloodgroup, admission_no, admission_date, first_name, middle_name,
+      last_name, batch, section, date_of_birth, gender, student_status,
+      rte, birth_place, hostel_or_day_scholar, country, state, city,
+      pin_code, language, phone, sms_enabled, ems_enabled, address_line_1,
+      father_first_name, father_last_name, father_mobile_phone,
+      father_address_email, father_state, father_pin_code, mother_first_name,
+      mother_last_name, mother_mobile_phone, mother_address_email,
+      mother_state, mother_pin_code
     } = req.body;
 
-    if (!name) return res.status(400).json({ message: 'Student name is required' });
+    if (!first_name) return res.status(400).json({ message: 'First name is required' });
 
     // Check if student exists
     const checkResult = await client.query(
@@ -577,11 +617,21 @@ const updateStudent = async (req, res) => {
       `UPDATE students
        SET name = $1, policies = $2, "programName" = $3, admission_year = $4, semister = $5,
            "collageName" = $6, rollnumber = $7, email = $8, "contactNumber" = $9, address = $10,
-           "fatherName" = $11, adharnumber = $12, bloodgroup = $13, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $14 AND "deleteStatus" = true
+           "fatherName" = $11, adharnumber = $12, bloodgroup = $13, admission_no = $14,
+           admission_date = $15, first_name = $16, middle_name = $17, last_name = $18,
+           batch = $19, section = $20, date_of_birth = $21, gender = $22,
+           student_status = $23, rte = $24, birth_place = $25, hostel_or_day_scholar = $26,
+           country = $27, state = $28, city = $29, pin_code = $30, language = $31,
+           phone = $32, sms_enabled = $33, ems_enabled = $34, address_line_1 = $35,
+           father_first_name = $36, father_last_name = $37, father_mobile_phone = $38,
+           father_address_email = $39, father_state = $40, father_pin_code = $41,
+           mother_first_name = $42, mother_last_name = $43, mother_mobile_phone = $44,
+           mother_address_email = $45, mother_state = $46, mother_pin_code = $47,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $48 AND "deleteStatus" = true
        RETURNING *`,
       [
-        name,
+        name || null,
         policies || null,
         programName || null,
         admission_year || null,
@@ -594,6 +644,40 @@ const updateStudent = async (req, res) => {
         fatherName || null,
         adharnumber || null,
         bloodgroup || null,
+        admission_no || null,
+        admission_date || null,
+        first_name || null,
+        middle_name || null,
+        last_name || null,
+        batch || null,
+        section || null,
+        date_of_birth || null,
+        gender || null,
+        student_status || null,
+        rte || null,
+        birth_place || null,
+        hostel_or_day_scholar || null,
+        country || null,
+        state || null,
+        city || null,
+        pin_code || null,
+        language || null,
+        phone || null,
+        sms_enabled || null,
+        ems_enabled || null,
+        address_line_1 || null,
+        father_first_name || null,
+        father_last_name || null,
+        father_mobile_phone || null,
+        father_address_email || null,
+        father_state || null,
+        father_pin_code || null,
+        mother_first_name || null,
+        mother_last_name || null,
+        mother_mobile_phone || null,
+        mother_address_email || null,
+        mother_state || null,
+        mother_pin_code || null,
         id
       ]
     );
@@ -1535,7 +1619,10 @@ const getMasterTeacher = async (req, res) => {
 };
 
 const createMasterTeacher = async (req, res) => {
-  const { name, email, college_id, department_id, designation_id, employee_code, experience, qualification, specialization, pan_no, aadhaar_no, dob, gender, joining_date, phone, address, status } = req.body;
+  const { 
+    name, email, college_id, department_id, designation_id, employee_code, experience, qualification, specialization, pan_no, aadhaar_no, dob, gender, joining_date, phone, address, status,
+    employee_category_name, first_name, middle_name, last_name, job_title, employee_position_name, employee_department_name, employee_grade_name, experience_detail, experience_months, marital_status, father_name, mother_name, spouse_name, blood_group, country_name, home_address_line1, home_city, home_state, home_country_name, office_phone1, office_phone2, office_state, home_phone1, fax
+  } = req.body;
 
   try {
     // Validate required fields
@@ -1578,10 +1665,16 @@ const createMasterTeacher = async (req, res) => {
 
     // Create master teacher
     const result = await client.query(
-      `INSERT INTO master_teachers (user_id, employee_code, college_id, department_id, designation_id, qualification, experience_years, specialization, pan_no, aadhaar_no, dob, gender, joining_date, phone, address, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-       RETURNING id, user_id, employee_code, college_id, department_id, designation_id, qualification, experience_years, specialization, pan_no, aadhaar_no, dob, gender, joining_date, phone, address, status`,
-      [userId, finalEmployeeCode, college_id, department_id, designation_id, qualification || null, experience || 0, specialization || null, pan_no || null, aadhaar_no || null, dob || null, gender || null, joining_date || null, phone || null, address || null, status || 'Active']
+      `INSERT INTO master_teachers (
+        user_id, employee_code, college_id, department_id, designation_id, qualification, experience_years, specialization, pan_no, aadhaar_no, dob, gender, joining_date, phone, address, status,
+        employee_category_name, first_name, middle_name, last_name, job_title, employee_position_name, employee_department_name, employee_grade_name, experience_detail, experience_months, marital_status, father_name, mother_name, spouse_name, blood_group, country_name, home_address_line1, home_city, home_state, home_country_name, office_phone1, office_phone2, office_state, home_phone1, email, fax
+      )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42)
+       RETURNING id`,
+      [
+        userId, finalEmployeeCode, college_id, department_id, designation_id, qualification || null, experience || 0, specialization || null, pan_no || null, aadhaar_no || null, dob || null, gender || null, joining_date || null, phone || null, address || null, status || 'Active',
+        employee_category_name || null, first_name || null, middle_name || null, last_name || null, job_title || null, employee_position_name || null, employee_department_name || null, employee_grade_name || null, experience_detail || null, experience_months || null, marital_status || null, father_name || null, mother_name || null, spouse_name || null, blood_group || null, country_name || null, home_address_line1 || null, home_city || null, home_state || null, home_country_name || null, office_phone1 || null, office_phone2 || null, office_state || null, home_phone1 || null, email || null, fax || null
+      ]
     );
 
     const teacherId = result.rows[0].id;
@@ -1591,7 +1684,7 @@ const createMasterTeacher = async (req, res) => {
       `SELECT 
         mt.id,
         u.name,
-        u.email,
+        mt.email,
         c.name AS college_name,
         md.department_name AS department,
         mdes.designation_name AS designation,
@@ -1608,7 +1701,8 @@ const createMasterTeacher = async (req, res) => {
         mt.status,
         mt.college_id,
         mt.department_id,
-        mt.designation_id
+        mt.designation_id,
+        mt.employee_category_name, mt.first_name, mt.middle_name, mt.last_name, mt.job_title, mt.employee_position_name, mt.employee_department_name, mt.employee_grade_name, mt.experience_detail, mt.experience_months, mt.marital_status, mt.father_name, mt.mother_name, mt.spouse_name, mt.blood_group, mt.country_name, mt.home_address_line1, mt.home_city, mt.home_state, mt.home_country_name, mt.office_phone1, mt.office_phone2, mt.office_state, mt.home_phone1, mt.fax
       FROM master_teachers mt
       LEFT JOIN users u ON mt.user_id = u.id
       LEFT JOIN colleges c ON mt.college_id = c.id
@@ -1635,22 +1729,8 @@ const updateMasterTeacher = async (req, res) => {
   const { id } = req.params;
   // pull every possible field from the body; some may be undefined
   const {
-    name,
-    email,
-    college_id,
-    department_id,
-    designation_id,
-    qualification,
-    experience,
-    specialization,
-    pan_no,
-    aadhaar_no,
-    dob,
-    gender,
-    joining_date,
-    phone,
-    address,
-    status
+    name, email, college_id, department_id, designation_id, qualification, experience, specialization, pan_no, aadhaar_no, dob, gender, joining_date, phone, address, status,
+    employee_category_name, first_name, middle_name, last_name, job_title, employee_position_name, employee_department_name, employee_grade_name, experience_detail, experience_months, marital_status, father_name, mother_name, spouse_name, blood_group, country_name, home_address_line1, home_city, home_state, home_country_name, office_phone1, office_phone2, office_state, home_phone1, fax
   } = req.body;
 
   try {
@@ -1694,24 +1774,38 @@ const updateMasterTeacher = async (req, res) => {
            phone = COALESCE($13, phone),
            address = COALESCE($14, address),
            status = COALESCE($15, status),
+           employee_category_name = COALESCE($16, employee_category_name),
+           first_name = COALESCE($17, first_name),
+           middle_name = COALESCE($18, middle_name),
+           last_name = COALESCE($19, last_name),
+           job_title = COALESCE($20, job_title),
+           employee_position_name = COALESCE($21, employee_position_name),
+           employee_department_name = COALESCE($22, employee_department_name),
+           employee_grade_name = COALESCE($23, employee_grade_name),
+           experience_detail = COALESCE($24, experience_detail),
+           experience_months = COALESCE($25, experience_months),
+           marital_status = COALESCE($26, marital_status),
+           father_name = COALESCE($27, father_name),
+           mother_name = COALESCE($28, mother_name),
+           spouse_name = COALESCE($29, spouse_name),
+           blood_group = COALESCE($30, blood_group),
+           country_name = COALESCE($31, country_name),
+           home_address_line1 = COALESCE($32, home_address_line1),
+           home_city = COALESCE($33, home_city),
+           home_state = COALESCE($34, home_state),
+           home_country_name = COALESCE($35, home_country_name),
+           office_phone1 = COALESCE($36, office_phone1),
+           office_phone2 = COALESCE($37, office_phone2),
+           office_state = COALESCE($38, office_state),
+           home_phone1 = COALESCE($39, home_phone1),
+           email = COALESCE($40, email),
+           fax = COALESCE($41, fax),
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $1`,
       [
         id,
-        college_id || null,
-        department_id || null,
-        designation_id || null,
-        qualification || null,
-        experience || null,
-        specialization || null,
-        pan_no || null,
-        aadhaar_no || null,
-        dob || null,
-        gender || null,
-        joining_date || null,
-        phone || null,
-        address || null,
-        status || null
+        college_id || null, department_id || null, designation_id || null, qualification || null, experience || null, specialization || null, pan_no || null, aadhaar_no || null, dob || null, gender || null, joining_date || null, phone || null, address || null, status || null,
+        employee_category_name || null, first_name || null, middle_name || null, last_name || null, job_title || null, employee_position_name || null, employee_department_name || null, employee_grade_name || null, experience_detail || null, experience_months || null, marital_status || null, father_name || null, mother_name || null, spouse_name || null, blood_group || null, country_name || null, home_address_line1 || null, home_city || null, home_state || null, home_country_name || null, office_phone1 || null, office_phone2 || null, office_state || null, home_phone1 || null, email || null, fax || null
       ]
     );
 

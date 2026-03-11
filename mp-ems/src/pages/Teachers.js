@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { toast } from 'react-toastify';
-import { 
+import { toast } from "react-toastify";
+import {
   Users, 
   Plus, 
   Pencil, 
@@ -11,12 +11,31 @@ import {
   Briefcase,
   User,
   ShieldCheck,
-  ShieldAlert
+  ShieldAlert,
+  Activity,
+  Shield,
+  Building2,
+  Eye,
+  Phone,
+  MapPin,
+  IdCard,
+  Droplet,
+  Hash
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import authUtils from '../utils/authUtils';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+
+
+const InfoItem = ({ label, value, isMono = false, className = "" }) => (
+  <div className={`space-y-1.5 ${className}`}>
+    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none ml-0.5">{label}</p>
+    <div className={`bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl ${isMono ? 'font-mono' : 'font-bold'} text-slate-700 text-sm`}>
+      {value || '-'}
+    </div>
+  </div>
+);
 
 const Teachers = () => {
   const [data, setData] = useState([]);
@@ -101,33 +120,18 @@ const Teachers = () => {
     joining_date: '',
     phone: '',
     address: '',
-    status: true
-  });
+    status: true, employee_category_name: '', first_name: '', middle_name: '', last_name: '', job_title: '', employee_position_name: '', employee_department_name: '', employee_grade_name: '', experience_detail: '', experience_months: '', marital_status: '', father_name: '', mother_name: '', spouse_name: '', blood_group: '', country_name: '', home_address_line1: '', home_city: '', home_state: '', home_country_name: '', office_phone1: '', office_phone2: '', office_state: '', home_phone1: '', fax: '' });
   const [addErrors, setAddErrors] = useState({});
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
   const [editForm, setEditForm] = useState({
-    id: '',
-    name: '',
-    email: '',
-    college_id: '',
-    designation_id: '',
-    department_id: '',
-    qualification: '',
-    experience: '',
-    specialization: '',
-    pan_no: '',
-    aadhaar_no: '',
-    dob: '',
-    gender: '',
-    joining_date: '',
-    phone: '',
-    address: '',
-    status: true
+    id: '', name: '', email: '', college_id: '', designation_id: '', department_id: '', qualification: '', experience: '', specialization: '', pan_no: '', aadhaar_no: '', dob: '', gender: '', joining_date: '', phone: '', address: '', status: true, employee_category_name: '', first_name: '', middle_name: '', last_name: '', job_title: '', employee_position_name: '', employee_department_name: '', employee_grade_name: '', experience_detail: '', experience_months: '', marital_status: '', father_name: '', mother_name: '', spouse_name: '', blood_group: '', country_name: '', home_address_line1: '', home_city: '', home_state: '', home_country_name: '', office_phone1: '', office_phone2: '', office_state: '', home_phone1: '', fax: '' 
   });
   const [editErrors, setEditErrors] = useState({});
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewData, setViewData] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
@@ -244,12 +248,13 @@ const Teachers = () => {
     setEditErrors({});
 
     fetchDropdownOptions();
-    setAddForm({ name: '', email: '', college_id: '', designation_id: '', department_id: '', qualification: '', experience: '', specialization: '', pan_no: '', aadhaar_no: '', dob: '', gender: '', joining_date: '', phone: '', address: '', status: true });
+    setAddForm({ name: '', email: '', college_id: '', designation_id: '', department_id: '', qualification: '', experience: '', specialization: '', pan_no: '', aadhaar_no: '', dob: '', gender: '', joining_date: '', phone: '', address: '', status: true, employee_category_name: '', first_name: '', middle_name: '', last_name: '', job_title: '', employee_position_name: '', employee_department_name: '', employee_grade_name: '', experience_detail: '', experience_months: '', marital_status: '', father_name: '', mother_name: '', spouse_name: '', blood_group: '', country_name: '', home_address_line1: '', home_city: '', home_state: '', home_country_name: '', office_phone1: '', office_phone2: '', office_state: '', home_phone1: '', fax: '' });
     setAddErrors({});
     setAddError('');
     setShowAddModal(true);
   };
   const closeAddModal = () => setShowAddModal(false);
+  const closeEditModal = () => setShowEditModal(false);
 
   const handleAddChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -275,93 +280,6 @@ const Teachers = () => {
     }
   };
 
-  const handleAddSubmit = async (e) => {
-    e.preventDefault();
-    const errs = validate(addForm);
-    if (Object.keys(errs).length > 0) return setAddErrors(errs);
-    
-    setAddLoading(true);
-    setAddError('');
-    try {
-      const payload = {
-        ...addForm,
-        college_id: addForm.college_id ? parseInt(addForm.college_id) : null,
-        designation_id: addForm.designation_id ? parseInt(addForm.designation_id) : null,
-        department_id: addForm.department_id ? parseInt(addForm.department_id) : null,
-        experience: addForm.experience ? parseInt(addForm.experience) : 0,
-        status: addForm.status ? 'Active' : 'Inactive'
-      };
-      const resp = await fetch('http://localhost:8080/api/master-teachers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
-        body: JSON.stringify(payload)
-      });
-      if (!resp.ok) throw new Error('Failed to add teacher');
-      
-      const result = await resp.json();
-      
-      // Add the new record to the table
-      if (result.data) {
-        setData(prevData => [result.data, ...prevData]);
-      }
-      
-      // Show success message
-      toast.success(result.message || 'Teacher record created successfully!');
-      setShowAddModal(false);
-    } catch (err) {
-      setAddError(err.message);
-    } finally {
-      setAddLoading(false);
-    }
-  };
-
-  const openEditModal = async (item) => {
-    try {
-      // clear any add‑modal errors so they don't bleed through
-      setAddErrors({});
-
-      // Fetch dropdown options and full teacher record in parallel
-      await fetchDropdownOptions();
-      
-      const resp = await fetch(`http://localhost:8080/api/master-teachers/${item.id}`, {
-        headers: authUtils.getAuthHeader()
-      });
-      
-      if (!resp.ok) throw new Error('Failed to fetch teacher details');
-      const teacherData = await resp.json();
-      
-      // Populate form with fetched data
-      // helper to convert timestamp/ISO string to YYYY-MM-DD for date input
-      const formatDate = d => d ? d.toString().slice(0,10) : '';
-      setEditForm({ 
-        id: teacherData.id,
-        name: teacherData.name,
-        email: teacherData.email,
-        college_id: teacherData.college_id || '',
-        designation_id: teacherData.designation_id || '',
-        department_id: teacherData.department_id || '',
-        qualification: teacherData.qualification || '',
-        experience: teacherData.experience_years || teacherData.experience || '',
-        specialization: teacherData.specialization || '',
-        pan_no: teacherData.pan_no || '',
-        aadhaar_no: teacherData.aadhaar_no || '',
-        dob: formatDate(teacherData.dob),
-        gender: teacherData.gender || '',
-        joining_date: formatDate(teacherData.joining_date),
-        phone: teacherData.phone || '',
-        address: teacherData.address || '',
-        status: teacherData.status === 'Active' || teacherData.status === true
-      });
-      setEditErrors({});
-      setEditError('');
-      setShowEditModal(true);
-    } catch (err) {
-      console.error('Failed to open edit modal:', err);
-      setEditError('Failed to load teacher details');
-    }
-  };
-  const closeEditModal = () => setShowEditModal(false);
-
   const handleEditChange = (e) => {
     const { name, value, type, checked } = e.target;
     let val = type === 'checkbox' ? checked : value;
@@ -380,6 +298,133 @@ const Teachers = () => {
         const { [name]: omit, ...rest } = prev;
         return rest;
       });
+    }
+  };
+
+  
+  const handleAddSubmit = async (e) => {
+    e.preventDefault();
+    const errs = validate(addForm);
+    if (Object.keys(errs).length > 0) return setAddErrors(errs);
+    
+    setAddLoading(true);
+    setAddError('');
+    try {
+      const payload = {
+        ...addForm,
+        college_id: addForm.college_id ? parseInt(addForm.college_id) : null,
+        designation_id: addForm.designation_id ? parseInt(addForm.designation_id) : null,
+        department_id: addForm.department_id ? parseInt(addForm.department_id) : null,
+        experience: addForm.experience ? parseInt(addForm.experience) : 0,
+        status: addForm.status ? 'Active' : 'Inactive',
+        employee_category_name: addForm.employee_category_name || null,
+        first_name: addForm.first_name || null,
+        middle_name: addForm.middle_name || null,
+        last_name: addForm.last_name || null,
+        job_title: addForm.job_title || null,
+        employee_position_name: addForm.employee_position_name || null,
+        employee_department_name: addForm.employee_department_name || null,
+        employee_grade_name: addForm.employee_grade_name || null,
+        experience_detail: addForm.experience_detail || null,
+        experience_months: addForm.experience_months || null,
+        marital_status: addForm.marital_status || null,
+        father_name: addForm.father_name || null,
+        mother_name: addForm.mother_name || null,
+        spouse_name: addForm.spouse_name || null,
+        blood_group: addForm.blood_group || null,
+        country_name: addForm.country_name || null,
+        home_address_line1: addForm.home_address_line1 || null,
+        home_city: addForm.home_city || null,
+        home_state: addForm.home_state || null,
+        home_country_name: addForm.home_country_name || null,
+        office_phone1: addForm.office_phone1 || null,
+        office_phone2: addForm.office_phone2 || null,
+        office_state: addForm.office_state || null,
+        home_phone1: addForm.home_phone1 || null,
+        fax: addForm.fax || null
+      };
+      const resp = await fetch('http://localhost:8080/api/master-teachers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok) throw new Error('Failed to add teacher');
+      
+      const result = await resp.json();
+      
+      if (result.data) {
+        setData(prevData => [result.data, ...prevData]);
+      }
+      
+      toast.success(result.message || 'Teacher record created successfully!');
+      setShowAddModal(false);
+    } catch (err) {
+      setAddError(err.message);
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
+  const openEditModal = async (item) => {
+    try {
+      setAddErrors({});
+      const resp = await fetch('http://localhost:8080/api/master-teachers/' + item.id, {
+        headers: authUtils.getAuthHeader()
+      });
+      if (!resp.ok) throw new Error('Failed to fetch teacher details');
+      
+      const teacherData = await resp.json();
+      const formatDate = (d) => d ? d.toString().slice(0,10) : '';
+      setEditForm({ 
+        id: teacherData.id,
+        name: teacherData.name,
+        email: teacherData.email,
+        college_id: teacherData.college_id || '',
+        designation_id: teacherData.designation_id || '',
+        department_id: teacherData.department_id || '',
+        qualification: teacherData.qualification || '',
+        experience: teacherData.experience_years || teacherData.experience || '',
+        specialization: teacherData.specialization || '',
+        pan_no: teacherData.pan_no || '',
+        aadhaar_no: teacherData.aadhaar_no || '',
+        dob: formatDate(teacherData.dob),
+        gender: teacherData.gender || '',
+        joining_date: formatDate(teacherData.joining_date),
+        phone: teacherData.phone || '',
+        address: teacherData.address || '',
+        status: teacherData.status === 'Active' || teacherData.status === true,
+        employee_category_name: teacherData.employee_category_name || '',
+        first_name: teacherData.first_name || '',
+        middle_name: teacherData.middle_name || '',
+        last_name: teacherData.last_name || '',
+        job_title: teacherData.job_title || '',
+        employee_position_name: teacherData.employee_position_name || '',
+        employee_department_name: teacherData.employee_department_name || '',
+        employee_grade_name: teacherData.employee_grade_name || '',
+        experience_detail: teacherData.experience_detail || '',
+        experience_months: teacherData.experience_months || '',
+        marital_status: teacherData.marital_status || '',
+        father_name: teacherData.father_name || '',
+        mother_name: teacherData.mother_name || '',
+        spouse_name: teacherData.spouse_name || '',
+        blood_group: teacherData.blood_group || '',
+        country_name: teacherData.country_name || '',
+        home_address_line1: teacherData.home_address_line1 || '',
+        home_city: teacherData.home_city || '',
+        home_state: teacherData.home_state || '',
+        home_country_name: teacherData.home_country_name || '',
+        office_phone1: teacherData.office_phone1 || '',
+        office_phone2: teacherData.office_phone2 || '',
+        office_state: teacherData.office_state || '',
+        home_phone1: teacherData.home_phone1 || '',
+        fax: teacherData.fax || ''
+      });
+      setEditErrors({});
+      setEditError('');
+      setShowEditModal(true);
+    } catch (err) {
+      console.error('Failed to open edit modal:', err);
+      setEditError('Failed to load teacher details');
     }
   };
 
@@ -407,9 +452,34 @@ const Teachers = () => {
         joining_date: editForm.joining_date || null,
         phone: editForm.phone || null,
         address: editForm.address || null,
-        status: editForm.status ? 'Active' : 'Inactive'
+        status: editForm.status ? 'Active' : 'Inactive',
+        employee_category_name: editForm.employee_category_name || null,
+        first_name: editForm.first_name || null,
+        middle_name: editForm.middle_name || null,
+        last_name: editForm.last_name || null,
+        job_title: editForm.job_title || null,
+        employee_position_name: editForm.employee_position_name || null,
+        employee_department_name: editForm.employee_department_name || null,
+        employee_grade_name: editForm.employee_grade_name || null,
+        experience_detail: editForm.experience_detail || null,
+        experience_months: editForm.experience_months || null,
+        marital_status: editForm.marital_status || null,
+        father_name: editForm.father_name || null,
+        mother_name: editForm.mother_name || null,
+        spouse_name: editForm.spouse_name || null,
+        blood_group: editForm.blood_group || null,
+        country_name: editForm.country_name || null,
+        home_address_line1: editForm.home_address_line1 || null,
+        home_city: editForm.home_city || null,
+        home_state: editForm.home_state || null,
+        home_country_name: editForm.home_country_name || null,
+        office_phone1: editForm.office_phone1 || null,
+        office_phone2: editForm.office_phone2 || null,
+        office_state: editForm.office_state || null,
+        home_phone1: editForm.home_phone1 || null,
+        fax: editForm.fax || null
       };
-      const resp = await fetch(`http://localhost:8080/api/master-teachers/${editForm.id}`, {
+      const resp = await fetch('http://localhost:8080/api/master-teachers/' + editForm.id, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
         body: JSON.stringify(payload)
@@ -418,14 +488,12 @@ const Teachers = () => {
       
       const result = await resp.json();
       
-      // Update the table data with the returned record
       if (result.data) {
         setData(prevData => 
           prevData.map(item => item.id === editForm.id ? result.data : item)
         );
       }
       
-      // Show success message
       toast.success(result.message || 'Teacher record updated successfully!');
       setShowEditModal(false);
     } catch (err) {
@@ -435,7 +503,7 @@ const Teachers = () => {
     }
   };
 
-  const handleArchive = (item) => {
+const handleArchive = (item) => {
     setDeleteTarget(item);
     setShowDeleteModal(true);
   };
@@ -1069,6 +1137,407 @@ const Teachers = () => {
                   { (addErrors.address || editErrors.address) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.address || editErrors.address}</p> }
                 </div>
 
+                
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Employee Category Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="employee_category_name"
+                      type="text"
+                      value={showAddModal ? addForm.employee_category_name : editForm.employee_category_name}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. Non Teaching"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.employee_category_name || editErrors.employee_category_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.employee_category_name || editErrors.employee_category_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.employee_category_name || editErrors.employee_category_name}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="first_name"
+                      type="text"
+                      value={showAddModal ? addForm.first_name : editForm.first_name}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. Jainendra"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.first_name || editErrors.first_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.first_name || editErrors.first_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.first_name || editErrors.first_name}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Middle Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="middle_name"
+                      type="text"
+                      value={showAddModal ? addForm.middle_name : editForm.middle_name}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. Singh"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.middle_name || editErrors.middle_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.middle_name || editErrors.middle_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.middle_name || editErrors.middle_name}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="last_name"
+                      type="text"
+                      value={showAddModal ? addForm.last_name : editForm.last_name}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. Harode"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.last_name || editErrors.last_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.last_name || editErrors.last_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.last_name || editErrors.last_name}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Job Title</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="job_title"
+                      type="text"
+                      value={showAddModal ? addForm.job_title : editForm.job_title}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. Asst. Programmer"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.job_title || editErrors.job_title) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.job_title || editErrors.job_title) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.job_title || editErrors.job_title}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Position Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="employee_position_name"
+                      type="text"
+                      value={showAddModal ? addForm.employee_position_name : editForm.employee_position_name}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. Asst. Programmer"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.employee_position_name || editErrors.employee_position_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.employee_position_name || editErrors.employee_position_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.employee_position_name || editErrors.employee_position_name}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Employee Department</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="employee_department_name"
+                      type="text"
+                      value={showAddModal ? addForm.employee_department_name : editForm.employee_department_name}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. ICT Cell"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.employee_department_name || editErrors.employee_department_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.employee_department_name || editErrors.employee_department_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.employee_department_name || editErrors.employee_department_name}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Employee Grade</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="employee_grade_name"
+                      type="text"
+                      value={showAddModal ? addForm.employee_grade_name : editForm.employee_grade_name}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. A"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.employee_grade_name || editErrors.employee_grade_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.employee_grade_name || editErrors.employee_grade_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.employee_grade_name || editErrors.employee_grade_name}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Experience Detail</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="experience_detail"
+                      type="text"
+                      value={showAddModal ? addForm.experience_detail : editForm.experience_detail}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. Served 5 years at XYZ"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.experience_detail || editErrors.experience_detail) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.experience_detail || editErrors.experience_detail) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.experience_detail || editErrors.experience_detail}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Experience Months</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="experience_months"
+                      type="number"
+                      value={showAddModal ? addForm.experience_months : editForm.experience_months}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. 60"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.experience_months || editErrors.experience_months) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.experience_months || editErrors.experience_months) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.experience_months || editErrors.experience_months}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Marital Status</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="marital_status"
+                      type="text"
+                      value={showAddModal ? addForm.marital_status : editForm.marital_status}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. Married"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.marital_status || editErrors.marital_status) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.marital_status || editErrors.marital_status) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.marital_status || editErrors.marital_status}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="father_name"
+                      type="text"
+                      value={showAddModal ? addForm.father_name : editForm.father_name}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. Ram"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.father_name || editErrors.father_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.father_name || editErrors.father_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.father_name || editErrors.father_name}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="mother_name"
+                      type="text"
+                      value={showAddModal ? addForm.mother_name : editForm.mother_name}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. Sita"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.mother_name || editErrors.mother_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.mother_name || editErrors.mother_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.mother_name || editErrors.mother_name}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Spouse Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="spouse_name"
+                      type="text"
+                      value={showAddModal ? addForm.spouse_name : editForm.spouse_name}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. Gita"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.spouse_name || editErrors.spouse_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.spouse_name || editErrors.spouse_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.spouse_name || editErrors.spouse_name}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Blood Group</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="blood_group"
+                      type="text"
+                      value={showAddModal ? addForm.blood_group : editForm.blood_group}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. O+"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.blood_group || editErrors.blood_group) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.blood_group || editErrors.blood_group) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.blood_group || editErrors.blood_group}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Country</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="country_name"
+                      type="text"
+                      value={showAddModal ? addForm.country_name : editForm.country_name}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. INDIA"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.country_name || editErrors.country_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.country_name || editErrors.country_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.country_name || editErrors.country_name}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Home Address</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="home_address_line1"
+                      type="text"
+                      value={showAddModal ? addForm.home_address_line1 : editForm.home_address_line1}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. 123 Main St"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.home_address_line1 || editErrors.home_address_line1) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.home_address_line1 || editErrors.home_address_line1) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.home_address_line1 || editErrors.home_address_line1}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Home City</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="home_city"
+                      type="text"
+                      value={showAddModal ? addForm.home_city : editForm.home_city}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. Bhopal"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.home_city || editErrors.home_city) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.home_city || editErrors.home_city) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.home_city || editErrors.home_city}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Home State</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="home_state"
+                      type="text"
+                      value={showAddModal ? addForm.home_state : editForm.home_state}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. Madhya Pradesh"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.home_state || editErrors.home_state) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.home_state || editErrors.home_state) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.home_state || editErrors.home_state}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Home Country</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="home_country_name"
+                      type="text"
+                      value={showAddModal ? addForm.home_country_name : editForm.home_country_name}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. INDIA"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.home_country_name || editErrors.home_country_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.home_country_name || editErrors.home_country_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.home_country_name || editErrors.home_country_name}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Office Phone 1</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="office_phone1"
+                      type="text"
+                      value={showAddModal ? addForm.office_phone1 : editForm.office_phone1}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. 0755-123456"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.office_phone1 || editErrors.office_phone1) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.office_phone1 || editErrors.office_phone1) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.office_phone1 || editErrors.office_phone1}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Office Phone 2</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="office_phone2"
+                      type="text"
+                      value={showAddModal ? addForm.office_phone2 : editForm.office_phone2}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. 0755-654321"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.office_phone2 || editErrors.office_phone2) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.office_phone2 || editErrors.office_phone2) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.office_phone2 || editErrors.office_phone2}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Office State</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="office_state"
+                      type="text"
+                      value={showAddModal ? addForm.office_state : editForm.office_state}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. Madhya Pradesh"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.office_state || editErrors.office_state) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.office_state || editErrors.office_state) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.office_state || editErrors.office_state}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Home Phone 1</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="home_phone1"
+                      type="text"
+                      value={showAddModal ? addForm.home_phone1 : editForm.home_phone1}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. 9876543210"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.home_phone1 || editErrors.home_phone1) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.home_phone1 || editErrors.home_phone1) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.home_phone1 || editErrors.home_phone1}</p> }
+                </div>
+
+                <div className="space-y-2 col-span-2 md:col-span-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Fax</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="fax"
+                      type="text"
+                      value={showAddModal ? addForm.fax : editForm.fax}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
+                      placeholder="e.g. 0755-111111"
+                      className={`w-full bg-slate-50 border-2 ${ (addErrors.fax || editErrors.fax) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                    />
+                  </div>
+                  { (addErrors.fax || editErrors.fax) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.fax || editErrors.fax}</p> }
+                </div>
+
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Personnel Status</label>
                   <div className="h-[62px] flex items-center justify-between px-6 bg-slate-50 rounded-2xl border-2 border-slate-100 group hover:bg-slate-100/50 transition-colors">
@@ -1152,6 +1621,117 @@ const Teachers = () => {
           </div>
         </div>
       )}
+      {/* View Details Modal */}
+      {showViewModal && viewData && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowViewModal(false)} />
+          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 flex flex-col">
+            {/* Header */}
+            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 bg-indigo-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                  <User size={30} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 leading-none">Faculty Profile</h2>
+                  <p className="text-sm text-slate-500 mt-1 font-bold uppercase tracking-wider">{viewData.name}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowViewModal(false)}
+                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {/* Personal Information Section */}
+                <div className="col-span-full mb-2">
+                  <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
+                    <span className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center"><User size={18}/></span>
+                    Personal Information
+                  </h3>
+                </div>
+                
+                <InfoItem label="Full Name" value={viewData.name} />
+                <InfoItem label="Email Address" value={viewData.email} />
+                <InfoItem label="Phone Number" value={viewData.phone} />
+                <InfoItem label="Date of Birth" value={viewData.dob ? new Date(viewData.dob).toLocaleDateString('en-IN') : '-'} />
+                <InfoItem label="Gender" value={viewData.gender} />
+                <InfoItem label="Blood Group" value={viewData.blood_group} />
+                <InfoItem label="Marital Status" value={viewData.marital_status} />
+                <InfoItem label="Father Name" value={viewData.father_name} />
+                <InfoItem label="Mother Name" value={viewData.mother_name} />
+                <InfoItem label="Spouse Name" value={viewData.spouse_name} />
+
+                {/* Professional Section */}
+                <div className="col-span-full mt-6 mb-2">
+                  <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
+                    <span className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center"><Briefcase size={18}/></span>
+                    Professional Affiliation
+                  </h3>
+                </div>
+                
+                <InfoItem label="Designation" value={safeDisplay(viewData.designation)} />
+                <InfoItem label="Department" value={safeDisplay(viewData.department)} />
+                <InfoItem label="College" value={viewData.college_name || 'Global'} />
+                <InfoItem label="Job Title" value={viewData.job_title} />
+                <InfoItem label="Position" value={viewData.employee_position_name} />
+                <InfoItem label="Employee Grade" value={viewData.employee_grade_name} />
+                <InfoItem label="Category" value={viewData.employee_category_name} />
+                <InfoItem label="Joining Date" value={viewData.joining_date ? new Date(viewData.joining_date).toLocaleDateString('en-IN') : '-'} />
+                <InfoItem label="Experience" value={viewData.experience ? `${viewData.experience} Years` : '-'} />
+                <InfoItem label="Experience Detail" value={viewData.experience_detail} />
+                <InfoItem label="Exp Months" value={viewData.experience_months} />
+                <InfoItem label="Qualification" value={viewData.qualification} />
+                <InfoItem label="Specialization" value={viewData.specialization} />
+
+                {/* Documents Section */}
+                <div className="col-span-full mt-6 mb-2">
+                  <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
+                    <span className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center"><IdCard size={18}/></span>
+                    Identification & Tax
+                  </h3>
+                </div>
+                <InfoItem label="PAN Card" value={viewData.pan_no} isMono={true} />
+                <InfoItem label="Aadhaar Number" value={viewData.aadhaar_no} isMono={true} />
+                <InfoItem label="Fax" value={viewData.fax} />
+
+                {/* Address Section */}
+                <div className="col-span-full mt-6 mb-2">
+                  <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
+                    <span className="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center"><MapPin size={18}/></span>
+                    Contact & Address Details
+                  </h3>
+                </div>
+                <InfoItem label="Residential Address" value={viewData.address} className="col-span-2" />
+                <InfoItem label="Home Address" value={viewData.home_address_line1} />
+                <InfoItem label="Home City" value={viewData.home_city} />
+                <InfoItem label="Home State" value={viewData.home_state} />
+                <InfoItem label="Home Country" value={viewData.home_country_name} />
+                <InfoItem label="Home Phone" value={viewData.home_phone1} />
+                <InfoItem label="Office Phone 1" value={viewData.office_phone1} />
+                <InfoItem label="Office Phone 2" value={viewData.office_phone2} />
+                <InfoItem label="Office State" value={viewData.office_state} />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button 
+                onClick={() => setShowViewModal(false)}
+                className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm uppercase tracking-widest"
+              >
+                Close Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

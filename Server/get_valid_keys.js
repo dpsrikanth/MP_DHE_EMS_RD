@@ -11,13 +11,13 @@ const client = new Client({
 
 async function run() {
   await client.connect();
-  const res = await client.query(`
-    SELECT table_name 
-    FROM information_schema.tables 
-    WHERE table_schema = 'public'
-    ORDER BY table_name;
-  `);
-  console.log('Tables:', res.rows.map(r => r.table_name));
+  const d = await client.query('SELECT id FROM master_designations LIMIT 1');
+  const dep = await client.query('SELECT id FROM master_departments LIMIT 1');
+  const c = await client.query('SELECT id FROM colleges LIMIT 1');
+  
+  console.log("Valid designation_id:", d.rows[0]?.id);
+  console.log("Valid department_id:", dep.rows[0]?.id);
+  console.log("Valid college_id:", c.rows[0]?.id);
   await client.end();
 }
 run();
