@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { 
-  GraduationCap, 
-  Plus, 
-  Pencil, 
-  X, 
+import {
+  GraduationCap,
+  Plus,
+  Pencil,
+  X,
   Check,
   User,
   BookOpen,
@@ -55,7 +55,7 @@ const Students = () => {
     clearFilters,
     visibleColumns,
     toggleColumn
-  } = useDataTable(data, { 
+  } = useDataTable(data, {
     searchFields: ['id', 'name', 'policies', 'programName', 'admission_year', 'semister'],
     initialSort: { field: 'id', direction: 'desc' },
     initialPageSize: 10,
@@ -230,7 +230,7 @@ const Students = () => {
   const fetchDropdownData = async () => {
     try {
       const token = localStorage.getItem('token');
-      
+
       // Fetch all dropdown data in parallel
       const [yearRes, policyRes, programRes, semesterRes, collegeRes] = await Promise.all([
         fetch('http://localhost:8080/api/academic-years', {
@@ -365,7 +365,7 @@ const Students = () => {
   const fetchPolicyByCollege = async (collegeName) => {
     try {
       const token = localStorage.getItem('token');
-      
+
       // First, find the college ID from the college name
       const collegeObj = colleges.find(col => (col.college_name || col.name) === collegeName);
       if (!collegeObj) return;
@@ -394,62 +394,67 @@ const Students = () => {
 
   // ---- Validation ----
   const validate = (form) => {
+    console.log("Validating form:", form);
     const errs = {};
-    
-    // Required fields
-    if (!form.first_name || !form.first_name.trim()) errs.first_name = 'First name is required';
-    else if (form.first_name.trim().length < 2) errs.first_name = 'First name must be at least 2 characters';
-    
-    if (!form.admission_no || !form.admission_no.trim()) errs.admission_no = 'Admission No is required';
-    if (!form.policies || !form.policies.trim()) errs.policies = 'Policy is required';
-    if (!form.programName || !form.programName.trim()) errs.programName = 'Program is required';
-    if (!form.admission_year) errs.admission_year = 'Admission year is required';
-    if (!form.semister || !form.semister.trim()) errs.semister = 'Semester is required';
-    
-    // Optional fields - only validate if has value
-    if (form.email) {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-        errs.email = 'Invalid email format (e.g., student@example.com)';
+    try {
+      // Required fields
+      if (!form.first_name || !form.first_name.trim()) errs.first_name = 'First name is required';
+      else if (form.first_name.trim().length < 2) errs.first_name = 'First name must be at least 2 characters';
+
+      if (!form.admission_no || !form.admission_no.trim()) errs.admission_no = 'Admission No is required';
+      if (!form.policies || !form.policies.trim()) errs.policies = 'Policy is required';
+      if (!form.programName || !form.programName.trim()) errs.programName = 'Program is required';
+      if (!form.admission_year) errs.admission_year = 'Admission year is required';
+      if (!form.semister || !form.semister.trim()) errs.semister = 'Semester is required';
+
+      // Optional fields - only validate if has value
+      if (form.email) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+          errs.email = 'Invalid email format (e.g., student@example.com)';
+        }
       }
-    }
-    
-    if (form.contactNumber) {
-      if (!/^\d{10}$/.test(form.contactNumber)) {
-        errs.contactNumber = 'Contact must be exactly 10 digits';
+
+      if (form.contactNumber) {
+        if (!/^\d{10}$/.test(form.contactNumber)) {
+          errs.contactNumber = 'Contact must be exactly 10 digits';
+        }
       }
-    }
-    
-    if (form.rollnumber) {
-      if (!/^[a-zA-Z0-9]+$/.test(form.rollnumber)) {
-        errs.rollnumber = 'Roll number: letters and numbers only';
+
+      if (form.rollnumber) {
+        if (!/^[a-zA-Z0-9]+$/.test(form.rollnumber)) {
+          errs.rollnumber = 'Roll number: letters and numbers only';
+        }
       }
-    }
-    
-    if (form.adharnumber) {
-      if (!/^(\d{4}-\d{4}-\d{4}|\d{12})$/.test(form.adharnumber)) {
-        errs.adharnumber = 'Aadhar: XXXX-XXXX-XXXX or 12 digits';
+
+      if (form.adharnumber) {
+        if (!/^(\d{4}-\d{4}-\d{4}|\d{12})$/.test(form.adharnumber)) {
+          errs.adharnumber = 'Aadhar: XXXX-XXXX-XXXX or 12 digits';
+        }
       }
-    }
-    
-    if (form.fatherName) {
-      if (form.fatherName.trim().length < 2) {
-        errs.fatherName = 'Father name: minimum 2 characters';
+
+      if (form.fatherName) {
+        if (form.fatherName.trim().length < 2) {
+          errs.fatherName = 'Father name: minimum 2 characters';
+        }
       }
-    }
-    
-    if (form.address) {
-      if (form.address.trim().length < 5) {
-        errs.address = 'Address: minimum 5 characters';
+
+      if (form.address) {
+        if (form.address.trim().length < 5) {
+          errs.address = 'Address: minimum 5 characters';
+        }
       }
+    } catch (vErr) {
+      console.error("Error during validation logic:", vErr);
     }
-    
+
+    console.log("Validation errors found:", errs);
     return errs;
   };
 
   // ---- Add Modal Handlers ----
   const openAddModal = () => {
-    setAddForm({ 
-      name: '', rollnumber: '', email: '', contactNumber: '', address: '', fatherName: '', 
+    setAddForm({
+      name: '', rollnumber: '', email: '', contactNumber: '', address: '', fatherName: '',
       adharnumber: '', bloodgroup: '', policies: '', programName: '', admission_year: '', semister: '', collageName: '',
       admission_no: '', admission_date: '', first_name: '', middle_name: '', last_name: '', batch: '', section: '',
       date_of_birth: '', gender: '', student_status: '', rte: '', birth_place: '', hostel_or_day_scholar: '',
@@ -460,6 +465,7 @@ const Students = () => {
     });
     setAddErrors({});
     setAddError('');
+    setAddLoading(false); // Reset loading state
     setShowAddModal(true);
   };
   const closeAddModal = () => setShowAddModal(false);
@@ -467,7 +473,7 @@ const Students = () => {
   const handleAddChange = async (e) => {
     const { name, value, type, checked } = e.target;
     setAddForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-    
+
     // When college is selected, fetch college-specific data and reset dependent fields
     if (name === 'collageName' && value) {
       const collegeObj = colleges.find(col => (col.college_name || col.name) === value);
@@ -486,14 +492,27 @@ const Students = () => {
   };
 
   const handleAddSubmit = async (e) => {
-    e.preventDefault();
-    const errs = validate(addForm);
-    if (Object.keys(errs).length > 0) return setAddErrors(errs);
-
-    setAddLoading(true);
-    setAddError('');
+    console.log("handleAddSubmit triggered with event:", e);
     try {
+      if (e && e.preventDefault) e.preventDefault();
+
+      const errs = validate(addForm);
+      if (Object.keys(errs).length > 0) {
+        console.log("Cancelling submit due to validation errors", errs);
+        setAddErrors(errs);
+        setAddError("Validation failed. Please check the form for missing or invalid fields.");
+        toast.error("Please fill all required fields correctly.");
+        return;
+      }
+
+      console.log("Proceeding with API call. Loading state set to true.");
+      setAddLoading(true);
+      setAddError('');
+
       const token = localStorage.getItem('token');
+      console.log("Token retrieved:", token ? "Token exists" : "No token");
+
+      console.log("Fetching http://localhost:8080/api/students...");
       const resp = await fetch('http://localhost:8080/api/students', {
         method: 'POST',
         headers: {
@@ -502,20 +521,27 @@ const Students = () => {
         },
         body: JSON.stringify(addForm)
       });
+
+      console.log("API response status:", resp.status);
       const text = await resp.text();
       let respData = {};
-      try { respData = JSON.parse(text); } catch (e) {}
+      try { respData = JSON.parse(text); } catch (e) { console.log("Response is not JSON"); }
 
       if (!resp.ok) {
+        console.error("API call failed:", respData.message || text);
         throw new Error(respData.message || text || 'Failed to enroll student');
       }
+
+      console.log("Student enrolled successfully!");
       toast.success(respData.message || 'Student enrolled successfully!');
       await fetchData();
       setShowAddModal(false);
     } catch (err) {
+      console.error("Caught error in handleAddSubmit:", err);
       setAddError(err.message);
     } finally {
       setAddLoading(false);
+      console.log("handleAddSubmit finished, loading set to false");
     }
   };
 
@@ -573,7 +599,7 @@ const Students = () => {
     });
     setEditErrors({});
     setEditError('');
-    
+
     // If college is already selected, load college-specific data
     if (student.collageName) {
       const collegeObj = colleges.find(col => (col.college_name || col.name) === student.collageName);
@@ -581,7 +607,7 @@ const Students = () => {
         await fetchCollegeData(collegeObj.id, true);
       }
     }
-    
+
     setShowEditModal(true);
   };
 
@@ -598,7 +624,7 @@ const Students = () => {
   const handleEditChange = async (e) => {
     const { name, value, type, checked } = e.target;
     setEditForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-    
+
     // When college is selected, fetch college-specific data and reset dependent fields
     if (name === 'collageName' && value) {
       const collegeObj = colleges.find(col => (col.college_name || col.name) === value);
@@ -683,7 +709,7 @@ const Students = () => {
       });
       const text = await resp.text();
       let respData = {};
-      try { respData = JSON.parse(text); } catch (e) {}
+      try { respData = JSON.parse(text); } catch (e) { }
 
       if (!resp.ok) {
         throw new Error(respData.message || text || 'Failed to update student');
@@ -757,19 +783,19 @@ const Students = () => {
               <p className="text-sm text-slate-500 mt-1 font-medium tracking-tight">Manage student profile, enrollment and affiliations</p>
             </div>
           </div>
-          
+
           <div className="flex flex-col md:flex-row md:items-center gap-4">
-            <TableSearch 
-              value={searchQuery} 
-              onChange={setSearchQuery} 
+            <TableSearch
+              value={searchQuery}
+              onChange={setSearchQuery}
               placeholder="Search by name, ID or affiliation..."
             />
-            <ColumnVisibilitySelector 
-              columns={availableColumns} 
-              visibleColumns={visibleColumns} 
-              onToggle={toggleColumn} 
+            <ColumnVisibilitySelector
+              columns={availableColumns}
+              visibleColumns={visibleColumns}
+              onToggle={toggleColumn}
             />
-            <button 
+            <button
               onClick={openAddModal}
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
             >
@@ -784,40 +810,40 @@ const Students = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-y border-slate-100 bg-slate-50/20">
-                <SortHeader 
-                  label="StudentId" 
-                  field="id" 
-                  currentSort={sortConfig} 
-                  onSort={handleSort} 
+                <SortHeader
+                  label="StudentId"
+                  field="id"
+                  currentSort={sortConfig}
+                  onSort={handleSort}
                   className="px-8 text-center"
                   visible={visibleColumns.id}
                 />
-                <SortHeader 
-                  label="Policy" 
-                  field="policies" 
-                  currentSort={sortConfig} 
-                  onSort={handleSort} 
+                <SortHeader
+                  label="Policy"
+                  field="policies"
+                  currentSort={sortConfig}
+                  onSort={handleSort}
                   visible={visibleColumns.policies}
                 />
-                <SortHeader 
-                  label="Program" 
-                  field="programName" 
-                  currentSort={sortConfig} 
-                  onSort={handleSort} 
+                <SortHeader
+                  label="Program"
+                  field="programName"
+                  currentSort={sortConfig}
+                  onSort={handleSort}
                   visible={visibleColumns.programName}
                 />
-                <SortHeader 
-                  label="AcademicYear" 
-                  field="admission_year" 
-                  currentSort={sortConfig} 
-                  onSort={handleSort} 
+                <SortHeader
+                  label="AcademicYear"
+                  field="admission_year"
+                  currentSort={sortConfig}
+                  onSort={handleSort}
                   visible={visibleColumns.admission_year}
                 />
-                <SortHeader 
-                  label="Semister" 
-                  field="semister" 
-                  currentSort={sortConfig} 
-                  onSort={handleSort} 
+                <SortHeader
+                  label="Semister"
+                  field="semister"
+                  currentSort={sortConfig}
+                  onSort={handleSort}
                   visible={visibleColumns.semister}
                 />
                 {/* <th className={`${visibleColumns.status ? '' : 'hidden'} px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center`}>Status</th>
@@ -874,21 +900,21 @@ const Students = () => {
                     )}
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button 
+                        <button
                           onClick={() => openViewModal(item)}
                           className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
                           title="View Details"
                         >
                           <Eye size={18} />
                         </button>
-                        <button 
+                        <button
                           onClick={() => openEditModal(item)}
                           className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
                           title="Edit Record"
                         >
                           <Pencil size={18} />
                         </button>
-                        <button 
+                        <button
                           onClick={() => openDeleteModal(item)}
                           className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                           title="Remove Record"
@@ -904,7 +930,7 @@ const Students = () => {
                   <td colSpan="7" className="px-8 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No students found matching your query</p>
-                      <button 
+                      <button
                         onClick={() => setSearchQuery('')}
                         className="text-xs font-black text-emerald-500 hover:text-emerald-600 underline uppercase tracking-tighter"
                       >
@@ -918,7 +944,7 @@ const Students = () => {
           </table>
         </div>
 
-        <TablePagination 
+        <TablePagination
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
@@ -932,7 +958,7 @@ const Students = () => {
       {showAddModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeAddModal} />
-          
+
           <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col">
             {/* Header */}
             <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
@@ -944,14 +970,14 @@ const Students = () => {
                   <GraduationCap size={12} /> Student Enrollment System
                 </p>
               </div>
-              <button 
+              <button
                 onClick={closeAddModal}
                 className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-2xl transition-all"
               >
                 <X size={20} />
               </button>
             </div>
-            
+
             {/* Body */}
             <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto">
               {addError && (
@@ -966,10 +992,10 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name (Req)</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="first_name" 
-                      value={addForm.first_name} 
-                      onChange={handleAddChange} 
+                    <input
+                      name="first_name"
+                      value={addForm.first_name}
+                      onChange={handleAddChange}
                       placeholder="e.g. Sriram"
                       className={`w-full bg-slate-50 border-2 ${addErrors.first_name ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
@@ -982,10 +1008,10 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="last_name" 
-                      value={addForm.last_name} 
-                      onChange={handleAddChange} 
+                    <input
+                      name="last_name"
+                      value={addForm.last_name}
+                      onChange={handleAddChange}
                       placeholder="e.g. Kumar"
                       className={`w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
@@ -997,10 +1023,10 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name (Legacy)</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="name" 
-                      value={addForm.name} 
-                      onChange={handleAddChange} 
+                    <input
+                      name="name"
+                      value={addForm.name}
+                      onChange={handleAddChange}
                       placeholder="e.g. Sriram Kumar"
                       className={`w-full bg-slate-50 border-2 ${addErrors.name ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
@@ -1013,10 +1039,10 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Admission No</label>
                   <div className="relative">
                     <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="admission_no" 
-                      value={addForm.admission_no} 
-                      onChange={handleAddChange} 
+                    <input
+                      name="admission_no"
+                      value={addForm.admission_no}
+                      onChange={handleAddChange}
                       placeholder="e.g. 25C00713"
                       className={`w-full bg-slate-50 border-2 ${addErrors.admission_no ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
@@ -1024,15 +1050,15 @@ const Students = () => {
                   {addErrors.admission_no && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.admission_no}</p>}
                 </div>
 
-                   {/* Date of Birth */}
+                {/* Date of Birth */}
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Date of Birth</label>
                   <div className="relative">
                     <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <input 
+                    <input
                       type="date"
-                      name="date_of_birth" 
-                      value={addForm.date_of_birth} 
+                      name="date_of_birth"
+                      value={addForm.date_of_birth}
                       onChange={handleAddChange}
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1044,10 +1070,10 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Batch</label>
                   <div className="relative">
                     <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <input 
-                      name="batch" 
-                      value={addForm.batch} 
-                      onChange={handleAddChange} 
+                    <input
+                      name="batch"
+                      value={addForm.batch}
+                      onChange={handleAddChange}
                       placeholder="e.g. I Year"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1059,24 +1085,24 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Section</label>
                   <div className="relative">
                     <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <input 
-                      name="section" 
-                      value={addForm.section} 
-                      onChange={handleAddChange} 
+                    <input
+                      name="section"
+                      value={addForm.section}
+                      onChange={handleAddChange}
                       placeholder="e.g. Economics"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold"
                     />
                   </div>
                 </div>
 
-                  {/* College */}
+                {/* College */}
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">College Name</label>
                   <div className="relative">
                     <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="collageName" 
-                      value={addForm.collageName} 
+                    <select
+                      name="collageName"
+                      value={addForm.collageName}
                       onChange={handleAddChange}
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer"
                     >
@@ -1095,9 +1121,9 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Policy</label>
                   <div className="relative">
                     <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="policies" 
-                      value={addForm.policies} 
+                    <select
+                      name="policies"
+                      value={addForm.policies}
                       onChange={handleAddChange}
                       disabled={!addForm.collageName}
                       className={`w-full bg-slate-50 border-2 ${addErrors.policies ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -1118,9 +1144,9 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Program</label>
                   <div className="relative">
                     <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="programName" 
-                      value={addForm.programName} 
+                    <select
+                      name="programName"
+                      value={addForm.programName}
                       onChange={handleAddChange}
                       disabled={!addForm.collageName}
                       className={`w-full bg-slate-50 border-2 ${addErrors.programName ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -1141,9 +1167,9 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Admission Year</label>
                   <div className="relative">
                     <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="admission_year" 
-                      value={addForm.admission_year} 
+                    <select
+                      name="admission_year"
+                      value={addForm.admission_year}
                       onChange={handleAddChange}
                       disabled={!addForm.collageName}
                       className={`w-full bg-slate-50 border-2 ${addErrors.admission_year ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -1164,9 +1190,9 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Semester</label>
                   <div className="relative">
                     <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="semister" 
-                      value={addForm.semister} 
+                    <select
+                      name="semister"
+                      value={addForm.semister}
                       onChange={handleAddChange}
                       disabled={!addForm.collageName}
                       className={`w-full bg-slate-50 border-2 ${addErrors.semister ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -1182,21 +1208,22 @@ const Students = () => {
                   {addErrors.semister && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.semister}</p>}
                 </div>
 
-              
+
 
                 {/* Roll Number */}
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Roll Number</label>
                   <div className="relative">
                     <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="rollnumber" 
-                      value={addForm.rollnumber} 
-                      onChange={handleAddChange} 
+                    <input
+                      name="rollnumber"
+                      value={addForm.rollnumber}
+                      onChange={handleAddChange}
                       placeholder="e.g. 101"
-                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                      className={`w-full bg-slate-50 border-2 ${addErrors.rollnumber ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
+                  {addErrors.rollnumber && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.rollnumber}</p>}
                 </div>
 
                 {/* Email */}
@@ -1204,15 +1231,16 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Email</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="email" 
+                    <input
+                      name="email"
                       type="email"
-                      value={addForm.email} 
-                      onChange={handleAddChange} 
+                      value={addForm.email}
+                      onChange={handleAddChange}
                       placeholder="e.g. student@example.com"
-                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                      className={`w-full bg-slate-50 border-2 ${addErrors.email ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
+                  {addErrors.email && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.email}</p>}
                 </div>
 
                 {/* Contact Number */}
@@ -1220,14 +1248,15 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Contact Number</label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="contactNumber" 
-                      value={addForm.contactNumber} 
-                      onChange={handleAddChange} 
+                    <input
+                      name="contactNumber"
+                      value={addForm.contactNumber}
+                      onChange={handleAddChange}
                       placeholder="e.g. 9876543210"
-                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                      className={`w-full bg-slate-50 border-2 ${addErrors.contactNumber ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
+                  {addErrors.contactNumber && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.contactNumber}</p>}
                 </div>
 
                 {/* Father Name */}
@@ -1235,14 +1264,15 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father's Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="fatherName" 
-                      value={addForm.fatherName} 
-                      onChange={handleAddChange} 
+                    <input
+                      name="fatherName"
+                      value={addForm.fatherName}
+                      onChange={handleAddChange}
                       placeholder="e.g. Raj Kumar"
-                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                      className={`w-full bg-slate-50 border-2 ${addErrors.fatherName ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
+                  {addErrors.fatherName && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.fatherName}</p>}
                 </div>
 
                 {/* Aadhar Number */}
@@ -1250,14 +1280,15 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Aadhar Number</label>
                   <div className="relative">
                     <IdCard className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="adharnumber" 
-                      value={addForm.adharnumber} 
-                      onChange={handleAddChange} 
+                    <input
+                      name="adharnumber"
+                      value={addForm.adharnumber}
+                      onChange={handleAddChange}
                       placeholder="e.g. 1234-5678-9012"
-                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
+                      className={`w-full bg-slate-50 border-2 ${addErrors.adharnumber ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
+                  {addErrors.adharnumber && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.adharnumber}</p>}
                 </div>
 
                 {/* Blood Group */}
@@ -1265,9 +1296,9 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Blood Group</label>
                   <div className="relative">
                     <Droplet className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="bloodgroup" 
-                      value={addForm.bloodgroup} 
+                    <select
+                      name="bloodgroup"
+                      value={addForm.bloodgroup}
                       onChange={handleAddChange}
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer"
                     >
@@ -1279,17 +1310,17 @@ const Students = () => {
                   </div>
                 </div>
 
-                
+
                 {/* Middle Name */}
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Middle Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="middle_name" 
-                      value={addForm.middle_name} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="middle_name"
+                      value={addForm.middle_name}
+                      onChange={handleAddChange}
                       placeholder="e.g. Singh"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1301,11 +1332,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Gender</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="gender" 
-                      value={addForm.gender} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="gender"
+                      value={addForm.gender}
+                      onChange={handleAddChange}
                       placeholder="e.g. Male/Female"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1317,11 +1348,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
                   <div className="relative">
                     <Activity className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="student_status" 
-                      value={addForm.student_status} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="student_status"
+                      value={addForm.student_status}
+                      onChange={handleAddChange}
                       placeholder="e.g. Active"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1333,11 +1364,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">RTE</label>
                   <div className="relative">
                     <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="rte" 
-                      value={addForm.rte} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="rte"
+                      value={addForm.rte}
+                      onChange={handleAddChange}
                       placeholder="e.g. Yes/No"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1349,11 +1380,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Birth Place</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="birth_place" 
-                      value={addForm.birth_place} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="birth_place"
+                      value={addForm.birth_place}
+                      onChange={handleAddChange}
                       placeholder="e.g. Bhopal"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1365,11 +1396,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Hostel/Day Scholar</label>
                   <div className="relative">
                     <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="hostel_or_day_scholar" 
-                      value={addForm.hostel_or_day_scholar} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="hostel_or_day_scholar"
+                      value={addForm.hostel_or_day_scholar}
+                      onChange={handleAddChange}
                       placeholder="e.g. Day/Hostel"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1381,11 +1412,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Language</label>
                   <div className="relative">
                     <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="language" 
-                      value={addForm.language} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="language"
+                      value={addForm.language}
+                      onChange={handleAddChange}
                       placeholder="e.g. Hindi"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1397,11 +1428,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Secondary Phone</label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="phone" 
-                      value={addForm.phone} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="phone"
+                      value={addForm.phone}
+                      onChange={handleAddChange}
                       placeholder="e.g. 9876543210"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1413,11 +1444,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">SMS Enabled</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="sms_enabled" 
-                      value={addForm.sms_enabled} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="sms_enabled"
+                      value={addForm.sms_enabled}
+                      onChange={handleAddChange}
                       placeholder="e.g. Yes/No"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1429,11 +1460,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">EMS Enabled</label>
                   <div className="relative">
                     <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="ems_enabled" 
-                      value={addForm.ems_enabled} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="ems_enabled"
+                      value={addForm.ems_enabled}
+                      onChange={handleAddChange}
                       placeholder="e.g. Yes/No"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1445,11 +1476,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Address Line 1</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="address_line_1" 
-                      value={addForm.address_line_1} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="address_line_1"
+                      value={addForm.address_line_1}
+                      onChange={handleAddChange}
                       placeholder="e.g. 123 Main St"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1461,11 +1492,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">City</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="city" 
-                      value={addForm.city} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="city"
+                      value={addForm.city}
+                      onChange={handleAddChange}
                       placeholder="e.g. Bhopal"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1477,11 +1508,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">State</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="state" 
-                      value={addForm.state} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="state"
+                      value={addForm.state}
+                      onChange={handleAddChange}
                       placeholder="e.g. Madhya Pradesh"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1493,11 +1524,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Country</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="country" 
-                      value={addForm.country} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="country"
+                      value={addForm.country}
+                      onChange={handleAddChange}
                       placeholder="e.g. India"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1509,11 +1540,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Pin Code</label>
                   <div className="relative">
                     <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="pin_code" 
-                      value={addForm.pin_code} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="pin_code"
+                      value={addForm.pin_code}
+                      onChange={handleAddChange}
                       placeholder="e.g. 462001"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1525,11 +1556,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father First Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="father_first_name" 
-                      value={addForm.father_first_name} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="father_first_name"
+                      value={addForm.father_first_name}
+                      onChange={handleAddChange}
                       placeholder="e.g. Raj"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1541,11 +1572,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Last Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="father_last_name" 
-                      value={addForm.father_last_name} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="father_last_name"
+                      value={addForm.father_last_name}
+                      onChange={handleAddChange}
                       placeholder="e.g. Kumar"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1557,11 +1588,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Mobile</label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="father_mobile_phone" 
-                      value={addForm.father_mobile_phone} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="father_mobile_phone"
+                      value={addForm.father_mobile_phone}
+                      onChange={handleAddChange}
                       placeholder="e.g. 9876543210"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1573,11 +1604,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Email</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
+                    <input
                       type="email"
-                      name="father_address_email" 
-                      value={addForm.father_address_email} 
-                      onChange={handleAddChange} 
+                      name="father_address_email"
+                      value={addForm.father_address_email}
+                      onChange={handleAddChange}
                       placeholder="e.g. father@example.com"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1589,11 +1620,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father State</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="father_state" 
-                      value={addForm.father_state} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="father_state"
+                      value={addForm.father_state}
+                      onChange={handleAddChange}
                       placeholder="e.g. MP"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1605,11 +1636,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Pin Code</label>
                   <div className="relative">
                     <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="father_pin_code" 
-                      value={addForm.father_pin_code} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="father_pin_code"
+                      value={addForm.father_pin_code}
+                      onChange={handleAddChange}
                       placeholder="e.g. 462001"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1621,11 +1652,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother First Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="mother_first_name" 
-                      value={addForm.mother_first_name} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="mother_first_name"
+                      value={addForm.mother_first_name}
+                      onChange={handleAddChange}
                       placeholder="e.g. Sita"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1637,11 +1668,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Last Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="mother_last_name" 
-                      value={addForm.mother_last_name} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="mother_last_name"
+                      value={addForm.mother_last_name}
+                      onChange={handleAddChange}
                       placeholder="e.g. Devi"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1653,11 +1684,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Mobile</label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="mother_mobile_phone" 
-                      value={addForm.mother_mobile_phone} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="mother_mobile_phone"
+                      value={addForm.mother_mobile_phone}
+                      onChange={handleAddChange}
                       placeholder="e.g. 9876543210"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1669,11 +1700,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Email</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
+                    <input
                       type="email"
-                      name="mother_address_email" 
-                      value={addForm.mother_address_email} 
-                      onChange={handleAddChange} 
+                      name="mother_address_email"
+                      value={addForm.mother_address_email}
+                      onChange={handleAddChange}
                       placeholder="e.g. mother@example.com"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1685,11 +1716,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother State</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="mother_state" 
-                      value={addForm.mother_state} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="mother_state"
+                      value={addForm.mother_state}
+                      onChange={handleAddChange}
                       placeholder="e.g. MP"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1701,11 +1732,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Pin Code</label>
                   <div className="relative">
                     <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="mother_pin_code" 
-                      value={addForm.mother_pin_code} 
-                      onChange={handleAddChange} 
+                    <input
+
+                      name="mother_pin_code"
+                      value={addForm.mother_pin_code}
+                      onChange={handleAddChange}
                       placeholder="e.g. 462001"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1716,15 +1747,16 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Address</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-4 text-slate-400" size={18} />
-                    <textarea 
-                      name="address" 
-                      value={addForm.address} 
-                      onChange={handleAddChange} 
+                    <textarea
+                      name="address"
+                      value={addForm.address}
+                      onChange={handleAddChange}
                       placeholder="e.g. 123 Main Street, City, State 12345"
-                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold resize-none"
+                      className={`w-full bg-slate-50 border-2 ${addErrors.address ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold resize-none`}
                       rows="3"
                     />
                   </div>
+                  {addErrors.address && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.address}</p>}
                 </div>
 
               </div>
@@ -1732,14 +1764,15 @@ const Students = () => {
 
             {/* Footer */}
             <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-5">
-              <button 
+              <button
                 className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
                 onClick={closeAddModal}
                 disabled={addLoading}
               >
                 Discard
               </button>
-              <button 
+              <button
+                type="button"
                 onClick={handleAddSubmit}
                 disabled={addLoading}
                 className="px-10 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm uppercase tracking-widest flex items-center gap-3 disabled:opacity-50 disabled:scale-100"
@@ -1760,7 +1793,7 @@ const Students = () => {
       {showEditModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeEditModal} />
-          
+
           <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col">
             {/* Header */}
             <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
@@ -1772,14 +1805,14 @@ const Students = () => {
                   <GraduationCap size={12} /> Student ID: {editForm.id}
                 </p>
               </div>
-              <button 
+              <button
                 onClick={closeEditModal}
                 className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-2xl transition-all"
               >
                 <X size={20} />
               </button>
             </div>
-            
+
             {/* Body */}
             <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto">
               {editError && (
@@ -1794,10 +1827,10 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name (Req)</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="first_name" 
-                      value={editForm.first_name} 
-                      onChange={handleEditChange} 
+                    <input
+                      name="first_name"
+                      value={editForm.first_name}
+                      onChange={handleEditChange}
                       placeholder="e.g. Sriram"
                       className={`w-full bg-slate-50 border-2 ${editErrors.first_name ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
@@ -1810,10 +1843,10 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="last_name" 
-                      value={editForm.last_name} 
-                      onChange={handleEditChange} 
+                    <input
+                      name="last_name"
+                      value={editForm.last_name}
+                      onChange={handleEditChange}
                       placeholder="e.g. Kumar"
                       className={`w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
@@ -1825,10 +1858,10 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name (Legacy)</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="name" 
-                      value={editForm.name} 
-                      onChange={handleEditChange} 
+                    <input
+                      name="name"
+                      value={editForm.name}
+                      onChange={handleEditChange}
                       placeholder="e.g. Sriram Kumar"
                       className={`w-full bg-slate-50 border-2 ${editErrors.name ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
@@ -1841,10 +1874,10 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Admission No</label>
                   <div className="relative">
                     <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="admission_no" 
-                      value={editForm.admission_no} 
-                      onChange={handleEditChange} 
+                    <input
+                      name="admission_no"
+                      value={editForm.admission_no}
+                      onChange={handleEditChange}
                       placeholder="e.g. 25C00713"
                       className={`w-full bg-slate-50 border-2 ${editErrors.admission_no ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
@@ -1852,15 +1885,15 @@ const Students = () => {
                   {editErrors.admission_no && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.admission_no}</p>}
                 </div>
 
-                   {/* Date of Birth */}
+                {/* Date of Birth */}
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Date of Birth</label>
                   <div className="relative">
                     <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <input 
+                    <input
                       type="date"
-                      name="date_of_birth" 
-                      value={editForm.date_of_birth} 
+                      name="date_of_birth"
+                      value={editForm.date_of_birth}
                       onChange={handleEditChange}
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1872,10 +1905,10 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Batch</label>
                   <div className="relative">
                     <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <input 
-                      name="batch" 
-                      value={editForm.batch} 
-                      onChange={handleEditChange} 
+                    <input
+                      name="batch"
+                      value={editForm.batch}
+                      onChange={handleEditChange}
                       placeholder="e.g. I Year"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1887,10 +1920,10 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Section</label>
                   <div className="relative">
                     <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <input 
-                      name="section" 
-                      value={editForm.section} 
-                      onChange={handleEditChange} 
+                    <input
+                      name="section"
+                      value={editForm.section}
+                      onChange={handleEditChange}
                       placeholder="e.g. Economics"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -1902,9 +1935,9 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">College Name</label>
                   <div className="relative">
                     <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="collageName" 
-                      value={editForm.collageName} 
+                    <select
+                      name="collageName"
+                      value={editForm.collageName}
                       onChange={handleEditChange}
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer"
                     >
@@ -1923,9 +1956,9 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Policy</label>
                   <div className="relative">
                     <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="policies" 
-                      value={editForm.policies} 
+                    <select
+                      name="policies"
+                      value={editForm.policies}
                       onChange={handleEditChange}
                       disabled={!editForm.collageName}
                       className={`w-full bg-slate-50 border-2 ${editErrors.policies ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -1946,9 +1979,9 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Program</label>
                   <div className="relative">
                     <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="programName" 
-                      value={editForm.programName} 
+                    <select
+                      name="programName"
+                      value={editForm.programName}
                       onChange={handleEditChange}
                       disabled={!editForm.collageName}
                       className={`w-full bg-slate-50 border-2 ${editErrors.programName ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -1969,9 +2002,9 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Admission Year</label>
                   <div className="relative">
                     <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="admission_year" 
-                      value={editForm.admission_year} 
+                    <select
+                      name="admission_year"
+                      value={editForm.admission_year}
                       onChange={handleEditChange}
                       disabled={!editForm.collageName}
                       className={`w-full bg-slate-50 border-2 ${editErrors.admission_year ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -1992,9 +2025,9 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Semester</label>
                   <div className="relative">
                     <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="semister" 
-                      value={editForm.semister} 
+                    <select
+                      name="semister"
+                      value={editForm.semister}
                       onChange={handleEditChange}
                       disabled={!editForm.collageName}
                       className={`w-full bg-slate-50 border-2 ${editErrors.semister ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -2010,17 +2043,17 @@ const Students = () => {
                   {editErrors.semister && <p className="text-[10px] font-bold text-red-500 ml-1">{editErrors.semister}</p>}
                 </div>
 
-                
+
 
                 {/* Roll Number */}
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Roll Number</label>
                   <div className="relative">
                     <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="rollnumber" 
-                      value={editForm.rollnumber} 
-                      onChange={handleEditChange} 
+                    <input
+                      name="rollnumber"
+                      value={editForm.rollnumber}
+                      onChange={handleEditChange}
                       placeholder="e.g. 101"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2032,11 +2065,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Email</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="email" 
+                    <input
+                      name="email"
                       type="email"
-                      value={editForm.email} 
-                      onChange={handleEditChange} 
+                      value={editForm.email}
+                      onChange={handleEditChange}
                       placeholder="e.g. student@example.com"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2048,10 +2081,10 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Contact Number</label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="contactNumber" 
-                      value={editForm.contactNumber} 
-                      onChange={handleEditChange} 
+                    <input
+                      name="contactNumber"
+                      value={editForm.contactNumber}
+                      onChange={handleEditChange}
                       placeholder="e.g. 9876543210"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2063,10 +2096,10 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father's Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="fatherName" 
-                      value={editForm.fatherName} 
-                      onChange={handleEditChange} 
+                    <input
+                      name="fatherName"
+                      value={editForm.fatherName}
+                      onChange={handleEditChange}
                       placeholder="e.g. Raj Kumar"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2078,10 +2111,10 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Aadhar Number</label>
                   <div className="relative">
                     <IdCard className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="adharnumber" 
-                      value={editForm.adharnumber} 
-                      onChange={handleEditChange} 
+                    <input
+                      name="adharnumber"
+                      value={editForm.adharnumber}
+                      onChange={handleEditChange}
                       placeholder="e.g. 1234-5678-9012"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2093,9 +2126,9 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Blood Group</label>
                   <div className="relative">
                     <Droplet className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    <select 
-                      name="bloodgroup" 
-                      value={editForm.bloodgroup} 
+                    <select
+                      name="bloodgroup"
+                      value={editForm.bloodgroup}
                       onChange={handleEditChange}
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer"
                     >
@@ -2107,17 +2140,17 @@ const Students = () => {
                   </div>
                 </div>
 
-                
+
                 {/* Middle Name */}
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Middle Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="middle_name" 
-                      value={editForm.middle_name} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="middle_name"
+                      value={editForm.middle_name}
+                      onChange={handleEditChange}
                       placeholder="e.g. Singh"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2129,11 +2162,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Gender</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="gender" 
-                      value={editForm.gender} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="gender"
+                      value={editForm.gender}
+                      onChange={handleEditChange}
                       placeholder="e.g. Male/Female"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2145,11 +2178,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
                   <div className="relative">
                     <Activity className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="student_status" 
-                      value={editForm.student_status} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="student_status"
+                      value={editForm.student_status}
+                      onChange={handleEditChange}
                       placeholder="e.g. Active"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2161,11 +2194,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">RTE</label>
                   <div className="relative">
                     <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="rte" 
-                      value={editForm.rte} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="rte"
+                      value={editForm.rte}
+                      onChange={handleEditChange}
                       placeholder="e.g. Yes/No"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2177,11 +2210,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Birth Place</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="birth_place" 
-                      value={editForm.birth_place} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="birth_place"
+                      value={editForm.birth_place}
+                      onChange={handleEditChange}
                       placeholder="e.g. Bhopal"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2193,11 +2226,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Hostel/Day Scholar</label>
                   <div className="relative">
                     <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="hostel_or_day_scholar" 
-                      value={editForm.hostel_or_day_scholar} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="hostel_or_day_scholar"
+                      value={editForm.hostel_or_day_scholar}
+                      onChange={handleEditChange}
                       placeholder="e.g. Day/Hostel"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2209,11 +2242,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Language</label>
                   <div className="relative">
                     <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="language" 
-                      value={editForm.language} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="language"
+                      value={editForm.language}
+                      onChange={handleEditChange}
                       placeholder="e.g. Hindi"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2225,11 +2258,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Secondary Phone</label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="phone" 
-                      value={editForm.phone} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="phone"
+                      value={editForm.phone}
+                      onChange={handleEditChange}
                       placeholder="e.g. 9876543210"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2241,11 +2274,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">SMS Enabled</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="sms_enabled" 
-                      value={editForm.sms_enabled} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="sms_enabled"
+                      value={editForm.sms_enabled}
+                      onChange={handleEditChange}
                       placeholder="e.g. Yes/No"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2257,11 +2290,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">EMS Enabled</label>
                   <div className="relative">
                     <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="ems_enabled" 
-                      value={editForm.ems_enabled} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="ems_enabled"
+                      value={editForm.ems_enabled}
+                      onChange={handleEditChange}
                       placeholder="e.g. Yes/No"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2273,11 +2306,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Address Line 1</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="address_line_1" 
-                      value={editForm.address_line_1} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="address_line_1"
+                      value={editForm.address_line_1}
+                      onChange={handleEditChange}
                       placeholder="e.g. 123 Main St"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2289,11 +2322,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">City</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="city" 
-                      value={editForm.city} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="city"
+                      value={editForm.city}
+                      onChange={handleEditChange}
                       placeholder="e.g. Bhopal"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2305,11 +2338,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">State</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="state" 
-                      value={editForm.state} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="state"
+                      value={editForm.state}
+                      onChange={handleEditChange}
                       placeholder="e.g. Madhya Pradesh"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2321,11 +2354,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Country</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="country" 
-                      value={editForm.country} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="country"
+                      value={editForm.country}
+                      onChange={handleEditChange}
                       placeholder="e.g. India"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2337,11 +2370,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Pin Code</label>
                   <div className="relative">
                     <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="pin_code" 
-                      value={editForm.pin_code} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="pin_code"
+                      value={editForm.pin_code}
+                      onChange={handleEditChange}
                       placeholder="e.g. 462001"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2353,11 +2386,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father First Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="father_first_name" 
-                      value={editForm.father_first_name} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="father_first_name"
+                      value={editForm.father_first_name}
+                      onChange={handleEditChange}
                       placeholder="e.g. Raj"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2369,11 +2402,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Last Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="father_last_name" 
-                      value={editForm.father_last_name} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="father_last_name"
+                      value={editForm.father_last_name}
+                      onChange={handleEditChange}
                       placeholder="e.g. Kumar"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2385,11 +2418,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Mobile</label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="father_mobile_phone" 
-                      value={editForm.father_mobile_phone} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="father_mobile_phone"
+                      value={editForm.father_mobile_phone}
+                      onChange={handleEditChange}
                       placeholder="e.g. 9876543210"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2401,11 +2434,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Email</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
+                    <input
                       type="email"
-                      name="father_address_email" 
-                      value={editForm.father_address_email} 
-                      onChange={handleEditChange} 
+                      name="father_address_email"
+                      value={editForm.father_address_email}
+                      onChange={handleEditChange}
                       placeholder="e.g. father@example.com"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2417,11 +2450,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father State</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="father_state" 
-                      value={editForm.father_state} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="father_state"
+                      value={editForm.father_state}
+                      onChange={handleEditChange}
                       placeholder="e.g. MP"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2433,11 +2466,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Father Pin Code</label>
                   <div className="relative">
                     <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="father_pin_code" 
-                      value={editForm.father_pin_code} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="father_pin_code"
+                      value={editForm.father_pin_code}
+                      onChange={handleEditChange}
                       placeholder="e.g. 462001"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2449,11 +2482,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother First Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="mother_first_name" 
-                      value={editForm.mother_first_name} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="mother_first_name"
+                      value={editForm.mother_first_name}
+                      onChange={handleEditChange}
                       placeholder="e.g. Sita"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2465,11 +2498,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Last Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="mother_last_name" 
-                      value={editForm.mother_last_name} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="mother_last_name"
+                      value={editForm.mother_last_name}
+                      onChange={handleEditChange}
                       placeholder="e.g. Devi"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2481,11 +2514,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Mobile</label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="mother_mobile_phone" 
-                      value={editForm.mother_mobile_phone} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="mother_mobile_phone"
+                      value={editForm.mother_mobile_phone}
+                      onChange={handleEditChange}
                       placeholder="e.g. 9876543210"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2497,11 +2530,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Email</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
+                    <input
                       type="email"
-                      name="mother_address_email" 
-                      value={editForm.mother_address_email} 
-                      onChange={handleEditChange} 
+                      name="mother_address_email"
+                      value={editForm.mother_address_email}
+                      onChange={handleEditChange}
                       placeholder="e.g. mother@example.com"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2513,11 +2546,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother State</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="mother_state" 
-                      value={editForm.mother_state} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="mother_state"
+                      value={editForm.mother_state}
+                      onChange={handleEditChange}
                       placeholder="e.g. MP"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2529,11 +2562,11 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mother Pin Code</label>
                   <div className="relative">
                     <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      
-                      name="mother_pin_code" 
-                      value={editForm.mother_pin_code} 
-                      onChange={handleEditChange} 
+                    <input
+
+                      name="mother_pin_code"
+                      value={editForm.mother_pin_code}
+                      onChange={handleEditChange}
                       placeholder="e.g. 462001"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold"
                     />
@@ -2544,10 +2577,10 @@ const Students = () => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Address</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-4 text-slate-400" size={18} />
-                    <textarea 
-                      name="address" 
-                      value={editForm.address} 
-                      onChange={handleEditChange} 
+                    <textarea
+                      name="address"
+                      value={editForm.address}
+                      onChange={handleEditChange}
                       placeholder="e.g. 123 Main Street, City, State 12345"
                       className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold resize-none"
                       rows="3"
@@ -2559,14 +2592,14 @@ const Students = () => {
 
             {/* Footer */}
             <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-5">
-              <button 
+              <button
                 className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
                 onClick={closeEditModal}
                 disabled={editLoading}
               >
                 Discard
               </button>
-              <button 
+              <button
                 onClick={handleEditSubmit}
                 disabled={editLoading}
                 className="px-10 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm uppercase tracking-widest flex items-center gap-3 disabled:opacity-50 disabled:scale-100"
@@ -2587,7 +2620,7 @@ const Students = () => {
       {showViewModal && viewStudent && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeViewModal} />
-          
+
           <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col">
             {/* Header */}
             <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50 to-emerald-50">
@@ -2599,14 +2632,14 @@ const Students = () => {
                   <GraduationCap size={12} /> ID: {viewStudent.id}
                 </p>
               </div>
-              <button 
+              <button
                 onClick={closeViewModal}
                 className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-2xl transition-all"
               >
                 <X size={20} />
               </button>
             </div>
-            
+
             {/* Body */}
             <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -2709,7 +2742,7 @@ const Students = () => {
 
             {/* Footer */}
             <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-5">
-              <button 
+              <button
                 className="px-10 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm uppercase tracking-widest flex items-center gap-3"
                 onClick={closeViewModal}
               >
@@ -2734,22 +2767,22 @@ const Students = () => {
               <p className="text-slate-500 text-sm leading-relaxed mb-6">
                 Are you sure you want to delete <span className="font-bold text-slate-900">"{studentToDelete?.name}"</span>? This action cannot be reversed.
               </p>
-              
+
               {deleteError && (
                 <div className="mb-6 p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-xs font-bold flex items-center gap-2 w-full text-left">
                   <ShieldAlert size={16} className="shrink-0" /> {deleteError}
                 </div>
               )}
-              
+
               <div className="flex gap-3 w-full">
-                <button 
+                <button
                   className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all"
                   onClick={closeDeleteModal}
                   disabled={deleteLoading}
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-500/20 transition-all flex items-center justify-center disabled:opacity-50"
                   onClick={handleDeleteConfirm}
                   disabled={deleteLoading}
