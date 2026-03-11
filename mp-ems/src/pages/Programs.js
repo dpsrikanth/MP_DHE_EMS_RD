@@ -9,7 +9,11 @@ import {
   Calendar,
   Hash,
   ShieldCheck,
-  ShieldAlert
+  ShieldAlert,
+  Eye,
+  Layers,
+  Settings,
+  ListRestart
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import Select, { components } from "react-select";
@@ -32,6 +36,15 @@ const Option = (props) => {
   );
 };
 
+const InfoItem = ({ label, value, isMono = false, className = "" }) => (
+  <div className={`space-y-1.5 ${className}`}>
+    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none ml-0.5">{label}</p>
+    <div className={`bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl ${isMono ? 'font-mono' : 'font-bold'} text-slate-700 text-sm`}>
+      {value || '-'}
+    </div>
+  </div>
+);
+
 const Programs = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,10 +52,20 @@ const Programs = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewData, setViewData] = useState(null);
   const [selected, setSelected] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [departments, setDepartments] = useState([]);
-  const [form, setForm] = useState({ name: '', duration_years: '', department_ids: [] });
+  const [form, setForm] = useState({ 
+    name: '', 
+    duration_years: '', 
+    department_ids: [],
+    section_name: '',
+    code: '',
+    grading_system_type: 'Normal',
+    enable_elective_subjects_selection: 'N'
+  });
 
   const availableColumns = [
     { key: 'id', label: 'ID' },
@@ -122,7 +145,11 @@ const Programs = () => {
         body: JSON.stringify({ 
           name: form.name, 
           duration_years: parseInt(form.duration_years),
-          department_ids: form.department_ids.map(d => d.value)
+          department_ids: form.department_ids.map(d => d.value),
+          section_name: form.section_name,
+          code: form.code,
+          grading_system_type: form.grading_system_type,
+          enable_elective_subjects_selection: form.enable_elective_subjects_selection
         })
       });
       if (!res.ok) {
@@ -132,7 +159,15 @@ const Programs = () => {
       const result = await res.json();
       toast.success(result.message || 'Program added successfully!');
       setShowAddModal(false);
-      setForm({ name: '', duration_years: '', department_ids: [] });
+      setForm({ 
+        name: '', 
+        duration_years: '', 
+        department_ids: [],
+        section_name: '',
+        code: '',
+        grading_system_type: 'Normal',
+        enable_elective_subjects_selection: 'N'
+      });
       fetchData();
     } catch (err) {
       toast.error('Error: ' + err.message);
@@ -149,7 +184,11 @@ const Programs = () => {
         body: JSON.stringify({ 
           name: form.name, 
           duration_years: parseInt(form.duration_years),
-          department_ids: form.department_ids.map(d => d.value)
+          department_ids: form.department_ids.map(d => d.value),
+          section_name: form.section_name,
+          code: form.code,
+          grading_system_type: form.grading_system_type,
+          enable_elective_subjects_selection: form.enable_elective_subjects_selection
         })
       });
       if (!res.ok) {
@@ -160,7 +199,15 @@ const Programs = () => {
       toast.success(result.message || 'Program updated successfully!');
       setShowEditModal(false);
       setSelected(null);
-      setForm({ name: '', duration_years: '', department_ids: [] });
+      setForm({ 
+        name: '', 
+        duration_years: '', 
+        department_ids: [],
+        section_name: '',
+        code: '',
+        grading_system_type: 'Normal',
+        enable_elective_subjects_selection: 'N'
+      });
       fetchData();
     } catch (err) {
       toast.error('Error: ' + err.message);
@@ -174,7 +221,15 @@ const Programs = () => {
       const selectedDepts = item.department_ids && departments.length > 0
         ? departments.filter(d => item.department_ids.includes(d.value))
         : [];
-      setForm({ name: item.name, duration_years: item.duration_years, department_ids: selectedDepts });
+      setForm({ 
+        name: item.name, 
+        duration_years: item.duration_years, 
+        department_ids: selectedDepts,
+        section_name: item.section_name || '',
+        code: item.code || '',
+        grading_system_type: item.grading_system_type || 'Normal',
+        enable_elective_subjects_selection: item.enable_elective_subjects_selection || 'N'
+      });
       setShowEditModal(true);
     }
   };
@@ -317,6 +372,13 @@ const Programs = () => {
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button 
+                          onClick={() => { setViewData(item); setShowViewModal(true); }}
+                          className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
+                          title="View Details"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button 
                           onClick={() => loadForEdit(item.id)}
                           className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"
                           title="Edit Program"
@@ -368,7 +430,7 @@ const Programs = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => { setShowAddModal(false); setShowEditModal(false); setSelected(null); }} />
           
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
             {/* Modal Header */}
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white">
               <div>
@@ -403,21 +465,93 @@ const Programs = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Duration in Years</label>
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                    <Calendar size={18} />
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Duration in Years</label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                      <Calendar size={18} />
+                    </div>
+                    <input 
+                      type="number" 
+                      placeholder="e.g. 4" 
+                      value={form.duration_years} 
+                      onChange={(e) => setForm({ ...form, duration_years: e.target.value })}
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500 outline-none transition-all font-black"
+                    />
                   </div>
-                  <input 
-                    type="number" 
-                    placeholder="e.g. 4" 
-                    value={form.duration_years} 
-                    onChange={(e) => setForm({ ...form, duration_years: e.target.value })}
-                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500 outline-none transition-all font-black text-lg"
-                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Section Name</label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                      <Layers size={18} />
+                    </div>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. A" 
+                      value={form.section_name} 
+                      onChange={(e) => setForm({ ...form, section_name: e.target.value })}
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold"
+                    />
+                  </div>
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Program Code</label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                      <Hash size={18} />
+                    </div>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. BAG1" 
+                      value={form.code} 
+                      onChange={(e) => setForm({ ...form, code: e.target.value })}
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Grading System</label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                      <Settings size={18} />
+                    </div>
+                    <select 
+                      value={form.grading_system_type} 
+                      onChange={(e) => setForm({ ...form, grading_system_type: e.target.value })}
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold appearance-none cursor-pointer"
+                    >
+                      <option value="Normal">Normal</option>
+                      <option value="CBCE">CBCE</option>
+                      <option value="Non-CBCE">Non-CBCE</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Enable Elective Selection</label>
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                    <ListRestart size={18} />
+                  </div>
+                  <select 
+                    value={form.enable_elective_subjects_selection} 
+                    onChange={(e) => setForm({ ...form, enable_elective_subjects_selection: e.target.value })}
+                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold appearance-none cursor-pointer"
+                  >
+                    <option value="Y">Yes (Enabled)</option>
+                    <option value="N">No (Disabled)</option>
+                  </select>
+                </div>
+              </div>
+
 
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Departments</label>
@@ -474,7 +608,20 @@ const Programs = () => {
             <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
               <button 
                 className="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-800"
-                onClick={() => { setShowAddModal(false); setShowEditModal(false); setSelected(null); setForm({ name: '', duration_years: '', department_ids: [] }); }}
+                onClick={() => { 
+                  setShowAddModal(false); 
+                  setShowEditModal(false); 
+                  setSelected(null); 
+                  setForm({ 
+                    name: '', 
+                    duration_years: '', 
+                    department_ids: [],
+                    section_name: '',
+                    code: '',
+                    grading_system_type: 'Normal',
+                    enable_elective_subjects_selection: 'N'
+                  }); 
+                }}
               >
                 Discard
               </button>
@@ -517,6 +664,77 @@ const Programs = () => {
                   Remove
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* View Details Modal */}
+      {showViewModal && viewData && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowViewModal(false)} />
+          
+          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+            {/* Header */}
+            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
+              <div>
+                <h2 className="text-2xl font-black tracking-tight leading-none mb-1">
+                  Program Profile
+                </h2>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70 flex items-center gap-2">
+                  <BookOpen size={12} /> Academic Management System
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowViewModal(false)}
+                className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-2xl transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            {/* Body */}
+            <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InfoItem label="Program Name" value={viewData.name} className="col-span-full" />
+                <InfoItem label="Program Code" value={viewData.code} isMono={true} />
+                <InfoItem label="Duration" value={`${viewData.duration_years} Years`} />
+                <InfoItem label="Section" value={viewData.section_name} />
+                <InfoItem label="Grading System" value={viewData.grading_system_type} />
+                <InfoItem label="Elective Selection" value={viewData.enable_elective_subjects_selection === 'Y' ? 'Enabled' : 'Disabled'} />
+                <InfoItem label="Status" value={viewData.status || 'Active'} />
+                <InfoItem label="Created On" value={viewData.created_at ? new Date(viewData.created_at).toLocaleString() : '-'} />
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center"><Layers size={18}/></span>
+                  Associated Departments
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {viewData.department_ids && viewData.department_ids.length > 0 ? (
+                    viewData.department_ids.map(deptId => {
+                      const dept = departments.find(d => d.value === deptId);
+                      return (
+                        <span key={deptId} className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-600">
+                          {dept ? dept.label : `ID: ${deptId}`}
+                        </span>
+                      );
+                    })
+                  ) : (
+                    <span className="text-sm text-slate-400 font-medium italic">No departments associated</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button 
+                onClick={() => setShowViewModal(false)}
+                className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm uppercase tracking-widest"
+              >
+                Close Details
+              </button>
             </div>
           </div>
         </div>

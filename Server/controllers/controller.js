@@ -1355,6 +1355,7 @@ const getMasterPrograms = async (req, res) => {
   try {
     const result = await client.query(
       `SELECT mp.id, mp.name, mp.duration_years, mp.status, mp.created_at, 
+              mp.section_name, mp.code, mp.grading_system_type, mp.enable_elective_subjects_selection,
               COALESCE(
                 (SELECT json_agg(department_id) 
                  FROM master_program_departments 
@@ -1373,10 +1374,13 @@ const getMasterPrograms = async (req, res) => {
 
 const createMasterProgram = async (req, res) => {
   try {
-    const { name, duration_years, department_ids } = req.body;
+    const { name, duration_years, department_ids, section_name, code, grading_system_type, enable_elective_subjects_selection } = req.body;
     if (!name || !duration_years) return res.status(400).json({ message: "Program name and duration are required" });
     await client.query('BEGIN');
-    const result = await client.query("INSERT INTO master_programs (name, duration_years, status) VALUES ($1, $2, 'Active') RETURNING id, name, duration_years, status, created_at", [name, duration_years]);
+    const result = await client.query(
+      "INSERT INTO master_programs (name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, status) VALUES ($1, $2, $3, $4, $5, $6, 'Active') RETURNING id, name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, status, created_at", 
+      [name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection]
+    );
     const programId = result.rows[0].id;
     if (department_ids && Array.isArray(department_ids) && department_ids.length > 0) {
       for (const deptId of department_ids) {
@@ -1407,10 +1411,13 @@ const getMasterProgram = async (req, res) => {
 const updateMasterProgram = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, duration_years, department_ids } = req.body;
+    const { name, duration_years, department_ids, section_name, code, grading_system_type, enable_elective_subjects_selection } = req.body;
     if (!name || !duration_years) return res.status(400).json({ message: "Program name and duration are required" });
     await client.query('BEGIN');
-    const result = await client.query("UPDATE master_programs SET name = $1, duration_years = $2 WHERE id = $3 RETURNING id, name, duration_years, created_at", [name, duration_years, id]);
+    const result = await client.query(
+      "UPDATE master_programs SET name = $1, duration_years = $2, section_name = $3, code = $4, grading_system_type = $5, enable_elective_subjects_selection = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING id, name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, created_at", 
+      [name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, id]
+    );
     if (result.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ message: "Master program not found" });
