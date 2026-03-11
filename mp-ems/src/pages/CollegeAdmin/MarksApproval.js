@@ -61,6 +61,7 @@ const MarksApproval = () => {
     };
 
     const updateStatus = async (workflowId, newStatus) => {
+        console.log(`updateStatus triggered: workflowId=${workflowId}, newStatus=${newStatus}`);
         try {
             const token = localStorage.getItem('token');
             // Optimistic update
@@ -177,9 +178,9 @@ const MarksApproval = () => {
                                                 {wf.status === 'Submitted' && (
                                                     <button
                                                         onClick={() => navigate(`/admin/marks-review/${wf.subject_id}/${wf.section}`, {
-                                                            state: { 
-                                                                semester_id: wf.semester_id, 
-                                                                academic_year_id: wf.academic_year_id 
+                                                            state: {
+                                                                semester_id: wf.semester_id,
+                                                                academic_year_id: wf.academic_year_id
                                                             }
                                                         })}
                                                         className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors"

@@ -11,19 +11,19 @@ const MarksReview = () => {
     // Context from navigation state
     const semesterId = location.state?.semester_id || 1;
     const academicYearId = location.state?.academic_year_id || 1;
-    
+
     const [marksData, setMarksData] = useState([]);
     const [marksStructure, setMarksStructure] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isLocking, setIsLocking] = useState(false);
     const [isRejecting, setIsRejecting] = useState(false);
-    
+
     // Review Modal States
     const [isReviewOpen, setIsReviewOpen] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [reviewComment, setReviewComment] = useState('');
     const [isSavingReview, setIsSavingReview] = useState(false);
-    
+
     // Extracted subject metadata
     const [subjectMeta, setSubjectMeta] = useState(null);
 
@@ -50,7 +50,7 @@ const MarksReview = () => {
             const reviewRes = await fetch(`http://localhost:8080/api/college-admin/review-marks?subject_id=${subjectId}&section=${section}&college_id=${collegeId}&semester_id=${semesterId}&academic_year_id=${academicYearId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            
+
             if (reviewRes.ok) {
                 const reviewData = await reviewRes.json();
                 setMarksData(reviewData);
@@ -130,12 +130,15 @@ const MarksReview = () => {
     };
 
     const handleOpenReview = (student) => {
+        console.log("Opening review modal for student:", student);
         setSelectedStudent(student);
         setReviewComment(student.review_comment || '');
         setIsReviewOpen(true);
     };
 
     const handleSaveReview = async (status) => {
+        console.log(`handleSaveReview triggered with status: ${status}`);
+        console.log("Selected student:", selectedStudent);
         setIsSavingReview(true);
         try {
             const token = localStorage.getItem('token');
@@ -178,9 +181,9 @@ const MarksReview = () => {
         studentMarks.forEach(m => {
             const struct = marksStructure.find(s => s.id === m.component_id);
             if (!struct) return;
-            
+
             const score = m.is_absent ? 0 : parseFloat(m.marks_obtained);
-            
+
             if (struct.component_name.toUpperCase().includes('IA')) {
                 iaScores.push(score);
                 iaPassMarks.push(parseFloat(struct.passing_marks || 0));
@@ -191,10 +194,10 @@ const MarksReview = () => {
         });
 
         // Best of IA passing marks (usually same, but for robustness)
-        iaPassMarks.sort((a,b) => b - a);
+        iaPassMarks.sort((a, b) => b - a);
         const passMark = (iaPassMarks[0] || 0) + (iaPassMarks[1] || 0) + practicalPassMark;
 
-        iaScores.sort((a,b) => b - a);
+        iaScores.sort((a, b) => b - a);
         const bestOf3 = (iaScores[0] || 0) + (iaScores[1] || 0);
         const total = bestOf3 + practicalScore;
         const isPass = total >= passMark;
@@ -204,7 +207,7 @@ const MarksReview = () => {
 
     return (
         <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
-             <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4">
                 <button onClick={() => navigate('/admin/marks-verification')} className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-colors shadow-sm">
                     <ArrowLeft size={18} />
                 </button>
@@ -222,13 +225,13 @@ const MarksReview = () => {
                     <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
             ) : marksData.length === 0 ? (
-                 <div className="bg-white rounded-3xl p-12 text-center border border-slate-200">
+                <div className="bg-white rounded-3xl p-12 text-center border border-slate-200">
                     <p className="text-slate-500 font-medium">No marks data found for this section.</p>
                 </div>
             ) : (
                 <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
                     <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                         <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 font-bold text-sm">
+                        <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 font-bold text-sm">
                             <AlertCircle size={16} />
                             Preview Mode: Best of 3 will be officially calculated upon Locking
                         </div>
@@ -280,7 +283,7 @@ const MarksReview = () => {
                                             <td className="px-6 py-4 text-center border-l-2 border-indigo-50 bg-indigo-50/30">
                                                 <span className="text-sm font-black text-indigo-600">{preview.bestOf3}</span>
                                             </td>
-                                            
+
                                             <td className="px-6 py-4 text-center">
                                                 <span className="text-sm font-bold text-slate-700">{preview.practicalScore}</span>
                                             </td>
@@ -297,13 +300,12 @@ const MarksReview = () => {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-center">
-                                                <button 
+                                                <button
                                                     onClick={() => handleOpenReview(student)}
-                                                    className={`p-2 rounded-lg transition-colors flex flex-col items-center gap-1 ${
-                                                        student.review_status === 'Rejected' ? 'bg-red-50 text-red-600' : 
-                                                        student.review_status === 'Approved' ? 'bg-emerald-50 text-emerald-600' : 
-                                                        'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                                                    }`}
+                                                    className={`p-2 rounded-lg transition-colors flex flex-col items-center gap-1 ${student.review_status === 'Rejected' ? 'bg-red-50 text-red-600' :
+                                                            student.review_status === 'Approved' ? 'bg-emerald-50 text-emerald-600' :
+                                                                'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                                        }`}
                                                 >
                                                     <MessageSquare size={16} />
                                                     <span className="text-[8px] font-black">{student.review_status || 'REVIEW'}</span>
@@ -317,7 +319,7 @@ const MarksReview = () => {
                     </div>
 
                     <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-between items-center z-20 sticky bottom-0">
-                         <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-2">
                             <div className="text-sm text-slate-500 max-w-xl">
                                 <span className="font-bold text-amber-600 block mb-1">Important Note</span>
                                 Once you lock these marks, they cannot be modified by the faculty. The system will permanently write the Best of 3 calculations to the database.
@@ -330,7 +332,7 @@ const MarksReview = () => {
                                 <AlertCircle size={14} />
                                 Reject Section & Send Back to Faculty
                             </button>
-                         </div>
+                        </div>
                         <button
                             disabled={isLocking}
                             onClick={handleLockMarks}
@@ -384,7 +386,7 @@ const MarksReview = () => {
                                     <MessageSquare size={16} className="text-indigo-500" />
                                     Review Comments
                                 </label>
-                                <textarea 
+                                <textarea
                                     className="w-full h-24 p-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-sm resize-none"
                                     placeholder="Enter your observations or reason for rejection..."
                                     value={reviewComment}
@@ -393,14 +395,14 @@ const MarksReview = () => {
                             </div>
                         </div>
                         <div className="p-6 bg-slate-50 flex gap-3">
-                            <button 
+                            <button
                                 onClick={() => handleSaveReview('Rejected')}
                                 disabled={isSavingReview}
                                 className="flex-1 py-3.5 bg-white border-2 border-red-500 text-red-600 font-black rounded-xl hover:bg-red-50 transition-all uppercase tracking-widest text-xs"
                             >
                                 {isSavingReview ? 'Saving...' : 'Reject Marks'}
                             </button>
-                            <button 
+                            <button
                                 onClick={() => handleSaveReview('Approved')}
                                 disabled={isSavingReview}
                                 className="flex-1 py-3.5 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all uppercase tracking-widest text-xs flex items-center justify-center gap-2"
