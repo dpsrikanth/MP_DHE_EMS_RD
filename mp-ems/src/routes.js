@@ -8,7 +8,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Universities from "./pages/Universities";
 import Colleges from "./pages/Colleges";
 import Programs from "./pages/Programs";
-import Batches from "./pages/Batches";
+import Batches from './pages/Batches';
 import AcademicYears from "./pages/AcademicYears";
 import Semesters from "./pages/Semesters";
 import Subjects from "./pages/Subjects";

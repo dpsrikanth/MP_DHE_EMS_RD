@@ -1257,12 +1257,21 @@ const getMasterSubjects = async (req, res) => {
   try {
     const result = await client.query(
       `SELECT ms.id, ms.subject_code, ms.name, ms.status, ms.created_at, 
+              ms.program_id, ms.semester_id, ms.mapping_type, ms.is_mandatory, 
+              ms.has_examination, ms.periods_per_week, ms.teacher_id,
+              mp.name AS program_name,
+              mse.semester_name,
+              u.name AS teacher_name,
               COALESCE(
                 (SELECT json_agg(department_id) 
                  FROM master_subject_departments 
                  WHERE subject_id = ms.id), 
               '[]'::json) as department_ids
        FROM master_subjects ms 
+       LEFT JOIN master_programs mp ON ms.program_id = mp.id
+       LEFT JOIN master_semesters mse ON ms.semester_id = mse.id
+       LEFT JOIN master_teachers mt ON ms.teacher_id = mt.id
+       LEFT JOIN users u ON mt.user_id = u.id
        WHERE ms.status IS NULL OR ms.status = 'Active' 
        ORDER BY ms.id`
     );
@@ -1275,10 +1284,23 @@ const getMasterSubjects = async (req, res) => {
 
 const createMasterSubject = async (req, res) => {
   try {
-    const { subject_code, name, department_ids } = req.body;
+    const { 
+      subject_code, name, department_ids,
+      program_id, semester_id, mapping_type, is_mandatory, 
+      has_examination, periods_per_week, teacher_id 
+    } = req.body;
+    
     if (!subject_code || !name) return res.status(400).json({ message: "Subject code and name are required" });
+    
     await client.query('BEGIN');
-    const result = await client.query("INSERT INTO master_subjects (subject_code, name, status) VALUES ($1, $2, 'Active') RETURNING id, subject_code, name, status, created_at", [subject_code, name]);
+    const result = await client.query(
+      `INSERT INTO master_subjects (
+        subject_code, name, program_id, semester_id, mapping_type, 
+        is_mandatory, has_examination, periods_per_week, teacher_id, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Active') 
+      RETURNING *`, 
+      [subject_code, name, program_id, semester_id, mapping_type, is_mandatory, has_examination, periods_per_week, teacher_id]
+    );
     const subjectId = result.rows[0].id;
     if (department_ids && Array.isArray(department_ids) && department_ids.length > 0) {
       for (const deptId of department_ids) {
@@ -1297,7 +1319,14 @@ const createMasterSubject = async (req, res) => {
 const getMasterSubject = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query("SELECT id, subject_code, name, status, created_at FROM master_subjects WHERE id = $1", [id]);
+    const result = await client.query(
+      `SELECT id, subject_code, name, status, created_at,
+              program_id, semester_id, mapping_type, is_mandatory, 
+              has_examination, periods_per_week, teacher_id
+       FROM master_subjects 
+       WHERE id = $1`, 
+      [id]
+    );
     if (result.rows.length === 0) return res.status(404).json({ message: "Master subject not found" });
     res.json(result.rows[0]);
   } catch (error) {
@@ -1309,14 +1338,30 @@ const getMasterSubject = async (req, res) => {
 const updateMasterSubject = async (req, res) => {
   try {
     const { id } = req.params;
-    const { subject_code, name, department_ids } = req.body;
+    const { 
+      subject_code, name, department_ids,
+      program_id, semester_id, mapping_type, is_mandatory, 
+      has_examination, periods_per_week, teacher_id 
+    } = req.body;
+    
     if (!subject_code || !name) return res.status(400).json({ message: "Subject code and name are required" });
+    
     await client.query('BEGIN');
-    const result = await client.query("UPDATE master_subjects SET subject_code = $1, name = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, subject_code, name, created_at", [subject_code, name, id]);
+    const result = await client.query(
+      `UPDATE master_subjects 
+       SET subject_code = $1, name = $2, program_id = $3, semester_id = $4, 
+           mapping_type = $5, is_mandatory = $6, has_examination = $7, 
+           periods_per_week = $8, teacher_id = $9, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $10 
+       RETURNING *`, 
+      [subject_code, name, program_id, semester_id, mapping_type, is_mandatory, has_examination, periods_per_week, teacher_id, id]
+    );
+    
     if (result.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ message: "Master subject not found" });
     }
+    
     if (department_ids && Array.isArray(department_ids)) {
       await client.query("DELETE FROM master_subject_departments WHERE subject_id = $1", [id]);
       for (const deptId of department_ids) {
@@ -1524,6 +1569,99 @@ const deleteMasterBatch = async (req, res) => {
     res.json({ message: "Batch deleted successfully" });
   } catch (error) {
     console.error("Delete master batch error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getSubjectMappings = async (req, res) => {
+  try {
+    const result = await client.query(
+      `SELECT 
+        msm.*,
+        mp.name AS program_name,
+        mse.semester_name,
+        ms.name AS subject_name,
+        ms.subject_code,
+        mt.name AS teacher_name,
+        mt.employee_code AS teacher_employee_number
+      FROM master_subject_mappings msm
+      LEFT JOIN master_programs mp ON msm.program_id = mp.id
+      LEFT JOIN master_semesters mse ON msm.semester_id = mse.id
+      LEFT JOIN master_subjects ms ON msm.subject_id = ms.id
+      LEFT JOIN master_teachers mt ON msm.teacher_id = mt.id
+      WHERE msm.status = 'Active'
+      ORDER BY msm.id DESC`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get subject mappings error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const createSubjectMapping = async (req, res) => {
+  try {
+    const { 
+      program_id, semester_id, subject_id, teacher_id, 
+      mapping_type, is_mandatory, has_examination, periods_per_week 
+    } = req.body;
+
+    if (!program_id || !semester_id || !subject_id) {
+      return res.status(400).json({ message: "Program, Semester, and Subject are required" });
+    }
+
+    const result = await client.query(
+      `INSERT INTO master_subject_mappings (
+        program_id, semester_id, subject_id, teacher_id, 
+        mapping_type, is_mandatory, has_examination, periods_per_week, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'Active')
+      RETURNING *`,
+      [program_id, semester_id, subject_id, teacher_id, mapping_type, is_mandatory, has_examination, periods_per_week]
+    );
+    res.status(201).json({ message: "Subject mapping created successfully", data: result.rows[0] });
+  } catch (error) {
+    console.error("Create subject mapping error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const updateSubjectMapping = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { 
+      program_id, semester_id, subject_id, teacher_id, 
+      mapping_type, is_mandatory, has_examination, periods_per_week 
+    } = req.body;
+
+    const result = await client.query(
+      `UPDATE master_subject_mappings 
+       SET program_id = $1, semester_id = $2, subject_id = $3, teacher_id = $4, 
+           mapping_type = $5, is_mandatory = $6, has_examination = $7, 
+           periods_per_week = $8, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $9
+       RETURNING *`,
+      [program_id, semester_id, subject_id, teacher_id, mapping_type, is_mandatory, has_examination, periods_per_week, id]
+    );
+
+    if (result.rows.length === 0) return res.status(404).json({ message: "Mapping not found" });
+    res.json({ message: "Subject mapping updated successfully", data: result.rows[0] });
+  } catch (error) {
+    console.error("Update subject mapping error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const deleteSubjectMapping = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await client.query(
+      `UPDATE master_subject_mappings SET status = 'Inactive', updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id`,
+      [id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: "Mapping not found" });
+    res.json({ message: "Subject mapping deleted successfully" });
+  } catch (error) {
+    console.error("Delete subject mapping error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -2293,5 +2431,10 @@ module.exports = {
   getStudentsForMarks,
   saveTeacherMarks,
   getMarksForApproval,
-  approveRejectMarks
+  approveRejectMarks,
+  // Subject Mapping
+  getSubjectMappings,
+  createSubjectMapping,
+  updateSubjectMapping,
+  deleteSubjectMapping
 };
