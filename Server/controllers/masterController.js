@@ -15,7 +15,7 @@ const getMasters = async (req, res) => {
       FROM master_subjects s ORDER BY s.id
     `);
 
-    if (user && user.college_id) {
+    if (user && user.college_id && user.role !== 'admin' && user.role !== 'superAdmin') {
       policies = await client.query(`
         SELECT p.id, p.name 
         FROM master_policies p

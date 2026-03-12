@@ -93,7 +93,7 @@ exports.enterStudentMarks = async (req, res) => {
         // Basic validation: Check if marks are locked
         if (marksData.length > 0) {
             const { subject_id } = marksData[0];
-            
+
             // Look up the workflow status for this specific section/college/semester
             const checkQuery = `
                 SELECT status FROM marks_workflow_status 
@@ -111,7 +111,7 @@ exports.enterStudentMarks = async (req, res) => {
                         WHERE subject_id = $1 AND student_id = $2 AND college_id = $3 
                         AND semester_id = $4 AND academic_year_id = $5 AND section = $6
                     `;
-                    const studentReviewRes = await db.query(studentReviewQuery, 
+                    const studentReviewRes = await db.query(studentReviewQuery,
                         [subject_id, data.student_id, college_id, semester_id, academic_year_id, section]);
                     const studentStatus = studentReviewRes.rows.length > 0 ? studentReviewRes.rows[0].status : 'Pending';
 
@@ -127,7 +127,7 @@ exports.enterStudentMarks = async (req, res) => {
                             const existing = existingRes.rows[0];
                             const isMarksSame = parseFloat(existing.marks_obtained) === parseFloat(data.marks_obtained);
                             const isAbsentSame = existing.is_absent === data.is_absent;
-                            
+
                             if (isMarksSame && isAbsentSame) {
                                 continue; // No change for this locked student, proceed to next
                             }
@@ -148,7 +148,15 @@ exports.enterStudentMarks = async (req, res) => {
                     (student_id, subject_id, component_id, marks_obtained, is_absent, entered_by_faculty_id) 
                     VALUES ($1, $2, $3, $4, $5, $6) 
                     ON CONFLICT (student_id, component_id) 
-                    DO UPDATE SET marks_obtained = EXCLUDED.marks_obtained, is_absent = EXCLUDED.is_absent, updated_at = CURRENT_TIMESTAMP
+                    DO UPDATE SET 
+                        updated_at = CASE 
+                            WHEN student_internal_marks.marks_obtained != EXCLUDED.marks_obtained 
+                                 OR student_internal_marks.is_absent != EXCLUDED.is_absent 
+                            THEN CURRENT_TIMESTAMP 
+                            ELSE student_internal_marks.updated_at 
+                        END,
+                        marks_obtained = EXCLUDED.marks_obtained, 
+                        is_absent = EXCLUDED.is_absent
                 `;
                 await client.query(query, [data.student_id, data.subject_id, data.component_id, data.marks_obtained, data.is_absent, faculty_id]);
             }
@@ -180,11 +188,27 @@ exports.submitMarks = async (req, res) => {
         try {
             await client.query('BEGIN');
 
-            const checkQuery = `SELECT id FROM marks_workflow_status WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5`;
+            const checkQuery = `SELECT id, status, updated_at FROM marks_workflow_status WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5`;
             const checkRes = await client.query(checkQuery, [college_id, subject_id, semester_id, academic_year_id, section]);
 
             if (checkRes.rows.length > 0) {
-                await client.query(`UPDATE marks_workflow_status SET status = 'Submitted', updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [checkRes.rows[0].id]);
+                const workflow = checkRes.rows[0];
+
+                // If rejected, ensure at least one mark was updated AFTER the rejection
+                if (workflow.status === 'Rejected') {
+                    const changeCheckQuery = `
+                        SELECT 1 FROM student_internal_marks 
+                        WHERE subject_id = $1 AND updated_at > $2
+                        AND entered_by_faculty_id = $3
+                        LIMIT 1
+                    `;
+                    const changeCheckRes = await client.query(changeCheckQuery, [subject_id, workflow.updated_at, faculty_id]);
+                    if (changeCheckRes.rowCount === 0) {
+                        return res.status(400).json({ error: "Please update marks before resubmitting. No changes detected since rejection." });
+                    }
+                }
+
+                await client.query(`UPDATE marks_workflow_status SET status = 'Submitted', updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [workflow.id]);
             } else {
                 await client.query(`
                     INSERT INTO marks_workflow_status 

@@ -299,21 +299,41 @@ exports.deleteFacultyAssignment = async (req, res) => {
 exports.getMarksWorkflowStatus = async (req, res) => {
     try {
         const { college_id, semester_id } = req.query;
+        const { role, department_id } = req.user;
+
         let query = `
-            SELECT ws.*, s.name as subject_name, sem.semester_name as semester
+            SELECT ws.*, s.name as subject_name, sem.semester_name as semester, 
+                   mp.name as program_name, md.department_name
             FROM marks_workflow_status ws
             LEFT JOIN master_subjects s ON ws.subject_id = s.id
             LEFT JOIN master_semesters sem ON ws.semester_id = sem.id
+            LEFT JOIN policy_program_subjects pps ON ws.subject_id = pps.subject_id 
+                AND ws.college_id = pps.college_id 
+                AND ws.semester_id = pps.semester_id
+            LEFT JOIN master_programs mp ON pps.program_id = mp.id
+            LEFT JOIN master_departments md ON pps.department_id = md.id
             WHERE ws.college_id = $1
         `;
         let params = [college_id];
+        let paramCount = 1;
+
         if (semester_id) {
-            query += ` AND ws.semester_id = $2`;
+            paramCount++;
+            query += ` AND ws.semester_id = $${paramCount}`;
             params.push(semester_id);
         }
+
+        // HOD filtering
+        if (role === 'HOD' && department_id) {
+            paramCount++;
+            query += ` AND pps.department_id = $${paramCount}`;
+            params.push(department_id);
+        }
+
         const result = await db.query(query, params);
         res.status(200).json(result.rows);
     } catch (error) {
+        console.error("getMarksWorkflowStatus error:", error);
         res.status(500).json({ error: "Failed to fetch workflow status" });
     }
 };
@@ -321,7 +341,33 @@ exports.getMarksWorkflowStatus = async (req, res) => {
 exports.updateWorkflowStatus = async (req, res) => {
     try {
         const { college_id, subject_id, semester_id, academic_year_id, section, status } = req.body;
-        const approved_by = req.user ? req.user.id : null; // Assuming auth middleware sets req.user
+        const { id: approved_by, role } = req.user;
+
+        // Security: Only allow specific roles for specific status changes
+        if (status === 'Locked' && role !== 'college_admin') {
+            return res.status(403).json({ error: "Only College Admins can lock marks" });
+        }
+        if ((status === 'Approved' || status === 'Rejected') && (role !== 'HOD' && role !== 'college_admin')) {
+            return res.status(403).json({ error: "Unauthorized status change" });
+        }
+
+        let finalStatus = status;
+        let responseMessage = `Workflow status updated to ${status}`;
+
+        // If trying to approve, check if any individual students are rejected
+        if (status === 'Approved') {
+            const rejectionCheck = await db.query(
+                `SELECT 1 FROM student_marks_review 
+                 WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 
+                 AND academic_year_id = $4 AND section = $5 AND status = 'Rejected' LIMIT 1`,
+                [college_id, subject_id, semester_id, academic_year_id, section]
+            );
+
+            if (rejectionCheck.rowCount > 0) {
+                finalStatus = 'Rejected';
+                responseMessage = "Section rejected due to individual student-wise rejections. Faculty can now edit rejected records.";
+            }
+        }
 
         const query = `
             INSERT INTO marks_workflow_status 
@@ -331,14 +377,14 @@ exports.updateWorkflowStatus = async (req, res) => {
             DO UPDATE SET status = EXCLUDED.status, approved_by = EXCLUDED.approved_by, updated_at = CURRENT_TIMESTAMP
             RETURNING *;
         `;
-        const result = await db.query(query, [college_id, subject_id, semester_id, academic_year_id, section, status, approved_by]);
+        const result = await db.query(query, [college_id, subject_id, semester_id, academic_year_id, section, finalStatus, approved_by]);
 
         // Audit log 
         if (approved_by) {
             await db.query(`INSERT INTO audit_logs (user_id, action, entity_type, entity_id) VALUES ($1, $2, 'MARKS_WORKFLOW', $3)`,
-                [approved_by, `STATUS_CHANGED_TO_${status}`, result.rows[0].id]);
+                [approved_by, `STATUS_CHANGED_TO_${finalStatus}`, result.rows[0].id]);
         }
-        res.status(200).json({ message: `Workflow status updated to ${status}`, data: result.rows[0] });
+        res.status(200).json({ message: responseMessage, data: result.rows[0], status: finalStatus });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Failed to update workflow status" });
@@ -374,6 +420,20 @@ exports.getMarksTracking = async (req, res) => {
 exports.reviewMarks = async (req, res) => {
     try {
         const { subject_id, section, college_id, semester_id, academic_year_id } = req.query;
+        const { role, department_id } = req.user;
+
+        // Security: HOD can only review their department's subjects
+        if (role === 'HOD' && department_id) {
+            const deptCheck = await db.query(
+                `SELECT 1 FROM policy_program_subjects 
+                 WHERE subject_id = $1 AND college_id = $2 AND department_id = $3`,
+                [subject_id, college_id, department_id]
+            );
+            if (deptCheck.rows.length === 0) {
+                return res.status(403).json({ error: "Unauthorized: Subject does not belong to your department" });
+            }
+        }
+
         // Fetch raw marks for all students for this subject
         const query = `
             SELECT sim.*, s.name as student_name, s.rollnumber, 
@@ -394,13 +454,13 @@ exports.reviewMarks = async (req, res) => {
         let studentsObj = {};
         for (let row of result.rows) {
             if (!studentsObj[row.student_id]) {
-                studentsObj[row.student_id] = { 
-                    student_id: row.student_id, 
-                    student_name: row.student_name, 
-                    rollnumber: row.rollnumber, 
+                studentsObj[row.student_id] = {
+                    student_id: row.student_id,
+                    student_name: row.student_name,
+                    rollnumber: row.rollnumber,
                     review_status: row.review_status || 'Pending',
                     review_comment: row.review_comment || '',
-                    marks: [] 
+                    marks: []
                 };
             }
             studentsObj[row.student_id].marks.push({
@@ -420,7 +480,19 @@ exports.reviewMarks = async (req, res) => {
 exports.saveStudentReview = async (req, res) => {
     try {
         const { college_id, subject_id, semester_id, academic_year_id, section, student_id, status, comment } = req.body;
-        const reviewed_by = req.user ? req.user.id : null;
+        const { id: reviewed_by, role, department_id } = req.user;
+
+        // Security: HOD can only review their department's subjects
+        if (role === 'HOD' && department_id) {
+            const deptCheck = await db.query(
+                `SELECT 1 FROM policy_program_subjects 
+                 WHERE subject_id = $1 AND college_id = $2 AND department_id = $3`,
+                [subject_id, college_id, department_id]
+            );
+            if (deptCheck.rows.length === 0) {
+                return res.status(403).json({ error: "Unauthorized: Subject does not belong to your department" });
+            }
+        }
 
         const query = `
             INSERT INTO student_marks_review 
@@ -431,7 +503,7 @@ exports.saveStudentReview = async (req, res) => {
             RETURNING *;
         `;
         const result = await db.query(query, [college_id, subject_id, semester_id, academic_year_id, section, student_id, status, comment, reviewed_by]);
-        
+
         res.status(200).json({ message: "Student review saved", data: result.rows[0] });
     } catch (error) {
         console.error(error);
@@ -467,7 +539,11 @@ exports.rejectWorkflow = async (req, res) => {
 exports.lockMarks = async (req, res) => {
     try {
         const { subject_id, section, college_id, semester_id, academic_year_id } = req.body;
-        const approved_by = req.user ? req.user.id : null;
+        const { id: approved_by, role } = req.user;
+
+        if (role !== 'college_admin') {
+            return res.status(403).json({ error: "Only College Admins can lock marks" });
+        }
 
         const client = await db.connect();
         try {
@@ -480,7 +556,7 @@ exports.lockMarks = async (req, res) => {
                 AND semester_id = $4 AND academic_year_id = $5
             `;
             const reviewStatusRes = await client.query(reviewStatusQuery, [subject_id, section, college_id, semester_id, academic_year_id]);
-            
+
             const rejections = reviewStatusRes.rows.filter(r => r.status === 'Rejected');
             const totalReviewed = reviewStatusRes.rows.length;
 
@@ -502,7 +578,7 @@ exports.lockMarks = async (req, res) => {
                 `, [college_id, subject_id, semester_id, academic_year_id, section, approved_by]);
 
                 await client.query('COMMIT');
-                return res.status(200).json({ 
+                return res.status(200).json({
                     message: "Section rejected due to student-wise rejections. Faculty can now edit rejected records.",
                     status: 'Rejected'
                 });

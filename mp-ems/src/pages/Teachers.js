@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
 import {
-  Users, 
-  Plus, 
-  Pencil, 
-  X, 
+  Users,
+  Plus,
+  Pencil,
+  X,
   Check,
   Mail,
   Building,
@@ -66,20 +66,20 @@ const Teachers = () => {
   const [designationOptions, setDesignationOptions] = useState([]);
   const [departmentOptions, setDepartmentOptions] = useState([]);
   const [collegeOptions, setCollegeOptions] = useState([]);
-  
+
   // apply designation filter ahead of the table hook
   // teachers data may include a designation object or string depending on API
   const filteredByDesignation = designationFilter && designationFilter !== 'All'
     ? data.filter(d => {
-        let des = d.designation;
-        if (des && typeof des === 'object') {
-          // API might return { designation_name: 'Professor' }
-          des = des.designation_name || des.name || '';
-        }
-        return des === designationFilter;
-      })
+      let des = d.designation;
+      if (des && typeof des === 'object') {
+        // API might return { designation_name: 'Professor' }
+        des = des.designation_name || des.name || '';
+      }
+      return des === designationFilter;
+    })
     : data;
-  
+
   const {
     paginatedData,
     searchQuery,
@@ -94,7 +94,7 @@ const Teachers = () => {
     totalItems,
     visibleColumns,
     toggleColumn
-  } = useDataTable(filteredByDesignation, { 
+  } = useDataTable(filteredByDesignation, {
     searchFields: ['id', 'name', 'email', 'college_name', 'department', 'designation'],
     initialSort: { field: 'id', direction: 'desc' },
     initialPageSize: 10,
@@ -120,14 +120,15 @@ const Teachers = () => {
     joining_date: '',
     phone: '',
     address: '',
-    status: true, employee_category_name: '', first_name: '', middle_name: '', last_name: '', job_title: '', employee_position_name: '', employee_department_name: '', employee_grade_name: '', experience_detail: '', experience_months: '', marital_status: '', father_name: '', mother_name: '', spouse_name: '', blood_group: '', country_name: '', home_address_line1: '', home_city: '', home_state: '', home_country_name: '', office_phone1: '', office_phone2: '', office_state: '', home_phone1: '', fax: '' });
+    status: true, employee_category_name: '', first_name: '', middle_name: '', last_name: '', job_title: '', employee_position_name: '', employee_department_name: '', employee_grade_name: '', experience_detail: '', experience_months: '', marital_status: '', father_name: '', mother_name: '', spouse_name: '', blood_group: '', country_name: '', home_address_line1: '', home_city: '', home_state: '', home_country_name: '', office_phone1: '', office_phone2: '', office_state: '', home_phone1: '', fax: ''
+  });
   const [addErrors, setAddErrors] = useState({});
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
   const [editForm, setEditForm] = useState({
-    id: '', name: '', email: '', college_id: '', designation_id: '', department_id: '', qualification: '', experience: '', specialization: '', pan_no: '', aadhaar_no: '', dob: '', gender: '', joining_date: '', phone: '', address: '', status: true, employee_category_name: '', first_name: '', middle_name: '', last_name: '', job_title: '', employee_position_name: '', employee_department_name: '', employee_grade_name: '', experience_detail: '', experience_months: '', marital_status: '', father_name: '', mother_name: '', spouse_name: '', blood_group: '', country_name: '', home_address_line1: '', home_city: '', home_state: '', home_country_name: '', office_phone1: '', office_phone2: '', office_state: '', home_phone1: '', fax: '' 
+    id: '', name: '', email: '', college_id: '', designation_id: '', department_id: '', qualification: '', experience: '', specialization: '', pan_no: '', aadhaar_no: '', dob: '', gender: '', joining_date: '', phone: '', address: '', status: true, employee_category_name: '', first_name: '', middle_name: '', last_name: '', job_title: '', employee_position_name: '', employee_department_name: '', employee_grade_name: '', experience_detail: '', experience_months: '', marital_status: '', father_name: '', mother_name: '', spouse_name: '', blood_group: '', country_name: '', home_address_line1: '', home_city: '', home_state: '', home_country_name: '', office_phone1: '', office_phone2: '', office_state: '', home_phone1: '', fax: ''
   });
   const [editErrors, setEditErrors] = useState({});
   const [showViewModal, setShowViewModal] = useState(false);
@@ -149,7 +150,7 @@ const Teachers = () => {
           headers: authUtils.getAuthHeader()
         })
       ]);
-      
+
       if (designResp.ok) {
         const designations = await designResp.json();
         setDesignationOptions(designations.map(d => ({
@@ -157,7 +158,7 @@ const Teachers = () => {
           name: d.designation_name
         })));
       }
-      
+
       if (deptResp.ok) {
         const departments = await deptResp.json();
         setDepartmentOptions(departments.map(d => ({
@@ -168,9 +169,9 @@ const Teachers = () => {
 
       if (collegeResp.ok) {
         const colleges = await collegeResp.json();
-         console.log("college", colleges);  
+        console.log("college", colleges);
         setCollegeOptions(colleges.map(c => ({
-         
+
           id: c.id,
           name: c.college_name
         })));
@@ -248,7 +249,50 @@ const Teachers = () => {
     setEditErrors({});
 
     fetchDropdownOptions();
-    setAddForm({ name: '', email: '', college_id: '', designation_id: '', department_id: '', qualification: '', experience: '', specialization: '', pan_no: '', aadhaar_no: '', dob: '', gender: '', joining_date: '', phone: '', address: '', status: true, employee_category_name: '', first_name: '', middle_name: '', last_name: '', job_title: '', employee_position_name: '', employee_department_name: '', employee_grade_name: '', experience_detail: '', experience_months: '', marital_status: '', father_name: '', mother_name: '', spouse_name: '', blood_group: '', country_name: '', home_address_line1: '', home_city: '', home_state: '', home_country_name: '', office_phone1: '', office_phone2: '', office_state: '', home_phone1: '', fax: '' });
+    const auth = authUtils.getAuth();
+    setAddForm({
+      name: '',
+      email: '',
+      college_id: auth.roleName === 'HOD' ? auth.collegeId : '',
+      designation_id: '',
+      department_id: auth.roleName === 'HOD' ? auth.departmentId : '',
+      qualification: '',
+      experience: '',
+      specialization: '',
+      pan_no: '',
+      aadhaar_no: '',
+      dob: '',
+      gender: '',
+      joining_date: '',
+      phone: '',
+      address: '',
+      status: true,
+      employee_category_name: '',
+      first_name: '',
+      middle_name: '',
+      last_name: '',
+      job_title: '',
+      employee_position_name: '',
+      employee_department_name: '',
+      employee_grade_name: '',
+      experience_detail: '',
+      experience_months: '',
+      marital_status: '',
+      father_name: '',
+      mother_name: '',
+      spouse_name: '',
+      blood_group: '',
+      country_name: '',
+      home_address_line1: '',
+      home_city: '',
+      home_state: '',
+      home_country_name: '',
+      office_phone1: '',
+      office_phone2: '',
+      office_state: '',
+      home_phone1: '',
+      fax: ''
+    });
     setAddErrors({});
     setAddError('');
     setShowAddModal(true);
@@ -301,12 +345,12 @@ const Teachers = () => {
     }
   };
 
-  
+
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     const errs = validate(addForm);
     if (Object.keys(errs).length > 0) return setAddErrors(errs);
-    
+
     setAddLoading(true);
     setAddError('');
     try {
@@ -349,13 +393,13 @@ const Teachers = () => {
         body: JSON.stringify(payload)
       });
       if (!resp.ok) throw new Error('Failed to add teacher');
-      
+
       const result = await resp.json();
-      
+
       if (result.data) {
         setData(prevData => [result.data, ...prevData]);
       }
-      
+
       toast.success(result.message || 'Teacher record created successfully!');
       setShowAddModal(false);
     } catch (err) {
@@ -372,10 +416,10 @@ const Teachers = () => {
         headers: authUtils.getAuthHeader()
       });
       if (!resp.ok) throw new Error('Failed to fetch teacher details');
-      
+
       const teacherData = await resp.json();
-      const formatDate = (d) => d ? d.toString().slice(0,10) : '';
-      setEditForm({ 
+      const formatDate = (d) => d ? d.toString().slice(0, 10) : '';
+      setEditForm({
         id: teacherData.id,
         name: teacherData.name,
         email: teacherData.email,
@@ -485,15 +529,15 @@ const Teachers = () => {
         body: JSON.stringify(payload)
       });
       if (!resp.ok) throw new Error('Failed to update teacher');
-      
+
       const result = await resp.json();
-      
+
       if (result.data) {
-        setData(prevData => 
+        setData(prevData =>
           prevData.map(item => item.id === editForm.id ? result.data : item)
         );
       }
-      
+
       toast.success(result.message || 'Teacher record updated successfully!');
       setShowEditModal(false);
     } catch (err) {
@@ -503,7 +547,7 @@ const Teachers = () => {
     }
   };
 
-const handleArchive = (item) => {
+  const handleArchive = (item) => {
     setDeleteTarget(item);
     setShowDeleteModal(true);
   };
@@ -515,14 +559,14 @@ const handleArchive = (item) => {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() }
       });
-      
+
       if (!resp.ok) throw new Error('Failed to delete teacher');
-      
+
       const result = await resp.json();
-      
+
       // Remove the record from the table
       setData(prevData => prevData.filter(t => t.id !== deleteTarget.id));
-      
+
       setShowDeleteModal(false);
       setDeleteTarget(null);
     } catch (err) {
@@ -560,7 +604,7 @@ const handleArchive = (item) => {
               <p className="text-sm text-slate-500 mt-1 font-medium tracking-tight">Manage teaching staff, their affiliations and active status</p>
             </div>
           </div>
-          
+
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-4 px-6 py-2 bg-slate-50 rounded-2xl border border-slate-100">
               <div className="text-center">
@@ -573,11 +617,11 @@ const handleArchive = (item) => {
                 <p className="text-xl font-black leading-none">{activeCount}</p>
               </div>
             </div>
-            
+
             <div className="flex flex-col md:flex-row md:items-center gap-4">
-              <TableSearch 
-                value={searchQuery} 
-                onChange={setSearchQuery} 
+              <TableSearch
+                value={searchQuery}
+                onChange={setSearchQuery}
                 placeholder="Search by name, email, college or department..."
               />
 
@@ -595,12 +639,12 @@ const handleArchive = (item) => {
                 </select>
               </div>
 
-              <ColumnVisibilitySelector 
-                columns={availableColumns} 
-                visibleColumns={visibleColumns} 
-                onToggle={toggleColumn} 
+              <ColumnVisibilitySelector
+                columns={availableColumns}
+                visibleColumns={visibleColumns}
+                onToggle={toggleColumn}
               />
-              <button 
+              <button
                 onClick={openAddModal}
                 className="inline-flex items-center gap-2 px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
               >
@@ -781,14 +825,14 @@ const handleArchive = (item) => {
                     )}
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button 
+                        <button
                           onClick={() => openEditModal(item)}
                           className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
                           title="Modify Profile"
                         >
                           <Pencil size={18} />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleArchive(item)}
                           className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                           title="Archive Teacher"
@@ -802,9 +846,9 @@ const handleArchive = (item) => {
               ) : (
                 <tr>
                   <td colSpan="5" className="px-8 py-12 text-center">
-                   <div className="flex flex-col items-center gap-2">
+                    <div className="flex flex-col items-center gap-2">
                       <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No faculty members found</p>
-                      <button 
+                      <button
                         onClick={() => setSearchQuery('')}
                         className="text-xs font-black text-blue-500 hover:text-blue-600 underline uppercase tracking-tighter"
                       >
@@ -818,7 +862,7 @@ const handleArchive = (item) => {
           </table>
         </div>
 
-        <TablePagination 
+        <TablePagination
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
@@ -832,7 +876,7 @@ const handleArchive = (item) => {
       {(showAddModal || showEditModal) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={showAddModal ? closeAddModal : closeEditModal} />
-          
+
           <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
             {/* Header */}
             <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
@@ -844,14 +888,14 @@ const handleArchive = (item) => {
                   <User size={12} /> Personnel Management System
                 </p>
               </div>
-              <button 
+              <button
                 onClick={showAddModal ? closeAddModal : closeEditModal}
                 className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-2xl transition-all"
               >
                 <X size={20} />
               </button>
             </div>
-            
+
             {/* Body */}
             <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto">
               {(addError || editError) && (
@@ -865,51 +909,53 @@ const handleArchive = (item) => {
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="name" 
-                      value={showAddModal ? addForm.name : editForm.name} 
-                      onChange={showAddModal ? handleAddChange : handleEditChange} 
+                    <input
+                      name="name"
+                      value={showAddModal ? addForm.name : editForm.name}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. Dr. Jane Doe"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.name || editErrors.name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.name || editErrors.name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.name || editErrors.name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.name || editErrors.name}</p> }
+                  {(addErrors.name || editErrors.name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.name || editErrors.name}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Official Email</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      name="email" 
+                    <input
+                      name="email"
                       type="email"
-                      value={showAddModal ? addForm.email : editForm.email} 
-                      onChange={showAddModal ? handleAddChange : handleEditChange} 
+                      value={showAddModal ? addForm.email : editForm.email}
+                      onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="faculty@college.edu"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.email || editErrors.email) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.email || editErrors.email) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.email || editErrors.email) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.email || editErrors.email}</p> }
+                  {(addErrors.email || editErrors.email) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.email || editErrors.email}</p>}
                 </div>
 
-                <div className="space-y-2 col-span-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Institute / College</label>
-                  <div className="relative">
-                    <Building className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <select 
-                      name="college_id" 
-                      value={showAddModal ? addForm.college_id : editForm.college_id} 
-                      onChange={showAddModal ? handleAddChange : handleEditChange}
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.college_id || editErrors.college_id) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
-                    >
-                      <option value="">Select college</option>
-                      {collegeOptions.map(college => (
-                        <option key={college.id} value={college.id}>{college.name}</option>
-                      ))}
-                    </select>
+                {authUtils.getAuth().roleName !== 'HOD' && (
+                  <div className="space-y-2 col-span-2">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Institute / College</label>
+                    <div className="relative">
+                      <Building className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                      <select
+                        name="college_id"
+                        value={showAddModal ? addForm.college_id : editForm.college_id}
+                        onChange={showAddModal ? handleAddChange : handleEditChange}
+                        className={`w-full bg-slate-50 border-2 ${(addErrors.college_id || editErrors.college_id) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
+                      >
+                        <option value="">Select college</option>
+                        {collegeOptions.map(college => (
+                          <option key={college.id} value={college.id}>{college.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {(addErrors.college_id || editErrors.college_id) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.college_id || editErrors.college_id}</p>}
                   </div>
-                  { (addErrors.college_id || editErrors.college_id) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.college_id || editErrors.college_id}</p> }
-                </div>
+                )}
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Designation</label>
@@ -919,7 +965,7 @@ const handleArchive = (item) => {
                       name="designation_id"
                       value={showAddModal ? addForm.designation_id : editForm.designation_id}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.designation_id || editErrors.designation_id) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.designation_id || editErrors.designation_id) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     >
                       <option value="">Select designation</option>
                       {designationOptions.map(opt => (
@@ -927,27 +973,29 @@ const handleArchive = (item) => {
                       ))}
                     </select>
                   </div>
-                  { (addErrors.designation_id || editErrors.designation_id) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.designation_id || editErrors.designation_id}</p> }
+                  {(addErrors.designation_id || editErrors.designation_id) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.designation_id || editErrors.designation_id}</p>}
                 </div>
 
-                <div className="space-y-2 col-span-2 md:col-span-1">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Department</label>
-                  <div className="relative">
-                    <Building className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <select
-                      name="department_id"
-                      value={showAddModal ? addForm.department_id : editForm.department_id}
-                      onChange={showAddModal ? handleAddChange : handleEditChange}
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.department_id || editErrors.department_id) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
-                    >
-                      <option value="">Select department</option>
-                      {departmentOptions.map(opt => (
-                        <option key={opt.id} value={opt.id}>{opt.name}</option>
-                      ))}
-                    </select>
+                {authUtils.getAuth().roleName !== 'HOD' && (
+                  <div className="space-y-2 col-span-2 md:col-span-1">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Department</label>
+                    <div className="relative">
+                      <Building className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                      <select
+                        name="department_id"
+                        value={showAddModal ? addForm.department_id : editForm.department_id}
+                        onChange={showAddModal ? handleAddChange : handleEditChange}
+                        className={`w-full bg-slate-50 border-2 ${(addErrors.department_id || editErrors.department_id) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
+                      >
+                        <option value="">Select department</option>
+                        {departmentOptions.map(opt => (
+                          <option key={opt.id} value={opt.id}>{opt.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {(addErrors.department_id || editErrors.department_id) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.department_id || editErrors.department_id}</p>}
                   </div>
-                  { (addErrors.department_id || editErrors.department_id) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.department_id || editErrors.department_id}</p> }
-                </div>
+                )}
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Qualification</label>
@@ -959,10 +1007,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.qualification : editForm.qualification}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. M.Sc., Ph.D."
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.qualification || editErrors.qualification) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.qualification || editErrors.qualification) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.qualification || editErrors.qualification) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.qualification || editErrors.qualification}</p> }
+                  {(addErrors.qualification || editErrors.qualification) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.qualification || editErrors.qualification}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -976,10 +1024,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.experience : editForm.experience}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="0"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.experience || editErrors.experience) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.experience || editErrors.experience) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.experience || editErrors.experience) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.experience || editErrors.experience}</p> }
+                  {(addErrors.experience || editErrors.experience) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.experience || editErrors.experience}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -992,10 +1040,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.specialization : editForm.specialization}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. Computer Science"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.specialization || editErrors.specialization) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.specialization || editErrors.specialization) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.specialization || editErrors.specialization) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.specialization || editErrors.specialization}</p> }
+                  {(addErrors.specialization || editErrors.specialization) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.specialization || editErrors.specialization}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1010,10 +1058,10 @@ const handleArchive = (item) => {
                       placeholder="AAAAA0000A"
                       pattern="[A-Z]{5}[0-9]{4}[A-Z]"
                       maxLength={10}
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.pan_no || editErrors.pan_no) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.pan_no || editErrors.pan_no) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.pan_no || editErrors.pan_no) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.pan_no || editErrors.pan_no}</p> }
+                  {(addErrors.pan_no || editErrors.pan_no) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.pan_no || editErrors.pan_no}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1028,10 +1076,10 @@ const handleArchive = (item) => {
                       placeholder="XXXX XXXX XXXX"
                       pattern="\d{12}"
                       maxLength={12}
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.aadhaar_no || editErrors.aadhaar_no) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.aadhaar_no || editErrors.aadhaar_no) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.aadhaar_no || editErrors.aadhaar_no) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.aadhaar_no || editErrors.aadhaar_no}</p> }
+                  {(addErrors.aadhaar_no || editErrors.aadhaar_no) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.aadhaar_no || editErrors.aadhaar_no}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1043,10 +1091,10 @@ const handleArchive = (item) => {
                       type="date"
                       value={showAddModal ? addForm.dob : editForm.dob}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.dob || editErrors.dob) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.dob || editErrors.dob) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.dob || editErrors.dob) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.dob || editErrors.dob}</p> }
+                  {(addErrors.dob || editErrors.dob) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.dob || editErrors.dob}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1086,7 +1134,7 @@ const handleArchive = (item) => {
                       <span className="text-sm font-bold text-slate-700">Other</span>
                     </label>
                   </div>
-                  { (addErrors.gender || editErrors.gender) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.gender || editErrors.gender}</p> }
+                  {(addErrors.gender || editErrors.gender) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.gender || editErrors.gender}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1098,10 +1146,10 @@ const handleArchive = (item) => {
                       type="date"
                       value={showAddModal ? addForm.joining_date : editForm.joining_date}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.joining_date || editErrors.joining_date) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.joining_date || editErrors.joining_date) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.joining_date || editErrors.joining_date) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.joining_date || editErrors.joining_date}</p> }
+                  {(addErrors.joining_date || editErrors.joining_date) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.joining_date || editErrors.joining_date}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1116,10 +1164,10 @@ const handleArchive = (item) => {
                       placeholder="+91 XXXXX XXXXX"
                       pattern="(\+91[-\s]?|0)?[6-9]\d{9}"
                       maxLength={14}
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.phone || editErrors.phone) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.phone || editErrors.phone) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.phone || editErrors.phone) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.phone || editErrors.phone}</p> }
+                  {(addErrors.phone || editErrors.phone) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.phone || editErrors.phone}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2">
@@ -1131,13 +1179,13 @@ const handleArchive = (item) => {
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="Enter complete address..."
                       rows="3"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.address || editErrors.address) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl px-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold resize-none`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.address || editErrors.address) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl px-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-all font-bold resize-none`}
                     />
                   </div>
-                  { (addErrors.address || editErrors.address) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.address || editErrors.address}</p> }
+                  {(addErrors.address || editErrors.address) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.address || editErrors.address}</p>}
                 </div>
 
-                
+
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Employee Category Name</label>
                   <div className="relative">
@@ -1148,10 +1196,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.employee_category_name : editForm.employee_category_name}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. Non Teaching"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.employee_category_name || editErrors.employee_category_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.employee_category_name || editErrors.employee_category_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.employee_category_name || editErrors.employee_category_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.employee_category_name || editErrors.employee_category_name}</p> }
+                  {(addErrors.employee_category_name || editErrors.employee_category_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.employee_category_name || editErrors.employee_category_name}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1164,10 +1212,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.first_name : editForm.first_name}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. Jainendra"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.first_name || editErrors.first_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.first_name || editErrors.first_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.first_name || editErrors.first_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.first_name || editErrors.first_name}</p> }
+                  {(addErrors.first_name || editErrors.first_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.first_name || editErrors.first_name}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1180,10 +1228,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.middle_name : editForm.middle_name}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. Singh"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.middle_name || editErrors.middle_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.middle_name || editErrors.middle_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.middle_name || editErrors.middle_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.middle_name || editErrors.middle_name}</p> }
+                  {(addErrors.middle_name || editErrors.middle_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.middle_name || editErrors.middle_name}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1196,10 +1244,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.last_name : editForm.last_name}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. Harode"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.last_name || editErrors.last_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.last_name || editErrors.last_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.last_name || editErrors.last_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.last_name || editErrors.last_name}</p> }
+                  {(addErrors.last_name || editErrors.last_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.last_name || editErrors.last_name}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1212,10 +1260,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.job_title : editForm.job_title}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. Asst. Programmer"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.job_title || editErrors.job_title) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.job_title || editErrors.job_title) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.job_title || editErrors.job_title) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.job_title || editErrors.job_title}</p> }
+                  {(addErrors.job_title || editErrors.job_title) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.job_title || editErrors.job_title}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1228,10 +1276,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.employee_position_name : editForm.employee_position_name}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. Asst. Programmer"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.employee_position_name || editErrors.employee_position_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.employee_position_name || editErrors.employee_position_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.employee_position_name || editErrors.employee_position_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.employee_position_name || editErrors.employee_position_name}</p> }
+                  {(addErrors.employee_position_name || editErrors.employee_position_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.employee_position_name || editErrors.employee_position_name}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1244,10 +1292,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.employee_department_name : editForm.employee_department_name}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. ICT Cell"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.employee_department_name || editErrors.employee_department_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.employee_department_name || editErrors.employee_department_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.employee_department_name || editErrors.employee_department_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.employee_department_name || editErrors.employee_department_name}</p> }
+                  {(addErrors.employee_department_name || editErrors.employee_department_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.employee_department_name || editErrors.employee_department_name}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1260,10 +1308,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.employee_grade_name : editForm.employee_grade_name}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. A"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.employee_grade_name || editErrors.employee_grade_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.employee_grade_name || editErrors.employee_grade_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.employee_grade_name || editErrors.employee_grade_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.employee_grade_name || editErrors.employee_grade_name}</p> }
+                  {(addErrors.employee_grade_name || editErrors.employee_grade_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.employee_grade_name || editErrors.employee_grade_name}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1276,10 +1324,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.experience_detail : editForm.experience_detail}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. Served 5 years at XYZ"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.experience_detail || editErrors.experience_detail) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.experience_detail || editErrors.experience_detail) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.experience_detail || editErrors.experience_detail) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.experience_detail || editErrors.experience_detail}</p> }
+                  {(addErrors.experience_detail || editErrors.experience_detail) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.experience_detail || editErrors.experience_detail}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1292,10 +1340,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.experience_months : editForm.experience_months}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. 60"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.experience_months || editErrors.experience_months) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.experience_months || editErrors.experience_months) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.experience_months || editErrors.experience_months) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.experience_months || editErrors.experience_months}</p> }
+                  {(addErrors.experience_months || editErrors.experience_months) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.experience_months || editErrors.experience_months}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1308,10 +1356,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.marital_status : editForm.marital_status}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. Married"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.marital_status || editErrors.marital_status) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.marital_status || editErrors.marital_status) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.marital_status || editErrors.marital_status) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.marital_status || editErrors.marital_status}</p> }
+                  {(addErrors.marital_status || editErrors.marital_status) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.marital_status || editErrors.marital_status}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1324,10 +1372,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.father_name : editForm.father_name}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. Ram"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.father_name || editErrors.father_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.father_name || editErrors.father_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.father_name || editErrors.father_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.father_name || editErrors.father_name}</p> }
+                  {(addErrors.father_name || editErrors.father_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.father_name || editErrors.father_name}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1340,10 +1388,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.mother_name : editForm.mother_name}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. Sita"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.mother_name || editErrors.mother_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.mother_name || editErrors.mother_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.mother_name || editErrors.mother_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.mother_name || editErrors.mother_name}</p> }
+                  {(addErrors.mother_name || editErrors.mother_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.mother_name || editErrors.mother_name}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1356,10 +1404,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.spouse_name : editForm.spouse_name}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. Gita"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.spouse_name || editErrors.spouse_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.spouse_name || editErrors.spouse_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.spouse_name || editErrors.spouse_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.spouse_name || editErrors.spouse_name}</p> }
+                  {(addErrors.spouse_name || editErrors.spouse_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.spouse_name || editErrors.spouse_name}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1372,10 +1420,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.blood_group : editForm.blood_group}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. O+"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.blood_group || editErrors.blood_group) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.blood_group || editErrors.blood_group) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.blood_group || editErrors.blood_group) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.blood_group || editErrors.blood_group}</p> }
+                  {(addErrors.blood_group || editErrors.blood_group) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.blood_group || editErrors.blood_group}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1388,10 +1436,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.country_name : editForm.country_name}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. INDIA"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.country_name || editErrors.country_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.country_name || editErrors.country_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.country_name || editErrors.country_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.country_name || editErrors.country_name}</p> }
+                  {(addErrors.country_name || editErrors.country_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.country_name || editErrors.country_name}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1404,10 +1452,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.home_address_line1 : editForm.home_address_line1}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. 123 Main St"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.home_address_line1 || editErrors.home_address_line1) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.home_address_line1 || editErrors.home_address_line1) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.home_address_line1 || editErrors.home_address_line1) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.home_address_line1 || editErrors.home_address_line1}</p> }
+                  {(addErrors.home_address_line1 || editErrors.home_address_line1) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.home_address_line1 || editErrors.home_address_line1}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1420,10 +1468,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.home_city : editForm.home_city}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. Bhopal"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.home_city || editErrors.home_city) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.home_city || editErrors.home_city) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.home_city || editErrors.home_city) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.home_city || editErrors.home_city}</p> }
+                  {(addErrors.home_city || editErrors.home_city) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.home_city || editErrors.home_city}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1436,10 +1484,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.home_state : editForm.home_state}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. Madhya Pradesh"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.home_state || editErrors.home_state) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.home_state || editErrors.home_state) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.home_state || editErrors.home_state) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.home_state || editErrors.home_state}</p> }
+                  {(addErrors.home_state || editErrors.home_state) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.home_state || editErrors.home_state}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1452,10 +1500,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.home_country_name : editForm.home_country_name}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. INDIA"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.home_country_name || editErrors.home_country_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.home_country_name || editErrors.home_country_name) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.home_country_name || editErrors.home_country_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.home_country_name || editErrors.home_country_name}</p> }
+                  {(addErrors.home_country_name || editErrors.home_country_name) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.home_country_name || editErrors.home_country_name}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1468,10 +1516,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.office_phone1 : editForm.office_phone1}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. 0755-123456"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.office_phone1 || editErrors.office_phone1) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.office_phone1 || editErrors.office_phone1) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.office_phone1 || editErrors.office_phone1) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.office_phone1 || editErrors.office_phone1}</p> }
+                  {(addErrors.office_phone1 || editErrors.office_phone1) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.office_phone1 || editErrors.office_phone1}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1484,10 +1532,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.office_phone2 : editForm.office_phone2}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. 0755-654321"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.office_phone2 || editErrors.office_phone2) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.office_phone2 || editErrors.office_phone2) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.office_phone2 || editErrors.office_phone2) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.office_phone2 || editErrors.office_phone2}</p> }
+                  {(addErrors.office_phone2 || editErrors.office_phone2) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.office_phone2 || editErrors.office_phone2}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1500,10 +1548,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.office_state : editForm.office_state}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. Madhya Pradesh"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.office_state || editErrors.office_state) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.office_state || editErrors.office_state) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.office_state || editErrors.office_state) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.office_state || editErrors.office_state}</p> }
+                  {(addErrors.office_state || editErrors.office_state) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.office_state || editErrors.office_state}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1516,10 +1564,10 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.home_phone1 : editForm.home_phone1}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. 9876543210"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.home_phone1 || editErrors.home_phone1) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.home_phone1 || editErrors.home_phone1) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.home_phone1 || editErrors.home_phone1) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.home_phone1 || editErrors.home_phone1}</p> }
+                  {(addErrors.home_phone1 || editErrors.home_phone1) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.home_phone1 || editErrors.home_phone1}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -1532,29 +1580,29 @@ const handleArchive = (item) => {
                       value={showAddModal ? addForm.fax : editForm.fax}
                       onChange={showAddModal ? handleAddChange : handleEditChange}
                       placeholder="e.g. 0755-111111"
-                      className={`w-full bg-slate-50 border-2 ${ (addErrors.fax || editErrors.fax) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
+                      className={`w-full bg-slate-50 border-2 ${(addErrors.fax || editErrors.fax) ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white outline-none transition-all font-bold`}
                     />
                   </div>
-                  { (addErrors.fax || editErrors.fax) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.fax || editErrors.fax}</p> }
+                  {(addErrors.fax || editErrors.fax) && <p className="text-[10px] font-bold text-red-500 ml-1">{addErrors.fax || editErrors.fax}</p>}
                 </div>
 
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Personnel Status</label>
                   <div className="h-[62px] flex items-center justify-between px-6 bg-slate-50 rounded-2xl border-2 border-slate-100 group hover:bg-slate-100/50 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${ (showAddModal ? addForm.status : editForm.status) ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-200 text-slate-500' }`}>
-                        { (showAddModal ? addForm.status : editForm.status) ? <ShieldCheck size={18} /> : <ShieldAlert size={18} /> }
+                      <div className={`p-2 rounded-lg ${(showAddModal ? addForm.status : editForm.status) ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-200 text-slate-500'}`}>
+                        {(showAddModal ? addForm.status : editForm.status) ? <ShieldCheck size={18} /> : <ShieldAlert size={18} />}
                       </div>
                       <span className="text-sm font-black text-slate-700 uppercase tracking-tighter">
-                        { (showAddModal ? addForm.status : editForm.status) ? 'Active Faculty' : 'On Leave / Retired' }
+                        {(showAddModal ? addForm.status : editForm.status) ? 'Active Faculty' : 'On Leave / Retired'}
                       </span>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        name="status" 
-                        type="checkbox" 
-                        checked={showAddModal ? addForm.status : editForm.status} 
-                        onChange={showAddModal ? handleAddChange : handleEditChange} 
+                      <input
+                        name="status"
+                        type="checkbox"
+                        checked={showAddModal ? addForm.status : editForm.status}
+                        onChange={showAddModal ? handleAddChange : handleEditChange}
                         className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
@@ -1566,19 +1614,19 @@ const handleArchive = (item) => {
 
             {/* Footer */}
             <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-5">
-              <button 
+              <button
                 className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
                 onClick={showAddModal ? closeAddModal : closeEditModal}
                 disabled={addLoading || editLoading}
               >
                 Discard Changes
               </button>
-              <button 
+              <button
                 onClick={showAddModal ? handleAddSubmit : handleEditSubmit}
                 disabled={addLoading || editLoading}
                 className="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl shadow-blue-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm uppercase tracking-widest flex items-center gap-3 disabled:opacity-50 disabled:scale-100"
               >
-                { (addLoading || editLoading) ? (
+                {(addLoading || editLoading) ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <Check size={20} />
@@ -1604,13 +1652,13 @@ const handleArchive = (item) => {
                 Are you sure you want to delete <span className="font-bold text-slate-900">"{deleteTarget?.name}"</span>? This action cannot be reversed.
               </p>
               <div className="flex gap-3 w-full">
-                <button 
+                <button
                   className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all"
                   onClick={() => setShowDeleteModal(false)}
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-500/20 transition-all"
                   onClick={handleDeleteConfirm}
                 >
@@ -1637,7 +1685,7 @@ const handleArchive = (item) => {
                   <p className="text-sm text-slate-500 mt-1 font-bold uppercase tracking-wider">{viewData.name}</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setShowViewModal(false)}
                 className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm"
               >
@@ -1651,11 +1699,11 @@ const handleArchive = (item) => {
                 {/* Personal Information Section */}
                 <div className="col-span-full mb-2">
                   <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center"><User size={18}/></span>
+                    <span className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center"><User size={18} /></span>
                     Personal Information
                   </h3>
                 </div>
-                
+
                 <InfoItem label="Full Name" value={viewData.name} />
                 <InfoItem label="Email Address" value={viewData.email} />
                 <InfoItem label="Phone Number" value={viewData.phone} />
@@ -1670,11 +1718,11 @@ const handleArchive = (item) => {
                 {/* Professional Section */}
                 <div className="col-span-full mt-6 mb-2">
                   <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center"><Briefcase size={18}/></span>
+                    <span className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center"><Briefcase size={18} /></span>
                     Professional Affiliation
                   </h3>
                 </div>
-                
+
                 <InfoItem label="Designation" value={safeDisplay(viewData.designation)} />
                 <InfoItem label="Department" value={safeDisplay(viewData.department)} />
                 <InfoItem label="College" value={viewData.college_name || 'Global'} />
@@ -1692,7 +1740,7 @@ const handleArchive = (item) => {
                 {/* Documents Section */}
                 <div className="col-span-full mt-6 mb-2">
                   <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center"><IdCard size={18}/></span>
+                    <span className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center"><IdCard size={18} /></span>
                     Identification & Tax
                   </h3>
                 </div>
@@ -1703,7 +1751,7 @@ const handleArchive = (item) => {
                 {/* Address Section */}
                 <div className="col-span-full mt-6 mb-2">
                   <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center"><MapPin size={18}/></span>
+                    <span className="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center"><MapPin size={18} /></span>
                     Contact & Address Details
                   </h3>
                 </div>
@@ -1721,7 +1769,7 @@ const handleArchive = (item) => {
 
             {/* Footer */}
             <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex justify-end">
-              <button 
+              <button
                 onClick={() => setShowViewModal(false)}
                 className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm uppercase tracking-widest"
               >

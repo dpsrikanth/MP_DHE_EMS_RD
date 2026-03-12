@@ -27,6 +27,7 @@ import MarksEntry from "./pages/Faculty/MarksEntry";
 import MarksVerification from "./pages/CollegeAdmin/MarksVerification";
 import MarksReview from "./pages/CollegeAdmin/MarksReview";
 import MarksReports from "./pages/CollegeAdmin/MarksReports";
+import HODDashboard from "./pages/HOD/Dashboard";
 import Layout from "./components/Layout";
 
 const AppRoutes = () => {
@@ -62,6 +63,10 @@ const AppRoutes = () => {
       {/* Faculty Routes */}
       <Route path="/faculty/dashboard" element={<Layout><ProtectedRoute element={<FacultyDashboard />} /></Layout>} />
       <Route path="/faculty/marks-entry" element={<Layout><ProtectedRoute element={<MarksEntry />} /></Layout>} />
+
+      {/* HOD Routes */}
+      <Route path="/hod/dashboard" element={<Layout><ProtectedRoute element={<HODDashboard />} /></Layout>} />
+      <Route path="/hod/marks-approval" element={<Layout><ProtectedRoute element={<MarksApproval />} /></Layout>} />
 
       {/* New Marks Verification Routes */}
       <Route path="/admin/marks-verification" element={<Layout><ProtectedRoute element={<MarksVerification />} /></Layout>} />

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  BarChart3, 
-  Plus, 
-  Pencil, 
-  Trash2, 
-  Search, 
-  Filter, 
+import {
+  BarChart3,
+  Plus,
+  Pencil,
+  Trash2,
+  Search,
+  Filter,
   ArrowUpRight,
   GraduationCap,
   FileText,
@@ -14,6 +14,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { toast } from 'react-toastify';
+import authUtils from '../utils/authUtils';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 
@@ -23,7 +24,7 @@ import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } fr
  */
 const Marks = () => {
   const [activeTab, setActiveTab] = useState('teacher'); // 'teacher' or 'hod'
-  
+
   // Data States
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -58,6 +59,17 @@ const Marks = () => {
   // Fetch initial dropdown data (Colleges, Depts, etc)
   useEffect(() => {
     fetchFilterData();
+
+    // Auto-setup for HOD
+    const auth = authUtils.getAuth();
+    if (auth.roleName === 'HOD') {
+      setActiveTab('hod');
+      if (auth.collegeId) setSelectedCollege(auth.collegeId);
+      if (auth.departmentId) setSelectedDepartment(auth.departmentId);
+    } else if (authUtils.isFaculty()) {
+      setActiveTab('teacher');
+      if (auth.collegeId) setSelectedCollege(auth.collegeId);
+    }
   }, []);
 
   const handleMarkChange = (id, field, value) => {
@@ -65,12 +77,12 @@ const Marks = () => {
       // id passed from inputs is always item.student_id
       if (item.student_id === id) {
         const val = value === '' ? '' : Math.min(Math.max(0, Number(value)), field === 'internal_marks' ? 40 : 60);
-        
+
         const newItem = { ...item, [field]: val };
         const intMarks = Number(newItem.internal_marks) || 0;
         const extMarks = Number(newItem.external_marks) || 0;
         newItem.total_marks = intMarks + extMarks;
-        
+
         // Let's modify the item so it marks as edited
         newItem._edited = true;
         return newItem;
@@ -106,9 +118,9 @@ const Marks = () => {
         },
         body: JSON.stringify(payload)
       });
-      
+
       if (!res.ok) throw new Error('Failed to save marks');
-      
+
       alert(status === 'Draft' ? 'Drafts saved successfully' : 'Submitted for approval successfully');
       fetchData(); // reload
     } catch (err) {
@@ -132,9 +144,9 @@ const Marks = () => {
           action: action
         })
       });
-      
+
       if (!res.ok) throw new Error(`Failed to ${action} mark`);
-      
+
       alert(`Mark ${action}d successfully`);
       fetchData();
     } catch (err) {
@@ -191,7 +203,7 @@ const Marks = () => {
     totalItems,
     visibleColumns,
     toggleColumn
-  } = useDataTable(data, { 
+  } = useDataTable(data, {
     searchFields: ['id', 'student_id', 'exam_id'],
     initialSort: { field: 'id', direction: 'desc' },
     initialPageSize: 10,
@@ -213,9 +225,9 @@ const Marks = () => {
     } else {
       // HOD Approval Tab
       if (!selectedCollege || !selectedDepartment) {
-         setData([]);
-         toast.warning('Please select College and Department to load approvals.');
-         return;
+        setData([]);
+        toast.warning('Please select College and Department to load approvals.');
+        return;
       }
     }
 
@@ -226,7 +238,7 @@ const Marks = () => {
       const params = new URLSearchParams();
       if (selectedCollege) params.append('college_id', selectedCollege);
       if (selectedDepartment) params.append('department_id', selectedDepartment);
-      
+
       if (activeTab === 'teacher') {
         if (selectedProgram) params.append('program_id', selectedProgram);
         if (selectedAcademicYear) params.append('academic_year_id', selectedAcademicYear);
@@ -255,8 +267,8 @@ const Marks = () => {
     }
   };
 
-  const filteredData = data.filter(item => 
-    item.student_id?.toString().includes(searchQuery) || 
+  const filteredData = data.filter(item =>
+    item.student_id?.toString().includes(searchQuery) ||
     item.exam_id?.toString().includes(searchQuery)
   );
 
@@ -284,42 +296,46 @@ const Marks = () => {
             </p>
           </div>
         </div>
-        
-        {/* Role Tabs */}
+
+        {/* Role Tabs - only show if both roles are possible (e.g. for super admin) or hide based on role */}
         <div className="flex bg-slate-100 p-1.5 rounded-2xl">
-          <button 
-            onClick={() => { setActiveTab('teacher'); setData([]); }}
-            className={`px-6 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'teacher' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            Teacher Entry
-          </button>
-          <button 
-            onClick={() => { setActiveTab('hod'); setData([]); }}
-            className={`px-6 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'hod' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            HOD Approvals
-          </button>
+          {(authUtils.isAdmin() || authUtils.isFaculty()) && (
+            <button
+              onClick={() => { setActiveTab('teacher'); setData([]); }}
+              className={`px-6 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'teacher' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Teacher Entry
+            </button>
+          )}
+          {(authUtils.isAdmin() || authUtils.isHOD()) && (
+            <button
+              onClick={() => { setActiveTab('hod'); setData([]); }}
+              className={`px-6 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'hod' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              HOD Approvals
+            </button>
+          )}
         </div>
 
         {/* Action Buttons */}
         <div className="flex items-center gap-4">
           {activeTab === 'teacher' && data.length > 0 && (
-             <>
-               <button 
-                 onClick={() => saveSelectedMarks('Draft')}
-                 disabled={saving}
-                 className="px-6 py-3 bg-white text-indigo-600 border-2 border-indigo-100 rounded-xl font-black text-sm uppercase tracking-widest hover:border-indigo-600 transition-all disabled:opacity-50"
-               >
-                 Save Drafts
-               </button>
-               <button 
-                 onClick={() => saveSelectedMarks('Pending Approval')}
-                 disabled={saving}
-                 className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
-               >
-                 Submit to HOD
-               </button>
-             </>
+            <>
+              <button
+                onClick={() => saveSelectedMarks('Draft')}
+                disabled={saving}
+                className="px-6 py-3 bg-white text-indigo-600 border-2 border-indigo-100 rounded-xl font-black text-sm uppercase tracking-widest hover:border-indigo-600 transition-all disabled:opacity-50"
+              >
+                Save Drafts
+              </button>
+              <button
+                onClick={() => saveSelectedMarks('Pending Approval')}
+                disabled={saving}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
+              >
+                Submit to HOD
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -328,9 +344,10 @@ const Marks = () => {
       <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <div>
           <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">College</label>
-          <select 
+          <select
             value={selectedCollege} onChange={(e) => setSelectedCollege(e.target.value)}
-            className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
+            disabled={authUtils.isHOD() || authUtils.isCollegeAdmin() || authUtils.isFaculty()}
+            className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
           >
             <option value="">Select College...</option>
             {colleges.map(c => <option key={c.id} value={c.id}>{c.college_name || c.name}</option>)}
@@ -338,9 +355,10 @@ const Marks = () => {
         </div>
         <div>
           <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Department</label>
-          <select 
+          <select
             value={selectedDepartment} onChange={(e) => setSelectedDepartment(e.target.value)}
-            className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
+            disabled={authUtils.isHOD()}
+            className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
           >
             <option value="">Select Department...</option>
             {departments.map(d => <option key={d.id} value={d.id}>{d.department_name}</option>)}
@@ -350,7 +368,7 @@ const Marks = () => {
           <>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Program</label>
-              <select 
+              <select
                 value={selectedProgram} onChange={(e) => setSelectedProgram(e.target.value)}
                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
               >
@@ -360,7 +378,7 @@ const Marks = () => {
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Academic Year</label>
-              <select 
+              <select
                 value={selectedAcademicYear} onChange={(e) => setSelectedAcademicYear(e.target.value)}
                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
               >
@@ -370,7 +388,7 @@ const Marks = () => {
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Semester</label>
-              <select 
+              <select
                 value={selectedSemester} onChange={(e) => setSelectedSemester(e.target.value)}
                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
               >
@@ -380,7 +398,7 @@ const Marks = () => {
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Subject</label>
-              <select 
+              <select
                 value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)}
                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
               >
@@ -390,7 +408,7 @@ const Marks = () => {
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Exam</label>
-              <select 
+              <select
                 value={selectedExam} onChange={(e) => setSelectedExam(e.target.value)}
                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
               >
@@ -408,7 +426,7 @@ const Marks = () => {
           </>
         )}
         <div className="flex items-end">
-          <button 
+          <button
             onClick={fetchData}
             className="w-full bg-indigo-600 text-white px-8 py-3.5 rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
           >
@@ -422,17 +440,17 @@ const Marks = () => {
       <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
         {/* Table Toolbar */}
         <div className="p-8 border-b border-slate-50 bg-slate-50/30 flex flex-col lg:flex-row justify-between items-center gap-6">
-          <TableSearch 
-            value={searchQuery} 
-            onChange={setSearchQuery} 
+          <TableSearch
+            value={searchQuery}
+            onChange={setSearchQuery}
             placeholder="Search by Student ID, Exam ID, or Ref..."
             className="w-full lg:w-96"
           />
           <div className="flex items-center gap-3">
-            <ColumnVisibilitySelector 
-              columns={availableColumns} 
-              visibleColumns={visibleColumns} 
-              onToggle={toggleColumn} 
+            <ColumnVisibilitySelector
+              columns={availableColumns}
+              visibleColumns={visibleColumns}
+              onToggle={toggleColumn}
             />
             <button className="p-3.5 bg-white border-2 border-slate-100 text-slate-500 rounded-2xl hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm">
               <Filter size={20} />
@@ -462,20 +480,20 @@ const Marks = () => {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-slate-50/50">
-                  <SortHeader 
-                    label="Enrollment No" 
-                    field="enrollment_number" 
-                    currentSort={sortConfig} 
-                    onSort={handleSort} 
-                    className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-100" 
+                  <SortHeader
+                    label="Enrollment No"
+                    field="enrollment_number"
+                    currentSort={sortConfig}
+                    onSort={handleSort}
+                    className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-100"
                     visible={visibleColumns.id}
                   />
-                  <SortHeader 
-                    label="Student Info" 
-                    field="student_name" 
-                    currentSort={sortConfig} 
-                    onSort={handleSort} 
-                    className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-100" 
+                  <SortHeader
+                    label="Student Info"
+                    field="student_name"
+                    currentSort={sortConfig}
+                    onSort={handleSort}
+                    className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-100"
                     visible={visibleColumns.student}
                   />
                   {activeTab === 'teacher' ? (
@@ -517,28 +535,28 @@ const Marks = () => {
                         </div>
                       </td>
                     )}
-                    
+
                     {activeTab === 'teacher' ? (
                       <>
                         <td className="px-8 py-6">
-                           <input 
-                              type="number" 
-                              min="0" max="40"
-                              value={item.internal_marks ?? ''}
-                              onChange={(e) => handleMarkChange(item.student_id, 'internal_marks', e.target.value)}
-                              disabled={item.status === 'Approved' || item.status === 'Pending Approval'}
-                              className="w-20 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 text-center focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-400"
-                           />
+                          <input
+                            type="number"
+                            min="0" max="40"
+                            value={item.internal_marks ?? ''}
+                            onChange={(e) => handleMarkChange(item.student_id, 'internal_marks', e.target.value)}
+                            disabled={item.status === 'Approved' || item.status === 'Pending Approval'}
+                            className="w-20 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 text-center focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-400"
+                          />
                         </td>
                         <td className="px-8 py-6">
-                           <input 
-                              type="number" 
-                              min="0" max="60"
-                              value={item.external_marks ?? ''}
-                              onChange={(e) => handleMarkChange(item.student_id, 'external_marks', e.target.value)}
-                              disabled={item.status === 'Approved' || item.status === 'Pending Approval'}
-                              className="w-20 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 text-center focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-400"
-                           />
+                          <input
+                            type="number"
+                            min="0" max="60"
+                            value={item.external_marks ?? ''}
+                            onChange={(e) => handleMarkChange(item.student_id, 'external_marks', e.target.value)}
+                            disabled={item.status === 'Approved' || item.status === 'Pending Approval'}
+                            className="w-20 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 text-center focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-400"
+                          />
                         </td>
                         <td className="px-8 py-6">
                           <span className={`text-sm font-black tabular-nums ${getPerformanceColor(item.total_marks || 0, 100)} px-3 py-1.5 rounded-lg border`}>
@@ -557,24 +575,24 @@ const Marks = () => {
                         <td className="px-8 py-6 text-sm font-bold text-slate-600">{item.submitted_by}</td>
                       </>
                     )}
-                    
+
                     <td className="px-8 py-6 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-3">
                         <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-md border
-                          ${item.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                            item.status === 'Pending Approval' ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-                            'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                          ${item.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                            item.status === 'Pending Approval' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                              'bg-slate-100 text-slate-500 border-slate-200'}`}>
                           {item.status || 'Not Entered'}
                         </span>
-                        
+
                         {activeTab === 'hod' && (
                           <div className="flex items-center gap-1 ml-2">
-                             <button onClick={() => handleHodAction(item.mark_id, 'Approve')} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors border border-transparent hover:border-emerald-200" title="Approve">
-                               <CheckCircle2 size={18} />
-                             </button>
-                             <button onClick={() => handleHodAction(item.mark_id, 'Reject')} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200" title="Reject">
-                               <AlertCircle size={18} />
-                             </button>
+                            <button onClick={() => handleHodAction(item.mark_id, 'Approve')} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors border border-transparent hover:border-emerald-200" title="Approve">
+                              <CheckCircle2 size={18} />
+                            </button>
+                            <button onClick={() => handleHodAction(item.mark_id, 'Reject')} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200" title="Reject">
+                              <AlertCircle size={18} />
+                            </button>
                           </div>
                         )}
                       </div>
@@ -586,7 +604,7 @@ const Marks = () => {
           )}
         </div>
 
-        <TablePagination 
+        <TablePagination
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
@@ -602,7 +620,7 @@ const Marks = () => {
             </div>
             <h3 className="text-3xl font-black text-slate-900 mb-3 tracking-tight italic">Ecosystem Void</h3>
             <p className="text-slate-500 font-medium max-w-sm mb-10 leading-relaxed">No marks records found in the system for the current criteria. Start by recording a new evaluation.</p>
-            <button 
+            <button
               onClick={() => setSearchQuery('')}
               className="flex items-center gap-2 px-8 py-4 bg-indigo-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-600 transition-all transform hover:-translate-y-1"
             >
@@ -627,7 +645,7 @@ const Marks = () => {
           </div>
         </div>
         <div className="bg-slate-900 p-10 rounded-[3rem] text-white shadow-2xl shadow-slate-900/20 relative overflow-hidden group border border-slate-800">
-           <div className="absolute top-0 right-0 p-8 text-sky-500 opacity-20 group-hover:scale-150 transition-transform duration-700">
+          <div className="absolute top-0 right-0 p-8 text-sky-500 opacity-20 group-hover:scale-150 transition-transform duration-700">
             <TrendingUp size={120} />
           </div>
           <h4 className="text-xl font-black mb-4 uppercase tracking-tighter">Trend Insights</h4>

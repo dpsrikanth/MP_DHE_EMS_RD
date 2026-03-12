@@ -1,0 +1,166 @@
+import {
+    Users,
+    GraduationCap,
+    BookOpen,
+    FileText,
+    LayoutDashboard,
+    Activity,
+    Award,
+    CheckCircle,
+    AlertCircle,
+    Clock
+} from "lucide-react";
+import React, { useState, useEffect } from "react";
+import authUtils from "../../utils/authUtils";
+
+const HODDashboard = () => {
+    const [stats, setStats] = useState({
+        pendingApprovals: 0,
+        totalStudents: 0,
+        totalFaculty: 0,
+        activeSubjects: 0
+    });
+
+    const [departmentName, setDepartmentName] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchHODData = async () => {
+            try {
+                const { collegeId, departmentId, token } = authUtils.getAuth();
+                const user = JSON.parse(localStorage.getItem("user") || "{}");
+                setDepartmentName(user.department_name || "Department");
+
+                const authHeader = { headers: { Authorization: `Bearer ${token}` } };
+
+                // Fetch stats (Mocked for now or using existing APIs with filters)
+                // In a real scenario, we'd have a specific HOD stats endpoint
+                const response = await fetch(`http://localhost:8080/api/marks/approvals?college_id=${collegeId}&department_id=${departmentId}`, authHeader);
+                if (response.ok) {
+                    const approvals = await response.json();
+                    setStats(prev => ({ ...prev, pendingApprovals: approvals.length }));
+                }
+
+                // Fetch Department Teacher Count
+                const tResponse = await fetch(`http://localhost:8080/api/teachers?college_id=${collegeId}&department_id=${departmentId}`, authHeader);
+                if (tResponse.ok) {
+                    const teachers = await tResponse.json();
+                    setStats(prev => ({ ...prev, totalFaculty: teachers.length }));
+                }
+
+                // Fetch Department Student Count
+                const sResponse = await fetch(`http://localhost:8080/api/students?college_id=${collegeId}&department_id=${departmentId}`, authHeader);
+                if (sResponse.ok) {
+                    const students = await sResponse.json();
+                    setStats(prev => ({ ...prev, totalStudents: students.length }));
+                }
+
+            } catch (err) {
+                console.error("Dashboard error:", err);
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchHODData();
+    }, []);
+
+    if (loading) return (
+        <div className="flex items-center justify-center min-h-[400px]">
+            <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+    );
+
+    const dashboardStats = [
+        { label: 'Pending Approvals', value: stats.pendingApprovals, icon: <Clock size={24} />, color: 'bg-amber-500', shadow: 'shadow-amber-500/20' },
+        { label: 'Total Faculty', value: stats.totalFaculty, icon: <Users size={24} />, color: 'bg-blue-500', shadow: 'shadow-blue-500/20' },
+        { label: 'Total Students', value: stats.totalStudents, icon: <GraduationCap size={24} />, color: 'bg-emerald-500', shadow: 'shadow-emerald-500/20' },
+        { label: 'Active Subjects', value: stats.activeSubjects || '---', icon: <BookOpen size={24} />, color: 'bg-purple-500', shadow: 'shadow-purple-500/20' },
+    ];
+
+    return (
+        <div className="space-y-8 animate-in fade-in duration-700 p-6 bg-slate-50/50 min-h-screen">
+            {/* Welcome Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">HOD Dashboard</h1>
+                    <p className="text-slate-500 font-medium tracking-tight mt-1">Management Overview for <span className="text-sky-600 font-bold">{departmentName}</span></p>
+                </div>
+                <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Admin Active</span>
+                </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {dashboardStats.map((stat, idx) => (
+                    <div
+                        key={idx}
+                        className="group relative bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl hover:shadow-sky-200/50 hover:-translate-y-1 transition-all duration-300"
+                    >
+                        <div className="relative z-10 flex items-center justify-between">
+                            <div className={`p-4 rounded-2xl text-white ${stat.color} ${stat.shadow} group-hover:scale-110 transition-all duration-500`}>
+                                {stat.icon}
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{stat.label}</p>
+                                <p className="text-3xl font-black text-slate-900 leading-none tracking-tighter">{stat.value}</p>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Main Content Areas */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Quick Actions */}
+                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                            <Activity size={24} className="text-sky-500" /> Quick Actions
+                        </h2>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-sky-500 hover:text-white transition-all duration-300 border border-slate-100 font-bold group">
+                            <div className="w-10 h-10 rounded-xl bg-white text-sky-500 flex items-center justify-center shadow-sm group-hover:text-sky-600">
+                                <CheckCircle size={20} />
+                            </div>
+                            <span className="text-sm">Approve Pending Marks</span>
+                        </button>
+                        <button className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-slate-900 hover:text-white transition-all duration-300 border border-slate-100 font-bold group">
+                            <div className="w-10 h-10 rounded-xl bg-white text-slate-900 flex items-center justify-center shadow-sm group-hover:text-black">
+                                <Users size={20} />
+                            </div>
+                            <span className="text-sm">Manage Faculty</span>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Notifications/Alerts */}
+                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+                    <h2 className="text-xl font-black text-slate-900 tracking-tight mb-8">Recent Activity</h2>
+                    <div className="space-y-4">
+                        <div className="flex items-start gap-4 p-4 rounded-2xl bg-amber-50 border border-amber-100">
+                            <AlertCircle size={20} className="text-amber-500 mt-1" />
+                            <div>
+                                <p className="text-sm font-bold text-slate-900">Marks Submission Overdue</p>
+                                <p className="text-xs text-slate-500">Physics 1st Sem Internal marks are still pending from Prof. Sharma.</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-4 p-4 rounded-2xl bg-sky-50 border border-sky-100">
+                            <FileText size={20} className="text-sky-500 mt-1" />
+                            <div>
+                                <p className="text-sm font-bold text-slate-900">New Result Template</p>
+                                <p className="text-xs text-slate-500">A new template for marksheets has been uploaded by College Admin.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default HODDashboard;

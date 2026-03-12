@@ -60,13 +60,19 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 1, name: 'Dashboard', path: '/college-admin/dashboard', icon: <LayoutDashboard size={20} /> },
         { id: 2, name: 'Policy Config', path: '/college-admin/policies', icon: <ShieldCheck size={20} /> },
         { id: 3, name: 'Marks Structure', path: '/college-admin/marks-config', icon: <BarChart3 size={20} /> },
-        { id: 4, name: 'Faculty Assign', path: '/college-admin/faculty-assign', icon: <Users size={20} /> },
-        { id: 5, name: 'Marks Approval', path: '/college-admin/marks-approval', icon: <FileText size={20} /> },
+        { id: 5, name: 'Verify & Lock', path: '/college-admin/marks-approval', icon: <ShieldCheck size={20} /> },
       ];
     } else if (roleName === 'Faculty' || roleName === 'Teacher') {
       menuItems = [
         { id: 1, name: 'Dashboard', path: '/faculty/dashboard', icon: <LayoutDashboard size={20} /> },
         { id: 2, name: 'Marks Entry', path: '/faculty/marks-entry', icon: <BarChart3 size={20} /> },
+      ]
+    } else if (roleName === 'HOD') {
+      menuItems = [
+        { id: 1, name: 'Dashboard', path: '/hod/dashboard', icon: <LayoutDashboard size={20} /> },
+        { id: 2, name: 'Marks Approval', path: '/hod/marks-approval', icon: <FileText size={20} /> },
+        { id: 3, name: 'Faculty Assign', path: '/college-admin/faculty-assign', icon: <Users size={20} /> },
+        { id: 4, name: 'Department Faculty', path: '/teachers', icon: <Users size={20} /> },
       ]
     }
 
@@ -105,8 +111,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               key={item.id}
               onClick={() => handleLinkClick(item.path)}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
-                  ? 'bg-sky-500/10 text-sky-400 font-semibold'
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+                ? 'bg-sky-500/10 text-sky-400 font-semibold'
+                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
                 }`}
             >
               <div className="flex items-center gap-3">

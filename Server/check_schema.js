@@ -1,30 +1,15 @@
-const { Client } = require('pg');
-require('dotenv').config({ path: '.env' });
-
-const client = new Client({
-  connectionString: process.env.DATABASE_URL
-});
-
-async function getSchema() {
+const pool = require('./db');
+(async () => {
   try {
-    await client.connect();
-    const tables = ['master_semesters', 'master_teachers', 'master_subjects', 'master_programs'];
-    for (const table of tables) {
-      const res = await client.query(`
-        SELECT column_name, data_type 
-        FROM information_schema.columns 
-        WHERE table_name = '${table}'
-      `);
-      console.log(`--- Table: ${table} ---`);
-      res.rows.forEach(row => {
-        console.log(`${row.column_name}: ${row.data_type}`);
-      });
-    }
+    const res = await pool.query(`
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = 'users';
+        `);
+    console.log(JSON.stringify(res.rows, null, 2));
+    process.exit(0);
   } catch (err) {
     console.error(err);
-  } finally {
-    await client.end();
+    process.exit(1);
   }
-}
-
-getSchema();
+})();

@@ -210,7 +210,7 @@ const Login = async (req, res) => {
   try {
     const { email, password, rememberMe } = req.body;
     const user = await client.query(
-      `SELECT u.id, u.name, u.email, u.password, u.password_hash, COALESCE(mt.college_id, u.college_id) as college_id, r.role_name, mt.id as teacher_id 
+      `SELECT u.id, u.name, u.email, u.password, u.password_hash, COALESCE(mt.college_id, u.college_id) as college_id, r.role_name, mt.id as teacher_id, mt.department_id 
        FROM public.users u 
        JOIN public.roles r ON u.role_id = r.id 
        LEFT JOIN public.master_teachers mt ON mt.user_id = u.id
@@ -238,7 +238,8 @@ const Login = async (req, res) => {
       email: result.email,
       role: result.role_name,
       college_id: result.college_id,
-      teacher_id: result.teacher_id
+      teacher_id: result.teacher_id,
+      department_id: result.department_id
     };
     const accessToken = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: "15m" });
     const refreshToken = jwt.sign(payload, process.env.REFRESH_SECRET, { expiresIn: "30d" });
@@ -256,7 +257,8 @@ const Login = async (req, res) => {
         email: result.email,
         role: result.role_name,
         college_id: result.college_id,
-        teacher_id: result.teacher_id
+        teacher_id: result.teacher_id,
+        department_id: result.department_id
       }
     });
   } catch (error) {
@@ -1284,21 +1286,21 @@ const getMasterSubjects = async (req, res) => {
 
 const createMasterSubject = async (req, res) => {
   try {
-    const { 
+    const {
       subject_code, name, department_ids,
-      program_id, semester_id, mapping_type, is_mandatory, 
-      has_examination, periods_per_week, teacher_id 
+      program_id, semester_id, mapping_type, is_mandatory,
+      has_examination, periods_per_week, teacher_id
     } = req.body;
-    
+
     if (!subject_code || !name) return res.status(400).json({ message: "Subject code and name are required" });
-    
+
     await client.query('BEGIN');
     const result = await client.query(
       `INSERT INTO master_subjects (
         subject_code, name, program_id, semester_id, mapping_type, 
         is_mandatory, has_examination, periods_per_week, teacher_id, status
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Active') 
-      RETURNING *`, 
+      RETURNING *`,
       [subject_code, name, program_id, semester_id, mapping_type, is_mandatory, has_examination, periods_per_week, teacher_id]
     );
     const subjectId = result.rows[0].id;
@@ -1324,7 +1326,7 @@ const getMasterSubject = async (req, res) => {
               program_id, semester_id, mapping_type, is_mandatory, 
               has_examination, periods_per_week, teacher_id
        FROM master_subjects 
-       WHERE id = $1`, 
+       WHERE id = $1`,
       [id]
     );
     if (result.rows.length === 0) return res.status(404).json({ message: "Master subject not found" });
@@ -1338,14 +1340,14 @@ const getMasterSubject = async (req, res) => {
 const updateMasterSubject = async (req, res) => {
   try {
     const { id } = req.params;
-    const { 
+    const {
       subject_code, name, department_ids,
-      program_id, semester_id, mapping_type, is_mandatory, 
-      has_examination, periods_per_week, teacher_id 
+      program_id, semester_id, mapping_type, is_mandatory,
+      has_examination, periods_per_week, teacher_id
     } = req.body;
-    
+
     if (!subject_code || !name) return res.status(400).json({ message: "Subject code and name are required" });
-    
+
     await client.query('BEGIN');
     const result = await client.query(
       `UPDATE master_subjects 
@@ -1353,15 +1355,15 @@ const updateMasterSubject = async (req, res) => {
            mapping_type = $5, is_mandatory = $6, has_examination = $7, 
            periods_per_week = $8, teacher_id = $9, updated_at = CURRENT_TIMESTAMP 
        WHERE id = $10 
-       RETURNING *`, 
+       RETURNING *`,
       [subject_code, name, program_id, semester_id, mapping_type, is_mandatory, has_examination, periods_per_week, teacher_id, id]
     );
-    
+
     if (result.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ message: "Master subject not found" });
     }
-    
+
     if (department_ids && Array.isArray(department_ids)) {
       await client.query("DELETE FROM master_subject_departments WHERE subject_id = $1", [id]);
       for (const deptId of department_ids) {
@@ -1423,7 +1425,7 @@ const createMasterProgram = async (req, res) => {
     if (!name || !duration_years) return res.status(400).json({ message: "Program name and duration are required" });
     await client.query('BEGIN');
     const result = await client.query(
-      "INSERT INTO master_programs (name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, status) VALUES ($1, $2, $3, $4, $5, $6, 'Active') RETURNING id, name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, status, created_at", 
+      "INSERT INTO master_programs (name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, status) VALUES ($1, $2, $3, $4, $5, $6, 'Active') RETURNING id, name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, status, created_at",
       [name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection]
     );
     const programId = result.rows[0].id;
@@ -1460,7 +1462,7 @@ const updateMasterProgram = async (req, res) => {
     if (!name || !duration_years) return res.status(400).json({ message: "Program name and duration are required" });
     await client.query('BEGIN');
     const result = await client.query(
-      "UPDATE master_programs SET name = $1, duration_years = $2, section_name = $3, code = $4, grading_system_type = $5, enable_elective_subjects_selection = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING id, name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, created_at", 
+      "UPDATE master_programs SET name = $1, duration_years = $2, section_name = $3, code = $4, grading_system_type = $5, enable_elective_subjects_selection = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING id, name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, created_at",
       [name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, id]
     );
     if (result.rows.length === 0) {
@@ -1521,7 +1523,7 @@ const createMasterBatch = async (req, res) => {
   try {
     const { batch_name, start_date, end_date, academic_year, import_fees_flag, program_id } = req.body;
     if (!batch_name) return res.status(400).json({ message: "Batch name is required" });
-    
+
     const result = await client.query(
       `INSERT INTO master_batches (batch_name, start_date, end_date, academic_year, import_fees_flag, program_id, status)
        VALUES ($1, $2, $3, $4, $5, $6, 'Active')
@@ -1539,7 +1541,7 @@ const updateMasterBatch = async (req, res) => {
   try {
     const { id } = req.params;
     const { batch_name, start_date, end_date, academic_year, import_fees_flag, program_id } = req.body;
-    
+
     const result = await client.query(
       `UPDATE master_batches 
        SET batch_name = $1, start_date = $2, end_date = $3, academic_year = $4, 
@@ -1548,7 +1550,7 @@ const updateMasterBatch = async (req, res) => {
        RETURNING *`,
       [batch_name, start_date, end_date, academic_year, import_fees_flag, program_id, id]
     );
-    
+
     if (result.rows.length === 0) return res.status(404).json({ message: "Batch not found" });
     res.json({ message: "Batch updated successfully", data: result.rows[0] });
   } catch (error) {
@@ -1601,9 +1603,9 @@ const getSubjectMappings = async (req, res) => {
 
 const createSubjectMapping = async (req, res) => {
   try {
-    const { 
-      program_id, semester_id, subject_id, teacher_id, 
-      mapping_type, is_mandatory, has_examination, periods_per_week 
+    const {
+      program_id, semester_id, subject_id, teacher_id,
+      mapping_type, is_mandatory, has_examination, periods_per_week
     } = req.body;
 
     if (!program_id || !semester_id || !subject_id) {
@@ -1628,9 +1630,9 @@ const createSubjectMapping = async (req, res) => {
 const updateSubjectMapping = async (req, res) => {
   try {
     const { id } = req.params;
-    const { 
-      program_id, semester_id, subject_id, teacher_id, 
-      mapping_type, is_mandatory, has_examination, periods_per_week 
+    const {
+      program_id, semester_id, subject_id, teacher_id,
+      mapping_type, is_mandatory, has_examination, periods_per_week
     } = req.body;
 
     const result = await client.query(
@@ -1758,8 +1760,8 @@ const getCollegeMasterPolicy = async (req, res) => {
 // Master Teachers Functions
 const getMasterTeachers = async (req, res) => {
   try {
-    const result = await client.query(
-      `SELECT 
+    const { roleName, collegeId, departmentId } = req.user;
+    let query = `SELECT 
         mt.id,
         u.name,
         u.email,
@@ -1782,9 +1784,20 @@ const getMasterTeachers = async (req, res) => {
       LEFT JOIN colleges c ON mt.college_id = c.id
       LEFT JOIN master_departments md ON mt.department_id = md.id
       LEFT JOIN master_designations mdes ON mt.designation_id = mdes.id
-      WHERE mt.status = 'Active'
-      ORDER BY mt.id DESC`
-    );
+      WHERE mt.status = 'Active'`;
+
+    const params = [];
+    if (roleName === 'HOD') {
+      params.push(collegeId, departmentId);
+      query += ` AND mt.college_id = $1 AND mt.department_id = $2`;
+    } else if (roleName === 'college_admin') {
+      params.push(collegeId);
+      query += ` AND mt.college_id = $1`;
+    }
+
+    query += ` ORDER BY mt.id DESC`;
+
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Get master teachers error:", error);
@@ -1836,10 +1849,20 @@ const getMasterTeacher = async (req, res) => {
 };
 
 const createMasterTeacher = async (req, res) => {
-  const { 
+  let {
     name, email, college_id, department_id, designation_id, employee_code, experience, qualification, specialization, pan_no, aadhaar_no, dob, gender, joining_date, phone, address, status,
     employee_category_name, first_name, middle_name, last_name, job_title, employee_position_name, employee_department_name, employee_grade_name, experience_detail, experience_months, marital_status, father_name, mother_name, spouse_name, blood_group, country_name, home_address_line1, home_city, home_state, home_country_name, office_phone1, office_phone2, office_state, home_phone1, fax
   } = req.body;
+
+  const { roleName, collegeId, departmentId: userDeptId } = req.user;
+
+  // Enforce HOD restrictions
+  if (roleName === 'HOD') {
+    college_id = collegeId;
+    department_id = userDeptId;
+  } else if (roleName === 'college_admin') {
+    college_id = collegeId;
+  }
 
   try {
     // Validate required fields
@@ -1944,21 +1967,40 @@ const createMasterTeacher = async (req, res) => {
 
 const updateMasterTeacher = async (req, res) => {
   const { id } = req.params;
+  const { roleName, collegeId, departmentId: userDeptId } = req.user;
+
   // pull every possible field from the body; some may be undefined
-  const {
+  let {
     name, email, college_id, department_id, designation_id, qualification, experience, specialization, pan_no, aadhaar_no, dob, gender, joining_date, phone, address, status,
     employee_category_name, first_name, middle_name, last_name, job_title, employee_position_name, employee_department_name, employee_grade_name, experience_detail, experience_months, marital_status, father_name, mother_name, spouse_name, blood_group, country_name, home_address_line1, home_city, home_state, home_country_name, office_phone1, office_phone2, office_state, home_phone1, fax
   } = req.body;
 
+  // Enforce HOD restrictions
+  if (roleName === 'HOD') {
+    college_id = collegeId;
+    department_id = userDeptId;
+  } else if (roleName === 'college_admin') {
+    college_id = collegeId;
+  }
+
   try {
-    // Get existing teacher
-    const existing = await client.query(
-      "SELECT user_id FROM master_teachers WHERE id = $1",
-      [id]
-    );
+    // Get existing teacher and check permissions
+    let checkQuery = "SELECT user_id, college_id, department_id FROM master_teachers WHERE id = $1";
+    const existing = await client.query(checkQuery, [id]);
 
     if (existing.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Master teacher not found" });
+    }
+
+    // Permission check
+    if (roleName === 'HOD') {
+      if (existing.rows[0].college_id !== collegeId || existing.rows[0].department_id !== userDeptId) {
+        return res.status(403).json({ success: false, message: "Access denied. You can only update teachers in your department." });
+      }
+    } else if (roleName === 'college_admin') {
+      if (existing.rows[0].college_id !== collegeId) {
+        return res.status(403).json({ success: false, message: "Access denied. You can only update teachers in your college." });
+      }
     }
 
     const userId = existing.rows[0].user_id;

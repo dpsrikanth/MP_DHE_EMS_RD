@@ -12,6 +12,10 @@ const MarksApproval = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const isHOD = user.role === 'HOD';
+    const isCollegeAdmin = user.role === 'college_admin';
+
     useEffect(() => {
         fetchSemesters();
         fetchWorkflows();
@@ -36,7 +40,7 @@ const MarksApproval = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const collegeId = localStorage.getItem('collegeId');
+            const collegeId = user.college_id;
 
             let url = `http://localhost:8080/api/college-admin/workflow-status?college_id=${collegeId}`;
             if (semesterId) url += `&semester_id=${semesterId}`;
@@ -116,8 +120,8 @@ const MarksApproval = () => {
                         <FileText size={28} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 leading-none">Marks Verification & Approval</h1>
-                        <p className="text-sm text-slate-500 mt-1 font-medium">Review and lock internal marks submitted by faculty.</p>
+                        <h1 className="text-2xl font-bold text-slate-900 leading-none">Marks Monitoring & Locking</h1>
+                        <p className="text-sm text-slate-500 mt-1 font-medium">Monitor approval status and perform final mark locking.</p>
                     </div>
                 </div>
             </div>
@@ -175,37 +179,28 @@ const MarksApproval = () => {
                                     <td className="px-6 py-4 text-right">
                                         {wf.status !== 'Locked' && (
                                             <div className="flex items-center justify-end gap-2">
-                                                {wf.status === 'Submitted' && (
-                                                    <button
-                                                        onClick={() => navigate(`/admin/marks-review/${wf.subject_id}/${wf.section}`, {
-                                                            state: {
-                                                                semester_id: wf.semester_id,
-                                                                academic_year_id: wf.academic_year_id
-                                                            }
-                                                        })}
-                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors"
-                                                    >
-                                                        <Eye size={12} /> Verify
-                                                    </button>
-                                                )}
-                                                {wf.status === 'Verified' && (
-                                                    <button
-                                                        onClick={() => updateStatus(wf.id, 'Approved')}
-                                                        className="px-3 py-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg text-xs font-bold transition-colors"
-                                                    >
-                                                        Approve
-                                                    </button>
-                                                )}
-                                                {wf.status === 'Approved' && (
+                                                <button
+                                                    onClick={() => navigate(`/admin/marks-review/${wf.subject_id}/${wf.section}`, {
+                                                        state: {
+                                                            semester_id: wf.semester_id,
+                                                            academic_year_id: wf.academic_year_id
+                                                        }
+                                                    })}
+                                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors"
+                                                >
+                                                    <Eye size={12} /> {isCollegeAdmin ? 'Review' : 'Verify'}
+                                                </button>
+
+                                                {isCollegeAdmin && wf.status === 'Approved' && (
                                                     <button
                                                         onClick={() => updateStatus(wf.id, 'Locked')}
                                                         className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-800 text-white hover:bg-slate-900 rounded-lg text-xs font-bold shadow-md shadow-slate-900/20 transition-all"
                                                     >
-                                                        <Lock size={12} /> Lock
+                                                        <Lock size={12} /> Lock Marks
                                                     </button>
                                                 )}
-                                                {/* Rejection/Reject to previous state could also be added here */}
-                                                {(wf.status === 'Submitted' || wf.status === 'Verified') && (
+
+                                                {isHOD && wf.status === 'Submitted' && (
                                                     <button
                                                         onClick={() => updateStatus(wf.id, 'Pending')}
                                                         className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold transition-colors"

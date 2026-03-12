@@ -27,6 +27,10 @@ const MarksReview = () => {
     // Extracted subject metadata
     const [subjectMeta, setSubjectMeta] = useState(null);
 
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const isHOD = user.role === 'HOD';
+    const isCollegeAdmin = user.role === 'college_admin';
+
     useEffect(() => {
         fetchReviewData();
     }, [subjectId, section]);
@@ -35,8 +39,7 @@ const MarksReview = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const userStr = localStorage.getItem('user');
-            const collegeId = userStr ? JSON.parse(userStr).college_id : 1;
+            const collegeId = user.college_id;
 
             // 1. Fetch Marks Structure 
             const structureRes = await fetch(`http://localhost:8080/api/college-admin/marks-structure/${subjectId}`, {
@@ -57,12 +60,61 @@ const MarksReview = () => {
             }
 
             // 3. Setup basic subject meta (could fetch more details from subject API)
-            setSubjectMeta({ id: subjectId, section: section, collegeId });
+            setSubjectMeta({ id: subjectId, section: section, collegeId, status: '' });
+
+            // 4. Fetch status
+            const workflowRes = await fetch(`http://localhost:8080/api/college-admin/workflow-status?college_id=${collegeId}&semester_id=${semesterId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (workflowRes.ok) {
+                const workflows = await workflowRes.json();
+                const currentWf = workflows.find(w => w.subject_id.toString() === subjectId.toString() && w.section === section);
+                if (currentWf) {
+                    setSubjectMeta(prev => ({ ...prev, status: currentWf.status }));
+                }
+            }
 
         } catch (err) {
             toast.error("Failed to load marks for review");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleApproveSection = async () => {
+        if (!window.confirm("Are you sure you want to approve this section? It will be sent to the College Admin for final locking.")) return;
+
+        setIsLocking(true); // Reusing isLocking for loading state
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:8080/api/college-admin/workflow-status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({
+                    subject_id: subjectId,
+                    section: section,
+                    college_id: subjectMeta.collegeId,
+                    semester_id: semesterId,
+                    academic_year_id: academicYearId,
+                    status: 'Approved'
+                })
+            });
+
+            if (res.ok) {
+                const result = await res.json();
+                if (result.status === 'Rejected') {
+                    toast.warning("Section rejected due to individual student rejections. Sent back to faculty.");
+                } else {
+                    toast.success("Section approved successfully!");
+                }
+                navigate('/hod/marks-approval');
+            } else {
+                toast.error("Failed to approve section");
+            }
+        } catch (err) {
+            toast.error("Error approving section");
+        } finally {
+            setIsLocking(false);
         }
     };
 
@@ -118,7 +170,7 @@ const MarksReview = () => {
 
             if (res.ok) {
                 toast.success("Section rejected and sent back to faculty.");
-                navigate('/admin/marks-verification');
+                navigate(isHOD ? '/hod/marks-approval' : '/admin/marks-verification');
             } else {
                 toast.error("Failed to reject section");
             }
@@ -302,9 +354,10 @@ const MarksReview = () => {
                                             <td className="px-6 py-4 text-center">
                                                 <button
                                                     onClick={() => handleOpenReview(student)}
-                                                    className={`p-2 rounded-lg transition-colors flex flex-col items-center gap-1 ${student.review_status === 'Rejected' ? 'bg-red-50 text-red-600' :
-                                                            student.review_status === 'Approved' ? 'bg-emerald-50 text-emerald-600' :
-                                                                'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                                    disabled={isCollegeAdmin}
+                                                    className={`p-2 rounded-lg transition-colors flex flex-col items-center gap-1 ${isCollegeAdmin ? 'cursor-default' : 'hover:scale-[1.05]'} ${student.review_status === 'Rejected' ? 'bg-red-50 text-red-600' :
+                                                        student.review_status === 'Approved' ? 'bg-emerald-50 text-emerald-600' :
+                                                            'bg-slate-100 text-slate-500 hover:bg-slate-200'
                                                         }`}
                                                 >
                                                     <MessageSquare size={16} />
@@ -322,30 +375,52 @@ const MarksReview = () => {
                         <div className="flex flex-col gap-2">
                             <div className="text-sm text-slate-500 max-w-xl">
                                 <span className="font-bold text-amber-600 block mb-1">Important Note</span>
-                                Once you lock these marks, they cannot be modified by the faculty. The system will permanently write the Best of 3 calculations to the database.
+                                {isHOD ?
+                                    "Approving this section will notify the College Admin that marks are ready for final locking. You will still be able to view these marks." :
+                                    "Once you lock these marks, they cannot be modified by the faculty. The system will permanently write the Best of 3 calculations to the database."
+                                }
                             </div>
-                            <button
-                                disabled={isRejecting}
-                                onClick={handleRejectWorkflow}
-                                className="inline-flex items-center gap-2 text-red-500 font-bold text-xs hover:underline"
-                            >
-                                <AlertCircle size={14} />
-                                Reject Section & Send Back to Faculty
-                            </button>
-                        </div>
-                        <button
-                            disabled={isLocking}
-                            onClick={handleLockMarks}
-                            className={`inline-flex items-center gap-2 px-10 py-4 text-white font-black rounded-xl shadow-xl transition-all uppercase tracking-widest text-sm
-                                ${isLocking ? 'bg-amber-400 cursor-not-allowed shadow-none' : 'bg-amber-500 hover:bg-amber-600 hover:scale-[1.02] shadow-amber-500/20 active:scale-[0.98]'}`}
-                        >
-                            {isLocking ? (
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            ) : (
-                                <ShieldCheck size={20} />
+                            {isHOD && subjectMeta?.status === 'Submitted' && (
+                                <button
+                                    disabled={isRejecting}
+                                    onClick={handleRejectWorkflow}
+                                    className="inline-flex items-center gap-2 text-red-500 font-bold text-xs hover:underline"
+                                >
+                                    <AlertCircle size={14} />
+                                    Reject Section & Send Back to Faculty
+                                </button>
                             )}
-                            <span>{isLocking ? 'Locking...' : 'Lock Marks & Process'}</span>
-                        </button>
+                        </div>
+                        {isHOD && subjectMeta?.status === 'Submitted' && (
+                            <button
+                                disabled={isLocking}
+                                onClick={handleApproveSection}
+                                className={`inline-flex items-center gap-2 px-10 py-4 text-white font-black rounded-xl shadow-xl transition-all uppercase tracking-widest text-sm
+                                    ${isLocking ? 'bg-amber-400 cursor-not-allowed shadow-none' : 'bg-emerald-500 hover:bg-emerald-600 hover:scale-[1.02] shadow-emerald-500/20 active:scale-[0.98]'}`}
+                            >
+                                {isLocking ? (
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                    <ShieldCheck size={20} />
+                                )}
+                                <span>{isLocking ? 'Approving...' : 'Verify & Approve Section'}</span>
+                            </button>
+                        )}
+                        {isCollegeAdmin && subjectMeta?.status === 'Approved' && (
+                            <button
+                                disabled={isLocking}
+                                onClick={handleLockMarks}
+                                className={`inline-flex items-center gap-2 px-10 py-4 text-white font-black rounded-xl shadow-xl transition-all uppercase tracking-widest text-sm
+                                    ${isLocking ? 'bg-amber-400 cursor-not-allowed shadow-none' : 'bg-amber-500 hover:bg-amber-600 hover:scale-[1.02] shadow-amber-500/20 active:scale-[0.98]'}`}
+                            >
+                                {isLocking ? (
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                    <ShieldCheck size={20} />
+                                )}
+                                <span>{isLocking ? 'Locking...' : 'Lock Marks & Process'}</span>
+                            </button>
+                        )}
                     </div>
                 </div>
             )}

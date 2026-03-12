@@ -48,15 +48,30 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        authUtils.setAuth(data.token, data.user.role || "", data.user.id || "", data.user.college_id || "", data.user);
+        authUtils.setAuth(
+          data.token,
+          data.user.role || "",
+          data.user.id || "",
+          data.user.college_id || "",
+          data.user,
+          data.user.department_id || ""
+        );
 
+        console.log("Login successful, user role:", data.user.role);
         if (authUtils.isAdmin()) {
+          console.log("Navigating to Admin Dashboard");
           navigate("/dashboard");
         } else if (authUtils.isCollegeAdmin()) {
+          console.log("Navigating to College Admin Dashboard");
           navigate("/college-admin/dashboard");
+        } else if (authUtils.isHOD()) {
+          console.log("Navigating to HOD Dashboard");
+          navigate("/hod/dashboard");
         } else if (authUtils.isFaculty()) {
+          console.log("Navigating to Faculty Dashboard");
           navigate("/faculty/dashboard");
         } else {
+          console.log("Access denied, role:", data.user.role);
           setError("Access denied. Appropriate role required.");
           authUtils.logout();
         }

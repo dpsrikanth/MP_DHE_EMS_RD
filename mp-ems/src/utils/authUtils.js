@@ -1,11 +1,12 @@
 // Authentication utility functions
 
 export const authUtils = {
-  setAuth: (token, roleName, userId, collegeId, userObj) => {
+  setAuth: (token, roleName, userId, collegeId, userObj, departmentId) => {
     localStorage.setItem("token", token);
     localStorage.setItem("roleName", roleName);
     localStorage.setItem("userId", userId);
     if (collegeId) localStorage.setItem("collegeId", collegeId);
+    if (departmentId) localStorage.setItem("departmentId", departmentId);
     if (userObj) localStorage.setItem("user", JSON.stringify(userObj));
   },
 
@@ -15,6 +16,7 @@ export const authUtils = {
     roleName: localStorage.getItem("roleName"),
     userId: localStorage.getItem("userId"),
     collegeId: localStorage.getItem("collegeId"),
+    departmentId: localStorage.getItem("departmentId"),
   }),
 
   // Check if user is authenticated
@@ -33,6 +35,11 @@ export const authUtils = {
     return roleName === "college_admin";
   },
 
+  isHOD: () => {
+    const roleName = localStorage.getItem("roleName");
+    return roleName === "HOD";
+  },
+
   isFaculty: () => {
     const roleName = localStorage.getItem("roleName");
     if (!roleName) return false;
@@ -46,6 +53,7 @@ export const authUtils = {
     localStorage.removeItem("roleName");
     localStorage.removeItem("userId");
     localStorage.removeItem("collegeId");
+    localStorage.removeItem("departmentId");
     localStorage.removeItem("user");
   },
 

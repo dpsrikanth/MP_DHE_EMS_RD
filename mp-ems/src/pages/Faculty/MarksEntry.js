@@ -15,6 +15,7 @@ const MarksEntry = () => {
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [marksDraft, setMarksDraft] = useState({});
+    const [initialMarks, setInitialMarks] = useState({}); // Track initial state for change detection
     const [reviews, setReviews] = useState({}); // Per-student review statuses/comments
 
     useEffect(() => {
@@ -97,17 +98,27 @@ const MarksEntry = () => {
 
             // Populate draft state with existing marks
             const draft = {};
+            const initial = {};
             studentsData.forEach(student => {
                 draft[student.id] = {};
+                initial[student.id] = {};
                 structureData.forEach(comp => {
                     const existing = existingMarks.find(m => m.student_id === student.id && m.component_id === comp.id);
+                    const markVal = existing ? existing.marks_obtained : '';
+                    const absVal = existing ? existing.is_absent : false;
+
                     draft[student.id][comp.id] = {
-                        marks: existing ? existing.marks_obtained : '',
-                        isAbsent: existing ? existing.is_absent : false
+                        marks: markVal,
+                        isAbsent: absVal
+                    };
+                    initial[student.id][comp.id] = {
+                        marks: markVal,
+                        isAbsent: absVal
                     };
                 });
             });
             setMarksDraft(draft);
+            setInitialMarks(initial);
 
         } catch (err) {
             toast.error('Error fetching details for marks entry');
@@ -211,6 +222,23 @@ const MarksEntry = () => {
         return { label: 'Pass', style: 'text-green-500' };
     };
 
+    const checkHasChanges = () => {
+        for (const studentId in marksDraft) {
+            for (const compId in marksDraft[studentId]) {
+                const current = marksDraft[studentId][compId];
+                const initial = initialMarks[studentId]?.[compId] || { marks: '', isAbsent: false };
+
+                const currentMark = current.marks === '' ? null : parseFloat(current.marks);
+                const initialMark = initial.marks === '' ? null : parseFloat(initial.marks);
+
+                if (currentMark !== initialMark || current.isAbsent !== initial.isAbsent) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
     const isReadOnly = ['Submitted', 'Approved', 'Locked', 'Rejected'].includes(workflowStatus);
 
     const handleSaveMarks = async () => {
@@ -278,6 +306,12 @@ const MarksEntry = () => {
         const assignmentStr = assignedSubjects.find(a => a.id === selectedAssignment.value);
         if (!assignmentStr || (isReadOnly && workflowStatus !== 'Rejected')) return;
 
+        // Validation for Rejected status
+        if (workflowStatus === 'Rejected' && !checkHasChanges()) {
+            toast.error("Please update marks before resubmitting. No changes detected.");
+            return;
+        }
+
         if (!window.confirm("Are you sure you want to submit these marks? You won't be able to edit them afterwards.")) return;
 
         setIsSaving(true);
@@ -308,8 +342,8 @@ const MarksEntry = () => {
                 const saveRes = await fetch('http://localhost:8080/api/faculty-marks/enter-marks', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                    body: JSON.stringify({ 
-                        marksData: payload, 
+                    body: JSON.stringify({
+                        marksData: payload,
                         faculty_id: teacherId,
                         college_id: assignmentStr.college_id,
                         semester_id: assignmentStr.semester_id,
