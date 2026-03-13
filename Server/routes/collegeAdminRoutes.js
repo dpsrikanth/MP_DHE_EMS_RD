@@ -27,6 +27,7 @@ router.delete('/policy-mappings/:id', collegeAdminController.deletePolicyMapping
 router.post('/marks-structure', collegeAdminController.configureMarksStructure);
 router.get('/marks-structure/:subject_id', collegeAdminController.getMarksStructure);
 router.get('/all-marks-structures', collegeAdminController.getAllMarksStructures);
+router.get('/get-components', collegeAdminController.getMarksStructureComponents);
 router.put('/marks-structure/:id', collegeAdminController.editMarksStructure);
 router.delete('/marks-structure/:id', collegeAdminController.deleteMarksStructure);
 

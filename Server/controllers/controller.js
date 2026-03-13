@@ -847,7 +847,8 @@ const createTeacher = async (req, res) => {
 
 const getExams = async (req, res) => {
   try {
-    const result = await client.query(`
+    const { role, college_id } = req.user;
+    let query = `
       SELECT 
         e.id, 
         e.name as exam_name, 
@@ -866,7 +867,16 @@ const getExams = async (req, res) => {
         e.subject_id,
         sub.name as subject_name,
         e.exam_date, 
-        e.status 
+        e.status,
+        e.is_published,
+        e.student_application_open,
+        (SELECT EXISTS (
+          SELECT 1 FROM internal_marks_structure ims 
+          WHERE ims.college_id = e.college_id 
+          AND ims.department_id = e.department_id 
+          AND ims.program_id = e.program_id 
+          AND ims.subject_id = e.subject_id
+        )) as has_marks_structure
       FROM exams e
       LEFT JOIN master_semesters ms ON e.semester_id = ms.id
       LEFT JOIN colleges c ON e.college_id = c.id
@@ -875,8 +885,21 @@ const getExams = async (req, res) => {
       LEFT JOIN master_programs mp ON e.program_id = mp.id
       LEFT JOIN master_academic_years ay ON e.academic_year_id = ay.id
       LEFT JOIN master_subjects sub ON e.subject_id = sub.id
-      ORDER BY e.created_at DESC
-    `);
+    `;
+    
+    const params = [];
+    if (role === 'college_admin') {
+      query += ` WHERE e.college_id = $1`;
+      params.push(college_id);
+    } else if (role === 'HOD') {
+      const { department_id } = req.user;
+      query += ` WHERE e.college_id = $1 AND e.department_id = $2`;
+      params.push(college_id, department_id);
+    }
+    
+    query += ` ORDER BY e.created_at DESC`;
+    
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Get exams error:", error);
@@ -886,10 +909,35 @@ const getExams = async (req, res) => {
 
 const createExam = async (req, res) => {
   try {
-    const { name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id } = req.body;
-    if (!name || !semester_id || !college_id || !exam_type || !exam_date) {
-      return res.status(400).json({ message: "Missing required fields" });
+    const { role, college_id: userCollegeId, department_id: userDepartmentId } = req.user;
+    let { name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id } = req.body;
+    
+    // Enforce college_id and department_id for restricted roles
+    if (role === 'college_admin') {
+      college_id = userCollegeId;
+    } else if (role === 'HOD') {
+      college_id = userCollegeId;
+      department_id = userDepartmentId;
     }
+
+    if (!name || !semester_id || !college_id || !exam_type || !exam_date || !subject_id || !department_id || !program_id) {
+      return res.status(400).json({ message: "Missing required fields (Name, Semester, College, Exam Type, Date, Subject, Department, Program)" });
+    }
+
+    // NEW: Validate Marks Structure Existence
+    const structureCheck = await client.query(
+      `SELECT 1 FROM internal_marks_structure 
+       WHERE college_id = $1 AND department_id = $2 AND program_id = $3 AND subject_id = $4 LIMIT 1`,
+      [college_id, department_id, program_id, subject_id]
+    );
+
+    if (structureCheck.rows.length === 0) {
+      return res.status(400).json({ 
+        message: "Blocked: No Marks Structure defined for this Subject/Department/Program. Please configure marks structure first.",
+        requireConfig: true
+      });
+    }
+
     const result = await client.query(
       "INSERT INTO exams (name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *",
       [name, semester_id, college_id, exam_type, exam_date, status ?? true, department_id || null, program_id || null, academic_year_id || null, subject_id || null]
@@ -904,11 +952,26 @@ const createExam = async (req, res) => {
 const updateExam = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id } = req.body;
+    const { role, college_id: userCollegeId, department_id: userDepartmentId } = req.user;
+    let { name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id } = req.body;
 
     // Check if exists
-    const checkResult = await client.query('SELECT id FROM exams WHERE id = $1', [id]);
+    const checkResult = await client.query('SELECT college_id, department_id FROM exams WHERE id = $1', [id]);
     if (checkResult.rows.length === 0) return res.status(404).json({ message: "Exam not found" });
+
+    // Enforce constraints for restricted roles
+    if (role === 'college_admin') {
+      if (checkResult.rows[0].college_id != userCollegeId) {
+        return res.status(403).json({ message: "Unauthorized to update this exam" });
+      }
+      college_id = userCollegeId;
+    } else if (role === 'HOD') {
+      if (checkResult.rows[0].college_id != userCollegeId || checkResult.rows[0].department_id != userDepartmentId) {
+        return res.status(403).json({ message: "Unauthorized to update this exam" });
+      }
+      college_id = userCollegeId;
+      department_id = userDepartmentId;
+    }
 
     const result = await client.query(
       `UPDATE exams 
@@ -935,14 +998,78 @@ const updateExam = async (req, res) => {
 const deleteExam = async (req, res) => {
   try {
     const { id } = req.params;
-    const checkResult = await client.query('SELECT id FROM exams WHERE id = $1', [id]);
+    const { role, college_id: userCollegeId, department_id: userDepartmentId } = req.user;
+
+    const checkResult = await client.query('SELECT college_id, department_id FROM exams WHERE id = $1', [id]);
     if (checkResult.rows.length === 0) return res.status(404).json({ message: "Exam not found" });
+
+    // Enforce security for restricted roles
+    if (role === 'college_admin') {
+      if (checkResult.rows[0].college_id != userCollegeId) {
+        return res.status(403).json({ message: "Unauthorized to delete this exam" });
+      }
+    } else if (role === 'HOD') {
+      if (checkResult.rows[0].college_id != userCollegeId || checkResult.rows[0].department_id != userDepartmentId) {
+        return res.status(403).json({ message: "Unauthorized to delete this exam" });
+      }
+    }
 
     await client.query("DELETE FROM exams WHERE id = $1", [id]);
     res.json({ message: "Exam deleted successfully" });
   } catch (error) {
     console.error("Delete exam error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const publishExam = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { is_published } = req.body;
+    const { role, college_id: userCollegeId, department_id: userDepartmentId } = req.user;
+
+    const checkResult = await client.query('SELECT college_id, department_id FROM exams WHERE id = $1', [id]);
+    if (checkResult.rows.length === 0) return res.status(404).json({ message: "Exam not found" });
+
+    if (role === 'college_admin' && checkResult.rows[0].college_id != userCollegeId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    if (role === 'HOD' && (checkResult.rows[0].college_id != userCollegeId || checkResult.rows[0].department_id != userDepartmentId)) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const result = await client.query(
+      "UPDATE exams SET is_published = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *",
+      [is_published, id]
+    );
+    res.json({ message: `Exam ${is_published ? 'published' : 'unpublished'} successfully`, data: result.rows[0] });
+  } catch (error) {
+    console.error("Publish exam error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const toggleStudentApplication = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { open } = req.body;
+    const { role, college_id: userCollegeId } = req.user;
+
+    const checkResult = await client.query('SELECT college_id, is_published FROM exams WHERE id = $1', [id]);
+    if (checkResult.rows.length === 0) return res.status(404).json({ message: "Exam not found" });
+
+    if (!checkResult.rows[0].is_published && open) {
+      return res.status(400).json({ message: "Cannot open applications for an unpublished exam" });
+    }
+
+    const result = await client.query(
+      "UPDATE exams SET student_application_open = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *",
+      [open, id]
+    );
+    res.json({ message: `Applications ${open ? 'opened' : 'closed'} successfully`, data: result.rows[0] });
+  } catch (error) {
+    console.error("Toggle application error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -2422,6 +2549,8 @@ module.exports = {
   createExam,
   updateExam,
   deleteExam,
+  publishExam,
+  toggleStudentApplication,
   getMarks,
   getMasterSemesters,
   createMasterSemester,

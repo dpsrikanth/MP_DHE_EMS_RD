@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { 
   FileText, Plus, Pencil, X, Check, Calendar, Book, Layers, Hash, ArrowRight,
-  AlertCircle
+  AlertCircle, Globe, Users, Radio, BookOpen
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import authUtils from "../utils/authUtils";
 
 const Exams = () => {
   const [data, setData] = useState([]);
@@ -20,6 +21,8 @@ const Exams = () => {
   const [programs, setPrograms] = useState([]);
   const [academicYears, setAcademicYears] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [subjectMappings, setSubjectMappings] = useState([]);
+  const [availableComponents, setAvailableComponents] = useState([]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -76,14 +79,15 @@ const Exams = () => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const [colRes, semRes, typeRes, depRes, progRes, yearRes, subRes] = await Promise.all([
+      const [colRes, semRes, typeRes, depRes, progRes, yearRes, subRes, mapRes] = await Promise.all([
         fetch('http://localhost:8080/api/colleges', { headers }),
         fetch('http://localhost:8080/api/master-semesters', { headers }),
         fetch('http://localhost:8080/api/exam-types', { headers }),
         fetch('http://localhost:8080/api/master-departments', { headers }),
         fetch('http://localhost:8080/api/master-programs', { headers }),
         fetch('http://localhost:8080/api/academic-years', { headers }),
-        fetch('http://localhost:8080/api/master-subjects', { headers })
+        fetch('http://localhost:8080/api/master-subjects', { headers }),
+        fetch('http://localhost:8080/api/subject-mappings', { headers })
       ]);
 
       if (colRes.ok) setColleges(await colRes.json());
@@ -93,10 +97,59 @@ const Exams = () => {
       if (progRes.ok) setPrograms(await progRes.json());
       if (yearRes.ok) setAcademicYears(await yearRes.json());
       if (subRes.ok) setSubjects(await subRes.json());
+      if (mapRes.ok) setSubjectMappings(await mapRes.json());
     } catch (err) {
       console.error("Failed to fetch dropdown data:", err);
     }
   };
+
+  const fetchComponents = async (context) => {
+    const { college_id, department_id, program_id, semester_id, subject_id } = context;
+    
+    // Only fetch if ALL context fields are present
+    if (!college_id || !department_id || !program_id || !semester_id || !subject_id) {
+      console.log("FRONTEND DEBUG: Incomplete context, clearing components");
+      setAvailableComponents([]);
+      if (!editingId) setFormData(prev => ({ ...prev, name: '' }));
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const query = new URLSearchParams({
+        college_id, department_id, program_id, semester_id, subject_id
+      }).toString();
+
+      console.log("FRONTEND DEBUG: Fetching components with URL:", `http://localhost:8080/api/college-admin/get-components?${query}`);
+
+      const res = await fetch(`http://localhost:8080/api/college-admin/get-components?${query}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        const components = await res.json();
+        console.log("FRONTEND DEBUG: Received components:", components);
+        setAvailableComponents(components);
+        
+        // Auto-select if only one component exists and name is currently empty
+        if (components.length === 1 && !formData.name) {
+          setFormData(prev => ({ ...prev, name: components[0] }));
+        }
+      } else {
+        console.error("FRONTEND DEBUG: Fetch failed with status:", res.status);
+        setAvailableComponents([]);
+      }
+    } catch (err) {
+      console.error("FRONTEND DEBUG: Fetch components error:", err);
+      setAvailableComponents([]);
+    }
+  };
+
+  useEffect(() => {
+    if (isModalOpen) {
+      fetchComponents(formData);
+    }
+  }, [formData.college_id, formData.department_id, formData.program_id, formData.semester_id, formData.subject_id, isModalOpen]);
 
   const fetchData = async () => {
     try {
@@ -118,12 +171,18 @@ const Exams = () => {
   };
 
   const resetForm = () => {
+    const auth = authUtils.getAuth();
+    const isRestricted = authUtils.isCollegeAdmin() || authUtils.isHOD();
+    const defaultCollegeId = isRestricted ? auth.collegeId : '';
+    const defaultDepartmentId = authUtils.isHOD() ? auth.departmentId : '';
+
     setFormData({ 
-      name: '', semester_id: '', college_id: '', exam_type: '', 
-      department_id: '', program_id: '', academic_year_id: '', subject_id: '', 
+      name: '', semester_id: '', college_id: defaultCollegeId, exam_type: '', 
+      department_id: defaultDepartmentId, program_id: '', academic_year_id: '', subject_id: '', 
       exam_date: '', status: true 
     });
     setEditingId(null);
+    setAvailableComponents([]);
     setIsModalOpen(false);
     setError(null);
   };
@@ -143,6 +202,45 @@ const Exams = () => {
     });
     setEditingId(exam.id);
     setIsModalOpen(true);
+  };
+
+  const handleTogglePublish = async (exam) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:8080/api/exams/${exam.id}/publish`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ is_published: !exam.is_published })
+      });
+      if (res.ok) fetchData();
+      else alert("Failed to toggle publish status");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleToggleApplications = async (exam) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:8080/api/exams/${exam.id}/toggle-applications`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ open: !exam.student_application_open })
+      });
+      if (res.ok) fetchData();
+      else {
+        const errData = await res.json();
+        alert(errData.message || "Failed to toggle application status");
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -237,7 +335,10 @@ const Exams = () => {
               onToggle={toggleColumn} 
             />
             <button 
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                resetForm();
+                setIsModalOpen(true);
+              }}
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-2xl shadow-xl shadow-purple-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
             >
               <Plus size={20} />
@@ -333,18 +434,61 @@ const Exams = () => {
                         </div>
                       </td>
                     )}
-                    {visibleColumns.date && (
+                     {visibleColumns.date && (
                       <td className="px-4 py-5">
-                        <div className="flex items-center gap-2 text-slate-500 group-hover:text-purple-600 transition-colors">
-                          <Calendar size={14} />
-                          <span className="text-xs font-black tracking-tighter">
-                            {item.exam_date ? new Date(item.exam_date).toLocaleDateString() : 'N/A'}
-                          </span>
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2 text-slate-500 font-medium">
+                            <Calendar size={14} />
+                            <span className="text-xs">
+                              {item.exam_date ? new Date(item.exam_date).toLocaleDateString() : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {item.is_published ? (
+                              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase rounded-lg border border-emerald-100 flex items-center gap-1">
+                                <Globe size={10} /> Published
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-slate-50 text-slate-400 text-[10px] font-black uppercase rounded-lg border border-slate-100 italic">
+                                Draft
+                              </span>
+                            )}
+                            {item.student_application_open && (
+                              <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-black uppercase rounded-lg border border-blue-100 flex items-center gap-1">
+                                <Radio size={10} className="animate-pulse" /> Enrolling
+                              </span>
+                            )}
+                            {!item.has_marks_structure && (
+                              <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-black uppercase rounded-lg border border-amber-100 flex items-center gap-1" title="Configure Marks Structure">
+                                <AlertCircle size={10} /> Missing Config
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
                     )}
-                    <td className="px-8 py-5 text-right">
-                      <div className="flex items-center justify-end gap-2 text-slate-400">
+                     <td className="px-8 py-5 text-right">
+                      <div className="flex items-center justify-end gap-1.5 text-slate-400">
+                        {(authUtils.isAdmin() || authUtils.isCollegeAdmin()) && (
+                          <>
+                            <button 
+                              onClick={() => handleTogglePublish(item)}
+                              className={`p-2 rounded-xl transition-all ${item.is_published ? 'text-emerald-500 bg-emerald-50' : 'hover:text-purple-600 hover:bg-purple-50'}`}
+                              title={item.is_published ? "Unpublish Exam" : "Publish Exam"}
+                            >
+                              <Globe size={18} />
+                            </button>
+                            <button 
+                              onClick={() => handleToggleApplications(item)}
+                              disabled={!item.is_published}
+                              className={`p-2 rounded-xl transition-all ${!item.is_published ? 'opacity-30 cursor-not-allowed' : item.student_application_open ? 'text-blue-500 bg-blue-50' : 'hover:text-blue-600 hover:bg-blue-50'}`}
+                              title={item.student_application_open ? "Close Applications" : "Open Applications"}
+                            >
+                              <Users size={18} />
+                            </button>
+                            <div className="w-[1px] h-6 bg-slate-100 mx-1" />
+                          </>
+                        )}
                         <button 
                           onClick={() => handleEdit(item)}
                           className="p-2 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
@@ -429,27 +573,16 @@ const Exams = () => {
               )}
 
               <form id="examForm" onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Assessment Name</label>
-                  <input
-                    required
-                    maxLength={255}
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none md:text-base placeholder:text-slate-400 placeholder:font-medium"
-                    placeholder="e.g. Midterm Examination 2026"
-                  />
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">College Context</label>
                     <div className="relative">
                       <select
                         required
+                        disabled={authUtils.isCollegeAdmin()}
                         value={formData.college_id}
                         onChange={(e) => setFormData({ ...formData, college_id: e.target.value })}
-                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer"
+                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                       >
                         <option value="" disabled className="font-medium text-slate-500">Select College</option>
                         {colleges.map(c => (
@@ -466,7 +599,12 @@ const Exams = () => {
                       <select
                         required
                         value={formData.semester_id}
-                        onChange={(e) => setFormData({ ...formData, semester_id: e.target.value })}
+                        onChange={(e) => setFormData({ 
+                          ...formData, 
+                          semester_id: e.target.value,
+                          subject_id: '',
+                          name: ''
+                        })}
                         className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer"
                       >
                         <option value="" disabled className="font-medium text-slate-500">Select Semester</option>
@@ -485,9 +623,16 @@ const Exams = () => {
                     <div className="relative">
                       <select
                         required
+                        disabled={authUtils.isHOD()}
                         value={formData.department_id}
-                        onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
-                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer"
+                        onChange={(e) => setFormData({ 
+                          ...formData, 
+                          department_id: e.target.value,
+                          program_id: '',
+                          subject_id: '',
+                          name: ''
+                        })}
+                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                       >
                         <option value="" disabled className="font-medium text-slate-500">Select Department</option>
                         {departments.map(d => (
@@ -504,13 +649,23 @@ const Exams = () => {
                       <select
                         required
                         value={formData.program_id}
-                        onChange={(e) => setFormData({ ...formData, program_id: e.target.value })}
-                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer"
+                        disabled={!formData.department_id}
+                        onChange={(e) => setFormData({ 
+                          ...formData, 
+                          program_id: e.target.value,
+                          subject_id: '',
+                          name: ''
+                        })}
+                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer disabled:opacity-70"
                       >
-                        <option value="" disabled className="font-medium text-slate-500">Select Program</option>
-                        {programs.map(p => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
+                        <option value="" disabled className="font-medium text-slate-500">
+                          {formData.department_id ? "Select Program" : "Select Department First"}
+                        </option>
+                        {programs
+                          .filter(p => p.department_ids && p.department_ids.includes(parseInt(formData.department_id)))
+                          .map(p => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
                       </select>
                       <Book className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
                     </div>
@@ -542,16 +697,72 @@ const Exams = () => {
                       <select
                         required
                         value={formData.subject_id}
-                        onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
-                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer"
+                        disabled={!formData.program_id}
+                        onChange={(e) => setFormData({ 
+                          ...formData, 
+                          subject_id: e.target.value,
+                          name: ''
+                        })}
+                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer disabled:opacity-70"
                       >
-                        <option value="" disabled className="font-medium text-slate-500">Select Subject</option>
-                        {subjects.map(s => (
+                        <option value="" disabled className="font-medium text-slate-500">
+                           {formData.program_id ? "Select Subject" : "Select Program First"}
+                        </option>
+                        {(() => {
+                          const programIdInt = parseInt(formData.program_id);
+                          const semesterIdInt = parseInt(formData.semester_id);
+                          const departmentIdInt = parseInt(formData.department_id);
+                          
+                          if (!formData.program_id || !formData.semester_id) return [];
+
+                          // Source 1: Explicit mappings from master_subject_mappings table
+                          const mappedFromTableIds = subjectMappings
+                            .filter(m => m.program_id === programIdInt && m.semester_id === semesterIdInt)
+                            .map(m => m.subject_id);
+                          
+                          // Source 2: Direct links from master_subjects table
+                          const mappedDirectly = subjects.filter(s => {
+                            const progMatch = s.program_id === programIdInt;
+                            const semMatch = s.semester_id === semesterIdInt;
+                            const deptMatch = s.department_ids && Array.isArray(s.department_ids) && s.department_ids.includes(departmentIdInt);
+                            return progMatch && semMatch && deptMatch;
+                          });
+                          const mappedDirectlyIds = mappedDirectly.map(s => s.id);
+
+                          // Union of both sources
+                          const allMappedIds = new Set([...mappedFromTableIds, ...mappedDirectlyIds]);
+                          
+                          console.log(`FRONTEND DEBUG: Filtering for Prog:${programIdInt}, Sem:${semesterIdInt}, Dept:${departmentIdInt}. Found ${allMappedIds.size} total subjects.`);
+                          
+                          return subjects.filter(s => allMappedIds.has(s.id));
+                        })().map(s => (
                           <option key={s.id} value={s.id}>{s.name}</option>
                         ))}
                       </select>
                       <FileText className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
                     </div>
+                    {formData.program_id && formData.semester_id && (
+                      <p className="text-[10px] font-medium mt-1 px-1">
+                        {(() => {
+                          const programIdInt = parseInt(formData.program_id);
+                          const semesterIdInt = parseInt(formData.semester_id);
+                          const departmentIdInt = parseInt(formData.department_id);
+                          
+                          const tableCount = subjectMappings.filter(m => m.program_id === programIdInt && m.semester_id === semesterIdInt).length;
+                          const directCount = subjects.filter(s => 
+                            s.program_id === programIdInt && 
+                            s.semester_id === semesterIdInt && 
+                            s.department_ids && s.department_ids.includes(departmentIdInt)
+                          ).length;
+                          
+                          const totalCount = tableCount + directCount; // Overestimate is fine for this indicator
+                          
+                          return totalCount > 0 
+                            ? <span className="text-emerald-600 flex items-center gap-1"><Check size={10} /> {totalCount} Subjects available for this context</span>
+                            : <span className="text-amber-600 flex items-center gap-1"><AlertCircle size={10} /> No subjects found! Check Subject Mappings or Subject Profile settings.</span>;
+                        })()}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -563,7 +774,7 @@ const Exams = () => {
                         required
                         value={formData.exam_type}
                         onChange={(e) => setFormData({ ...formData, exam_type: e.target.value })}
-                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer"
+                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer"
                       >
                         <option value="" disabled className="font-medium text-slate-500">Select Exam Type</option>
                         {examTypes.map(t => (
@@ -582,10 +793,36 @@ const Exams = () => {
                         type="date"
                         value={formData.exam_date}
                         onChange={(e) => setFormData({ ...formData, exam_date: e.target.value })}
-                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none cursor-pointer"
+                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 px-5 transition-all outline-none cursor-pointer"
                       />
                     </div>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Assessment Name (Component)</label>
+                  <div className="relative">
+                    <select
+                      required
+                      value={formData.name}
+                      disabled={!formData.subject_id}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                      <option value="" disabled className="font-medium text-slate-500">
+                        {!formData.subject_id ? "Select Subject First" : (availableComponents.length > 0 ? "Select Component" : "No Components Defined")}
+                      </option>
+                      {availableComponents.map(comp => (
+                        <option key={comp} value={comp}>{comp}</option>
+                      ))}
+                    </select>
+                    <BookOpen className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                  </div>
+                  {formData.subject_id && !availableComponents.length && (
+                    <p className="text-[10px] text-amber-600 font-bold px-1 flex items-center gap-1">
+                      <AlertCircle size={10} /> Please ensure marks structure is configured to see components
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-4 pt-2">

@@ -1,15 +1,27 @@
 const pool = require('./db');
-(async () => {
+
+async function checkSchema() {
   try {
     const res = await pool.query(`
-            SELECT column_name, data_type 
-            FROM information_schema.columns 
-            WHERE table_name = 'users';
-        `);
-    console.log(JSON.stringify(res.rows, null, 2));
-    process.exit(0);
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'exams';
+    `);
+    console.log("Exams Table Columns:");
+    console.table(res.rows);
+
+    const marksRes = await pool.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'internal_marks_structure';
+    `);
+    console.log("\nInternal Marks Structure Table Columns:");
+    console.table(marksRes.rows);
   } catch (err) {
     console.error(err);
-    process.exit(1);
+  } finally {
+    process.exit();
   }
-})();
+}
+
+checkSchema();

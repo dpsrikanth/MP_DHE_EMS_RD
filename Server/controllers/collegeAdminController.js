@@ -146,6 +146,53 @@ exports.getMarksStructure = async (req, res) => {
     }
 };
 
+exports.getMarksStructureComponents = async (req, res) => {
+    try {
+        const { college_id, department_id, program_id, semester_id, subject_id } = req.query;
+        
+        console.log("DEBUG: getMarksStructureComponents called with:", {
+            college_id, department_id, program_id, semester_id, subject_id
+        });
+
+        if (!college_id || !department_id || !program_id || !semester_id || !subject_id) {
+            return res.status(400).json({ error: "Missing required query parameters" });
+        }
+
+        const query = `
+            SELECT DISTINCT component_name 
+            FROM internal_marks_structure 
+            WHERE college_id = $1 
+              AND department_id = $2 
+              AND program_id = $3 
+              AND semester_id = $4 
+              AND subject_id = $5
+            ORDER BY component_name;
+        `;
+        const params = [
+            parseInt(college_id), 
+            parseInt(department_id), 
+            parseInt(program_id), 
+            parseInt(semester_id), 
+            parseInt(subject_id)
+        ];
+        
+        if (params.some(p => isNaN(p))) {
+            console.warn("DEBUG: Skipping query due to NaN parameters:", params);
+            return res.status(200).json([]);
+        }
+
+        console.log("DEBUG: Executing query with params:", params);
+        
+        const result = await db.query(query, params);
+        console.log("DEBUG: Query result rows:", result.rows.length, result.rows);
+        
+        res.status(200).json(result.rows.map(r => r.component_name));
+    } catch (error) {
+        console.error("Get components error:", error);
+        res.status(500).json({ error: "Failed to fetch components" });
+    }
+};
+
 exports.getAllMarksStructures = async (req, res) => {
     try {
         const college_id = req.user?.college_id;
