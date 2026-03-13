@@ -204,8 +204,11 @@ const Teachers = () => {
 
     if (!form.aadhaar_no) {
       errs.aadhaar_no = 'Aadhaar is required';
-    } else if (!/^\d{12}$/.test(form.aadhaar_no)) {
-      errs.aadhaar_no = 'Aadhaar must be 12 digits';
+    } else {
+      const cleanAadhaar = form.aadhaar_no.toString().replace(/\s/g, '');
+      if (!/^\d{12}$/.test(cleanAadhaar)) {
+        errs.aadhaar_no = 'Aadhaar must be 12 digits';
+      }
     }
 
     if (!form.dob) errs.dob = 'Date of birth is required';
@@ -475,7 +478,14 @@ const Teachers = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     const errs = validate(editForm);
-    if (Object.keys(errs).length > 0) return setEditErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      setEditErrors(errs);
+      setEditError('Please correct the highlighted errors in the form.');
+      // Scroll to the top of the modal content
+      const modalContent = document.querySelector('.max-h-\\[70vh\\]');
+      if (modalContent) modalContent.scrollTop = 0;
+      return;
+    }
 
     setEditLoading(true);
     setEditError('');

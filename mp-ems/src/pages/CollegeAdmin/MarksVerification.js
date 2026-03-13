@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { CheckCircle, Clock, ShieldAlert, FileText, ChevronRight } from 'lucide-react';
+import { CheckCircle, Clock, ShieldAlert, FileText, ChevronRight, Lock, Building } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const MarksVerification = () => {
     const [trackingData, setTrackingData] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const [isUnlocking, setIsUnlocking] = useState(false);
+
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const isAdmin = user.role?.toLowerCase() === 'admin' || user.role === 'college_admin';
+
 
     useEffect(() => {
         fetchTrackingData();
@@ -17,11 +22,18 @@ const MarksVerification = () => {
             setLoading(true);
             const token = localStorage.getItem('token');
             const userStr = localStorage.getItem('user');
-            const collegeId = userStr ? JSON.parse(userStr).college_id : 1;
+            const user = userStr ? JSON.parse(userStr) : {};
+            const collegeId = user.college_id;
 
-            const res = await fetch(`http://localhost:8080/api/college-admin/marks-tracking?college_id=${collegeId}`, {
+            let url = `http://localhost:8080/api/college-admin/marks-tracking`;
+            if (collegeId) {
+                url += `?college_id=${collegeId}`;
+            }
+
+            const res = await fetch(url, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+
             if (res.ok) {
                 const data = await res.json();
                 setTrackingData(data);
@@ -41,6 +53,41 @@ const MarksVerification = () => {
             }
         });
     };
+
+    const handleUnlockMarks = async (item) => {
+        if (!window.confirm(`Are you sure you want to UNLOCK marks for ${item.subject_name} (Section ${item.section})? This will delete individual reviews and calculated results.`)) {
+            return;
+        }
+
+        setIsUnlocking(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:8080/api/college-admin/unlock-marks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({
+                    subject_id: item.subject_id,
+                    section: item.section,
+                    college_id: item.college_id,
+                    semester_id: item.semester_id,
+                    academic_year_id: item.academic_year_id
+                })
+            });
+
+            if (res.ok) {
+                toast.success("Marks successfully unlocked!");
+                fetchTrackingData(); // Refresh list
+            } else {
+                const err = await res.json();
+                toast.error(err.error || "Failed to unlock marks");
+            }
+        } catch (error) {
+            toast.error("Error unlocking marks");
+        } finally {
+            setIsUnlocking(false);
+        }
+    };
+
 
     const getStatusConfig = (status) => {
         switch (status) {
@@ -96,19 +143,38 @@ const MarksVerification = () => {
                                         </button>
                                     )}
                                      {item.status === 'Locked' && (
-                                        <button 
-                                            className="text-emerald-600 bg-emerald-50 p-2 rounded-xl cursor-default"
-                                            title="Already Locked"
-                                        >
-                                            <CheckCircle size={20} />
-                                        </button>
+                                        <div className="flex gap-2">
+                                            {isAdmin && (
+                                                <button 
+                                                    onClick={() => handleUnlockMarks(item)}
+                                                    className="text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 p-2 rounded-xl transition-colors"
+                                                    title="Unlock Marks (Admin Only)"
+                                                >
+                                                    <Lock size={20} />
+                                                </button>
+                                            )}
+                                            <button 
+                                                className="text-emerald-600 bg-emerald-50 p-2 rounded-xl cursor-default"
+                                                title="Already Locked"
+                                            >
+                                                <CheckCircle size={20} />
+                                            </button>
+                                        </div>
                                     )}
+
                                 </div>
 
                                 <div className="space-y-1 mt-2">
                                     <h3 className="text-lg font-bold text-slate-900 leading-tight">{item.subject_name}</h3>
-                                    <p className="text-sm font-medium text-slate-500">Section: {item.section}</p>
+                                    <div className="flex flex-col gap-1">
+                                        <p className="text-sm font-medium text-slate-500">Section: {item.section}</p>
+                                        <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 bg-indigo-50/50 w-fit px-2 py-0.5 rounded-md">
+                                            <Building size={12} />
+                                            {item.college_name || `College ID: ${item.college_id}`}
+                                        </div>
+                                    </div>
                                 </div>
+
 
                                 <div className="mt-6 pt-4 border-t border-slate-100 grid grid-cols-2 gap-4 text-xs font-medium text-slate-500">
                                     <div>

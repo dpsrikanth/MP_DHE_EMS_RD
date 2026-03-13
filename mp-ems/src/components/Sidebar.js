@@ -53,6 +53,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       { id: 11, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
       { id: 12, name: 'Marks', path: '/marks', icon: <BarChart3 size={20} /> },
       { id: 13, name: 'Policies', path: '/policies', icon: <ShieldCheck size={20} /> },
+      { id: 15, name: 'Verify & Unlock', path: '/admin/marks-verification', icon: <ShieldCheck size={20} /> },
     ];
 
     if (roleName === 'college_admin') {

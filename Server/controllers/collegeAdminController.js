@@ -442,27 +442,42 @@ exports.getMarksTracking = async (req, res) => {
     try {
         const { college_id, semester_id } = req.query;
         let query = `
-            SELECT DISTINCT mws.*, s.name as subject_name, ay.year_name as academic_year, sem.semester_name as semester, mp.name as program_name
+            SELECT DISTINCT mws.*, s.name as subject_name, ay.year_name as academic_year, sem.semester_name as semester, 
+                   mp.name as program_name, c.name as college_name
             FROM marks_workflow_status mws
             LEFT JOIN master_subjects s ON mws.subject_id = s.id
             LEFT JOIN master_academic_years ay ON mws.academic_year_id = ay.id
             LEFT JOIN master_semesters sem ON mws.semester_id = sem.id
             LEFT JOIN policy_program_subjects pps ON mws.subject_id = pps.subject_id AND mws.college_id = pps.college_id AND mws.semester_id = pps.semester_id
             LEFT JOIN master_programs mp ON pps.program_id = mp.id
-            WHERE mws.college_id = $1
+            LEFT JOIN colleges c ON mws.college_id = c.id
+            WHERE 1=1
         `;
-        let params = [college_id];
-        if (semester_id) {
-            query += ` AND mws.semester_id = $2`;
+
+        let params = [];
+        let paramCount = 0;
+
+        // Only filter by college_id if it's a valid value (not 'null' or empty)
+        if (college_id && college_id !== 'null' && college_id !== 'undefined') {
+            paramCount++;
+            query += ` AND mws.college_id = $${paramCount}`;
+            params.push(college_id);
+        }
+
+        if (semester_id && semester_id !== 'null' && semester_id !== 'undefined') {
+            paramCount++;
+            query += ` AND mws.semester_id = $${paramCount}`;
             params.push(semester_id);
         }
+        
         const result = await db.query(query, params);
         res.status(200).json(result.rows);
     } catch (error) {
-        console.error(error);
+        console.error("getMarksTracking error:", error);
         res.status(500).json({ error: "Failed to fetch marks tracking overview" });
     }
 };
+
 
 exports.reviewMarks = async (req, res) => {
     try {
@@ -800,3 +815,66 @@ exports.getMarksReport = async (req, res) => {
         res.status(500).json({ error: "Failed to fetch marks report" });
     }
 };
+
+exports.unlockMarks = async (req, res) => {
+    try {
+        const { subject_id, section, college_id, semester_id, academic_year_id } = req.body;
+        const { role, id: user_id } = req.user;
+
+        // Security check: Only Admins can unlock
+        if (role?.toLowerCase() !== 'admin' && role !== 'college_admin') {
+            return res.status(403).json({ error: "Only Admins can unlock marks" });
+        }
+
+        const client = await db.connect();
+        try {
+            await client.query('BEGIN');
+
+            console.log(`--- Unlocking Marks for Subject ${subject_id}, Section ${section} ---`);
+
+            // 1. Reset workflow status to Pending
+            await client.query(`
+                UPDATE marks_workflow_status 
+                SET status = 'Pending', approved_by = NULL, updated_at = CURRENT_TIMESTAMP
+                WHERE subject_id = $1 AND section = $2 AND college_id = $3 
+                  AND semester_id = $4 AND academic_year_id = $5
+            `, [subject_id, section, college_id, semester_id, academic_year_id]);
+
+            // 2. Delete individual student reviews for this section
+            await client.query(`
+                DELETE FROM student_marks_review 
+                WHERE subject_id = $1 AND section = $2 AND college_id = $3
+                  AND semester_id = $4 AND academic_year_id = $5
+            `, [subject_id, section, college_id, semester_id, academic_year_id]);
+
+            // 3. Delete calculated marks for this subject context 
+            // Since calculation is per-subject and requires all sections locked,
+            // unlocking one section invalidates the calculation for that subject/semester.
+            await client.query(`
+                DELETE FROM calculated_internal_marks 
+                WHERE subject_id = $1 AND college_id = $2 
+                  AND semester_id = $3 AND academic_year_id = $4
+            `, [subject_id, college_id, semester_id, academic_year_id]);
+
+            // 4. Audit Log
+            await client.query(`
+                INSERT INTO audit_logs (user_id, action, entity_type, entity_id) 
+                VALUES ($1, 'MARKS_UNLOCKED', 'MARKS_WORKFLOW', $2)
+            `, [user_id, subject_id]);
+
+            await client.query('COMMIT');
+            res.status(200).json({ message: "Marks successfully unlocked. Workflow reset to Pending." });
+
+        } catch (innerError) {
+            await client.query('ROLLBACK');
+            throw innerError;
+        } finally {
+            client.release();
+        }
+
+    } catch (error) {
+        console.error("Unlock Marks Error:", error);
+        res.status(500).json({ error: "Failed to unlock marks", details: error.message });
+    }
+};
+
