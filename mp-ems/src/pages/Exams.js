@@ -47,8 +47,42 @@ const Exams = () => {
     { key: 'date', label: 'Timeline' }
   ];
 
+
+  // Group data by series for display
+  const groupedData = React.useMemo(() => {
+    const groups = {};
+    data.forEach(item => {
+      // Group key: Name + Semester + College + Type + Program + Academic Year
+      const key = `${item.exam_name}_${item.semester_id}_${item.college_id || 'null'}_${item.exam_type}_${item.program_id}_${item.academic_year_id}`;
+      if (!groups[key]) {
+        groups[key] = {
+          ...item,
+          subjects: []
+        };
+      }
+      groups[key].subjects.push({
+        id: item.id,
+        subject_id: item.subject_id,
+        subject_name: item.subject_name,
+        exam_date: item.exam_date,
+        start_time: item.start_time,
+        end_time: item.end_time,
+        is_published: item.is_published,
+        student_application_open: item.student_application_open,
+        has_marks_structure: item.has_marks_structure
+      });
+    });
+    // Sort groups by ID (highest/latest first)
+    return Object.values(groups).sort((a, b) => b.id - a.id);
+  }, [data]);
+
+  // Apply search/pagination to groupedData if needed, but useDataTable already handles 'data'.
+  // We'll update useDataTable to use groupedData or manually filter/paginate here for better control.
+  // Actually, for consistency with 'useDataTable' hook, let's keep it simple and just group the paginatedData 
+  // OR map the paginatedData to its group owners. 
+  // Best: Group the entire dataset, then apply search/pagination to groups.
   const {
-    paginatedData,
+    paginatedData: groupedPaginatedData,
     searchQuery,
     setSearchQuery,
     sortConfig,
@@ -61,7 +95,7 @@ const Exams = () => {
     totalItems,
     visibleColumns,
     toggleColumn
-  } = useDataTable(data, { 
+  } = useDataTable(groupedData, { 
     searchFields: ['id', 'exam_name'],
     initialSort: { field: 'id', direction: 'desc' },
     initialPageSize: 10,
@@ -188,6 +222,16 @@ const Exams = () => {
   };
 
   const handleEdit = (exam) => {
+    // Find all subjects in this series
+    const series = data.filter(item => 
+      item.exam_name === exam.exam_name && 
+      item.semester_id === exam.semester_id && 
+      (item.college_id === exam.college_id || (!item.college_id && !exam.college_id)) &&
+      item.exam_type === exam.exam_type &&
+      item.program_id === exam.program_id &&
+      item.academic_year_id === exam.academic_year_id
+    );
+
     setFormData({
       name: exam.exam_name || '',
       semester_id: exam.semester_id || '',
@@ -196,73 +240,94 @@ const Exams = () => {
       department_id: exam.department_id || '',
       program_id: exam.program_id || '',
       academic_year_id: exam.academic_year_id || '',
-      subject_id: exam.subject_id || '',
-      exam_date: exam.exam_date ? new Date(exam.exam_date).toISOString().split('T')[0] : '',
-      start_time: exam.start_time || '',
-      end_time: exam.end_time || '',
       status: exam.status,
-      subjects: [] // Not used for editing single records
+      // Map existing records to the subjects array structure
+      subjects: series.map(s => ({
+        id: s.id,
+        subject_id: s.subject_id,
+        exam_date: s.exam_date ? new Date(s.exam_date).toISOString().split('T')[0] : '',
+        start_time: s.start_time || '',
+        end_time: s.end_time || ''
+      }))
     });
     setEditingId(exam.id);
     setIsModalOpen(true);
   };
 
-  const handleTogglePublish = async (exam) => {
+  const handleTogglePublish = async (series) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/exams/${exam.id}/publish`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ is_published: !exam.is_published })
-      });
-      if (res.ok) fetchData();
-      else alert("Failed to toggle publish status");
+      setLoading(true);
+      // Determine new status (toggle based on the first item in series for consistency)
+      const newStatus = !series.subjects[0].is_published;
+      
+      const promises = series.subjects.map(s => 
+        fetch(`http://localhost:8080/api/exams/${s.id}/publish`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}` 
+          },
+          body: JSON.stringify({ is_published: newStatus })
+        })
+      );
+      
+      await Promise.all(promises);
+      fetchData();
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleToggleApplications = async (exam) => {
+  const handleToggleApplications = async (series) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/exams/${exam.id}/toggle-applications`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ open: !exam.student_application_open })
-      });
-      if (res.ok) fetchData();
-      else {
-        const errData = await res.json();
-        alert(errData.message || "Failed to toggle application status");
-      }
+      setLoading(true);
+      const newStatus = !series.subjects[0].student_application_open;
+
+      const promises = series.subjects.map(s => 
+        fetch(`http://localhost:8080/api/exams/${s.id}/toggle-applications`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}` 
+          },
+          body: JSON.stringify({ open: newStatus })
+        })
+      );
+      
+      await Promise.all(promises);
+      fetchData();
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this exam?")) return;
+  const handleDelete = async (series) => {
+    if (!window.confirm(`Are you sure you want to delete this entire exam series (${series.subjects.length} subjects)?`)) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/exams/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        fetchData();
-      } else {
-        const errData = await res.json();
-        alert(errData.message || "Failed to delete exam");
-      }
+      setLoading(true);
+      
+      // Delete all subjects in parallel
+      const deletePromises = series.subjects.map(s => 
+        fetch(`http://localhost:8080/api/exams/${s.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      );
+      
+      await Promise.all(deletePromises);
+      fetchData();
     } catch (err) {
       console.error(err);
-      alert("Error deleting exam");
+      alert("Error deleting exam series");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -386,26 +451,31 @@ const Exams = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {paginatedData.length > 0 ? (
-                paginatedData.map((item) => (
+              {groupedPaginatedData.length > 0 ? (
+                groupedPaginatedData.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
                     {visibleColumns.id && (
                       <td className="px-8 py-5">
                         <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                           #{item.id}
                         </span>
+                        {item.subjects.length > 1 && (
+                          <div className="mt-1 text-[9px] font-bold text-purple-400 uppercase">
+                            Series ({item.subjects.length})
+                          </div>
+                        )}
                       </td>
                     )}
                     {visibleColumns.details && (
                       <td className="px-4 py-5">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500 border border-purple-100 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300">
-                            <FileText size={18} />
+                            <Layers size={18} />
                           </div>
                           <div>
-                            <p className="text-sm font-bold text-slate-900 leading-none mb-1">{item.exam_name}</p>
+                            <p className="text-sm font-bold text-slate-900 mb-1">{item.exam_name}</p>
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none flex items-center gap-1.5">
-                              Major Assessment <ArrowRight size={10} /> Tier 1
+                              Timetable Group <ArrowRight size={10} /> {item.semester_name || `SEM-${item.semester_id}`}
                             </p>
                           </div>
                         </div>
@@ -416,7 +486,7 @@ const Exams = () => {
                         <div className="flex flex-col gap-1.5">
                           <div className="flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 bg-blue-400 rounded-full shrink-0" />
-                            <p className="text-xs font-bold text-slate-700 truncate max-w-[200px]" title={item.college_name}>{item.college_name || `College-${item.college_id}`}</p>
+                            <p className="text-xs font-bold text-slate-700 truncate max-w-[200px]" title={item.college_name}>{item.college_name || 'University-wide'}</p>
                           </div>
                           {(item.department_name || item.program_name) && (
                             <div className="flex items-center gap-1.5">
@@ -426,78 +496,57 @@ const Exams = () => {
                               </p>
                             </div>
                           )}
-                          {(item.subject_name || item.year_name) && (
-                            <div className="flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 bg-amber-400 rounded-full shrink-0" />
-                              <p className="text-[11px] font-semibold text-slate-500 truncate max-w-[200px]">
-                                {item.subject_name} {item.year_name ? `(${item.year_name})` : ''}
-                              </p>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full shrink-0" />
-                            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-tight">{item.semester_name || `Semester-${item.semester_id}`}</p>
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {item.subjects.map(s => (
+                              <span key={s.id} className="text-[9px] font-bold px-2 py-0.5 bg-slate-50 text-slate-500 rounded-md border border-slate-200">
+                                {s.subject_name}
+                              </span>
+                            ))}
                           </div>
                         </div>
                       </td>
                     )}
                      {visibleColumns.date && (
                       <td className="px-4 py-5">
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center gap-2 text-slate-500 font-medium">
-                            <Calendar size={14} />
-                            <span className="text-xs">
-                              {item.exam_date ? new Date(item.exam_date).toLocaleDateString() : 'N/A'}
-                              {item.start_time && (
-                                <div className="mt-1 flex items-center gap-1.5">
-                                  <Clock size={10} className="text-slate-400" />
-                                  <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-100">
-                                    {item.start_time} - {item.end_time}
-                                  </span>
-                                </div>
-                              )}
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {item.is_published ? (
-                              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase rounded-lg border border-emerald-100 flex items-center gap-1">
-                                <Globe size={10} /> Published
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 bg-slate-50 text-slate-400 text-[10px] font-black uppercase rounded-lg border border-slate-100 italic">
-                                Draft
-                              </span>
-                            )}
-                            {item.student_application_open && (
-                              <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-black uppercase rounded-lg border border-blue-100 flex items-center gap-1">
-                                <Radio size={10} className="animate-pulse" /> Enrolling
-                              </span>
-                            )}
-                            {!item.has_marks_structure && (
-                              <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-black uppercase rounded-lg border border-amber-100 flex items-center gap-1" title="Configure Marks Structure">
-                                <AlertCircle size={10} /> Missing Config
-                              </span>
-                            )}
-                          </div>
+                        <div className="space-y-3">
+                          {item.subjects.map((s, idx) => (
+                            <div key={s.id} className={`${idx > 0 ? 'pt-2 border-t border-slate-50' : ''} space-y-1`}>
+                              <div className="flex items-center gap-2 text-slate-600 font-bold text-[11px]">
+                                <Calendar size={12} className="text-slate-400" />
+                                <span>{s.exam_date ? new Date(s.exam_date).toLocaleDateString() : 'N/A'}</span>
+                                {s.start_time && (
+                                  <span className="text-[10px] text-slate-400 font-medium">({s.start_time}-{s.end_time})</span>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {s.is_published ? (
+                                  <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase rounded-md border border-emerald-100">Published</span>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 bg-slate-50 text-slate-400 text-[9px] font-black uppercase rounded-md border border-slate-100 italic">Draft</span>
+                                )}
+                                {s.student_application_open && (
+                                  <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[9px] font-black uppercase rounded-md border border-blue-100">Enrolling</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </td>
                     )}
-                     <td className="px-8 py-5 text-right">
-                      <div className="flex items-center justify-end gap-1.5 text-slate-400">
+                     <td className="px-8 py-5 text-right">                      <div className="flex items-center justify-end gap-1.5 text-slate-400">
                         {(authUtils.isAdmin() || authUtils.isCollegeAdmin()) && (
                           <>
                             <button 
                               onClick={() => handleTogglePublish(item)}
-                              className={`p-2 rounded-xl transition-all ${item.is_published ? 'text-emerald-500 bg-emerald-50' : 'hover:text-purple-600 hover:bg-purple-50'}`}
-                              title={item.is_published ? "Unpublish Exam" : "Publish Exam"}
+                              className={`p-2 rounded-xl transition-all ${item.subjects[0].is_published ? 'text-emerald-500 bg-emerald-50' : 'hover:text-purple-600 hover:bg-purple-50'}`}
+                              title={item.subjects[0].is_published ? "Unpublish Series" : "Publish Series"}
                             >
                               <Globe size={18} />
                             </button>
                             <button 
-                              onClick={() => handleToggleApplications(item)}
-                              disabled={!item.is_published}
-                              className={`p-2 rounded-xl transition-all ${!item.is_published ? 'opacity-30 cursor-not-allowed' : item.student_application_open ? 'text-blue-500 bg-blue-50' : 'hover:text-blue-600 hover:bg-blue-50'}`}
-                              title={item.student_application_open ? "Close Applications" : "Open Applications"}
+                               onClick={() => handleToggleApplications(item)}
+                               className={`p-2 rounded-xl transition-all ${item.subjects[0].student_application_open ? 'text-blue-500 bg-blue-50' : 'hover:text-purple-600 hover:bg-purple-50'}`}
+                               title={item.subjects[0].student_application_open ? "Close Series Enrollments" : "Open Series Enrollments"}
                             >
                               <Users size={18} />
                             </button>
@@ -512,13 +561,14 @@ const Exams = () => {
                           <Pencil size={18} />
                         </button>
                         <button 
-                          onClick={() => handleDelete(item.id)}
+                          onClick={() => handleDelete(item)}
                           className="p-2 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                           title="Revoke Schedule"
                         >
                           <MdDelete size={20} />
                         </button>
                       </div>
+
                     </td>
                   </tr>
                 ))
@@ -750,164 +800,117 @@ const Exams = () => {
                   </div>
                 </div>
 
-                {!editingId ? (
-                  <div className="space-y-4 pt-4 border-t border-slate-100">
-                    <div className="flex items-center justify-between mb-2">
-                       <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Subjects & Schedule</label>
-                       <button 
-                        type="button"
-                        onClick={() => setFormData({
-                          ...formData,
-                          subjects: [...formData.subjects, { id: Date.now(), subject_id: '', exam_date: '', start_time: '', end_time: '' }]
-                        })}
-                        className="text-[10px] font-black uppercase text-purple-600 hover:text-purple-700 flex items-center gap-1 bg-purple-50 px-3 py-1.5 rounded-xl border border-purple-100 transition-all"
-                       >
-                         <Plus size={12} /> Add Subject Row
-                       </button>
-                    </div>
-                    
-                    {formData.subjects.map((sub, index) => (
-                      <div key={sub.id} className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 space-y-4 relative">
-                        {formData.subjects.length > 1 && (
-                          <button 
-                            type="button"
-                            onClick={() => setFormData({
-                              ...formData,
-                              subjects: formData.subjects.filter(s => s.id !== sub.id)
-                            })}
-                            className="absolute -top-2 -right-2 w-6 h-6 bg-white border border-slate-100 text-slate-400 hover:text-red-500 rounded-full flex items-center justify-center shadow-sm transition-all"
-                          >
-                            <X size={12} />
-                          </button>
-                        )}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject</label>
-                            <select
-                              required
-                              value={sub.subject_id}
-                              onChange={(e) => {
-                                const newSubs = [...formData.subjects];
-                                newSubs[index].subject_id = e.target.value;
-                                setFormData({ ...formData, subjects: newSubs });
-                              }}
-                              className="w-full h-12 bg-white border border-slate-200 text-slate-900 text-sm font-bold rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-4 transition-all outline-none"
-                            >
-                              <option value="">Select Subject</option>
-                              {(() => {
-                                const programIdInt = parseInt(formData.program_id);
-                                const semesterIdInt = parseInt(formData.semester_id);
-                                const departmentIdInt = parseInt(formData.department_id);
-                                if (!formData.program_id || !formData.semester_id) return [];
-                                const mappedFromTableIds = subjectMappings
-                                  .filter(m => m.program_id === programIdInt && m.semester_id === semesterIdInt)
-                                  .map(m => m.subject_id);
-                                const mappedDirectly = subjects.filter(s => {
-                                  const progMatch = s.program_id === programIdInt;
-                                  const semMatch = s.semester_id === semesterIdInt;
-                                  const deptMatch = !departmentIdInt || (s.department_ids && Array.isArray(s.department_ids) && s.department_ids.includes(departmentIdInt));
-                                  return progMatch && semMatch && deptMatch;
-                                });
-                                const allMappedIds = new Set([...mappedFromTableIds, ...mappedDirectly.map(s => s.id)]);
-                                return subjects.filter(s => allMappedIds.has(s.id));
-                              })().map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
-                            <input
-                              required
-                              type="date"
-                              value={sub.exam_date}
-                              onChange={(e) => {
-                                const newSubs = [...formData.subjects];
-                                newSubs[index].exam_date = e.target.value;
-                                setFormData({ ...formData, subjects: newSubs });
-                              }}
-                              className="w-full h-12 bg-white border border-slate-200 text-slate-900 text-sm font-bold rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-4 transition-all outline-none"
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Start Time</label>
-                            <input
-                              type="text"
-                              placeholder="09.00 A.M"
-                              value={sub.start_time}
-                              onChange={(e) => {
-                                const newSubs = [...formData.subjects];
-                                newSubs[index].start_time = e.target.value;
-                                setFormData({ ...formData, subjects: newSubs });
-                              }}
-                              className="w-full h-12 bg-white border border-slate-200 text-slate-900 text-sm font-bold rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-4 transition-all outline-none"
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">End Time</label>
-                            <input
-                              type="text"
-                              placeholder="12.00 NOON"
-                              value={sub.end_time}
-                              onChange={(e) => {
-                                const newSubs = [...formData.subjects];
-                                newSubs[index].end_time = e.target.value;
-                                setFormData({ ...formData, subjects: newSubs });
-                              }}
-                              className="w-full h-12 bg-white border border-slate-200 text-slate-900 text-sm font-bold rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-4 transition-all outline-none"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <div className="flex items-center justify-between mb-2">
+                     <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Subjects & Schedule</label>
+                     <button 
+                      type="button"
+                      onClick={() => setFormData({
+                        ...formData,
+                        subjects: [...formData.subjects, { id: 'new-' + Date.now(), subject_id: '', exam_date: '', start_time: '', end_time: '' }]
+                      })}
+                      className="text-[10px] font-black uppercase text-purple-600 hover:text-purple-700 flex items-center gap-1 bg-purple-50 px-3 py-1.5 rounded-xl border border-purple-100 transition-all"
+                     >
+                       <Plus size={12} /> Add Subject Row
+                     </button>
                   </div>
-                ) : (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Subject</label>
-                        <select
-                          required
-                          value={formData.subject_id}
-                          onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
-                          className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none"
+                  
+                  {formData.subjects.map((sub, index) => (
+                    <div key={sub.id} className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 space-y-4 relative">
+                      {formData.subjects.length > 1 && (
+                        <button 
+                          type="button"
+                          onClick={() => setFormData({
+                            ...formData,
+                            subjects: formData.subjects.filter(s => s.id !== sub.id)
+                          })}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-white border border-slate-100 text-slate-400 hover:text-red-500 rounded-full flex items-center justify-center shadow-sm transition-all"
                         >
-                          {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                        </select>
+                          <X size={12} />
+                        </button>
+                      )}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject</label>
+                          <select
+                            required
+                            value={sub.subject_id}
+                            onChange={(e) => {
+                              const newSubs = [...formData.subjects];
+                              newSubs[index].subject_id = e.target.value;
+                              setFormData({ ...formData, subjects: newSubs });
+                            }}
+                            className="w-full h-12 bg-white border border-slate-200 text-slate-900 text-sm font-bold rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-4 transition-all outline-none"
+                          >
+                            <option value="">Select Subject</option>
+                            {/* Filtering logic for subjects */}
+                            {(() => {
+                              const programIdInt = parseInt(formData.program_id);
+                              const semesterIdInt = parseInt(formData.semester_id);
+                              const departmentIdInt = parseInt(formData.department_id);
+                              if (!formData.program_id || !formData.semester_id) return [];
+                              const mappedFromTableIds = subjectMappings
+                                .filter(m => m.program_id === programIdInt && m.semester_id === semesterIdInt)
+                                .map(m => m.subject_id);
+                              const mappedDirectly = subjects.filter(s => {
+                                const progMatch = s.program_id === programIdInt;
+                                const semMatch = s.semester_id === semesterIdInt;
+                                const deptMatch = !departmentIdInt || (s.department_ids && Array.isArray(s.department_ids) && s.department_ids.includes(departmentIdInt));
+                                return progMatch && semMatch && deptMatch;
+                              });
+                              const allMappedIds = new Set([...mappedFromTableIds, ...mappedDirectly.map(s => s.id)]);
+                              return subjects.filter(s => allMappedIds.has(s.id));
+                            })().map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
+                          <input
+                            required
+                            type="date"
+                            value={sub.exam_date}
+                            onChange={(e) => {
+                              const newSubs = [...formData.subjects];
+                              newSubs[index].exam_date = e.target.value;
+                              setFormData({ ...formData, subjects: newSubs });
+                            }}
+                            className="w-full h-12 bg-white border border-slate-200 text-slate-900 text-sm font-bold rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-4 transition-all outline-none"
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Schedule Date</label>
-                        <input
-                          required
-                          type="date"
-                          value={formData.exam_date}
-                          onChange={(e) => setFormData({ ...formData, exam_date: e.target.value })}
-                          className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none"
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Start Time</label>
+                          <input
+                            type="text"
+                            placeholder="09.00 A.M"
+                            value={sub.start_time}
+                            onChange={(e) => {
+                              const newSubs = [...formData.subjects];
+                              newSubs[index].start_time = e.target.value;
+                              setFormData({ ...formData, subjects: newSubs });
+                            }}
+                            className="w-full h-12 bg-white border border-slate-200 text-slate-900 text-sm font-bold rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-4 transition-all outline-none"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">End Time</label>
+                          <input
+                            type="text"
+                            placeholder="12.00 NOON"
+                            value={sub.end_time}
+                            onChange={(e) => {
+                              const newSubs = [...formData.subjects];
+                              newSubs[index].end_time = e.target.value;
+                              setFormData({ ...formData, subjects: newSubs });
+                            }}
+                            className="w-full h-12 bg-white border border-slate-200 text-slate-900 text-sm font-bold rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-4 transition-all outline-none"
+                          />
+                        </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Start Time</label>
-                        <input
-                          type="text"
-                          value={formData.start_time}
-                          onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                          className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">End Time</label>
-                        <input
-                          type="text"
-                          value={formData.end_time}
-                          onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                          className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
+                  ))}
+                </div>
 
                 <div className="flex items-center gap-4 pt-2">
                   <button 

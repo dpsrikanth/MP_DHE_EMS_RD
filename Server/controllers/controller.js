@@ -976,24 +976,80 @@ const updateExam = async (req, res) => {
   try {
     const { id } = req.params;
     const { role, college_id: userCollegeId, department_id: userDepartmentId } = req.user;
-    let { name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, start_time, end_time } = req.body;
-
+    let { name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, start_time, end_time, subjects } = req.body;
+    
     // Check if exists
-    const checkResult = await client.query('SELECT college_id, department_id FROM exams WHERE id = $1', [id]);
+    const checkResult = await client.query('SELECT name, semester_id, college_id, exam_type, program_id, academic_year_id, department_id FROM exams WHERE id = $1', [id]);
     if (checkResult.rows.length === 0) return res.status(404).json({ message: "Exam not found" });
+    const original = checkResult.rows[0];
 
     // Enforce constraints for restricted roles
     if (role === 'college_admin') {
-      if (checkResult.rows[0].college_id != userCollegeId) {
+      if (original.college_id != userCollegeId) {
         return res.status(403).json({ message: "Unauthorized to update this exam" });
       }
       college_id = userCollegeId;
     } else if (role === 'HOD') {
-      if (checkResult.rows[0].college_id != userCollegeId || checkResult.rows[0].department_id != userDepartmentId) {
+      if (original.college_id != userCollegeId || original.department_id != userDepartmentId) {
         return res.status(403).json({ message: "Unauthorized to update this exam" });
       }
       college_id = userCollegeId;
       department_id = userDepartmentId;
+    }
+
+    // Handle Batch Sync if 'subjects' array is provided
+    if (subjects && Array.isArray(subjects) && subjects.length > 0) {
+      // 1. Identify all IDs currently in this series
+      const seriesRes = await client.query(
+        `SELECT id FROM exams 
+         WHERE name = $1 AND semester_id = $2 AND COALESCE(college_id, 0) = COALESCE($3, 0) 
+         AND exam_type = $4 AND program_id = $5 AND academic_year_id = $6`,
+        [original.name, original.semester_id, original.college_id, original.exam_type, original.program_id, original.academic_year_id]
+      );
+      const existingSeriesIds = seriesRes.rows.map(r => r.id);
+      const incomingIds = subjects.map(s => s.id).filter(id => typeof id === 'number');
+
+      // 2. Delete missing records
+      const toDelete = existingSeriesIds.filter(id => !incomingIds.includes(id));
+      if (toDelete.length > 0) {
+        await client.query("DELETE FROM exams WHERE id = ANY($1)", [toDelete]);
+      }
+
+      // 3. Update or Insert
+      for (const sub of subjects) {
+        const { id: subId, subject_id, exam_date, start_time, end_time } = sub;
+        
+        if (subId && typeof subId === 'number' && existingSeriesIds.includes(subId)) {
+          // Update existing
+          await client.query(
+            `UPDATE exams SET 
+              name = COALESCE($1, name), 
+              semester_id = COALESCE($2, semester_id), 
+              college_id = $3, 
+              exam_type = COALESCE($4, exam_type), 
+              exam_date = COALESCE($5, exam_date), 
+              status = COALESCE($6, status),
+              department_id = COALESCE($7, department_id),
+              program_id = COALESCE($8, program_id),
+              academic_year_id = COALESCE($9, academic_year_id),
+              subject_id = COALESCE($10, subject_id),
+              start_time = COALESCE($11, start_time),
+              end_time = COALESCE($12, end_time)
+             WHERE id = $13`,
+            [name, semester_id, college_id || null, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, start_time, end_time, subId]
+          );
+        } else {
+          // Insert new (Added to existing series during edit)
+          await client.query(
+            `INSERT INTO exams (
+              name, semester_id, college_id, exam_type, exam_date, start_time, end_time, 
+              status, department_id, program_id, academic_year_id, subject_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+            [name, semester_id, college_id || null, exam_type, exam_date, start_time, end_time, status ?? true, department_id || null, program_id || null, academic_year_id || null, subject_id]
+          );
+        }
+      }
+      return res.json({ message: "Series updated successfully", count: subjects.length });
     }
 
     const result = await client.query(
