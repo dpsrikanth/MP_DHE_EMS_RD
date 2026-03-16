@@ -77,6 +77,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 3, name: 'Faculty Assign', path: '/college-admin/faculty-assign', icon: <Users size={20} /> },
         { id: 4, name: 'Department Faculty', path: '/teachers', icon: <Users size={20} /> },
       ]
+    } else if (roleName === 'Student') {
+      menuItems = [
+        { id: 1, name: 'Dashboard', path: '/student/dashboard', icon: <LayoutDashboard size={20} /> },
+        { id: 2, name: 'Exam Schedule', path: '/student/exams', icon: <FileText size={20} /> },
+      ]
     }
 
     return menuItems;

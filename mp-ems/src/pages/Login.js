@@ -70,6 +70,9 @@ const Login = () => {
         } else if (authUtils.isFaculty()) {
           console.log("Navigating to Faculty Dashboard");
           navigate("/faculty/dashboard");
+        } else if (authUtils.isStudent()) {
+          console.log("Navigating to Student Dashboard");
+          navigate("/student/dashboard");
         } else {
           console.log("Access denied, role:", data.user.role);
           setError("Access denied. Appropriate role required.");

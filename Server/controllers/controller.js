@@ -2607,6 +2607,95 @@ const deleteMasterDepartment = async (req, res) => {
   }
 };
 
+const getStudentExams = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // First, find the student details associated with this user
+    const studentRes = await client.query(
+      `SELECT id, "programName", semister, "collageName" 
+       FROM students 
+       WHERE user_id = $1 AND "deleteStatus" = true`,
+      [userId]
+    );
+
+    if (studentRes.rows.length === 0) {
+      return res.status(404).json({ message: "Student record not found for this user." });
+    }
+
+    const student = studentRes.rows[0];
+
+    // Fetch exams matching the student's program, semester, and college
+    // Note: students table stores these as strings, exams table stores them as IDs.
+    // We need to resolve Name/Semester/College to IDs or join accurately.
+    // Based on existing getExams logic, we filter by published and application open status.
+    
+    // Improved query to handle string-based student fields
+    const query = `
+      SELECT 
+        e.id, 
+        e.name as exam_name, 
+        ms.semester_name,
+        COALESCE(c.name, 'University-wide') as college_name,
+        et.type_name as exam_type_name,
+        sub.name as subject_name,
+        e.exam_date, 
+        e.start_time,
+        e.end_time,
+        er.payment_status,
+        er.registration_date
+      FROM exams e
+      JOIN master_semesters ms ON e.semester_id = ms.id
+      LEFT JOIN colleges c ON e.college_id = c.id
+      JOIN exam_types et ON e.exam_type = et.id
+      JOIN master_subjects sub ON e.subject_id = sub.id
+      JOIN master_programs mp ON e.program_id = mp.id
+      LEFT JOIN exam_registrations er ON er.exam_id = e.id AND er.student_id = $1
+      WHERE e.is_published = true 
+        AND e.student_application_open = true
+        AND mp.name = $2
+        AND ms.semester_name = $3
+        AND (c.name = $4 OR (e.college_id IS NULL AND e.exam_type = 2))
+      ORDER BY e.exam_date ASC, e.start_time ASC
+    `;
+
+    const result = await client.query(query, [student.id, student.programName, student.semister, student.collageName]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get student exams error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const registerForExam = async (req, res) => {
+  try {
+    const { exam_ids } = req.body; // Changed from exam_id to exam_ids (array)
+    const userId = req.user.id;
+
+    if (!exam_ids || !Array.isArray(exam_ids) || exam_ids.length === 0) {
+      return res.status(400).json({ message: "Exam IDs are required." });
+    }
+
+    // Find student ID
+    const studentRes = await client.query('SELECT id FROM students WHERE user_id = $1', [userId]);
+    if (studentRes.rows.length === 0) return res.status(404).json({ message: "Student record not found." });
+    const studentId = studentRes.rows[0].id;
+
+    // Bulk insert registration
+    await client.query(
+      `INSERT INTO exam_registrations (student_id, exam_id, payment_status, registration_date)
+       SELECT $1, UNNEST($2::int[]), 'Paid', CURRENT_TIMESTAMP
+       ON CONFLICT (student_id, exam_id) DO NOTHING`,
+      [studentId, exam_ids]
+    );
+
+    res.json({ message: "Successfully registered for exam series." });
+  } catch (error) {
+    console.error("Register for exam error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   register,
   changePassword,
@@ -2702,5 +2791,7 @@ module.exports = {
   getSubjectMappings,
   createSubjectMapping,
   updateSubjectMapping,
-  deleteSubjectMapping
+  deleteSubjectMapping,
+  getStudentExams,
+  registerForExam
 };

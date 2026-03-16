@@ -47,6 +47,11 @@ export const authUtils = {
     return normalizedRole === "faculty" || normalizedRole === "teacher";
   },
 
+  isStudent: () => {
+    const roleName = localStorage.getItem("roleName");
+    return roleName?.toLowerCase() === "student";
+  },
+
   // Logout and clear auth data
   logout: () => {
     localStorage.removeItem("token");

@@ -27,6 +27,8 @@ import MarksEntry from "./pages/Faculty/MarksEntry";
 import MarksVerification from "./pages/CollegeAdmin/MarksVerification";
 import MarksReview from "./pages/CollegeAdmin/MarksReview";
 import MarksReports from "./pages/CollegeAdmin/MarksReports";
+import StudentDashboard from "./pages/Student/Dashboard";
+import StudentExams from "./pages/Student/StudentExams";
 import HODDashboard from "./pages/HOD/Dashboard";
 import Layout from "./components/Layout";
 
@@ -72,6 +74,10 @@ const AppRoutes = () => {
       <Route path="/admin/marks-verification" element={<Layout><ProtectedRoute element={<MarksVerification />} /></Layout>} />
       <Route path="/admin/marks-review/:subjectId/:section" element={<Layout><ProtectedRoute element={<MarksReview />} /></Layout>} />
       <Route path="/admin/marks-reports" element={<Layout><ProtectedRoute element={<MarksReports />} /></Layout>} />
+
+      {/* Student Routes */}
+      <Route path="/student/dashboard" element={<Layout><ProtectedRoute element={<StudentDashboard />} /></Layout>} />
+      <Route path="/student/exams" element={<Layout><ProtectedRoute element={<StudentExams />} /></Layout>} />
     </Routes>
   );
 };
