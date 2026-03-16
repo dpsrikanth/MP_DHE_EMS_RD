@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { 
   FileText, Plus, Pencil, X, Check, Calendar, Book, Layers, Hash, ArrowRight,
-  AlertCircle, Globe, Users, Radio, BookOpen
+  AlertCircle, Globe, Users, Radio, BookOpen, Clock
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
@@ -36,8 +36,7 @@ const Exams = () => {
     department_id: '',
     program_id: '',
     academic_year_id: '',
-    subject_id: '',
-    exam_date: '',
+    subjects: [{ id: Date.now(), subject_id: '', exam_date: '', start_time: '', end_time: '' }],
     status: true
   });
 
@@ -178,8 +177,9 @@ const Exams = () => {
 
     setFormData({ 
       name: '', semester_id: '', college_id: defaultCollegeId, exam_type: '', 
-      department_id: defaultDepartmentId, program_id: '', academic_year_id: '', subject_id: '', 
-      exam_date: '', status: true 
+      department_id: defaultDepartmentId, program_id: '', academic_year_id: '', 
+      subjects: [{ id: Date.now(), subject_id: '', exam_date: '', start_time: '', end_time: '' }],
+      status: true 
     });
     setEditingId(null);
     setAvailableComponents([]);
@@ -198,7 +198,10 @@ const Exams = () => {
       academic_year_id: exam.academic_year_id || '',
       subject_id: exam.subject_id || '',
       exam_date: exam.exam_date ? new Date(exam.exam_date).toISOString().split('T')[0] : '',
-      status: exam.status
+      start_time: exam.start_time || '',
+      end_time: exam.end_time || '',
+      status: exam.status,
+      subjects: [] // Not used for editing single records
     });
     setEditingId(exam.id);
     setIsModalOpen(true);
@@ -274,13 +277,17 @@ const Exams = () => {
         : 'http://localhost:8080/api/exams';
       const method = editingId ? 'PUT' : 'POST';
 
+      const payload = editingId 
+        ? { ...formData } 
+        : { ...formData, subjects: formData.subjects };
+
       const res = await fetch(url, {
         method,
         headers: { 
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}` 
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       if (!res.ok) {
@@ -441,6 +448,14 @@ const Exams = () => {
                             <Calendar size={14} />
                             <span className="text-xs">
                               {item.exam_date ? new Date(item.exam_date).toLocaleDateString() : 'N/A'}
+                              {item.start_time && (
+                                <div className="mt-1 flex items-center gap-1.5">
+                                  <Clock size={10} className="text-slate-400" />
+                                  <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-100">
+                                    {item.start_time} - {item.end_time}
+                                  </span>
+                                </div>
+                              )}
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
@@ -578,15 +593,17 @@ const Exams = () => {
                     <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">College Context</label>
                     <div className="relative">
                       <select
-                        required
+                        required={formData.exam_type != 2}
                         disabled={authUtils.isCollegeAdmin()}
                         value={formData.college_id}
                         onChange={(e) => setFormData({ ...formData, college_id: e.target.value })}
                         className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                       >
-                        <option value="" disabled className="font-medium text-slate-500">Select College</option>
+                        <option value="" className="font-medium text-slate-500">
+                          {formData.exam_type == 2 ? "University-wide (All Colleges)" : "Select College"}
+                        </option>
                         {colleges.map(c => (
-                          <option key={c.id} value={c.id}>{c.college_name || c.name}</option>
+                          <option key={c.id} value={c.id}>{c.name || c.college_name}</option>
                         ))}
                       </select>
                       <Layers className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
@@ -690,80 +707,6 @@ const Exams = () => {
                       <Calendar className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Subject</label>
-                    <div className="relative">
-                      <select
-                        required
-                        value={formData.subject_id}
-                        disabled={!formData.program_id}
-                        onChange={(e) => setFormData({ 
-                          ...formData, 
-                          subject_id: e.target.value,
-                          name: ''
-                        })}
-                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer disabled:opacity-70"
-                      >
-                        <option value="" disabled className="font-medium text-slate-500">
-                           {formData.program_id ? "Select Subject" : "Select Program First"}
-                        </option>
-                        {(() => {
-                          const programIdInt = parseInt(formData.program_id);
-                          const semesterIdInt = parseInt(formData.semester_id);
-                          const departmentIdInt = parseInt(formData.department_id);
-                          
-                          if (!formData.program_id || !formData.semester_id) return [];
-
-                          // Source 1: Explicit mappings from master_subject_mappings table
-                          const mappedFromTableIds = subjectMappings
-                            .filter(m => m.program_id === programIdInt && m.semester_id === semesterIdInt)
-                            .map(m => m.subject_id);
-                          
-                          // Source 2: Direct links from master_subjects table
-                          const mappedDirectly = subjects.filter(s => {
-                            const progMatch = s.program_id === programIdInt;
-                            const semMatch = s.semester_id === semesterIdInt;
-                            const deptMatch = s.department_ids && Array.isArray(s.department_ids) && s.department_ids.includes(departmentIdInt);
-                            return progMatch && semMatch && deptMatch;
-                          });
-                          const mappedDirectlyIds = mappedDirectly.map(s => s.id);
-
-                          // Union of both sources
-                          const allMappedIds = new Set([...mappedFromTableIds, ...mappedDirectlyIds]);
-                          
-                          console.log(`FRONTEND DEBUG: Filtering for Prog:${programIdInt}, Sem:${semesterIdInt}, Dept:${departmentIdInt}. Found ${allMappedIds.size} total subjects.`);
-                          
-                          return subjects.filter(s => allMappedIds.has(s.id));
-                        })().map(s => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                      </select>
-                      <FileText className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    </div>
-                    {formData.program_id && formData.semester_id && (
-                      <p className="text-[10px] font-medium mt-1 px-1">
-                        {(() => {
-                          const programIdInt = parseInt(formData.program_id);
-                          const semesterIdInt = parseInt(formData.semester_id);
-                          const departmentIdInt = parseInt(formData.department_id);
-                          
-                          const tableCount = subjectMappings.filter(m => m.program_id === programIdInt && m.semester_id === semesterIdInt).length;
-                          const directCount = subjects.filter(s => 
-                            s.program_id === programIdInt && 
-                            s.semester_id === semesterIdInt && 
-                            s.department_ids && s.department_ids.includes(departmentIdInt)
-                          ).length;
-                          
-                          const totalCount = tableCount + directCount; // Overestimate is fine for this indicator
-                          
-                          return totalCount > 0 
-                            ? <span className="text-emerald-600 flex items-center gap-1"><Check size={10} /> {totalCount} Subjects available for this context</span>
-                            : <span className="text-amber-600 flex items-center gap-1"><AlertCircle size={10} /> No subjects found! Check Subject Mappings or Subject Profile settings.</span>;
-                        })()}
-                      </p>
-                    )}
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -786,44 +729,185 @@ const Exams = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Schedule Date</label>
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Assessment Component</label>
                     <div className="relative">
-                      <input
+                      <select
                         required
-                        type="date"
-                        value={formData.exam_date}
-                        onChange={(e) => setFormData({ ...formData, exam_date: e.target.value })}
-                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 px-5 transition-all outline-none cursor-pointer"
-                      />
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer"
+                      >
+                         <option value="" disabled>Select Component</option>
+                         {/* We'll populate some common ones or allow manual if needed, 
+                             but here we'll use the ones available for the first subject if any */}
+                         <option value="Final Theory">Final Theory</option>
+                         <option value="Practical">Practical</option>
+                         <option value="Viva Voce">Viva Voce</option>
+                         <option value="Supplementary">Supplementary</option>
+                      </select>
+                      <BookOpen className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Assessment Name (Component)</label>
-                  <div className="relative">
-                    <select
-                      required
-                      value={formData.name}
-                      disabled={!formData.subject_id}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                      <option value="" disabled className="font-medium text-slate-500">
-                        {!formData.subject_id ? "Select Subject First" : (availableComponents.length > 0 ? "Select Component" : "No Components Defined")}
-                      </option>
-                      {availableComponents.map(comp => (
-                        <option key={comp} value={comp}>{comp}</option>
-                      ))}
-                    </select>
-                    <BookOpen className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                {!editingId ? (
+                  <div className="space-y-4 pt-4 border-t border-slate-100">
+                    <div className="flex items-center justify-between mb-2">
+                       <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Subjects & Schedule</label>
+                       <button 
+                        type="button"
+                        onClick={() => setFormData({
+                          ...formData,
+                          subjects: [...formData.subjects, { id: Date.now(), subject_id: '', exam_date: '', start_time: '', end_time: '' }]
+                        })}
+                        className="text-[10px] font-black uppercase text-purple-600 hover:text-purple-700 flex items-center gap-1 bg-purple-50 px-3 py-1.5 rounded-xl border border-purple-100 transition-all"
+                       >
+                         <Plus size={12} /> Add Subject Row
+                       </button>
+                    </div>
+                    
+                    {formData.subjects.map((sub, index) => (
+                      <div key={sub.id} className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 space-y-4 relative">
+                        {formData.subjects.length > 1 && (
+                          <button 
+                            type="button"
+                            onClick={() => setFormData({
+                              ...formData,
+                              subjects: formData.subjects.filter(s => s.id !== sub.id)
+                            })}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-white border border-slate-100 text-slate-400 hover:text-red-500 rounded-full flex items-center justify-center shadow-sm transition-all"
+                          >
+                            <X size={12} />
+                          </button>
+                        )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject</label>
+                            <select
+                              required
+                              value={sub.subject_id}
+                              onChange={(e) => {
+                                const newSubs = [...formData.subjects];
+                                newSubs[index].subject_id = e.target.value;
+                                setFormData({ ...formData, subjects: newSubs });
+                              }}
+                              className="w-full h-12 bg-white border border-slate-200 text-slate-900 text-sm font-bold rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-4 transition-all outline-none"
+                            >
+                              <option value="">Select Subject</option>
+                              {(() => {
+                                const programIdInt = parseInt(formData.program_id);
+                                const semesterIdInt = parseInt(formData.semester_id);
+                                const departmentIdInt = parseInt(formData.department_id);
+                                if (!formData.program_id || !formData.semester_id) return [];
+                                const mappedFromTableIds = subjectMappings
+                                  .filter(m => m.program_id === programIdInt && m.semester_id === semesterIdInt)
+                                  .map(m => m.subject_id);
+                                const mappedDirectly = subjects.filter(s => {
+                                  const progMatch = s.program_id === programIdInt;
+                                  const semMatch = s.semester_id === semesterIdInt;
+                                  const deptMatch = !departmentIdInt || (s.department_ids && Array.isArray(s.department_ids) && s.department_ids.includes(departmentIdInt));
+                                  return progMatch && semMatch && deptMatch;
+                                });
+                                const allMappedIds = new Set([...mappedFromTableIds, ...mappedDirectly.map(s => s.id)]);
+                                return subjects.filter(s => allMappedIds.has(s.id));
+                              })().map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            </select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
+                            <input
+                              required
+                              type="date"
+                              value={sub.exam_date}
+                              onChange={(e) => {
+                                const newSubs = [...formData.subjects];
+                                newSubs[index].exam_date = e.target.value;
+                                setFormData({ ...formData, subjects: newSubs });
+                              }}
+                              className="w-full h-12 bg-white border border-slate-200 text-slate-900 text-sm font-bold rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-4 transition-all outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Start Time</label>
+                            <input
+                              type="text"
+                              placeholder="09.00 A.M"
+                              value={sub.start_time}
+                              onChange={(e) => {
+                                const newSubs = [...formData.subjects];
+                                newSubs[index].start_time = e.target.value;
+                                setFormData({ ...formData, subjects: newSubs });
+                              }}
+                              className="w-full h-12 bg-white border border-slate-200 text-slate-900 text-sm font-bold rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-4 transition-all outline-none"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">End Time</label>
+                            <input
+                              type="text"
+                              placeholder="12.00 NOON"
+                              value={sub.end_time}
+                              onChange={(e) => {
+                                const newSubs = [...formData.subjects];
+                                newSubs[index].end_time = e.target.value;
+                                setFormData({ ...formData, subjects: newSubs });
+                              }}
+                              className="w-full h-12 bg-white border border-slate-200 text-slate-900 text-sm font-bold rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-4 transition-all outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  {formData.subject_id && !availableComponents.length && (
-                    <p className="text-[10px] text-amber-600 font-bold px-1 flex items-center gap-1">
-                      <AlertCircle size={10} /> Please ensure marks structure is configured to see components
-                    </p>
-                  )}
-                </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Subject</label>
+                        <select
+                          required
+                          value={formData.subject_id}
+                          onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
+                          className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none"
+                        >
+                          {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Schedule Date</label>
+                        <input
+                          required
+                          type="date"
+                          value={formData.exam_date}
+                          onChange={(e) => setFormData({ ...formData, exam_date: e.target.value })}
+                          className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Start Time</label>
+                        <input
+                          type="text"
+                          value={formData.start_time}
+                          onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                          className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">End Time</label>
+                        <input
+                          type="text"
+                          value={formData.end_time}
+                          onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                          className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-4 pt-2">
                   <button 

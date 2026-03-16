@@ -51,8 +51,15 @@ const Subjects = () => {
   });
 
   const mappingTypes = [
+    { value: 'Major 1', label: 'Major 1' },
+    { value: 'Major 2', label: 'Major 2' },
     { value: 'Major', label: 'Major' },
     { value: 'Minor', label: 'Minor' },
+    { value: 'Elective', label: 'Elective' },
+    { value: 'Vocational', label: 'Vocational' },
+    { value: 'FC-1', label: 'FC-1' },
+    { value: 'FC-2', label: 'FC-2' },
+    { value: 'FP/Int/Appr', label: 'FP/Int/Appr' },
     { value: 'AEC', label: 'AEC' },
     { value: 'SEC', label: 'SEC' },
     { value: 'VBC', label: 'VBC' },
@@ -72,6 +79,7 @@ const Subjects = () => {
     { key: 'batch', label: 'Batch' },
     { key: 'name', label: 'Subject' },
     { key: 'mapping_type', label: 'Type' },
+    { key: 'credit', label: 'Credits' },
     { key: 'teacher_name', label: 'Faculty' },
     { key: 'periods_per_week', label: 'PPW' }
   ];
@@ -298,6 +306,7 @@ const Subjects = () => {
                 <SortHeader label="Batch" field="batch" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.batch} />
                 <SortHeader label="Subject" field="name" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.name} />
                 <SortHeader label="Type" field="mapping_type" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.mapping_type} />
+                <SortHeader label="Credits" field="credit" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.credit} className="text-center" />
                 <SortHeader label="Faculty" field="teacher_name" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.teacher_name} />
                 <SortHeader label="PPW" field="periods_per_week" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.periods_per_week} className="text-center" />
                 <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Settings</th>
@@ -327,6 +336,7 @@ const Subjects = () => {
                       </span>
                     </td>
                   )}
+                  {visibleColumns.credit && <td className="px-4 py-5 text-center text-sm font-black text-amber-600">{item.credit !== null && item.credit !== undefined ? item.credit : '-'}</td>}
                   {visibleColumns.teacher_name && (
                     <td className="px-4 py-5">
                       <div className="flex items-center gap-2">

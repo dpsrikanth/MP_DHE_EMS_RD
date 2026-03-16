@@ -848,6 +848,18 @@ const createTeacher = async (req, res) => {
 const getExams = async (req, res) => {
   try {
     const { role, college_id } = req.user;
+    const params = [];
+    let visibilityClause = '';
+
+    if (role === 'college_admin') {
+      visibilityClause = `WHERE (e.college_id = $1 OR (e.exam_type = 2 AND e.college_id IS NULL))`;
+      params.push(college_id);
+    } else if (role === 'HOD') {
+      const { department_id } = req.user;
+      visibilityClause = `WHERE (e.college_id = $1 OR (e.exam_type = 2 AND e.college_id IS NULL)) AND e.department_id = $2`;
+      params.push(college_id, department_id);
+    }
+
     let query = `
       SELECT 
         e.id, 
@@ -855,7 +867,7 @@ const getExams = async (req, res) => {
         e.semester_id, 
         ms.semester_name,
         e.college_id, 
-        c.name as college_name,
+        COALESCE(c.name, 'University-wide') as college_name,
         e.exam_type, 
         et.type_name as exam_type_name,
         e.department_id,
@@ -867,12 +879,14 @@ const getExams = async (req, res) => {
         e.subject_id,
         sub.name as subject_name,
         e.exam_date, 
+        e.start_time,
+        e.end_time,
         e.status,
         e.is_published,
         e.student_application_open,
         (SELECT EXISTS (
           SELECT 1 FROM internal_marks_structure ims 
-          WHERE ims.college_id = e.college_id 
+          WHERE ims.college_id = COALESCE(e.college_id, ${params.length > 0 ? '$1' : 'null'}) 
           AND ims.department_id = e.department_id 
           AND ims.program_id = e.program_id 
           AND ims.subject_id = e.subject_id
@@ -885,19 +899,9 @@ const getExams = async (req, res) => {
       LEFT JOIN master_programs mp ON e.program_id = mp.id
       LEFT JOIN master_academic_years ay ON e.academic_year_id = ay.id
       LEFT JOIN master_subjects sub ON e.subject_id = sub.id
+      ${visibilityClause}
+      ORDER BY e.created_at DESC
     `;
-    
-    const params = [];
-    if (role === 'college_admin') {
-      query += ` WHERE e.college_id = $1`;
-      params.push(college_id);
-    } else if (role === 'HOD') {
-      const { department_id } = req.user;
-      query += ` WHERE e.college_id = $1 AND e.department_id = $2`;
-      params.push(college_id, department_id);
-    }
-    
-    query += ` ORDER BY e.created_at DESC`;
     
     const result = await client.query(query, params);
     res.json(result.rows);
@@ -910,7 +914,7 @@ const getExams = async (req, res) => {
 const createExam = async (req, res) => {
   try {
     const { role, college_id: userCollegeId, department_id: userDepartmentId } = req.user;
-    let { name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id } = req.body;
+    let { name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, start_time, end_time, subjects } = req.body;
     
     // Enforce college_id and department_id for restricted roles
     if (role === 'college_admin') {
@@ -920,27 +924,46 @@ const createExam = async (req, res) => {
       department_id = userDepartmentId;
     }
 
-    if (!name || !semester_id || !college_id || !exam_type || !exam_date || !subject_id || !department_id || !program_id) {
-      return res.status(400).json({ message: "Missing required fields (Name, Semester, College, Exam Type, Date, Subject, Department, Program)" });
+    // Handle Batch Creation if 'subjects' array is provided
+    if (subjects && Array.isArray(subjects) && subjects.length > 0) {
+      const createdExams = [];
+      for (const sub of subjects) {
+        const { subject_id, exam_date, start_time, end_time } = sub;
+        
+        const isGlobalExternal = (exam_type == 2 && role === 'admin' && !college_id);
+        
+        // Skip marks structure validation for global external exams
+        if (!isGlobalExternal) {
+          const structureCheck = await client.query(
+            `SELECT 1 FROM internal_marks_structure 
+             WHERE college_id = $1 AND department_id = $2 AND program_id = $3 AND subject_id = $4 LIMIT 1`,
+            [college_id, department_id, program_id, subject_id]
+          );
+          if (structureCheck.rows.length === 0) continue; // Skip subjects without structure in batch mode
+        }
+
+        const result = await client.query(
+          `INSERT INTO exams (
+            name, semester_id, college_id, exam_type, exam_date, start_time, end_time, 
+            status, department_id, program_id, academic_year_id, subject_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+          [name, semester_id, college_id, exam_type, exam_date, start_time, end_time, status ?? true, department_id || null, program_id || null, academic_year_id || null, subject_id]
+        );
+        createdExams.push(result.rows[0]);
+      }
+      return res.status(201).json(createdExams[0]); // Return the first one or a summary
     }
 
-    // NEW: Validate Marks Structure Existence
-    const structureCheck = await client.query(
-      `SELECT 1 FROM internal_marks_structure 
-       WHERE college_id = $1 AND department_id = $2 AND program_id = $3 AND subject_id = $4 LIMIT 1`,
-      [college_id, department_id, program_id, subject_id]
-    );
+    // Single Creation Logic (Fallback)
+    const isGlobalExternal = (exam_type == 2 && role === 'admin' && !college_id);
 
-    if (structureCheck.rows.length === 0) {
-      return res.status(400).json({ 
-        message: "Blocked: No Marks Structure defined for this Subject/Department/Program. Please configure marks structure first.",
-        requireConfig: true
-      });
+    if (!name || !semester_id || (!college_id && !isGlobalExternal) || !exam_type || !exam_date || !subject_id || !department_id || !program_id) {
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
     const result = await client.query(
-      "INSERT INTO exams (name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *",
-      [name, semester_id, college_id, exam_type, exam_date, status ?? true, department_id || null, program_id || null, academic_year_id || null, subject_id || null]
+      "INSERT INTO exams (name, semester_id, college_id, exam_type, exam_date, start_time, end_time, status, department_id, program_id, academic_year_id, subject_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *",
+      [name, semester_id, college_id, exam_type, exam_date, start_time, end_time, status ?? true, department_id || null, program_id || null, academic_year_id || null, subject_id || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -953,7 +976,7 @@ const updateExam = async (req, res) => {
   try {
     const { id } = req.params;
     const { role, college_id: userCollegeId, department_id: userDepartmentId } = req.user;
-    let { name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id } = req.body;
+    let { name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, start_time, end_time } = req.body;
 
     // Check if exists
     const checkResult = await client.query('SELECT college_id, department_id FROM exams WHERE id = $1', [id]);
@@ -977,16 +1000,18 @@ const updateExam = async (req, res) => {
       `UPDATE exams 
        SET name = COALESCE($1, name), 
            semester_id = COALESCE($2, semester_id), 
-           college_id = COALESCE($3, college_id), 
+           college_id = $3, 
            exam_type = COALESCE($4, exam_type), 
            exam_date = COALESCE($5, exam_date), 
            status = COALESCE($6, status),
            department_id = COALESCE($7, department_id),
            program_id = COALESCE($8, program_id),
            academic_year_id = COALESCE($9, academic_year_id),
-           subject_id = COALESCE($10, subject_id)
-       WHERE id = $11 RETURNING *`,
-      [name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, id]
+           subject_id = COALESCE($10, subject_id),
+           start_time = COALESCE($11, start_time),
+           end_time = COALESCE($12, end_time)
+       WHERE id = $13 RETURNING *`,
+      [name, semester_id, college_id || null, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, start_time, end_time, id]
     );
     res.json(result.rows[0]);
   } catch (error) {
@@ -1387,7 +1412,7 @@ const getMasterSubjects = async (req, res) => {
     const result = await client.query(
       `SELECT ms.id, ms.subject_code, ms.name, ms.status, ms.created_at, 
               ms.program_id, ms.semester_id, ms.mapping_type, ms.is_mandatory, 
-              ms.has_examination, ms.periods_per_week, ms.teacher_id,
+              ms.has_examination, ms.periods_per_week, ms.teacher_id, ms.credit,
               mp.name AS program_name,
               mse.semester_name,
               u.name AS teacher_name,
@@ -1421,14 +1446,21 @@ const createMasterSubject = async (req, res) => {
 
     if (!subject_code || !name) return res.status(400).json({ message: "Subject code and name are required" });
 
+    let credit = 4;
+    if (['Major 1', 'Major 2', 'Major', 'Minor', 'Elective'].includes(mapping_type)) {
+      credit = 6;
+    } else if (['Vocational', 'FC-1', 'FC-2', 'FP/Int/Appr', 'AEC', 'SEC', 'VBC'].includes(mapping_type)) {
+      credit = 4;
+    }
+
     await client.query('BEGIN');
     const result = await client.query(
       `INSERT INTO master_subjects (
         subject_code, name, program_id, semester_id, mapping_type, 
-        is_mandatory, has_examination, periods_per_week, teacher_id, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Active') 
+        is_mandatory, has_examination, periods_per_week, teacher_id, status, credit
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Active', $10) 
       RETURNING *`,
-      [subject_code, name, program_id, semester_id, mapping_type, is_mandatory, has_examination, periods_per_week, teacher_id]
+      [subject_code, name, program_id, semester_id, mapping_type, is_mandatory, has_examination, periods_per_week, teacher_id, credit]
     );
     const subjectId = result.rows[0].id;
     if (department_ids && Array.isArray(department_ids) && department_ids.length > 0) {
@@ -1451,7 +1483,7 @@ const getMasterSubject = async (req, res) => {
     const result = await client.query(
       `SELECT id, subject_code, name, status, created_at,
               program_id, semester_id, mapping_type, is_mandatory, 
-              has_examination, periods_per_week, teacher_id
+              has_examination, periods_per_week, teacher_id, credit
        FROM master_subjects 
        WHERE id = $1`,
       [id]
@@ -1475,15 +1507,22 @@ const updateMasterSubject = async (req, res) => {
 
     if (!subject_code || !name) return res.status(400).json({ message: "Subject code and name are required" });
 
+    let credit = 4;
+    if (['Major 1', 'Major 2', 'Major', 'Minor', 'Elective'].includes(mapping_type)) {
+      credit = 6;
+    } else if (['Vocational', 'FC-1', 'FC-2', 'FP/Int/Appr', 'AEC', 'SEC', 'VBC'].includes(mapping_type)) {
+      credit = 4;
+    }
+
     await client.query('BEGIN');
     const result = await client.query(
       `UPDATE master_subjects 
        SET subject_code = $1, name = $2, program_id = $3, semester_id = $4, 
            mapping_type = $5, is_mandatory = $6, has_examination = $7, 
-           periods_per_week = $8, teacher_id = $9, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $10 
+           periods_per_week = $8, teacher_id = $9, credit = $10, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $11 
        RETURNING *`,
-      [subject_code, name, program_id, semester_id, mapping_type, is_mandatory, has_examination, periods_per_week, teacher_id, id]
+      [subject_code, name, program_id, semester_id, mapping_type, is_mandatory, has_examination, periods_per_week, teacher_id, credit, id]
     );
 
     if (result.rows.length === 0) {
