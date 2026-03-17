@@ -16,7 +16,9 @@ import {
   ShieldCheck,
   Building,
   Menu,
-  X
+  X,
+  UserPlus,
+  TrendingUp
 } from "lucide-react";
 
 /**
@@ -54,6 +56,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       { id: 12, name: 'Marks', path: '/marks', icon: <BarChart3 size={20} /> },
       { id: 13, name: 'Policies', path: '/policies', icon: <ShieldCheck size={20} /> },
       { id: 15, name: 'Verify & Unlock', path: '/admin/marks-verification', icon: <ShieldCheck size={20} /> },
+      { id: 16, name: 'External Assignment', path: '/university/external-assignment', icon: <UserPlus size={20} /> },
+      { id: 17, name: 'Result Hub', path: '/university/external-marks', icon: <TrendingUp size={20} /> },
     ];
 
     if (roleName === 'college_admin') {
@@ -81,6 +85,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       menuItems = [
         { id: 1, name: 'Dashboard', path: '/student/dashboard', icon: <LayoutDashboard size={20} /> },
         { id: 2, name: 'Exam Schedule', path: '/student/exams', icon: <FileText size={20} /> },
+      ]
+    } else if (roleName === 'External Faculty') {
+      menuItems = [
+        { id: 1, name: 'Dashboard', path: '/external-faculty/dashboard', icon: <LayoutDashboard size={20} /> },
+        { id: 2, name: 'External Marking', path: '/external-faculty/marks-entry', icon: <BarChart3 size={20} /> },
       ]
     }
 

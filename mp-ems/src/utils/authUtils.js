@@ -52,6 +52,11 @@ export const authUtils = {
     return roleName?.toLowerCase() === "student";
   },
 
+  isExternalFaculty: () => {
+    const roleName = localStorage.getItem("roleName");
+    return roleName === "External Faculty";
+  },
+
   // Logout and clear auth data
   logout: () => {
     localStorage.removeItem("token");

@@ -8,6 +8,9 @@ const routes = require('./routes/routes');
 const collegeAdminRoutes = require('./routes/collegeAdminRoutes');
 const facultyMarksRoutes = require('./routes/facultyMarksRoutes');
 
+const universityAdminRoutes = require('./routes/universityAdminRoutes');
+const externalFacultyRoutes = require('./routes/externalFacultyRoutes');
+
 const corsOptions = {
   origin: 'http://localhost:3000',
   optionsSuccessStatus: 200,
@@ -22,6 +25,8 @@ app.use(cookieParser());
 app.use('/api', routes);
 app.use('/api/college-admin', collegeAdminRoutes);
 app.use('/api/faculty-marks', facultyMarksRoutes);
+app.use('/api/university-admin', universityAdminRoutes);
+app.use('/api/external-faculty', externalFacultyRoutes);
 
 app.get('/api', (req, res) => {
   res.json({ message: 'API is running' });

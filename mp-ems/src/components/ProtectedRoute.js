@@ -3,7 +3,7 @@ import authUtils from "../utils/authUtils";
 
 const ProtectedRoute = ({ element }) => {
   // Check if user has valid token and some authorized role
-  if (!authUtils.isAuthenticated() || !(authUtils.isAdmin() || authUtils.isCollegeAdmin() || authUtils.isHOD() || authUtils.isFaculty() || authUtils.isStudent())) {
+  if (!authUtils.isAuthenticated() || !(authUtils.isAdmin() || authUtils.isCollegeAdmin() || authUtils.isHOD() || authUtils.isFaculty() || authUtils.isStudent() || authUtils.isExternalFaculty())) {
     return <Navigate to="/" replace />;
   }
 

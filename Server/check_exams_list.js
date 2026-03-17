@@ -1,12 +1,12 @@
 const client = require('./db');
 
-async function list() {
+async function check() {
     try {
         const res = await client.query(`
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public'
-            ORDER BY table_name
+            SELECT id, name, subject_id, academic_year_id, semester_id 
+            FROM exams 
+            ORDER BY name, id
+            LIMIT 50
         `);
         console.table(res.rows);
     } catch (e) {
@@ -16,4 +16,4 @@ async function list() {
     }
 }
 
-list();
+check();

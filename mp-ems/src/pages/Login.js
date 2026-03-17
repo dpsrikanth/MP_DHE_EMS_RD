@@ -73,6 +73,9 @@ const Login = () => {
         } else if (authUtils.isStudent()) {
           console.log("Navigating to Student Dashboard");
           navigate("/student/dashboard");
+        } else if (authUtils.isExternalFaculty()) {
+          console.log("Navigating to External Faculty Dashboard");
+          navigate("/external-faculty/dashboard");
         } else {
           console.log("Access denied, role:", data.user.role);
           setError("Access denied. Appropriate role required.");

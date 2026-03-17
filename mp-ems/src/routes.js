@@ -30,6 +30,10 @@ import MarksReports from "./pages/CollegeAdmin/MarksReports";
 import StudentDashboard from "./pages/Student/Dashboard";
 import StudentExams from "./pages/Student/StudentExams";
 import HODDashboard from "./pages/HOD/Dashboard";
+import ExternalAssignment from "./pages/UniversityAdmin/ExternalAssignment";
+import ExternalFacultyDashboard from "./pages/ExternalFaculty/Dashboard";
+import ExternalMarksEntry from "./pages/ExternalFaculty/MarksEntry";
+import UniversityMarksView from "./pages/UniversityAdmin/UniversityMarksView";
 import Layout from "./components/Layout";
 
 const AppRoutes = () => {
@@ -78,6 +82,14 @@ const AppRoutes = () => {
       {/* Student Routes */}
       <Route path="/student/dashboard" element={<Layout><ProtectedRoute element={<StudentDashboard />} /></Layout>} />
       <Route path="/student/exams" element={<Layout><ProtectedRoute element={<StudentExams />} /></Layout>} />
+
+      {/* External Faculty Routes */}
+      <Route path="/external-faculty/dashboard" element={<Layout><ProtectedRoute element={<ExternalFacultyDashboard />} /></Layout>} />
+      <Route path="/external-faculty/marks-entry" element={<Layout><ProtectedRoute element={<ExternalMarksEntry />} /></Layout>} />
+
+      {/* University Admin / Super Admin specialized routes */}
+      <Route path="/university/external-assignment" element={<Layout><ProtectedRoute element={<ExternalAssignment />} /></Layout>} />
+      <Route path="/university/external-marks" element={<Layout><ProtectedRoute element={<UniversityMarksView />} /></Layout>} />
     </Routes>
   );
 };

@@ -1,12 +1,10 @@
 const client = require('./db');
-
-async function list() {
+async function run() {
     try {
         const res = await client.query(`
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public'
-            ORDER BY table_name
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = 'students'
         `);
         console.table(res.rows);
     } catch (e) {
@@ -15,5 +13,4 @@ async function list() {
         process.exit(0);
     }
 }
-
-list();
+run();
