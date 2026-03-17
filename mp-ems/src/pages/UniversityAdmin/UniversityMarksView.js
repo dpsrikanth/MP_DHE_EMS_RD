@@ -161,7 +161,7 @@ const UniversityMarksView = () => {
                       s.rollnumber.toLowerCase().includes(searchQuery.toLowerCase())
                     )
                     .map((item) => (
-                      <tr key={item.mark_id} className="hover:bg-slate-50/50 transition-all duration-300 group">
+                      <tr key={`${item.student_id}-${item.subject_id}`} className="hover:bg-slate-50/50 transition-all duration-300 group">
                         <td className="px-10 py-6">
                           <span className="text-sm font-black text-slate-900 bg-slate-100 px-3 py-1.5 rounded-xl group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
                             #{item.rollnumber}
@@ -196,13 +196,18 @@ const UniversityMarksView = () => {
                           </div>
                         </td>
                         <td className="px-10 py-6 text-center">
-                          <div className={`inline-flex items-center gap-2 text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-wider border ${
-                            item.marks_status === 'Approved' 
-                              ? 'text-emerald-500 bg-emerald-50 border-emerald-100' 
-                              : 'text-amber-500 bg-amber-50 border-amber-100'
-                          }`}>
-                            {item.marks_status === 'Approved' ? <CheckCircle2 size={12} /> : <TrendingUp size={12} />}
-                            {item.marks_status}
+                          <div className="flex flex-col items-center gap-2">
+                            <div className={`inline-flex items-center gap-2 text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-wider border ${
+                              item.result_status === 'Pass' 
+                                ? 'text-emerald-500 bg-emerald-50 border-emerald-100' 
+                                : 'text-rose-500 bg-rose-50 border-rose-100'
+                            }`}>
+                              {item.result_status === 'Pass' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                              {item.result_status}
+                            </div>
+                            <span className="text-[8px] font-black text-slate-300 uppercase tracking-tighter">
+                                {item.marks_status}
+                            </span>
                           </div>
                         </td>
                       </tr>

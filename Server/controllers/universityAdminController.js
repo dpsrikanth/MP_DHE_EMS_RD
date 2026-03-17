@@ -107,22 +107,35 @@ exports.getFinalizedExternalMarks = async (req, res) => {
     try {
         const query = `
             SELECT 
-                m.id as mark_id, m.status as marks_status,
-                m.internal_marks, m.external_marks, m.total_marks,
+                m.id as mark_id, 
+                er.student_id,
+                er.exam_id,
+                COALESCE(m.status, 'Internal Only') as marks_status,
+                COALESCE(cim.total_internal, m.internal_marks, 0) as internal_marks, 
+                COALESCE(m.external_marks, 0) as external_marks,
+                (COALESCE(cim.total_internal, m.internal_marks, 0) + COALESCE(m.external_marks, 0)) as total_marks,
                 s.rollnumber, CONCAT(s.first_name, ' ', s.last_name) as student_name,
                 e.name as exam_name,
-                sub.name as subject_name, sub.id as subject_id
-            FROM marks m
-            JOIN students s ON m.student_id = s.id
-            JOIN exams e ON m.exam_id = e.id
-            JOIN master_subjects sub ON m.subject_id = sub.id
-            WHERE m.status IN ('Pending Approval', 'Approved')
+                sub.name as subject_name, sub.id as subject_id,
+                CASE 
+                    WHEN (COALESCE(cim.total_internal, m.internal_marks, 0) + COALESCE(m.external_marks, 0)) >= 40 THEN 'Pass'
+                    ELSE 'Fail'
+                END as result_status
+            FROM exam_registrations er
+            JOIN exams e ON er.exam_id = e.id
+            JOIN master_subjects sub ON e.subject_id = sub.id
+            JOIN students s ON er.student_id = s.id
+            LEFT JOIN marks m ON m.student_id = er.student_id AND m.exam_id = er.exam_id AND m.subject_id = e.subject_id
+            LEFT JOIN calculated_internal_marks cim ON er.student_id = cim.student_id 
+                AND (cim.subject_id = e.subject_id OR cim.subject_id IN (SELECT id FROM master_subjects WHERE name = sub.name))
+            WHERE er.payment_status = 'Paid'
+              AND (m.status IN ('Pending Approval', 'Approved') OR cim.id IS NOT NULL)
             ORDER BY sub.name ASC, s.rollnumber ASC
         `;
         const result = await db.query(query);
         res.status(200).json(result.rows);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Failed to fetch finalized marks" });
+        console.error("getFinalizedExternalMarks error:", error);
+        res.status(500).json({ error: "Failed to fetch synchronized marks" });
     }
 };
