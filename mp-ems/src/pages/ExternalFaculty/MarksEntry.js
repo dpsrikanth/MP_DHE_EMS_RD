@@ -247,7 +247,7 @@ const ExternalMarksEntry = () => {
                           <tr className="bg-slate-50/50 border-b">
                             <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest w-48">Roll Number</th>
                             <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student Information</th>
-                            <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-64">External Marks (Max: 100)</th>
+                            <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-64">External Marks (Max: 70)</th>
                             <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-40">Status</th>
                           </tr>
                         </thead>
@@ -255,7 +255,7 @@ const ExternalMarksEntry = () => {
                           {filteredStudents.map((item) => {
                             const key = `${item.student_id}_${item.subject_id}_${item.exam_id}`;
                             const extVal = parseFloat(modifiedMarks[key] || 0);
-                            const isPass = extVal >= 35;
+                            const isPass = extVal >= 28;
 
                             return (
                               <tr key={key} className="hover:bg-slate-50/50 transition-colors">
@@ -274,19 +274,19 @@ const ExternalMarksEntry = () => {
                                   <div className="flex flex-col items-center">
                                     <input 
                                       type="number"
-                                      max="100"
+                                      max="70"
                                       disabled={subject.assignment_status === 'Submitted' || submitting}
                                       value={modifiedMarks[key] || ""}
                                       onChange={(e) => {
                                         const val = e.target.value;
-                                        if (val === "" || (Number(val) >= 0 && Number(val) <= 100)) {
+                                        if (val === "" || (Number(val) >= 0 && Number(val) <= 70)) {
                                           handleMarkChange(item.student_id, item.subject_id, item.exam_id, val);
                                         }
                                       }}
                                       placeholder="00"
                                       className="w-24 h-11 bg-white border-2 border-slate-100 rounded-xl px-4 text-center text-lg font-black text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all disabled:opacity-30"
                                     />
-                                    <p className="text-[8px] font-black text-slate-300 mt-1 uppercase tracking-tighter">Subject Pass: 35</p>
+                                    <p className="text-[8px] font-black text-slate-300 mt-1 uppercase tracking-tighter">Subject Pass: 28</p>
                                   </div>
                                 </td>
                                 <td className="px-10 py-5 text-center">

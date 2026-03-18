@@ -53,8 +53,8 @@ exports.saveExternalMarks = async (req, res) => {
             const { student_id, exam_id, subject_id, external_marks, academic_year_id } = mark;
             let total = parseFloat(external_marks || 0);
             
-            // Enforce Max 100
-            if (total > 100) total = 100;
+            // Enforce Max 70
+            if (total > 70) total = 70;
 
             await db.query(`
                 INSERT INTO marks (student_id, subject_id, exam_id, academic_year_id, external_marks, total_marks, status)
