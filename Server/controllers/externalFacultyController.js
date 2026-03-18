@@ -113,7 +113,7 @@ exports.finalizeExternalMarks = async (req, res) => {
                 await client.query(`
                     UPDATE external_faculty_assignments 
                     SET status = 'Submitted' 
-                    WHERE faculty_user_id = $1 AND exam_id = $2 AND subject_id = $3
+                    WHERE faculty_user_id = $1 AND exam_id = $2 AND (subject_id = $3 OR subject_id IS NULL)
                 `, [faculty_user_id, exam_id, subject_id]);
             }
         } else {

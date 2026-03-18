@@ -33,7 +33,7 @@ const ExternalMarksEntry = () => {
         const initials = {};
         data.forEach(a => {
           const key = `${a.student_id}_${a.subject_id}_${a.exam_id}`;
-          initials[key] = a.external_marks || "";
+          initials[key] = a.external_marks !== null ? a.external_marks : "";
         });
         setModifiedMarks(initials);
       }
@@ -97,6 +97,34 @@ const ExternalMarksEntry = () => {
     setSubmitting(true);
     try {
       const token = localStorage.getItem('token');
+      
+      // 1. First Save the current marks as draft
+      const marksToSave = subjectGroup.students.map(s => {
+        const key = `${s.student_id}_${s.subject_id}_${s.exam_id}`;
+        return {
+          student_id: s.student_id,
+          exam_id: s.exam_id,
+          subject_id: s.subject_id,
+          external_marks: modifiedMarks[key],
+          academic_year_id: s.academic_year_id
+        };
+      });
+
+      const saveRes = await fetch('http://localhost:8080/api/external-faculty/save-marks', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ marksData: marksToSave })
+      });
+
+      if (!saveRes.ok) {
+        const saveData = await saveRes.json();
+        throw new Error(saveData.error || "Failed to save marks before finalization");
+      }
+
+      // 2. Then Finalize
       const res = await fetch('http://localhost:8080/api/external-faculty/finalize-marks', {
         method: 'POST',
         headers: { 
@@ -117,7 +145,7 @@ const ExternalMarksEntry = () => {
         toast.error(data.error || "Failed to finalize marks");
       }
     } catch (error) {
-      toast.error("An error occurred during finalization");
+      toast.error(error.message || "An error occurred during finalization");
     } finally {
       setSubmitting(false);
     }

@@ -75,7 +75,7 @@ const ExternalFacultyDashboard = () => {
             </p>
           </div>
           <button 
-            onClick={() => navigate('/faculty/marks-entry')}
+            onClick={() => navigate('/external-faculty/marks-entry')}
             className="px-8 py-4 bg-white text-indigo-600 font-bold rounded-2xl shadow-xl hover:bg-slate-50 transition-all hover:scale-[1.03] active:scale-[0.98] flex items-center gap-3 w-fit"
           >
             <ListChecks size={20} />
@@ -117,7 +117,7 @@ const ExternalFacultyDashboard = () => {
         <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between">
           <h3 className="text-xl font-bold text-slate-900">Recent Assignments</h3>
           <button 
-            onClick={() => navigate('/faculty/marks-entry')}
+            onClick={() => navigate('/external-faculty/marks-entry')}
             className="text-xs font-black text-indigo-600 hover:text-indigo-700 underline uppercase tracking-tighter"
           >
             View All Assignments
@@ -170,7 +170,7 @@ const ExternalFacultyDashboard = () => {
                     <td className="px-8 py-6 text-right">
                       <button 
                         disabled={row.assignment_status === 'Submitted'}
-                        onClick={() => navigate('/faculty/marks-entry')}
+                        onClick={() => navigate('/external-faculty/marks-entry')}
                         className={`p-2 rounded-xl transition-all ${row.assignment_status === 'Submitted' ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
                       >
                         <ArrowRight size={20} />
