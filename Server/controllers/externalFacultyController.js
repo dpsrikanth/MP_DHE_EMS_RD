@@ -47,8 +47,9 @@ exports.saveExternalMarks = async (req, res) => {
         return res.status(400).json({ error: "Invalid marks data." });
     }
 
+    const client = await db.connect();
     try {
-        await db.query('BEGIN');
+        await client.query('BEGIN');
         for (const mark of marksData) {
             const { student_id, exam_id, subject_id, external_marks, academic_year_id } = mark;
             let total = parseFloat(external_marks || 0);
@@ -56,7 +57,7 @@ exports.saveExternalMarks = async (req, res) => {
             // Enforce Max 70
             if (total > 70) total = 70;
 
-            await db.query(`
+            await client.query(`
                 INSERT INTO marks (student_id, subject_id, exam_id, academic_year_id, external_marks, total_marks, status)
                 VALUES ($1, $2, $3, $4, $5, $6, 'Draft')
                 ON CONFLICT (student_id, subject_id, exam_id) 
@@ -68,8 +69,7 @@ exports.saveExternalMarks = async (req, res) => {
             `, [student_id, subject_id, exam_id, academic_year_id, external_marks || 0, total]);
 
             // Update assignment status
-            // We update the specific subject assignment OR the exam-level assignment
-            await db.query(`
+            await client.query(`
                 UPDATE external_faculty_assignments 
                 SET status = 'Evaluated' 
                 WHERE faculty_user_id = $1 AND exam_id = $2 
@@ -77,12 +77,14 @@ exports.saveExternalMarks = async (req, res) => {
                   AND status != 'Submitted'
             `, [faculty_user_id, exam_id, subject_id]);
         }
-        await db.query('COMMIT');
+        await client.query('COMMIT');
         res.status(200).json({ message: "Marks saved successfully" });
     } catch (error) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
         console.error(error);
         res.status(500).json({ error: "Failed to save marks" });
+    } finally {
+        client.release();
     }
 };
 
@@ -94,20 +96,21 @@ exports.finalizeExternalMarks = async (req, res) => {
         return res.status(400).json({ error: "Exam ID is required." });
     }
 
+    const client = await db.connect();
     try {
-        await db.query('BEGIN');
+        await client.query('BEGIN');
         
         // If subject_ids are provided, finalize those specifically
         // Otherwise finalize ALL for the exam assignment
         if (subject_ids && Array.isArray(subject_ids) && subject_ids.length > 0) {
             for (const subject_id of subject_ids) {
-                await db.query(`
+                await client.query(`
                     UPDATE marks 
                     SET status = 'Pending Approval' 
                     WHERE subject_id = $1 AND exam_id = $2 AND external_marks IS NOT NULL
                 `, [subject_id, exam_id]);
 
-                await db.query(`
+                await client.query(`
                     UPDATE external_faculty_assignments 
                     SET status = 'Submitted' 
                     WHERE faculty_user_id = $1 AND exam_id = $2 AND subject_id = $3
@@ -115,25 +118,27 @@ exports.finalizeExternalMarks = async (req, res) => {
             }
         } else {
             // Finalize everything for this exam assignment
-            await db.query(`
+            await client.query(`
                 UPDATE marks 
                 SET status = 'Pending Approval' 
                 WHERE exam_id = $1 AND external_marks IS NOT NULL
                   AND student_id IN (SELECT student_id FROM exam_registrations WHERE exam_id = $1 AND payment_status = 'Paid')
             `, [exam_id]);
 
-            await db.query(`
+            await client.query(`
                 UPDATE external_faculty_assignments 
                 SET status = 'Submitted' 
                 WHERE faculty_user_id = $1 AND exam_id = $2 AND subject_id IS NULL
             `, [faculty_user_id, exam_id]);
         }
         
-        await db.query('COMMIT');
+        await client.query('COMMIT');
         res.status(200).json({ message: "Marks submitted to university successfully" });
     } catch (error) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
         console.error(error);
         res.status(500).json({ error: "Failed to finalize marks" });
+    } finally {
+        client.release();
     }
 };

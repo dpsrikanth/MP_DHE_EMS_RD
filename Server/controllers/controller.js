@@ -349,25 +349,28 @@ const getUniversities = async (req, res) => {
 };
 
 const createUniversity = async (req, res) => {
+  const dbClient = await client.connect();
   try {
     const { name, address, status } = req.body;
     if (!name) return res.status(400).json({ message: 'Name is required' });
-    await client.query('BEGIN');
-    const universityResult = await client.query(
+    await dbClient.query('BEGIN');
+    const universityResult = await dbClient.query(
       'INSERT INTO universities (name, address, status) VALUES ($1, $2, $3) RETURNING id, name, address, status, created_at',
       [name, address || null, status === undefined ? true : status]
     );
     const newUniversity = universityResult.rows[0];
-    await client.query(
+    await dbClient.query(
       'INSERT INTO colleges (name, university_id, address, status) VALUES ($1, $2, $3, $4)',
       [name, newUniversity.id, address || null, status === undefined ? true : status]
     );
-    await client.query('COMMIT');
+    await dbClient.query('COMMIT');
     res.status(201).json(newUniversity);
   } catch (err) {
-    await client.query('ROLLBACK');
+    await dbClient.query('ROLLBACK');
     console.error('Create university error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
+  } finally {
+    dbClient.release();
   }
 };
 
@@ -757,9 +760,10 @@ const updateTeacher = async (req, res) => {
   const { id } = req.params;
   const { college_id, designation, department, experience, status, name, email } = req.body;
 
+  const dbClient = await client.connect();
   try {
     // 1️⃣ Check if teacher exists
-    const teacherResult = await client.query(
+    const teacherResult = await dbClient.query(
       "SELECT * FROM teachers WHERE id = $1",
       [id]
     );
@@ -771,11 +775,11 @@ const updateTeacher = async (req, res) => {
     const teacher = teacherResult.rows[0];
 
     // 2️⃣ Start transaction
-    await client.query("BEGIN");
+    await dbClient.query("BEGIN");
 
     // 3️⃣ Update users table (if name or email provided)
     if (name || email) {
-      await client.query(
+      await dbClient.query(
         `UPDATE users 
          SET name = COALESCE($1, name),
              email = COALESCE($2, email)
@@ -785,7 +789,7 @@ const updateTeacher = async (req, res) => {
     }
 
     // 4️⃣ Update teachers table
-    await client.query(
+    await dbClient.query(
       `UPDATE teachers
        SET college_id = COALESCE($1, college_id),
            designation = COALESCE($2, designation),
@@ -797,13 +801,15 @@ const updateTeacher = async (req, res) => {
     );
 
     // 5️⃣ Commit transaction
-    await client.query("COMMIT");
+    await dbClient.query("COMMIT");
     res.json({ message: "Teacher updated successfully" });
   } catch (error) {
-    await client.query("ROLLBACK");
+    await dbClient.query("ROLLBACK");
     if (error.code === "23505") return res.status(400).json({ message: "Email already in use" });
     console.error(error);
     res.status(500).json({ message: "Server error" });
+  } finally {
+    dbClient.release();
   }
 };
 
@@ -816,32 +822,35 @@ const createTeacher = async (req, res) => {
     return res.status(400).json({ message: 'Name and email are required' });
   }
 
+  const dbClient = await client.connect();
   try {
     // begin transaction
-    await client.query('BEGIN');
+    await dbClient.query('BEGIN');
     // insert user
-    const userResult = await client.query(
+    const userResult = await dbClient.query(
       'INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id',
       [teacher_name, email]
     );
     const userId = userResult.rows[0].id;
 
     // insert teacher
-    const teacherResult = await client.query(
+    const teacherResult = await dbClient.query(
       `INSERT INTO teachers (user_id, college_id, designation, department, experience, status)
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
       [userId, college_id || null, designation || null, department || null, experience || null, status || true]
     );
 
-    await client.query('COMMIT');
+    await dbClient.query('COMMIT');
     res.status(201).json({ message: 'Teacher created successfully', id: teacherResult.rows[0].id });
   } catch (error) {
-    await client.query('ROLLBACK');
+    await dbClient.query('ROLLBACK');
     if (error.code === '23505') {
       return res.status(400).json({ message: 'Email already in use' });
     }
     console.error('Create teacher error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
+  } finally {
+    dbClient.release();
   }
 };
 
@@ -1248,22 +1257,21 @@ const getStudentsForMarks = async (req, res) => {
 };
 
 const saveTeacherMarks = async (req, res) => {
+  const dbClient = await client.connect();
   try {
     // Expected body: { subject_id, exam_id, academic_year_id, marksData: [{ student_id, internal_marks, external_marks, status }] }
     const { subject_id, exam_id, academic_year_id, marksData } = req.body;
-    const teacher_id = req.user.id; // From verifyToken middleware, assuming req.user.id is the teacher's user ID.
-    // NOTE: Ideally, we should look up the primary key from the teachers table using req.user.id.
-    // For simplicity, we query the teacher ID first if needed, otherwise rely on the payload passing the correct teacher_id.
-
+    const teacher_id = req.user.id; // From verifyToken middleware
+    
     // Attempt to lookup the real teacher record ID
-    const teacherCheck = await client.query('SELECT id FROM teachers WHERE user_id = $1', [req.user.id]);
+    const teacherCheck = await dbClient.query('SELECT id FROM teachers WHERE user_id = $1', [req.user.id]);
     const actual_teacher_id = teacherCheck.rows.length > 0 ? teacherCheck.rows[0].id : null;
 
     if (!subject_id || !marksData || !Array.isArray(marksData)) {
       return res.status(400).json({ message: "Invalid payload format." });
     }
 
-    await client.query("BEGIN"); // Start transaction
+    await dbClient.query("BEGIN"); // Start transaction
 
     for (const record of marksData) {
       if (!record.student_id) continue;
@@ -1271,10 +1279,9 @@ const saveTeacherMarks = async (req, res) => {
       const internal = record.internal_marks !== undefined && record.internal_marks !== '' ? parseFloat(record.internal_marks) : null;
       const external = record.external_marks !== undefined && record.external_marks !== '' ? parseFloat(record.external_marks) : null;
       const computedTotal = (internal || 0) + (external || 0);
-      const rowStatus = record.status || 'Draft'; // 'Draft' or 'Pending Approval'
+      const rowStatus = record.status || 'Draft';
 
-      // Check if marks record exists for this student/subject/exam combination
-      const checkResult = await client.query(
+      const checkResult = await dbClient.query(
         `SELECT id FROM marks 
          WHERE student_id = $1 AND subject_id = $2 
          AND (exam_id = $3 OR ($3 IS NULL AND exam_id IS NULL))
@@ -1283,17 +1290,14 @@ const saveTeacherMarks = async (req, res) => {
       );
 
       if (checkResult.rows.length > 0) {
-        // Update existing record
-        // Only allow update if status is Draft or Rejected (represented as Draft again). Don't let teacher overwrite Approved marks.
-        await client.query(
+        await dbClient.query(
           `UPDATE marks 
            SET internal_marks = $1, external_marks = $2, total_marks = $3, status = $4, teacher_id = $5 
            WHERE id = $6 AND status != 'Approved'`,
           [internal, external, computedTotal, rowStatus, actual_teacher_id, checkResult.rows[0].id]
         );
       } else {
-        // Insert new record
-        await client.query(
+        await dbClient.query(
           `INSERT INTO marks (student_id, subject_id, exam_id, academic_year_id, internal_marks, external_marks, total_marks, status, teacher_id) 
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
           [record.student_id, subject_id, exam_id || null, academic_year_id || null, internal, external, computedTotal, rowStatus, actual_teacher_id]
@@ -1301,12 +1305,14 @@ const saveTeacherMarks = async (req, res) => {
       }
     }
 
-    await client.query("COMMIT");
+    await dbClient.query("COMMIT");
     res.json({ message: "Marks saved successfully." });
   } catch (error) {
-    await client.query("ROLLBACK");
+    await dbClient.query("ROLLBACK");
     console.error("Save teacher marks error:", error);
     res.status(500).json({ message: "Failed to save marks", error: error.message });
+  } finally {
+    dbClient.release();
   }
 };
 
@@ -1493,6 +1499,7 @@ const getMasterSubjects = async (req, res) => {
 };
 
 const createMasterSubject = async (req, res) => {
+  const dbClient = await client.connect();
   try {
     const {
       subject_code, name, department_ids,
@@ -1509,8 +1516,8 @@ const createMasterSubject = async (req, res) => {
       credit = 4;
     }
 
-    await client.query('BEGIN');
-    const result = await client.query(
+    await dbClient.query('BEGIN');
+    const result = await dbClient.query(
       `INSERT INTO master_subjects (
         subject_code, name, program_id, semester_id, mapping_type, 
         is_mandatory, has_examination, periods_per_week, teacher_id, status, credit
@@ -1521,15 +1528,17 @@ const createMasterSubject = async (req, res) => {
     const subjectId = result.rows[0].id;
     if (department_ids && Array.isArray(department_ids) && department_ids.length > 0) {
       for (const deptId of department_ids) {
-        await client.query("INSERT INTO master_subject_departments (subject_id, department_id) VALUES ($1, $2)", [subjectId, deptId]);
+        await dbClient.query("INSERT INTO master_subject_departments (subject_id, department_id) VALUES ($1, $2)", [subjectId, deptId]);
       }
     }
-    await client.query('COMMIT');
+    await dbClient.query('COMMIT');
     res.status(201).json(result.rows[0]);
   } catch (error) {
-    await client.query('ROLLBACK');
+    await dbClient.query('ROLLBACK');
     console.error("Create master subject error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
+  } finally {
+    dbClient.release();
   }
 };
 
@@ -1553,6 +1562,7 @@ const getMasterSubject = async (req, res) => {
 };
 
 const updateMasterSubject = async (req, res) => {
+  const dbClient = await client.connect();
   try {
     const { id } = req.params;
     const {
@@ -1570,8 +1580,8 @@ const updateMasterSubject = async (req, res) => {
       credit = 4;
     }
 
-    await client.query('BEGIN');
-    const result = await client.query(
+    await dbClient.query('BEGIN');
+    const result = await dbClient.query(
       `UPDATE master_subjects 
        SET subject_code = $1, name = $2, program_id = $3, semester_id = $4, 
            mapping_type = $5, is_mandatory = $6, has_examination = $7, 
@@ -1582,22 +1592,24 @@ const updateMasterSubject = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      await client.query('ROLLBACK');
+      await dbClient.query('ROLLBACK');
       return res.status(404).json({ message: "Master subject not found" });
     }
 
     if (department_ids && Array.isArray(department_ids)) {
-      await client.query("DELETE FROM master_subject_departments WHERE subject_id = $1", [id]);
+      await dbClient.query("DELETE FROM master_subject_departments WHERE subject_id = $1", [id]);
       for (const deptId of department_ids) {
-        await client.query("INSERT INTO master_subject_departments (subject_id, department_id) VALUES ($1, $2)", [id, deptId]);
+        await dbClient.query("INSERT INTO master_subject_departments (subject_id, department_id) VALUES ($1, $2)", [id, deptId]);
       }
     }
-    await client.query('COMMIT');
+    await dbClient.query('COMMIT');
     res.json(result.rows[0]);
   } catch (error) {
-    await client.query('ROLLBACK');
+    await dbClient.query('ROLLBACK');
     console.error("Update master subject error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
+  } finally {
+    dbClient.release();
   }
 };
 
@@ -1642,26 +1654,29 @@ const getMasterPrograms = async (req, res) => {
 };
 
 const createMasterProgram = async (req, res) => {
+  const dbClient = await client.connect();
   try {
     const { name, duration_years, department_ids, section_name, code, grading_system_type, enable_elective_subjects_selection } = req.body;
     if (!name || !duration_years) return res.status(400).json({ message: "Program name and duration are required" });
-    await client.query('BEGIN');
-    const result = await client.query(
+    await dbClient.query('BEGIN');
+    const result = await dbClient.query(
       "INSERT INTO master_programs (name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, status) VALUES ($1, $2, $3, $4, $5, $6, 'Active') RETURNING id, name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, status, created_at",
       [name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection]
     );
     const programId = result.rows[0].id;
     if (department_ids && Array.isArray(department_ids) && department_ids.length > 0) {
       for (const deptId of department_ids) {
-        await client.query("INSERT INTO master_program_departments (program_id, department_id) VALUES ($1, $2)", [programId, deptId]);
+        await dbClient.query("INSERT INTO master_program_departments (program_id, department_id) VALUES ($1, $2)", [programId, deptId]);
       }
     }
-    await client.query('COMMIT');
+    await dbClient.query('COMMIT');
     res.status(201).json(result.rows[0]);
   } catch (error) {
-    await client.query('ROLLBACK');
+    await dbClient.query('ROLLBACK');
     console.error("Create master program error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
+  } finally {
+    dbClient.release();
   }
 };
 
@@ -1678,31 +1693,34 @@ const getMasterProgram = async (req, res) => {
 };
 
 const updateMasterProgram = async (req, res) => {
+  const dbClient = await client.connect();
   try {
     const { id } = req.params;
     const { name, duration_years, department_ids, section_name, code, grading_system_type, enable_elective_subjects_selection } = req.body;
     if (!name || !duration_years) return res.status(400).json({ message: "Program name and duration are required" });
-    await client.query('BEGIN');
-    const result = await client.query(
+    await dbClient.query('BEGIN');
+    const result = await dbClient.query(
       "UPDATE master_programs SET name = $1, duration_years = $2, section_name = $3, code = $4, grading_system_type = $5, enable_elective_subjects_selection = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING id, name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, created_at",
       [name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, id]
     );
     if (result.rows.length === 0) {
-      await client.query('ROLLBACK');
+      await dbClient.query('ROLLBACK');
       return res.status(404).json({ message: "Master program not found" });
     }
     if (department_ids && Array.isArray(department_ids)) {
-      await client.query("DELETE FROM master_program_departments WHERE program_id = $1", [id]);
+      await dbClient.query("DELETE FROM master_program_departments WHERE program_id = $1", [id]);
       for (const deptId of department_ids) {
-        await client.query("INSERT INTO master_program_departments (program_id, department_id) VALUES ($1, $2)", [id, deptId]);
+        await dbClient.query("INSERT INTO master_program_departments (program_id, department_id) VALUES ($1, $2)", [id, deptId]);
       }
     }
-    await client.query('COMMIT');
+    await dbClient.query('COMMIT');
     res.json(result.rows[0]);
   } catch (error) {
-    await client.query('ROLLBACK');
+    await dbClient.query('ROLLBACK');
     console.error("Update master program error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
+  } finally {
+    dbClient.release();
   }
 };
 
@@ -2086,6 +2104,7 @@ const createMasterTeacher = async (req, res) => {
     college_id = collegeId;
   }
 
+  const dbClient = await client.connect();
   try {
     // Validate required fields
     if (!name || !email || !college_id || !department_id || !designation_id) {
@@ -2093,7 +2112,7 @@ const createMasterTeacher = async (req, res) => {
     }
 
     // Check if email already exists
-    const existingEmail = await client.query(
+    const existingEmail = await dbClient.query(
       "SELECT id FROM users WHERE email = $1",
       [email]
     );
@@ -2106,7 +2125,7 @@ const createMasterTeacher = async (req, res) => {
     const finalEmployeeCode = employee_code || `EMP-${Date.now()}`;
 
     // Check if employee code already exists
-    const existingCode = await client.query(
+    const existingCode = await dbClient.query(
       "SELECT id FROM master_teachers WHERE employee_code = $1",
       [finalEmployeeCode]
     );
@@ -2116,17 +2135,17 @@ const createMasterTeacher = async (req, res) => {
     }
 
     // Begin transaction
-    await client.query('BEGIN');
+    await dbClient.query('BEGIN');
 
     // Create user
-    const userResult = await client.query(
+    const userResult = await dbClient.query(
       "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id",
       [name, email]
     );
     const userId = userResult.rows[0].id;
 
     // Create master teacher
-    const result = await client.query(
+    const result = await dbClient.query(
       `INSERT INTO master_teachers (
         user_id, employee_code, college_id, department_id, designation_id, qualification, experience_years, specialization, pan_no, aadhaar_no, dob, gender, joining_date, phone, address, status,
         employee_category_name, first_name, middle_name, last_name, job_title, employee_position_name, employee_department_name, employee_grade_name, experience_detail, experience_months, marital_status, father_name, mother_name, spouse_name, blood_group, country_name, home_address_line1, home_city, home_state, home_country_name, office_phone1, office_phone2, office_state, home_phone1, email, fax
@@ -2142,7 +2161,7 @@ const createMasterTeacher = async (req, res) => {
     const teacherId = result.rows[0].id;
 
     // Fetch the complete record with all joins for display
-    const completeRecord = await client.query(
+    const completeRecord = await dbClient.query(
       `SELECT 
         mt.id,
         u.name,
@@ -2174,16 +2193,18 @@ const createMasterTeacher = async (req, res) => {
       [teacherId]
     );
 
-    await client.query('COMMIT');
+    await dbClient.query('COMMIT');
     res.status(201).json({
       success: true,
       message: "Teacher record created successfully",
       data: completeRecord.rows[0]
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    await dbClient.query('ROLLBACK');
     console.error("Create master teacher error:", error);
     res.status(500).json({ success: false, message: "Server error", error: error.message });
+  } finally {
+    dbClient.release();
   }
 };
 
@@ -2191,7 +2212,6 @@ const updateMasterTeacher = async (req, res) => {
   const { id } = req.params;
   const { roleName, collegeId, departmentId: userDeptId } = req.user;
 
-  // pull every possible field from the body; some may be undefined
   let {
     name, email, college_id, department_id, designation_id, qualification, experience, specialization, pan_no, aadhaar_no, dob, gender, joining_date, phone, address, status,
     employee_category_name, first_name, middle_name, last_name, job_title, employee_position_name, employee_department_name, employee_grade_name, experience_detail, experience_months, marital_status, father_name, mother_name, spouse_name, blood_group, country_name, home_address_line1, home_city, home_state, home_country_name, office_phone1, office_phone2, office_state, home_phone1, fax
@@ -2205,10 +2225,11 @@ const updateMasterTeacher = async (req, res) => {
     college_id = collegeId;
   }
 
+  const dbClient = await client.connect();
   try {
     // Get existing teacher and check permissions
     let checkQuery = "SELECT user_id, college_id, department_id FROM master_teachers WHERE id = $1";
-    const existing = await client.query(checkQuery, [id]);
+    const existing = await dbClient.query(checkQuery, [id]);
 
     if (existing.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Master teacher not found" });
@@ -2228,18 +2249,18 @@ const updateMasterTeacher = async (req, res) => {
     const userId = existing.rows[0].user_id;
 
     // Begin transaction
-    await client.query('BEGIN');
+    await dbClient.query('BEGIN');
 
     // Update user if name or email provided
     if (name || email) {
-      await client.query(
+      await dbClient.query(
         `UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email) WHERE id = $3`,
         [name || null, email || null, userId]
       );
     }
 
     // Update master teacher
-    await client.query(
+    await dbClient.query(
       `UPDATE master_teachers 
        SET college_id = COALESCE($2, college_id),
            department_id = COALESCE($3, department_id),
@@ -2291,7 +2312,7 @@ const updateMasterTeacher = async (req, res) => {
     );
 
     // Fetch the complete updated record with all joins
-    const result = await client.query(
+    const result = await dbClient.query(
       `SELECT 
         mt.id,
         u.name,
@@ -2322,16 +2343,18 @@ const updateMasterTeacher = async (req, res) => {
       [id]
     );
 
-    await client.query('COMMIT');
+    await dbClient.query('COMMIT');
     res.json({
       success: true,
       message: "Teacher record updated successfully",
       data: result.rows[0]
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    await dbClient.query('ROLLBACK');
     console.error("Update master teacher error:", error);
     res.status(500).json({ success: false, message: "Server error", error: error.message });
+  } finally {
+    dbClient.release();
   }
 };
 

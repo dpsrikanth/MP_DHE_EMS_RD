@@ -49,13 +49,14 @@ exports.assignExternalFaculty = async (req, res) => {
         return res.status(400).json({ error: "Faculty ID and Exam ID are required" });
     }
 
+    const client = await db.connect();
     try {
-        await db.query('BEGIN');
+        await client.query('BEGIN');
         
         if (subject_ids && Array.isArray(subject_ids) && subject_ids.length > 0) {
             // Subject-level assignments
             for (const subject_id of subject_ids) {
-                await db.query(`
+                await client.query(`
                     INSERT INTO external_faculty_assignments (faculty_user_id, subject_id, exam_id, assigned_by)
                     VALUES ($1, $2, $3, $4)
                     ON CONFLICT (faculty_user_id, subject_id, exam_id) 
@@ -64,22 +65,22 @@ exports.assignExternalFaculty = async (req, res) => {
             }
         } else {
             // Exam-level assignment (subject_id IS NULL)
-            await db.query(`
+            await client.query(`
                 INSERT INTO external_faculty_assignments (faculty_user_id, subject_id, exam_id, assigned_by)
                 VALUES ($1, NULL, $2, $3)
                 ON CONFLICT (faculty_user_id, COALESCE(subject_id, -1), exam_id) 
                 DO UPDATE SET assigned_by = EXCLUDED.assigned_by, assigned_at = CURRENT_TIMESTAMP
             `, [faculty_user_id, exam_id, assigned_by]);
-            // NOTE: The unique constraint might need to handle NULLs correctly. 
-            // Better to use a unique index on (faculty_user_id, (COALESCE(subject_id, -1)), exam_id)
         }
         
-        await db.query('COMMIT');
+        await client.query('COMMIT');
         res.status(201).json({ message: "Assignments created successfully" });
     } catch (error) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
         console.error(error);
         res.status(500).json({ error: "Failed to create assignments" });
+    } finally {
+        client.release();
     }
 };
 
