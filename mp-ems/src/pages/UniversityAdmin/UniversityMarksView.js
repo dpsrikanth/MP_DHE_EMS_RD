@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { 
-  CheckCircle2, AlertCircle, Loader2, BookOpen, 
+import {
+  CheckCircle2, AlertCircle, Loader2, BookOpen,
   Search, Users, GraduationCap, ClipboardCheck,
   TrendingUp, ArrowLeftRight, FileText
 } from "lucide-react";
@@ -38,12 +38,27 @@ const UniversityMarksView = () => {
     }
   };
 
-  // Group by Subject
+  // Calculate SGPA for each student
+  const studentSGPA = marks.reduce((acc, curr) => {
+    if (!acc[curr.student_id]) {
+      acc[curr.student_id] = { totalCredits: 0, totalCreditPoints: 0 };
+    }
+    acc[curr.student_id].totalCredits += parseFloat(curr.credits || 0);
+    acc[curr.student_id].totalCreditPoints += parseFloat(curr.credit_points || 0);
+    return acc;
+  }, {});
+
+  // Group by Subject and inject SGPA
   const groupedData = marks.reduce((acc, curr) => {
     if (!acc[curr.subject_name]) {
       acc[curr.subject_name] = [];
     }
-    acc[curr.subject_name].push(curr);
+    const studentStats = studentSGPA[curr.student_id];
+    const sgpa = studentStats.totalCredits > 0 
+      ? (studentStats.totalCreditPoints / studentStats.totalCredits).toFixed(2) 
+      : '0.00';
+      
+    acc[curr.subject_name].push({ ...curr, sgpa });
     return acc;
   }, {});
 
@@ -74,9 +89,9 @@ const UniversityMarksView = () => {
 
         <div className="relative w-full md:w-96 group">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
-          <input 
-            type="text" 
-            placeholder="Search by Roll or Student Name..." 
+          <input
+            type="text"
+            placeholder="Search by Roll or Student Name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full h-16 bg-white border-4 border-slate-50 rounded-[1.5rem] shadow-sm pl-14 pr-6 text-sm font-bold focus:outline-none focus:border-indigo-500 transition-all placeholder:text-slate-300 shadow-indigo-100/20"
@@ -102,11 +117,10 @@ const UniversityMarksView = () => {
               <button
                 key={name}
                 onClick={() => setActiveSubject(name)}
-                className={`h-12 px-8 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
-                  activeSubject === name 
-                    ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20 scale-105' 
+                className={`h-12 px-8 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeSubject === name
+                    ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20 scale-105'
                     : 'bg-white text-slate-400 border-2 border-slate-50 hover:border-indigo-200 hover:text-indigo-500'
-                }`}
+                  }`}
               >
                 {name}
               </button>
@@ -127,7 +141,7 @@ const UniversityMarksView = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex gap-4">
                 <div className="bg-white/5 border border-white/10 px-6 py-4 rounded-3xl text-center">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Students</p>
@@ -151,13 +165,18 @@ const UniversityMarksView = () => {
                     <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Internal</th>
                     <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">External</th>
                     <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Total Score</th>
+                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Grade</th>
+                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Grade Points</th>
+                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Credits</th>
+                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Credit Pts</th>
+                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">SGPA</th>
                     <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-48">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {groupedData[activeSubject]
-                    ?.filter(s => 
-                      s.student_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                    ?.filter(s =>
+                      s.student_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                       s.rollnumber.toLowerCase().includes(searchQuery.toLowerCase())
                     )
                     .map((item) => (
@@ -173,8 +192,8 @@ const UniversityMarksView = () => {
                               {item.student_name.split(' ').map(n => n[0]).join('')}
                             </div>
                             <div>
-                                <p className="font-black text-slate-800 text-sm tracking-tight">{item.student_name}</p>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{item.exam_name}</p>
+                              <p className="font-black text-slate-800 text-sm tracking-tight">{item.student_name}</p>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{item.exam_name}</p>
                             </div>
                           </div>
                         </td>
@@ -188,25 +207,48 @@ const UniversityMarksView = () => {
                           <div className="text-xl font-black text-slate-900 flex flex-col items-center">
                             {item.total_marks || 0}
                             <div className="w-12 h-1 bg-slate-100 rounded-full mt-1.5 overflow-hidden">
-                                <div 
-                                    className="h-full bg-indigo-500 rounded-full" 
-                                    style={{ width: `${Math.min(item.total_marks, 100)}%` }}
-                                ></div>
+                              <div
+                                className="h-full bg-indigo-500 rounded-full"
+                                style={{ width: `${Math.min(item.total_marks, 100)}%` }}
+                              ></div>
                             </div>
                           </div>
                         </td>
                         <td className="px-10 py-6 text-center">
+                          <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl font-black text-sm border-2 ${
+                            ['O', 'A+', 'A'].includes(item.grade) ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                            ['B+', 'B'].includes(item.grade) ? 'bg-sky-50 text-sky-600 border-sky-100' :
+                            ['C'].includes(item.grade) ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                            'bg-rose-50 text-rose-600 border-rose-100'
+                          }`}>
+                            {item.grade}
+                          </div>
+                        </td>
+                        <td className="px-10 py-6 text-center font-black text-slate-700">
+                          {item.grade_point}
+                        </td>
+                        <td className="px-10 py-6 text-center font-bold text-slate-500">
+                          {item.credits || 0}
+                        </td>
+                        <td className="px-10 py-6 text-center font-black text-indigo-500">
+                          {item.credit_points || 0}
+                        </td>
+                        <td className="px-10 py-6 text-center">
+                          <div className="bg-slate-900 text-white px-3 py-1 rounded-lg font-black text-xs shadow-lg shadow-slate-200">
+                            {item.sgpa}
+                          </div>
+                        </td>
+                        <td className="px-10 py-6 text-center">
                           <div className="flex flex-col items-center gap-2">
-                            <div className={`inline-flex items-center gap-2 text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-wider border ${
-                              item.result_status === 'Pass' 
-                                ? 'text-emerald-500 bg-emerald-50 border-emerald-100' 
+                            <div className={`inline-flex items-center gap-2 text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-wider border ${item.result_status === 'Pass'
+                                ? 'text-emerald-500 bg-emerald-50 border-emerald-100'
                                 : 'text-rose-500 bg-rose-50 border-rose-100'
-                            }`}>
+                              }`}>
                               {item.result_status === 'Pass' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
                               {item.result_status}
                             </div>
                             <span className="text-[8px] font-black text-slate-300 uppercase tracking-tighter">
-                                {item.marks_status}
+                              {item.marks_status}
                             </span>
                           </div>
                         </td>
