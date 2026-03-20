@@ -35,6 +35,8 @@ import ExternalAssignment from "./pages/UniversityAdmin/ExternalAssignment";
 import ExternalFacultyDashboard from "./pages/ExternalFaculty/Dashboard";
 import ExternalMarksEntry from "./pages/ExternalFaculty/MarksEntry";
 import UniversityMarksView from "./pages/UniversityAdmin/UniversityMarksView";
+import HallTicket from "./pages/Student/HallTicket";
+import ResultSheet from "./pages/Student/ResultSheet";
 import Layout from "./components/Layout";
 
 const AppRoutes = () => {
@@ -84,6 +86,8 @@ const AppRoutes = () => {
       <Route path="/student/dashboard" element={<Layout><ProtectedRoute element={<StudentDashboard />} /></Layout>} />
       <Route path="/student/exams" element={<Layout><ProtectedRoute element={<StudentExams />} /></Layout>} />
       <Route path="/student/results" element={<Layout><ProtectedRoute element={<StudentResults />} /></Layout>} />
+      <Route path="/student/hall-ticket/:examName/:semesterId" element={<ProtectedRoute element={<HallTicket />} />} />
+      <Route path="/student/result-sheet/:examName" element={<ProtectedRoute element={<ResultSheet />} />} />
 
       {/* External Faculty Routes */}
       <Route path="/external-faculty/dashboard" element={<Layout><ProtectedRoute element={<ExternalFacultyDashboard />} /></Layout>} />

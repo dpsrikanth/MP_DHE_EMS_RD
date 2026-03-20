@@ -54,12 +54,12 @@ const UniversityMarksView = () => {
         totalCreditPoints: 0
       };
     }
-    const earnedCredits = curr.result_status === 'Pass' ? parseFloat(curr.credits || 0) : 0;
-    const earnedCreditPoints = curr.result_status === 'Pass' ? parseFloat(curr.credit_points || 0) : 0;
+    const credits = parseFloat(curr.credits || 0);
+    const creditPoints = parseFloat(curr.credit_points || 0);
 
-    acc[curr.student_id].subjects.push({ ...curr, credits: earnedCredits, credit_points: earnedCreditPoints });
-    acc[curr.student_id].totalCredits += earnedCredits;
-    acc[curr.student_id].totalCreditPoints += earnedCreditPoints;
+    acc[curr.student_id].subjects.push({ ...curr, credits, credit_points: creditPoints });
+    acc[curr.student_id].totalCredits += credits;
+    acc[curr.student_id].totalCreditPoints += creditPoints;
     return acc;
   }, {});
 
@@ -76,10 +76,10 @@ const UniversityMarksView = () => {
     if (!acc[curr.subject_name]) {
       acc[curr.subject_name] = [];
     }
-    const earnedCredits = curr.result_status === 'Pass' ? parseFloat(curr.credits || 0) : 0;
-    const earnedCreditPoints = curr.result_status === 'Pass' ? parseFloat(curr.credit_points || 0) : 0;
+    const credits = parseFloat(curr.credits || 0);
+    const creditPoints = parseFloat(curr.credit_points || 0);
     
-    acc[curr.subject_name].push({ ...curr, credits: earnedCredits, credit_points: earnedCreditPoints });
+    acc[curr.subject_name].push({ ...curr, credits, credit_points: creditPoints });
     return acc;
   }, {});
 

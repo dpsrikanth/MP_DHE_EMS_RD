@@ -2732,6 +2732,7 @@ const getStudentExams = async (req, res) => {
       SELECT 
         e.id, 
         e.name as exam_name, 
+        e.semester_id,
         ms.semester_name,
         COALESCE(c.name, 'University-wide') as college_name,
         et.type_name as exam_type_name,
@@ -2789,6 +2790,142 @@ const registerForExam = async (req, res) => {
     res.json({ message: "Successfully registered for exam series." });
   } catch (error) {
     console.error("Register for exam error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getHallTicketData = async (req, res) => {
+  try {
+    const { examName, semesterId } = req.params;
+    const userId = req.user.id;
+    
+    // 1. Get complete student details
+    const studentRes = await client.query(
+      `SELECT id, name, rollnumber, "programName", semister, "collageName", 
+              "fatherName", email, "contactNumber", address, adharnumber,
+              admission_no, batch, section, gender
+       FROM students 
+       WHERE user_id = $1 AND "deleteStatus" = true`,
+      [userId]
+    );
+
+    if (studentRes.rows.length === 0) {
+      return res.status(404).json({ message: "Student record not found." });
+    }
+
+    const student = studentRes.rows[0];
+
+    // 2. Fetch registered exams for this specific series
+    const query = `
+      SELECT 
+        e.id, 
+        e.name as exam_name, 
+        ms.semester_name,
+        COALESCE(c.name, 'University-wide') as college_name,
+        et.type_name as exam_type_name,
+        sub.name as subject_name,
+        sub.subject_code,
+        e.exam_date, 
+        e.start_time,
+        e.end_time
+      FROM exams e
+      JOIN master_semesters ms ON e.semester_id = ms.id
+      LEFT JOIN colleges c ON e.college_id = c.id
+      JOIN exam_types et ON e.exam_type = et.id
+      JOIN master_subjects sub ON e.subject_id = sub.id
+      JOIN exam_registrations er ON er.exam_id = e.id AND er.student_id = $1
+      WHERE e.name = $2 
+        AND e.semester_id = $3
+        AND er.payment_status = 'Paid'
+      ORDER BY e.exam_date ASC, e.start_time ASC
+    `;
+
+    const examRes = await client.query(query, [student.id, examName, semesterId]);
+    
+    if (examRes.rows.length === 0) {
+      return res.status(404).json({ message: "No paid registrations found for this exam series." });
+    }
+
+    res.json({
+      student,
+      exams: examRes.rows,
+      university: "Madhya Pradesh University of Excellence", // Placeholder or fetch from config
+      generatedAt: new Date()
+    });
+  } catch (error) {
+    console.error("Get hall ticket data error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getResultSheetData = async (req, res) => {
+  try {
+    const { examName } = req.params;
+    const userId = req.user.id;
+    
+    // 1. Get student details
+    const studentRes = await client.query(
+      `SELECT id, name, rollnumber, "programName", semister, "collageName", 
+              "fatherName", email, "contactNumber", address, adharnumber,
+              admission_no, batch, section, gender
+       FROM students 
+       WHERE user_id = $1`,
+      [userId]
+    );
+
+    if (studentRes.rows.length === 0) {
+      return res.status(404).json({ message: "Student record not found." });
+    }
+
+    const student = studentRes.rows[0];
+
+    // 2. Fetch marks for this specific exam name
+    const query = `
+      SELECT 
+        m.id as mark_id,
+        COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) as internal_marks,
+        COALESCE(m.external_marks, 0) as external_marks,
+        (COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) + COALESCE(m.external_marks, 0)) as total_marks,
+        m.status as result_status,
+        e.name as exam_name,
+        e.id as exam_id,
+        sub.name as subject_name,
+        sub.subject_code,
+        sub.credit as credits,
+        mp.name as program_name,
+        sem.semester_name,
+        s."collageName" as college_name
+      FROM marks m
+      JOIN exams e ON m.exam_id = e.id
+      JOIN master_subjects sub ON m.subject_id = sub.id
+      JOIN master_programs mp ON e.program_id = mp.id
+      JOIN master_semesters sem ON e.semester_id = sem.id
+      JOIN students s ON m.student_id = s.id
+      LEFT JOIN calculated_internal_marks cim ON m.student_id = cim.student_id 
+          AND (cim.subject_id = m.subject_id OR cim.subject_id IN (SELECT id FROM master_subjects WHERE name = sub.name))
+      LEFT JOIN (
+          SELECT student_id, subject_id, SUM(marks_obtained::float) as total_raw
+          FROM student_internal_marks
+          GROUP BY student_id, subject_id
+      ) raw_internal ON m.student_id = raw_internal.student_id AND m.subject_id = raw_internal.subject_id
+      WHERE m.student_id = $1 AND e.name = $2 AND e.results_published = true AND (m.status IN ('Finalized', 'Approved', 'Pending Approval', 'Draft', 'Internal Only'))
+      ORDER BY sub.name ASC
+    `;
+
+    const result = await client.query(query, [student.id, examName]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "No officially published results found for this exam series." });
+    }
+
+    res.json({
+      student,
+      results: result.rows,
+      university: "Madhya Pradesh University of Excellence",
+      generatedAt: new Date()
+    });
+  } catch (error) {
+    console.error("Get result sheet data error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -2892,5 +3029,7 @@ module.exports = {
   getStudentExams,
   registerForExam,
   publishResults,
-  getStudentResults
+  getStudentResults,
+  getHallTicketData,
+  getResultSheetData
 };

@@ -103,9 +103,6 @@ const StudentResults = () => {
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Performance <span className="text-emerald-500 italic">Statement</span></h1>
         </div>
         <div className="flex items-center gap-3">
-             <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 font-bold text-xs hover:bg-slate-50 transition-all shadow-sm">
-                <Download size={16} /> Export Official PDF
-             </button>
              <a href="/student/dashboard" className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20">
                 <LayoutDashboard size={16} /> Return to Home
              </a>
@@ -133,11 +130,20 @@ const StudentResults = () => {
                        <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight">{series.college_name}</h2>
                     </div>
                  </div>
-                 <div className="text-right">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 italic text-shadow-sm">Semester Status</p>
-                    <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">OFFICIALLY FINALIZED</span>
-                 </div>
-              </div>
+                  <div className="flex items-center gap-4 text-right">
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 italic text-shadow-sm">Semester Status</p>
+                      <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">OFFICIALLY FINALIZED</span>
+                    </div>
+                    <button 
+                      onClick={() => window.open(`/student/result-sheet/${encodeURIComponent(series.exam_name)}`, '_blank')}
+                      className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all flex items-center gap-2 group"
+                    >
+                      <Download size={14} className="group-hover:translate-y-0.5 transition-transform" /> 
+                      Download Statement
+                    </button>
+                  </div>
+                </div>
 
               {/* Main Table */}
               <div className="p-0">
