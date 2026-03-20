@@ -82,12 +82,71 @@ const getDashboardStats = async (req, res) => {
 
 const getUsers = async (req, res) => {
   try {
-    const result = await client.query(
-      "SELECT id, name, email, role_id, is_active, created_at FROM public.users LIMIT 10",
-    );
+    const result = await client.query(`
+      SELECT u.id, u.name, u.email, u.role_id, u.is_active, u.created_at, 
+             r.role_name, c.name as college_name, univ.name as university_name
+      FROM public.users u
+      LEFT JOIN public.roles r ON u.role_id = r.id
+      LEFT JOIN public.colleges c ON u.college_id = c.id
+      LEFT JOIN public.universities univ ON u.university_id = univ.id
+      ORDER BY u.created_at DESC
+    `);
     res.json(result.rows);
   } catch (error) {
     console.error("Get users error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const createUser = async (req, res) => {
+  try {
+    const { name, email, password, role_id, college_id, university_id } = req.body;
+    if (!name || !email || !password || !role_id) {
+      return res.status(400).json({ message: "Name, email, password and role are required" });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const result = await client.query(
+      "INSERT INTO public.users (name, email, password_hash, role_id, college_id, university_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email",
+      [name, email, hashedPassword, role_id, college_id || null, university_id || null]
+    );
+    res.status(201).json({ message: "User created successfully", data: result.rows[0] });
+  } catch (error) {
+    console.error("Create user error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, password, role_id, college_id, university_id, is_active } = req.body;
+    
+    if (password && password.trim() !== '') {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await client.query(
+        "UPDATE public.users SET name = $1, email = $2, password_hash = $3, role_id = $4, college_id = $5, university_id = $6, is_active = $7 WHERE id = $8",
+        [name, email, hashedPassword, role_id, college_id || null, university_id || null, is_active, id]
+      );
+    } else {
+      await client.query(
+        "UPDATE public.users SET name = $1, email = $2, role_id = $3, college_id = $4, university_id = $5, is_active = $6 WHERE id = $7",
+        [name, email, role_id, college_id || null, university_id || null, is_active, id]
+      );
+    }
+    res.json({ message: "User updated successfully" });
+  } catch (error) {
+    console.error("Update user error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await client.query("DELETE FROM public.users WHERE id = $1", [id]);
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Delete user error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -198,10 +257,45 @@ const getExamTypes = async (req, res) => {
 
 const getRoles = async (req, res) => {
   try {
-    const result = await client.query("SELECT id, role_name FROM roles");
+    const result = await client.query("SELECT id, role_name FROM roles ORDER BY id ASC");
     res.json(result.rows);
   } catch (error) {
     console.error("Get roles error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const createRole = async (req, res) => {
+  try {
+    const { role_name } = req.body;
+    if (!role_name) return res.status(400).json({ message: "Role name is required" });
+    const result = await client.query("INSERT INTO roles (role_name) VALUES ($1) RETURNING *", [role_name]);
+    res.status(201).json({ message: "Role created successfully", data: result.rows[0] });
+  } catch (error) {
+    console.error("Create role error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const updateRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role_name } = req.body;
+    await client.query("UPDATE roles SET role_name = $1 WHERE id = $2", [role_name, id]);
+    res.json({ message: "Role updated successfully" });
+  } catch (error) {
+    console.error("Update role error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const deleteRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await client.query("DELETE FROM roles WHERE id = $1", [id]);
+    res.json({ message: "Role deleted successfully" });
+  } catch (error) {
+    console.error("Delete role error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -2938,6 +3032,9 @@ module.exports = {
   changePassword,
   getDashboardStats,
   getUsers,
+  createUser,
+  updateUser,
+  deleteUser,
   getPrograms,
   getSubjects,
   getAcademicYears,
@@ -2947,6 +3044,9 @@ module.exports = {
   getSemesters,
   getExamTypes,
   getRoles,
+  createRole,
+  updateRole,
+  deleteRole,
   Login,
   refreshToken,
   getUniversities,

@@ -14,6 +14,8 @@ import Semesters from "./pages/Semesters";
 import Subjects from "./pages/Subjects";
 import Teachers from "./pages/Teachers";
 import Students from "./pages/Students";
+import Users from "./pages/Users";
+import Roles from "./pages/Roles";
 import Exams from "./pages/Exams";
 import Marks from "./pages/Marks";
 import Policies from "./pages/Policies";
@@ -59,6 +61,8 @@ const AppRoutes = () => {
       <Route path="/subjects" element={<Layout><ProtectedRoute element={<Subjects />} /></Layout>} />
       <Route path="/teachers" element={<Layout><ProtectedRoute element={<Teachers />} /></Layout>} />
       <Route path="/students" element={<Layout><ProtectedRoute element={<Students />} /></Layout>} />
+      <Route path="/users" element={<Layout><ProtectedRoute element={<Users />} /></Layout>} />
+      <Route path="/roles" element={<Layout><ProtectedRoute element={<Roles />} /></Layout>} />
       <Route path="/exams" element={<Layout><ProtectedRoute element={<Exams />} /></Layout>} />
       <Route path="/marks" element={<Layout><ProtectedRoute element={<Marks />} /></Layout>} />
       <Route path="/policies" element={<Layout><ProtectedRoute element={<Policies />} /></Layout>} />

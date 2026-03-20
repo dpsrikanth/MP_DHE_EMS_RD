@@ -1,0 +1,376 @@
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+import { 
+  Users as UsersIcon, 
+  Plus, 
+  Pencil, 
+  X, 
+  Check,
+  UserPlus,
+  Shield,
+  Building,
+  School
+} from "lucide-react";
+import { MdDelete } from "react-icons/md";
+import { useDataTable } from '../hooks/useDataTable';
+import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+
+const Users = () => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [selected, setSelected] = useState(null);
+  
+  const [roles, setRoles] = useState([]);
+  const [universities, setUniversities] = useState([]);
+  const [colleges, setColleges] = useState([]);
+
+  const [form, setForm] = useState({ 
+    name: '', 
+    email: '', 
+    password: '', 
+    role_id: '', 
+    university_id: '', 
+    college_id: '', 
+    is_active: true 
+  });
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const availableColumns = [
+    { key: 'id', label: 'ID' },
+    { key: 'name', label: 'Name' },
+    { key: 'email', label: 'Email' },
+    { key: 'role_name', label: 'Role' },
+    { key: 'institution', label: 'Institution' },
+    { key: 'status', label: 'Status' }
+  ];
+
+  const {
+    paginatedData,
+    searchQuery,
+    setSearchQuery,
+    sortConfig,
+    handleSort,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    totalItems,
+    visibleColumns,
+    toggleColumn
+  } = useDataTable(data, { 
+    searchFields: ['name', 'email', 'role_name', 'college_name', 'university_name'],
+    initialSort: { field: 'id', direction: 'desc' },
+    initialPageSize: 10,
+    availableColumns
+  });
+
+  useEffect(() => {
+    fetchData();
+    fetchMasterData();
+  }, []);
+
+  const fetchMasterData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      const [rRes, uRes, cRes] = await Promise.all([
+        fetch('http://localhost:8080/api/roles', { headers }),
+        fetch('http://localhost:8080/api/universities', { headers }),
+        fetch('http://localhost:8080/api/colleges', { headers })
+      ]);
+
+      if (rRes.ok) setRoles(await rRes.json());
+      if (uRes.ok) setUniversities(await uRes.json());
+      if (cRes.ok) setColleges(await cRes.json());
+    } catch (err) {
+      console.error("Error fetching masters:", err);
+    }
+  };
+
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/users', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch users');
+      const result = await response.json();
+      setData(result);
+      setLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selected) {
+      setForm({ 
+        name: selected.name || '', 
+        email: selected.email || '', 
+        password: '', // Don't show password hash
+        role_id: selected.role_id || '', 
+        university_id: selected.university_id || '', 
+        college_id: selected.college_id || '', 
+        is_active: selected.is_active === undefined ? true : selected.is_active 
+      });
+    } else {
+      setForm({ 
+        name: '', 
+        email: '', 
+        password: '', 
+        role_id: '', 
+        university_id: '', 
+        college_id: '', 
+        is_active: true 
+      });
+    }
+  }, [selected]);
+
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!form.name || !form.email || (!selected && !form.password) || !form.role_id) {
+        return toast.warning('Missing required fields');
+      }
+
+      const method = selected ? 'PUT' : 'POST';
+      const url = selected 
+        ? `http://localhost:8080/api/users/${selected.id}` 
+        : 'http://localhost:8080/api/users';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(form)
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || 'Operation failed');
+      }
+
+      toast.success(selected ? 'User updated' : 'User created');
+      setShowModal(false);
+      setSelected(null);
+      fetchData();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:8080/api/users/${deleteTarget.id}`, { 
+        method: 'DELETE', 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      if (!res.ok) throw new Error('Delete failed');
+      toast.success('User removed');
+      setShowDeleteModal(false);
+      setDeleteTarget(null);
+      fetchData();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  if (loading) return <div className="p-8 text-center font-bold text-slate-400 animate-pulse">Initializing User Matrix...</div>;
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Page Header */}
+      <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+        <div className="p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="w-14 h-14 bg-indigo-500/10 rounded-[1.5rem] flex items-center justify-center text-indigo-600 shadow-inner">
+              <UsersIcon size={32} />
+            </div>
+            <div>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight">User Management</h1>
+              <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">Access Control & Identities</p>
+            </div>
+          </div>
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <TableSearch value={searchQuery} onChange={setSearchQuery} placeholder="Search users..." />
+            <button 
+              onClick={() => { setSelected(null); setShowModal(true); }}
+              className="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap text-sm uppercase tracking-widest"
+            >
+              <UserPlus size={20} />
+              <span>Add User</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Table Content */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-y border-slate-50 bg-slate-50/30">
+                <SortHeader label="ID" field="id" currentSort={sortConfig} onSort={handleSort} className="px-8 py-5" visible={visibleColumns.id} />
+                <SortHeader label="User Info" field="name" currentSort={sortConfig} onSort={handleSort} className="px-4 py-5" visible={visibleColumns.name} />
+                <SortHeader label="Role" field="role_name" currentSort={sortConfig} onSort={handleSort} className="px-4 py-5" visible={visibleColumns.role_name} />
+                <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Institution</th>
+                <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Status</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {paginatedData.map((user) => (
+                <tr key={user.id} className="hover:bg-indigo-50/30 transition-all duration-300 group">
+                  <td className="px-8 py-5 text-sm font-bold text-slate-400">#{user.id}</td>
+                  <td className="px-4 py-5">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{user.name}</span>
+                      <span className="text-[10px] font-bold text-slate-400">{user.email}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-5">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-wider border border-indigo-100">
+                      <Shield size={10} />
+                      {user.role_name}
+                    </span>
+                  </td>
+                  <td className="px-4 py-5">
+                    <div className="flex flex-col gap-1">
+                      {user.university_name && (
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600">
+                          <School size={10} className="text-slate-400" />
+                          {user.university_name}
+                        </div>
+                      )}
+                      {user.college_name && (
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 italic">
+                          <Building size={10} className="text-slate-400" />
+                          {user.college_name}
+                        </div>
+                      )}
+                      {!user.university_name && !user.college_name && (
+                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Global Admin</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-5 text-center">
+                    <span className={`inline-flex h-2 w-2 rounded-full ${user.is_active ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300'}`} />
+                  </td>
+                  <td className="px-8 py-5 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                       <button onClick={() => { setSelected(user); setShowModal(true); }} className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"><Pencil size={18} /></button>
+                       <button onClick={() => { setDeleteTarget(user); setShowDeleteModal(true); }} className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"><MdDelete size={20} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={totalItems} pageSize={pageSize} onPageSizeChange={setPageSize} />
+      </div>
+
+      {/* User Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowModal(false)} />
+          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95">
+            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">{selected ? 'Edit User Profile' : 'Register New Identity'}</h2>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">System Access Configuration</p>
+              </div>
+              <button onClick={() => setShowModal(false)} className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 rounded-2xl transition-all"><X size={20} /></button>
+            </div>
+            
+            <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto scrollbar-premium">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                  <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800" placeholder="e.g. John Doe" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                  <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800" placeholder="john@example.com" />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    {selected ? 'Reset Password (Leave blank to keep current)' : 'Initial Password'}
+                  </label>
+                  <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800" placeholder={selected ? "New password..." : "Minimum 8 characters"} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Role Type</label>
+                  <select value={form.role_id} onChange={e => setForm({...form, role_id: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800">
+                    <option value="">Select Role</option>
+                    {roles.map(r => <option key={r.id} value={r.id}>{r.role_name}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
+                  <div className="flex items-center gap-4 bg-slate-50 px-5 py-3.5 rounded-2xl border-2 border-slate-100">
+                    <span className="text-sm font-bold text-slate-600 flex-1">{form.is_active ? 'Active' : 'Inactive'}</span>
+                    <button onClick={() => setForm({...form, is_active: !form.is_active})} className={`relative w-12 h-6 rounded-full transition-all ${form.is_active ? 'bg-indigo-500' : 'bg-slate-300'}`}>
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-all ${form.is_active ? 'translate-x-6' : ''}`} />
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">University (Optional)</label>
+                  <select value={form.university_id} onChange={e => setForm({...form, university_id: e.target.value, college_id: ''})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800">
+                    <option value="">Global / Select Unv.</option>
+                    {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">College (Optional)</label>
+                  <select value={form.college_id} onChange={e => setForm({...form, college_id: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800">
+                    <option value="">None / Select College</option>
+                    {colleges.filter(c => !form.university_id || c.university_id.toString() === form.university_id.toString()).map(c => <option key={c.id} value={c.id}>{c.college_name}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button 
+                onClick={() => setShowModal(false)}
+                className="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
+                >Discard</button>
+              <button 
+                onClick={handleSave}
+                className="px-10 py-3.5 bg-slate-900 border-b-4 border-black hover:bg-black text-white font-black rounded-2xl shadow-xl transition-all active:translate-y-1 active:border-b-0 uppercase text-xs tracking-widest"
+              >
+                {selected ? 'Update Profile' : 'Initialize Identity'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
+          <div className="relative bg-white rounded-[2rem] shadow-3xl w-full max-w-sm overflow-hidden p-8 text-center">
+            <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner"><MdDelete size={32} /></div>
+            <h3 className="text-xl font-black text-slate-900 mb-2">Purge Identity?</h3>
+            <p className="text-slate-500 text-sm font-medium mb-8 leading-relaxed">This will permanently remove <span className="text-slate-900 font-bold">"{deleteTarget?.name}"</span> from the system records. This operation is irreversible.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all">Abort</button>
+              <button onClick={handleDeleteConfirm} className="flex-1 py-4 bg-rose-500 text-white font-black rounded-2xl shadow-lg shadow-rose-500/20 hover:bg-rose-600 transition-all">Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Users;
