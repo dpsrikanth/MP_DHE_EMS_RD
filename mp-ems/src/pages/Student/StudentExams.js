@@ -111,79 +111,90 @@ const StudentExams = () => {
           <p className="text-slate-500">There are no exams currently open for registration in your program.</p>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="grid grid-cols-1 gap-12">
           {examGroups.map((group, gIdx) => (
-            <div key={gIdx} className="bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-xl shadow-slate-200/50">
-              <div className="bg-slate-900 p-6 flex justify-between items-center">
+            <div key={gIdx} className="animate-premium-fade" style={{ animationDelay: `${gIdx * 0.1}s` }}>
+              {/* Group Header */}
+              <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 px-4">
                 <div>
-                   <h2 className="text-white text-lg font-black tracking-tight">{group.exam_name}</h2>
-                   <p className="text-sky-400 text-xs font-bold uppercase tracking-widest">{group.semester_name}</p>
-                </div>
-                {group.allRegistered ? (
-                   <div className="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-400 px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest border border-emerald-500/20">
-                     <CheckCircle size={14} />
-                     Registered
+                   <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-1">{group.exam_name}</h2>
+                   <div className="flex items-center gap-3">
+                     <span className="text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em]">{group.semester_name}</span>
+                     <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                     <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{group.subjects.length} Total Papers</span>
                    </div>
-                ) : (
+                </div>
+                
+                {!group.allRegistered && (
                   <button
                     onClick={() => handleRegister(group.ids)}
-                    className="group relative overflow-hidden bg-white text-slate-900 px-8 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg hover:shadow-sky-500/20 active:scale-[0.98] transition-all flex items-center gap-2"
+                    className="mt-4 md:mt-0 group relative inline-flex items-center gap-3 bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-sky-400 to-indigo-500 opacity-0 group-hover:opacity-10 transition-opacity" />
-                    <span className="relative flex items-center gap-2">
-                      <CreditCard size={14} className="text-sky-500" />
-                      Pay Now (Full Series)
-                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <CreditCard size={16} className="relative z-10" />
+                    <span className="relative z-10">Register for Full Series</span>
                   </button>
                 )}
               </div>
-              
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
-                    <th className="px-8 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 w-48">Date & Day</th>
-                    <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Subject & Details</th>
-                    <th className="px-8 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Time</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {group.subjects.map((exam) => (
-                    <tr key={exam.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-8 py-6">
-                        <div className="flex flex-col">
-                          <span className="text-base font-black text-slate-900">
-                            {new Date(exam.exam_date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                          </span>
-                          <span className="text-xs font-bold text-sky-600 uppercase tracking-widest">
-                            {new Date(exam.exam_date).toLocaleDateString('en-GB', { weekday: 'long' })}
-                          </span>
+
+              {/* Subjects Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {group.subjects.map((exam) => (
+                  <div key={exam.id} className="group relative bg-white rounded-[2rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/50 hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-500 overflow-hidden">
+                    {/* Status Badge */}
+                    <div className="absolute top-6 right-6">
+                      {exam.payment_status === 'Paid' ? (
+                        <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full border border-emerald-100 font-black text-[8px] uppercase tracking-widest">
+                          <CheckCircle size={10} />
+                          Enrolled
                         </div>
-                      </td>
-                      <td className="px-4 py-6">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
-                            <BookOpen size={18} />
+                      ) : (
+                        <div className="flex items-center gap-1.5 bg-amber-50 text-amber-600 px-3 py-1 rounded-full border border-amber-100 font-black text-[8px] uppercase tracking-widest">
+                          <Clock size={10} />
+                          Pending
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mb-8">
+                      <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 mb-6 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-500 shadow-inner">
+                        <BookOpen size={24} />
+                      </div>
+                      <h3 className="text-lg font-black text-slate-900 leading-tight mb-1 group-hover:text-indigo-600 transition-colors line-clamp-2 min-h-[2.5rem]">
+                        {exam.subject_name}
+                      </h3>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Code: {exam.subject_code || 'N/A'}</p>
+                    </div>
+
+                    <div className="space-y-4 pt-6 border-t border-slate-50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex flex-col items-center justify-center border border-indigo-100">
+                             <span className="text-xs font-black">{new Date(exam.exam_date).getDate()}</span>
+                             <span className="text-[7px] font-bold uppercase">{new Date(exam.exam_date).toLocaleString('default', { month: 'short' })}</span>
                           </div>
                           <div>
-                            <span className="text-base font-bold text-slate-900 block leading-tight">
-                              {exam.subject_name}
-                            </span>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 block">
-                              Code: {exam.subject_code || 'N/A'}
-                            </span>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Examination Date</p>
+                            <p className="text-xs font-bold text-slate-700">{new Date(exam.exam_date).toLocaleDateString('en-GB', { weekday: 'long' })}</p>
                           </div>
                         </div>
-                      </td>
-                      <td className="px-8 py-6 text-right">
-                        <div className="inline-flex items-center gap-2 text-slate-600 font-bold bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                          <Clock size={14} className="text-slate-400" />
-                          <span className="text-sm">{exam.start_time} - {exam.end_time}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center border border-slate-100">
+                             <Clock size={16} />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Session Timing</p>
+                            <p className="text-xs font-bold text-slate-700">{exam.start_time} - {exam.end_time}</p>
+                          </div>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>

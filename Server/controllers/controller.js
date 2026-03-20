@@ -1163,6 +1163,80 @@ const toggleStudentApplication = async (req, res) => {
   }
 };
 
+const publishResults = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { results_published } = req.body;
+    const { role, college_id: userCollegeId } = req.user;
+
+    const checkResult = await client.query('SELECT college_id FROM exams WHERE id = $1', [id]);
+    if (checkResult.rows.length === 0) return res.status(404).json({ message: "Exam not found" });
+
+    if (role === 'college_admin' && checkResult.rows[0].college_id != userCollegeId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const result = await client.query(
+      "UPDATE exams SET results_published = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *",
+      [results_published, id]
+    );
+    res.json({ message: `Results ${results_published ? 'published' : 'unpublished'} successfully`, data: result.rows[0] });
+  } catch (error) {
+    console.error("Publish results error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getStudentResults = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Find student record for this user
+    const studentRes = await client.query('SELECT id FROM students WHERE user_id = $1', [userId]);
+    if (studentRes.rows.length === 0) return res.status(404).json({ message: "Student record not found" });
+    const studentId = studentRes.rows[0].id;
+
+    // Fetch finalized marks for exams where results are published
+    const query = `
+      SELECT 
+        m.id as mark_id,
+        COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) as internal_marks,
+        COALESCE(m.external_marks, 0) as external_marks,
+        (COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) + COALESCE(m.external_marks, 0)) as total_marks,
+        m.status as result_status,
+        e.name as exam_name,
+        e.id as exam_id,
+        sub.name as subject_name,
+        sub.subject_code,
+        sub.credit as credits,
+        mp.name as program_name,
+        sem.semester_name,
+        s."collageName" as college_name
+      FROM marks m
+      JOIN exams e ON m.exam_id = e.id
+      JOIN master_subjects sub ON m.subject_id = sub.id
+      JOIN master_programs mp ON e.program_id = mp.id
+      JOIN master_semesters sem ON e.semester_id = sem.id
+      JOIN students s ON m.student_id = s.id
+      LEFT JOIN calculated_internal_marks cim ON m.student_id = cim.student_id 
+          AND (cim.subject_id = m.subject_id OR cim.subject_id IN (SELECT id FROM master_subjects WHERE name = sub.name))
+      LEFT JOIN (
+          SELECT student_id, subject_id, SUM(marks_obtained::float) as total_raw
+          FROM student_internal_marks
+          GROUP BY student_id, subject_id
+      ) raw_internal ON m.student_id = raw_internal.student_id AND m.subject_id = raw_internal.subject_id
+      WHERE m.student_id = $1 AND e.results_published = true AND (m.status IN ('Finalized', 'Approved', 'Pending Approval', 'Draft', 'Internal Only'))
+      ORDER BY e.exam_date DESC, sub.name ASC
+    `;
+
+    const result = await client.query(query, [studentId]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get student results error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 const getMarks = async (req, res) => {
   try {
     const result = await client.query(`SELECT m.id, m.student_id, TRIM(s.name) as student_name, m.subject_id, sub.name as subject_name, m.exam_id, m.total_marks as marks_obtained, 100 as max_marks FROM marks m LEFT JOIN students s ON m.student_id = s.id LEFT JOIN master_subjects sub ON m.subject_id = sub.id`);
@@ -2816,5 +2890,7 @@ module.exports = {
   updateSubjectMapping,
   deleteSubjectMapping,
   getStudentExams,
-  registerForExam
+  registerForExam,
+  publishResults,
+  getStudentResults
 };

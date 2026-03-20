@@ -117,6 +117,7 @@ exports.getFinalizedExternalMarks = async (req, res) => {
                     COALESCE(m.external_marks, 0) as external_marks,
                     (COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) + COALESCE(m.external_marks, 0)) as total_marks,
                     s.rollnumber, CONCAT(s.first_name, ' ', s.last_name) as student_name,
+                    s."collageName" as college_name, s."programName" as program_name,
                     e.name as exam_name,
                     sub.name as subject_name, sub.id as subject_id,
                     sub.credit as credits

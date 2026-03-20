@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, GraduationCap, School, Calendar, BookOpen, AlertCircle } from 'lucide-react';
+import { User, Mail, GraduationCap, School, Calendar, BookOpen, AlertCircle, FileText } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
 
 const StudentDashboard = () => {
@@ -78,6 +78,16 @@ const StudentDashboard = () => {
              <p className="text-slate-400 text-sm font-medium mb-6 leading-relaxed">View scheduled exams, register for seating, and download hall tickets.</p>
              <a href="/student/exams" className="inline-flex items-center gap-2 text-sky-400 font-black text-xs uppercase tracking-widest hover:text-sky-300 transition-colors">
                Access Exams <div className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+             </a>
+          </div>
+
+          <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50 relative overflow-hidden group">
+             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500 rounded-full blur-[60px] opacity-5 group-hover:opacity-10 transition-opacity" />
+             <FileText className="text-emerald-500 mb-4" size={32} />
+             <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight text-shadow-sm">Academic Results</h3>
+             <p className="text-slate-500 text-sm font-medium mb-6 leading-relaxed text-shadow-sm">Check your finalized grades, SGPA, and download official marksheets.</p>
+             <a href="/student/results" className="inline-flex items-center gap-2 text-emerald-600 font-black text-xs uppercase tracking-widest hover:text-emerald-500 transition-colors">
+               View Results <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
              </a>
           </div>
 

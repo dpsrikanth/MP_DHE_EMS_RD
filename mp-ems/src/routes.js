@@ -29,6 +29,7 @@ import MarksReview from "./pages/CollegeAdmin/MarksReview";
 import MarksReports from "./pages/CollegeAdmin/MarksReports";
 import StudentDashboard from "./pages/Student/Dashboard";
 import StudentExams from "./pages/Student/StudentExams";
+import StudentResults from "./pages/Student/StudentResults";
 import HODDashboard from "./pages/HOD/Dashboard";
 import ExternalAssignment from "./pages/UniversityAdmin/ExternalAssignment";
 import ExternalFacultyDashboard from "./pages/ExternalFaculty/Dashboard";
@@ -82,6 +83,7 @@ const AppRoutes = () => {
       {/* Student Routes */}
       <Route path="/student/dashboard" element={<Layout><ProtectedRoute element={<StudentDashboard />} /></Layout>} />
       <Route path="/student/exams" element={<Layout><ProtectedRoute element={<StudentExams />} /></Layout>} />
+      <Route path="/student/results" element={<Layout><ProtectedRoute element={<StudentResults />} /></Layout>} />
 
       {/* External Faculty Routes */}
       <Route path="/external-faculty/dashboard" element={<Layout><ProtectedRoute element={<ExternalFacultyDashboard />} /></Layout>} />

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { 
   FileText, Plus, Pencil, X, Check, Calendar, Book, Layers, Hash, ArrowRight,
-  AlertCircle, Globe, Users, Radio, BookOpen, Clock
+  AlertCircle, Globe, Users, BookOpen, Clock
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
-import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import { TableSearch, TablePagination, ColumnVisibilitySelector } from '../components/TableControls';
 import authUtils from "../utils/authUtils";
 
 const Exams = () => {
@@ -68,6 +68,7 @@ const Exams = () => {
         start_time: item.start_time,
         end_time: item.end_time,
         is_published: item.is_published,
+        results_published: item.results_published,
         student_application_open: item.student_application_open,
         has_marks_structure: item.has_marks_structure
       });
@@ -85,8 +86,6 @@ const Exams = () => {
     paginatedData: groupedPaginatedData,
     searchQuery,
     setSearchQuery,
-    sortConfig,
-    handleSort,
     currentPage,
     setCurrentPage,
     pageSize,
@@ -281,6 +280,32 @@ const Exams = () => {
     }
   };
 
+  const handleToggleResultsPublish = async (series) => {
+    try {
+      const token = localStorage.getItem('token');
+      setLoading(true);
+      const newStatus = !series.subjects[0].results_published;
+      
+      const promises = series.subjects.map(s => 
+        fetch(`http://localhost:8080/api/exams/${s.id}/publish-results`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}` 
+          },
+          body: JSON.stringify({ results_published: newStatus })
+        })
+      );
+      
+      await Promise.all(promises);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleToggleApplications = async (series) => {
     try {
       const token = localStorage.getItem('token');
@@ -419,176 +444,173 @@ const Exams = () => {
           </div>
         </div>
 
-        {/* Enhanced Data Table */}
-        <div className="overflow-x-auto text-slate-700">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-y border-slate-100 bg-slate-50/20">
-                <SortHeader 
-                  label="ID Reference" 
-                  field="id" 
-                  currentSort={sortConfig} 
-                  onSort={handleSort} 
-                  className="px-8" 
-                  visible={visibleColumns.id}
-                />
-                <SortHeader 
-                  label="Assessment Details" 
-                  field="exam_name" 
-                  currentSort={sortConfig} 
-                  onSort={handleSort} 
-                  visible={visibleColumns.details}
-                />
-                <th className={`${visibleColumns.context ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Academic Context</th>
-                <SortHeader 
-                  label="Timeline" 
-                  field="exam_date" 
-                  currentSort={sortConfig} 
-                  onSort={handleSort} 
-                  visible={visibleColumns.date}
-                />
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {groupedPaginatedData.length > 0 ? (
-                groupedPaginatedData.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
-                    {visibleColumns.id && (
-                      <td className="px-8 py-5">
-                        <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                          #{item.id}
-                        </span>
-                        {item.subjects.length > 1 && (
-                          <div className="mt-1 text-[9px] font-bold text-purple-400 uppercase">
-                            Series ({item.subjects.length})
-                          </div>
-                        )}
-                      </td>
-                    )}
-                    {visibleColumns.details && (
-                      <td className="px-4 py-5">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500 border border-purple-100 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300">
-                            <Layers size={18} />
+        {/* Premium Card-based List */}
+        <div className="p-8 space-y-6">
+          {groupedPaginatedData.length > 0 ? (
+            groupedPaginatedData.map((item) => (
+              <div key={item.id} className="group glass-card rounded-[2rem] border border-slate-200/60 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 animate-premium-fade">
+                <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
+                  
+                  {/* Card Section 1: Identity & Meta */}
+                  <div className="p-8 lg:w-1/3 bg-slate-50/30">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="w-14 h-14 rounded-2xl bg-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition-transform duration-500">
+                        <Layers size={28} />
+                      </div>
+                      <span className="text-[10px] font-black text-slate-400 bg-white border border-slate-200 px-3 py-1 rounded-full uppercase tracking-widest shadow-sm">
+                        ID: #{item.id}
+                      </span>
+                    </div>
+                    
+                    <h3 className="text-xl font-black text-slate-900 leading-tight mb-2 group-hover:text-indigo-600 transition-colors">
+                      {item.exam_name}
+                    </h3>
+                    
+                    <div className="flex items-center gap-2 mb-6">
+                      <span className="px-3 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest border border-indigo-100">
+                        {item.semester_name || `SEM-${item.semester_id}`}
+                      </span>
+                      <span className="px-3 py-1 rounded-lg bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest border border-slate-200">
+                        {item.exam_type_name || 'General Exam'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-slate-400 shrink-0">
+                          <Globe size={14} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Institution</p>
+                          <p className="text-xs font-bold text-slate-700 leading-tight">{item.college_name || 'University-wide'}</p>
+                        </div>
+                      </div>
+                      
+                      {(item.department_name || item.program_name) && (
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-slate-400 shrink-0">
+                            <BookOpen size={14} />
                           </div>
                           <div>
-                            <p className="text-sm font-bold text-slate-900 mb-1">{item.exam_name}</p>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none flex items-center gap-1.5">
-                              Timetable Group <ArrowRight size={10} /> {item.semester_name || `SEM-${item.semester_id}`}
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Program Context</p>
+                            <p className="text-xs font-bold text-slate-700 leading-tight">
+                              {[item.department_name, item.program_name].filter(Boolean).join(' • ')}
                             </p>
                           </div>
                         </div>
-                      </td>
-                    )}
-                    {visibleColumns.context && (
-                      <td className="px-4 py-5 align-top">
-                        <div className="flex flex-col gap-1.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 bg-blue-400 rounded-full shrink-0" />
-                            <p className="text-xs font-bold text-slate-700 truncate max-w-[200px]" title={item.college_name}>{item.college_name || 'University-wide'}</p>
-                          </div>
-                          {(item.department_name || item.program_name) && (
-                            <div className="flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full shrink-0" />
-                              <p className="text-[11px] font-semibold text-slate-500 truncate max-w-[200px]">
-                                {[item.department_name, item.program_name].filter(Boolean).join(' • ')}
-                              </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card Section 2: Timeline & Subjects */}
+                  <div className="p-8 lg:w-1/2 flex-1">
+                    <div className="flex items-center justify-between mb-6">
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Examination Schedule</h4>
+                      <div className="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-widest border border-slate-200">
+                        {item.subjects.length} Subjects in Series
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {item.subjects.map((sub) => (
+                        <div key={sub.id} className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all group/sub">
+                          <div className="flex items-center gap-4">
+                            <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-slate-50 text-slate-400 border border-slate-100 group-hover/sub:bg-indigo-50 group-hover/sub:text-indigo-500 group-hover/sub:border-indigo-100 transition-colors">
+                              <span className="text-xs font-black">{new Date(sub.exam_date).getDate()}</span>
+                              <span className="text-[8px] font-bold uppercase">{new Date(sub.exam_date).toLocaleString('default', { month: 'short' })}</span>
                             </div>
-                          )}
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {item.subjects.map(s => (
-                              <span key={s.id} className="text-[9px] font-bold px-2 py-0.5 bg-slate-50 text-slate-500 rounded-md border border-slate-200">
-                                {s.subject_name}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </td>
-                    )}
-                     {visibleColumns.date && (
-                      <td className="px-4 py-5">
-                        <div className="space-y-3">
-                          {item.subjects.map((s, idx) => (
-                            <div key={s.id} className={`${idx > 0 ? 'pt-2 border-t border-slate-50' : ''} space-y-1`}>
-                              <div className="flex items-center gap-2 text-slate-600 font-bold text-[11px]">
-                                <Calendar size={12} className="text-slate-400" />
-                                <span>{s.exam_date ? new Date(s.exam_date).toLocaleDateString() : 'N/A'}</span>
-                                {s.start_time && (
-                                  <span className="text-[10px] text-slate-400 font-medium">({s.start_time}-{s.end_time})</span>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap gap-1">
-                                {s.is_published ? (
-                                  <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase rounded-md border border-emerald-100">Published</span>
+                            <div>
+                              <p className="text-sm font-bold text-slate-900 mb-0.5">{sub.subject_name}</p>
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1 text-[10px] text-slate-400 font-bold uppercase tracking-tight">
+                                  <Clock size={10} />
+                                  {sub.start_time}-{sub.end_time}
+                                </div>
+                                {sub.is_published ? (
+                                  <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest px-1.5 py-0.5 bg-emerald-50 rounded-md">LIVE</span>
                                 ) : (
-                                  <span className="px-1.5 py-0.5 bg-slate-50 text-slate-400 text-[9px] font-black uppercase rounded-md border border-slate-100 italic">Draft</span>
-                                )}
-                                {s.student_application_open && (
-                                  <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[9px] font-black uppercase rounded-md border border-blue-100">Enrolling</span>
+                                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest px-1.5 py-0.5 bg-slate-50 rounded-md">DRAFT</span>
                                 )}
                               </div>
                             </div>
-                          ))}
+                          </div>
+                          <div className="flex items-center gap-2">
+                             {sub.student_application_open && (
+                               <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" title="Applications Open" />
+                             )}
+                          </div>
                         </div>
-                      </td>
-                    )}
-                     <td className="px-8 py-5 text-right">                      <div className="flex items-center justify-end gap-1.5 text-slate-400">
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Card Section 3: Orchestration & Actions */}
+                  <div className="p-8 lg:w-64 bg-slate-50/50 flex flex-col justify-between">
+                    <div>
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Orchestration</h4>
+                      <div className="space-y-3">
                         {(authUtils.isAdmin() || authUtils.isCollegeAdmin()) && (
                           <>
                             <button 
                               onClick={() => handleTogglePublish(item)}
-                              className={`p-2 rounded-xl transition-all ${item.subjects[0].is_published ? 'text-emerald-500 bg-emerald-50' : 'hover:text-purple-600 hover:bg-purple-50'}`}
-                              title={item.subjects[0].is_published ? "Unpublish Series" : "Publish Series"}
+                              className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-xs ${item.subjects[0].is_published ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'}`}
                             >
-                              <Globe size={18} />
+                              <span className="uppercase tracking-widest">{item.subjects[0].is_published ? 'Published' : 'Publish All'}</span>
+                              <Globe size={16} />
                             </button>
                             <button 
-                               onClick={() => handleToggleApplications(item)}
-                               className={`p-2 rounded-xl transition-all ${item.subjects[0].student_application_open ? 'text-blue-500 bg-blue-50' : 'hover:text-purple-600 hover:bg-purple-50'}`}
-                               title={item.subjects[0].student_application_open ? "Close Series Enrollments" : "Open Series Enrollments"}
+                              onClick={() => handleToggleApplications(item)}
+                              className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-xs ${item.subjects[0].student_application_open ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'}`}
                             >
-                              <Users size={18} />
+                              <span className="uppercase tracking-widest">{item.subjects[0].student_application_open ? 'Enrolling' : 'Open Enrollment'}</span>
+                              <Users size={16} />
                             </button>
-                            <div className="w-[1px] h-6 bg-slate-100 mx-1" />
+                            <button 
+                              onClick={() => handleToggleResultsPublish(item)}
+                              className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-xs ${item.subjects[0].results_published ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-slate-200 text-slate-600 hover:border-amber-400 hover:text-amber-600'}`}
+                            >
+                              <span className="uppercase tracking-widest">{item.subjects[0].results_published ? 'Results Live' : 'Publish Results'}</span>
+                              <Check size={16} />
+                            </button>
                           </>
                         )}
-                        <button 
-                          onClick={() => handleEdit(item)}
-                          className="p-2 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
-                          title="Modify Specification"
-                        >
-                          <Pencil size={18} />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(item)}
-                          className="p-2 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                          title="Revoke Schedule"
-                        >
-                          <MdDelete size={20} />
-                        </button>
                       </div>
+                    </div>
 
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="px-8 py-12 text-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No examinations found</p>
+                    <div className="flex items-center gap-2 mt-8 pt-6 border-t border-slate-200">
                       <button 
-                        onClick={() => setSearchQuery('')}
-                        className="text-xs font-black text-purple-500 hover:text-purple-600 underline uppercase tracking-tighter"
+                        onClick={() => handleEdit(item)}
+                        className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm hover:shadow-indigo-500/10"
                       >
-                        Reset Search
+                        <Pencil size={14} />
+                        Modify
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(item)}
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-300 hover:text-red-500 hover:border-red-200 transition-all shadow-sm"
+                      >
+                        <MdDelete size={18} />
                       </button>
                     </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="py-20 text-center glass-card rounded-[3rem] border-2 border-dashed border-slate-200">
+              <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-300 mx-auto mb-6">
+                <FileText size={40} />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tighter">No Schedules Found</h3>
+              <p className="text-slate-500 mb-8 max-w-xs mx-auto font-medium">Capture institutional assessments by establishing a new examination schedule.</p>
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="px-8 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all"
+              >
+                Clear Filters
+              </button>
+            </div>
+          )}
         </div>
 
         <TablePagination 
@@ -600,6 +622,7 @@ const Exams = () => {
           onPageSizeChange={setPageSize}
         />
       </div>
+
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm sm:p-6">
@@ -650,7 +673,7 @@ const Exams = () => {
                         className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                       >
                         <option value="" className="font-medium text-slate-500">
-                          {formData.exam_type == 2 ? "University-wide (All Colleges)" : "Select College"}
+                          {formData.exam_type === '2' ? "University-wide (All Colleges)" : "Select College"}
                         </option>
                         {colleges.map(c => (
                           <option key={c.id} value={c.id}>{c.name || c.college_name}</option>
