@@ -1,0 +1,28 @@
+const { Client } = require('pg');
+
+const client = new Client({
+  user: 'postgres',
+  host: '172.16.0.225',
+  database: 'emsdb',
+  password: '!ntense@225',
+  port: 5432,
+});
+
+async function checkUser() {
+  try {
+    await client.connect();
+    const res = await client.query(`
+      SELECT u.email, r.role_name, u.university_id 
+      FROM public.users u 
+      JOIN public.roles r ON u.role_id = r.id 
+      WHERE r.role_name IN ('admin', 'superAdmin')
+    `);
+    console.log(JSON.stringify(res.rows, null, 2));
+  } catch (err) {
+    console.error(err);
+  } finally {
+    await client.end();
+  }
+}
+
+checkUser();

@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  FileText, GraduationCap, Award, BookOpen, 
-  Calendar, CheckCircle2, Download, AlertCircle, 
-  ArrowLeft, LayoutDashboard, Search
+  TrendingUp, Award, CheckCircle, XCircle, BookOpen, Clock, Download, 
+  LayoutDashboard, Search, GraduationCap, CheckCircle2 
 } from 'lucide-react';
+import { useGradingPolicy } from '../../hooks/useGradingPolicy';
+import { getGradeAndPoints, isPass, calculateSGPA } from '../../utils/gradingUtils';
 import { toast } from 'react-toastify';
 
 const StudentResults = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { config: gradingConfig, loading: configLoading } = useGradingPolicy();
   const [error, setError] = useState(null);
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
 
@@ -34,6 +36,8 @@ const StudentResults = () => {
   };
 
   const examSeriesResults = React.useMemo(() => {
+    if (!gradingConfig) return [];
+    
     const groups = {};
     results.forEach(record => {
       const key = record.exam_name;
@@ -51,19 +55,14 @@ const StudentResults = () => {
       }
 
       const marks = parseFloat(record.total_marks || 0);
-      let grade = 'F';
-      let gradePoint = 0;
-
-      if (marks >= 90) { grade = 'O'; gradePoint = 10; }
-      else if (marks >= 80) { grade = 'A+'; gradePoint = 9; }
-      else if (marks >= 70) { grade = 'A'; gradePoint = 8; }
-      else if (marks >= 60) { grade = 'B+'; gradePoint = 7; }
-      else if (marks >= 50) { grade = 'B'; gradePoint = 6; }
-      else if (marks >= 40) { grade = 'C'; gradePoint = 5; }
-
-      const isPass = record.result_status !== 'Fail' && marks >= 40;
-      const creditsAssigned = parseFloat(record.credits || 0);
-      const creditsEarned = isPass ? creditsAssigned : 0;
+      const { grade, gradePoint } = getGradeAndPoints(marks, gradingConfig.grade_scale);
+      const subjectIsPass = isPass(marks, gradingConfig.pass_threshold);
+      
+      // Use override if exists
+      const subjectId = record.subject_id || record.id;
+      const overrideCredits = gradingConfig.subject_credits?.[subjectId];
+      const creditsAssigned = overrideCredits !== undefined ? parseFloat(overrideCredits) : parseFloat(record.credits || 0);
+      const creditsEarned = subjectIsPass ? creditsAssigned : 0;
       const ciGi = gradePoint * creditsAssigned;
 
       groups[key].subjects.push({
@@ -73,7 +72,7 @@ const StudentResults = () => {
         creditsAssigned,
         creditsEarned,
         ciGi,
-        isPass
+        isPass: subjectIsPass
       });
 
       groups[key].totalCiGi += ciGi;
@@ -85,7 +84,7 @@ const StudentResults = () => {
       ...group,
       sgpa: group.totalCreditsAssigned > 0 ? (group.totalCiGi / group.totalCreditsAssigned).toFixed(2) : '0.00'
     }));
-  }, [results]);
+  }, [results, gradingConfig]);
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">

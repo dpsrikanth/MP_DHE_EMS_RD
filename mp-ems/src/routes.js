@@ -35,8 +35,10 @@ import ExternalAssignment from "./pages/UniversityAdmin/ExternalAssignment";
 import ExternalFacultyDashboard from "./pages/ExternalFaculty/Dashboard";
 import ExternalMarksEntry from "./pages/ExternalFaculty/MarksEntry";
 import UniversityMarksView from "./pages/UniversityAdmin/UniversityMarksView";
+import GradingPolicy from "./pages/UniversityAdmin/GradingPolicy";
 import HallTicket from "./pages/Student/HallTicket";
 import ResultSheet from "./pages/Student/ResultSheet";
+import ManageCredits from "./pages/UniversityAdmin/ManageCredits";
 import Layout from "./components/Layout";
 
 const AppRoutes = () => {
@@ -96,6 +98,8 @@ const AppRoutes = () => {
       {/* University Admin / Super Admin specialized routes */}
       <Route path="/university/external-assignment" element={<Layout><ProtectedRoute element={<ExternalAssignment />} /></Layout>} />
       <Route path="/university/external-marks" element={<Layout><ProtectedRoute element={<UniversityMarksView />} /></Layout>} />
+      <Route path="/university/grading-policy" element={<Layout><ProtectedRoute element={<GradingPolicy />} /></Layout>} />
+      <Route path="/university/manage-credits" element={<Layout><ProtectedRoute element={<ManageCredits />} /></Layout>} />
     </Routes>
   );
 };

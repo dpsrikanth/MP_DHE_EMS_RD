@@ -58,6 +58,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       { id: 15, name: 'Verify & Unlock', path: '/admin/marks-verification', icon: <ShieldCheck size={20} /> },
       { id: 16, name: 'External Assignment', path: '/university/external-assignment', icon: <UserPlus size={20} /> },
       { id: 17, name: 'Result Hub', path: '/university/external-marks', icon: <TrendingUp size={20} /> },
+      { id: 18, name: 'Grading Policy', path: '/university/grading-policy', icon: <ShieldCheck size={20} /> },
+      { id: 19, name: 'Manage Credits', path: '/university/manage-credits', icon: <BookOpen size={20} /> },
     ];
 
     if (roleName === 'college_admin') {

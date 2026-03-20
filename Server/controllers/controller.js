@@ -210,7 +210,7 @@ const Login = async (req, res) => {
   try {
     const { email, password, rememberMe } = req.body;
     const user = await client.query(
-      `SELECT u.id, u.name, u.email, u.password, u.password_hash, COALESCE(mt.college_id, u.college_id) as college_id, r.role_name, mt.id as teacher_id, mt.department_id 
+      `SELECT u.id, u.name, u.email, u.password, u.password_hash, COALESCE(mt.college_id, u.college_id) as college_id, u.university_id, r.role_name, mt.id as teacher_id, mt.department_id 
        FROM public.users u 
        JOIN public.roles r ON u.role_id = r.id 
        LEFT JOIN public.master_teachers mt ON mt.user_id = u.id
@@ -238,6 +238,7 @@ const Login = async (req, res) => {
       email: result.email,
       role: result.role_name,
       college_id: result.college_id,
+      university_id: result.university_id,
       teacher_id: result.teacher_id,
       department_id: result.department_id
     };
@@ -257,6 +258,7 @@ const Login = async (req, res) => {
         email: result.email,
         role: result.role_name,
         college_id: result.college_id,
+        university_id: result.university_id,
         teacher_id: result.teacher_id,
         department_id: result.department_id
       }
@@ -1207,6 +1209,7 @@ const getStudentResults = async (req, res) => {
         e.name as exam_name,
         e.id as exam_id,
         sub.name as subject_name,
+        sub.id as subject_id,
         sub.subject_code,
         sub.credit as credits,
         mp.name as program_name,

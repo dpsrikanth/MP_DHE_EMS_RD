@@ -5,12 +5,15 @@ import {
   TrendingUp, ArrowLeftRight, FileText
 } from "lucide-react";
 import { toast } from 'react-toastify';
+import { useGradingPolicy } from "../../hooks/useGradingPolicy";
+import { getGradeAndPoints, isPass, calculateSGPA } from "../../utils/gradingUtils";
 
 const UniversityMarksView = () => {
   const [marks, setMarks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState("subject"); // "subject" or "student"
   const [activeSubject, setActiveSubject] = useState(null);
+  const { config: gradingConfig, loading: configLoading } = useGradingPolicy();
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -40,48 +43,86 @@ const UniversityMarksView = () => {
   };
 
   // 1. Calculate SGPA and group by Student
-  const studentWiseData = marks.reduce((acc, curr) => {
-    if (!acc[curr.student_id]) {
-      acc[curr.student_id] = {
-        student_id: curr.student_id,
-        student_name: curr.student_name,
-        rollnumber: curr.rollnumber,
-        college_name: curr.college_name,
-        program_name: curr.program_name,
-        exam_name: curr.exam_name,
-        subjects: [],
-        totalCredits: 0,
-        totalCreditPoints: 0
-      };
-    }
-    const credits = parseFloat(curr.credits || 0);
-    const creditPoints = parseFloat(curr.credit_points || 0);
+  const studentWiseData = React.useMemo(() => {
+    if (!gradingConfig) return {};
+    
+    return marks.reduce((acc, curr) => {
+        if (!acc[curr.student_id]) {
+            acc[curr.student_id] = {
+                student_id: curr.student_id,
+                student_name: curr.student_name,
+                rollnumber: curr.rollnumber,
+                college_name: curr.college_name,
+                program_name: curr.program_name,
+                exam_name: curr.exam_name,
+                subjects: []
+            };
+        }
+        
+        const totalMarksForSubject = Number(curr.external_marks || 0) + Number(curr.internal_marks || 0);
+        const { grade, gradePoint } = getGradeAndPoints(totalMarksForSubject, gradingConfig.grade_scale);
+        const subjectIsPass = isPass(totalMarksForSubject, gradingConfig.pass_threshold);
+        
+        // Use override if exists
+        const subjectId = curr.subject_id || curr.id;
+        const overrideCredits = gradingConfig.subject_credits?.[subjectId];
+        const credits = overrideCredits !== undefined ? Number(overrideCredits) : Number(curr.credits || 0);
+        const creditPoints = gradePoint * credits;
 
-    acc[curr.student_id].subjects.push({ ...curr, credits, credit_points: creditPoints });
-    acc[curr.student_id].totalCredits += credits;
-    acc[curr.student_id].totalCreditPoints += creditPoints;
-    return acc;
-  }, {});
+        acc[curr.student_id].subjects.push({ 
+            ...curr, 
+            total_marks: totalMarksForSubject,
+            grade, 
+            grade_point: gradePoint,
+            credits, 
+            credit_points: creditPoints,
+            result_status: subjectIsPass ? 'Pass' : 'Fail'
+        });
+        return acc;
+    }, {});
+  }, [marks, gradingConfig]);
 
   // Inject SGPA and normalize
-  const studentList = Object.values(studentWiseData).map(student => {
-    const sgpa = student.totalCredits > 0 
-      ? (student.totalCreditPoints / student.totalCredits).toFixed(2) 
-      : '0.00';
-    return { ...student, sgpa };
-  });
+  const studentList = React.useMemo(() => {
+    if (!gradingConfig) return [];
+    return Object.values(studentWiseData).map(student => {
+        const sgpa = calculateSGPA(student.subjects, gradingConfig);
+        const totalCredits = student.subjects.reduce((sum, s) => sum + s.credits, 0);
+        return { ...student, sgpa, totalCredits };
+    });
+  }, [studentWiseData, gradingConfig]);
 
   // 2. Group by Subject (Original View)
-  const subjectWiseData = marks.reduce((acc, curr) => {
-    if (!acc[curr.subject_name]) {
-      acc[curr.subject_name] = [];
-    }
-    const credits = parseFloat(curr.credits || 0);
-    const creditPoints = parseFloat(curr.credit_points || 0);
+  const subjectWiseData = React.useMemo(() => {
+    if (!gradingConfig) return {};
     
-    acc[curr.subject_name].push({ ...curr, credits, credit_points: creditPoints });
-    return acc;
-  }, {});
+    return marks.reduce((acc, curr) => {
+        if (!acc[curr.subject_name]) {
+            acc[curr.subject_name] = [];
+        }
+        
+        const totalMarksForSubject = Number(curr.external_marks || 0) + Number(curr.internal_marks || 0);
+        const { grade, gradePoint } = getGradeAndPoints(totalMarksForSubject, gradingConfig.grade_scale);
+        const subjectIsPass = isPass(totalMarksForSubject, gradingConfig.pass_threshold);
+        
+        // Use override if exists
+        const subjectId = curr.subject_id || curr.id;
+        const overrideCredits = gradingConfig.subject_credits?.[subjectId];
+        const credits = overrideCredits !== undefined ? Number(overrideCredits) : Number(curr.credits || 0);
+        const creditPoints = gradePoint * credits;
+
+        acc[curr.subject_name].push({ 
+            ...curr, 
+            total_marks: totalMarksForSubject,
+            grade, 
+            grade_point: gradePoint,
+            credits, 
+            credit_points: creditPoints,
+            result_status: subjectIsPass ? 'Pass' : 'Fail'
+        });
+        return acc;
+    }, {});
+  }, [marks, gradingConfig]);
 
   const subjectNames = Object.keys(subjectWiseData);
 

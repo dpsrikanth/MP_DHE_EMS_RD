@@ -3,11 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Printer, Download, ChevronLeft, GraduationCap, Calendar, Award, BookOpen, CheckCircle2, User, Building, MapPin } from 'lucide-react';
 import { toast } from 'react-toastify';
 import authUtils from '../../utils/authUtils';
+import { useGradingPolicy } from '../../hooks/useGradingPolicy';
+import { getGradeAndPoints, isPass, calculateSGPA } from '../../utils/gradingUtils';
 
 const ResultSheet = () => {
   const { examName } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
+  const { config: gradingConfig, loading: configLoading } = useGradingPolicy();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,7 +41,7 @@ const ResultSheet = () => {
   };
 
   const processedResults = useMemo(() => {
-    if (!data || !data.results) return null;
+    if (!data || !data.results || !gradingConfig) return null;
 
     let totalCiGi = 0;
     let totalCreditsAssigned = 0;
@@ -46,19 +49,11 @@ const ResultSheet = () => {
 
     const subjects = data.results.map(record => {
       const marks = parseFloat(record.total_marks || 0);
-      let grade = 'F';
-      let gradePoint = 0;
-
-      if (marks >= 90) { grade = 'O'; gradePoint = 10; }
-      else if (marks >= 80) { grade = 'A+'; gradePoint = 9; }
-      else if (marks >= 70) { grade = 'A'; gradePoint = 8; }
-      else if (marks >= 60) { grade = 'B+'; gradePoint = 7; }
-      else if (marks >= 50) { grade = 'B'; gradePoint = 6; }
-      else if (marks >= 40) { grade = 'C'; gradePoint = 5; }
-
-      const isPass = record.result_status !== 'Fail' && marks >= 40;
+      const { grade, gradePoint } = getGradeAndPoints(marks, gradingConfig.grade_scale);
+      const subjectIsPass = isPass(marks, gradingConfig.pass_threshold);
+      
       const creditsAssigned = parseFloat(record.credits || 0);
-      const creditsEarned = isPass ? creditsAssigned : 0;
+      const creditsEarned = subjectIsPass ? creditsAssigned : 0;
       const ciGi = gradePoint * creditsAssigned;
 
       totalCiGi += ciGi;
@@ -72,11 +67,11 @@ const ResultSheet = () => {
         creditsAssigned,
         creditsEarned,
         ciGi,
-        isPass
+        isPass: subjectIsPass
       };
     });
 
-    const sgpa = totalCreditsAssigned > 0 ? (totalCiGi / totalCreditsAssigned).toFixed(2) : '0.00';
+    const sgpa = calculateSGPA(data.results, gradingConfig);
 
     return {
       subjects,
@@ -85,7 +80,7 @@ const ResultSheet = () => {
       totalCreditsEarned,
       sgpa
     };
-  }, [data]);
+  }, [data, gradingConfig]);
 
   const handlePrint = () => {
     window.print();
@@ -274,7 +269,7 @@ const ResultSheet = () => {
             </div>
 
             <div className="mt-12 pt-8 border-t border-slate-50 italic text-[9px] text-slate-400 leading-relaxed text-center uppercase tracking-widest font-black">
-                Classification of Grades: O (Outstanding) ≥ 90%, A+ (Excellent) ≥ 80%, A (Very Good) ≥ 70%, B+ (Good) ≥ 60%, B (Above Average) ≥ 50%, C (Average) ≥ 40%, F (Fail) \u003c 40%.
+                Classification of Grades: {gradingConfig?.grade_scale?.map(g => `${g.grade} ≥ ${g.min}%`).join(', ')}.
             </div>
         </div>
 

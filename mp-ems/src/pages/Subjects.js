@@ -47,7 +47,8 @@ const Subjects = () => {
     mapping_type: 'Major',
     is_mandatory: 'M',
     has_examination: true,
-    periods_per_week: 6
+    periods_per_week: 6,
+    credit: 4
   });
 
   const mappingTypes = [
@@ -169,7 +170,8 @@ const Subjects = () => {
         semester_id: form.semester_id?.value || null,
         teacher_id: form.teacher_id?.value || null,
         mapping_type: form.mapping_type?.value || 'Major',
-        is_mandatory: form.is_mandatory?.value || 'M'
+        is_mandatory: form.is_mandatory?.value || 'M',
+        credit: form.credit
       };
       
       const res = await fetch(`http://localhost:8080/api/master-subjects${isEdit ? `/${selected.id}` : ''}`, {
@@ -201,7 +203,8 @@ const Subjects = () => {
       mapping_type: mappingTypes.find(m => m.value === item.mapping_type) || mappingTypes[0],
       is_mandatory: mandatoryOptions.find(m => m.value === item.is_mandatory) || mandatoryOptions[0],
       has_examination: item.has_examination,
-      periods_per_week: item.periods_per_week || 1
+      periods_per_week: item.periods_per_week || 1,
+      credit: item.credit || 0
     });
     setShowEditModal(true);
   };
@@ -217,7 +220,8 @@ const Subjects = () => {
       mapping_type: mappingTypes[0],
       is_mandatory: mandatoryOptions[0],
       has_examination: true,
-      periods_per_week: 6
+      periods_per_week: 6,
+      credit: 4
     });
     setSelected(null);
   };
@@ -440,6 +444,18 @@ const Subjects = () => {
                         type="number" 
                         value={form.periods_per_week} 
                         onChange={(e) => setForm({...form, periods_per_week: parseInt(e.target.value) || 0})}
+                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white focus:border-amber-500 outline-none transition-all font-bold"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center block">Credits</label>
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-500"><Layers size={18} /></div>
+                      <input 
+                        type="number" 
+                        value={form.credit} 
+                        onChange={(e) => setForm({...form, credit: parseInt(e.target.value) || 0})}
                         className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white focus:border-amber-500 outline-none transition-all font-bold"
                       />
                     </div>
