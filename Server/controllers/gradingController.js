@@ -20,16 +20,23 @@ const DEFAULT_CONFIG = {
  */
 exports.getGradingConfig = async (req, res) => {
     try {
-        let universityId = req.user.university_id || req.user.college_id; 
+        let universityId = req.user.university_id || req.user.college_id;
 
         // SuperAdmin can override universityId via query param
         const isHighLevel = req.user.role === 'superAdmin' || req.user.role === 'admin';
         if (isHighLevel && req.query.targetUniversityId) {
             universityId = req.query.targetUniversityId;
         }
-        
+
         if (!universityId) {
             return res.status(400).json({ message: "University ID not found for user" });
+        }
+
+        // Check if the universityId we have is actually a college_id and we need the university_id
+        // (This handles cases where req.user only had college_id)
+        const collegeCheck = await db.query('SELECT university_id FROM colleges WHERE id = $1', [universityId]);
+        if (collegeCheck.rows.length > 0 && collegeCheck.rows[0].university_id) {
+            universityId = collegeCheck.rows[0].university_id;
         }
 
         const result = await db.query(

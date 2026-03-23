@@ -55,7 +55,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       { id: 20, name: 'Users', path: '/users', icon: <Users size={20} /> },
       { id: 21, name: 'Roles', path: '/roles', icon: <ShieldCheck size={20} /> },
       { id: 11, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
-      { id: 12, name: 'Marks', path: '/marks', icon: <BarChart3 size={20} /> },
+      // { id: 12, name: 'Marks', path: '/marks', icon: <BarChart3 size={20} /> },
       { id: 13, name: 'Policies', path: '/policies', icon: <ShieldCheck size={20} /> },
       { id: 15, name: 'Verify & Unlock', path: '/admin/marks-verification', icon: <ShieldCheck size={20} /> },
       { id: 16, name: 'External Assignment', path: '/university/external-assignment', icon: <UserPlus size={20} /> },
@@ -69,7 +69,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 1, name: 'Dashboard', path: '/college-admin/dashboard', icon: <LayoutDashboard size={20} /> },
         { id: 2, name: 'Policy Config', path: '/college-admin/policies', icon: <ShieldCheck size={20} /> },
         { id: 3, name: 'Marks Structure', path: '/college-admin/marks-config', icon: <BarChart3 size={20} /> },
-        { id: 4, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
+        // { id: 4, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
         { id: 5, name: 'Verify & Lock', path: '/college-admin/marks-approval', icon: <ShieldCheck size={20} /> },
       ];
     } else if (roleName === 'Faculty' || roleName === 'Teacher') {
@@ -80,7 +80,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     } else if (roleName === 'HOD') {
       menuItems = [
         { id: 1, name: 'Dashboard', path: '/hod/dashboard', icon: <LayoutDashboard size={20} /> },
-        { id: 5, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
+        // { id: 5, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
         { id: 2, name: 'Marks Approval', path: '/hod/marks-approval', icon: <FileText size={20} /> },
         { id: 3, name: 'Faculty Assign', path: '/college-admin/faculty-assign', icon: <Users size={20} /> },
         { id: 4, name: 'Department Faculty', path: '/teachers', icon: <Users size={20} /> },
