@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -28,6 +28,24 @@ import {
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [isAssignedPaperSetter, setIsAssignedPaperSetter] = useState(false);
+
+  useEffect(() => {
+    const roleName = localStorage.getItem('roleName');
+    if (['Faculty', 'Teacher', 'External Faculty'].includes(roleName)) {
+      fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/paper-setter/faculty/check-assigned`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+        }
+      })
+      .then(res => res.json())
+      .then(data => setIsAssignedPaperSetter(data.isAssigned))
+      .catch(err => console.error(err));
+    } else {
+      setIsAssignedPaperSetter(true);
+    }
+  }, []);
 
   const handleLinkClick = (path) => {
     navigate(path);
@@ -62,6 +80,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       { id: 17, name: 'Result Hub', path: '/university/external-marks', icon: <TrendingUp size={20} /> },
       { id: 18, name: 'Grading Policy', path: '/university/grading-policy', icon: <ShieldCheck size={20} /> },
       { id: 19, name: 'Manage Credits', path: '/university/manage-credits', icon: <BookOpen size={20} /> },
+      { id: 22, name: 'Paper Setter', path: '/paper-setter/dashboard', icon: <FileText size={20} /> },
     ];
 
     if (roleName === 'college_admin') {
@@ -75,8 +94,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     } else if (roleName === 'Faculty' || roleName === 'Teacher') {
       menuItems = [
         { id: 1, name: 'Dashboard', path: '/faculty/dashboard', icon: <LayoutDashboard size={20} /> },
-        { id: 2, name: 'Marks Entry', path: '/faculty/marks-entry', icon: <BarChart3 size={20} /> },
-      ]
+        { id: 2, name: 'Marks Entry', path: '/faculty/marks-entry', icon: <BarChart3 size={20} /> }
+      ];
+      if (isAssignedPaperSetter) {
+        menuItems.push({ id: 3, name: 'Paper Setter', path: '/paper-setter/dashboard', icon: <FileText size={20} /> });
+      }
     } else if (roleName === 'HOD') {
       menuItems = [
         { id: 1, name: 'Dashboard', path: '/hod/dashboard', icon: <LayoutDashboard size={20} /> },
@@ -84,6 +106,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 2, name: 'Marks Approval', path: '/hod/marks-approval', icon: <FileText size={20} /> },
         { id: 3, name: 'Faculty Assign', path: '/college-admin/faculty-assign', icon: <Users size={20} /> },
         { id: 4, name: 'Department Faculty', path: '/teachers', icon: <Users size={20} /> },
+        { id: 5, name: 'Assign Sets (HOD)', path: '/paper-setter/dashboard', icon: <FileText size={20} /> },
       ]
     } else if (roleName === 'Student') {
       menuItems = [
@@ -93,8 +116,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     } else if (roleName === 'External Faculty') {
       menuItems = [
         { id: 1, name: 'Dashboard', path: '/external-faculty/dashboard', icon: <LayoutDashboard size={20} /> },
-        { id: 2, name: 'External Marking', path: '/external-faculty/marks-entry', icon: <BarChart3 size={20} /> },
-      ]
+        { id: 2, name: 'External Marking', path: '/external-faculty/marks-entry', icon: <BarChart3 size={20} /> }
+      ];
+      if (isAssignedPaperSetter) {
+        menuItems.push({ id: 3, name: 'Paper Setter', path: '/paper-setter/dashboard', icon: <FileText size={20} /> });
+      }
     }
 
     return menuItems;

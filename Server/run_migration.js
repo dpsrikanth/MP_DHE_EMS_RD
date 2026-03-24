@@ -1,25 +1,19 @@
-const client = require('./db');
+const pool = require('./db.js');
 
-async function runMigration() {
+const migrate = async () => {
   try {
-    await client.connect();
-  } catch(e) { /* ignore if already connected by db.js */ }
-  
-  try {
-    const res = await client.query(`
-      CREATE TABLE IF NOT EXISTS master_program_departments (
-          program_id INTEGER REFERENCES master_programs(id) ON DELETE CASCADE,
-          department_id INTEGER REFERENCES master_departments(id) ON DELETE CASCADE,
-          PRIMARY KEY (program_id, department_id)
-      );
+    console.log('Starting migration...');
+    await pool.query(`
+      ALTER TABLE public.users 
+      ADD COLUMN IF NOT EXISTS reset_password_token VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS reset_password_expires TIMESTAMP;
     `);
-    console.log("Migration successful");
-  } catch (err) {
-    console.error("Migration failed:", err);
-  } finally {
-    await client.end();
+    console.log('Migration successful!');
     process.exit(0);
+  } catch (err) {
+    console.error('Migration failed:', err);
+    process.exit(1);
   }
-}
+};
 
-runMigration();
+migrate();

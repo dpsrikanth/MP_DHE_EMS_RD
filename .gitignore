@@ -1,6 +1,22 @@
-# Ignore node modules across the repository
+# Dependencies
 node_modules/
 **/node_modules/
+
+# Environment files
+.env
+**/.env
+Server/.env
+
+# Logs
+*.log
+error.log
+Server/error.log
+**/*.log
+
+# Build outputs
+dist/
+build/
+mp-ems/build/
 
 # Ignore common OS files
 .DS_Store

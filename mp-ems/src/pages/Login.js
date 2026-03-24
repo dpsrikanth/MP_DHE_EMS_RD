@@ -197,10 +197,7 @@ const Login = () => {
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between items-center px-1">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Password</label>
-                <button type="button" className="text-xs font-bold text-sky-500 hover:text-sky-600 hover:underline">Forgot?</button>
-              </div>
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
               <div className="relative group">
                 <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
                   <Lock size={18} />
@@ -221,6 +218,9 @@ const Login = () => {
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
+              </div>
+              <div className="flex justify-end pr-1">
+                <button type="button" onClick={() => navigate("/forgot-password")} className="text-xs font-bold text-sky-500 hover:text-sky-600 hover:underline transition-colors mt-1">Forgot Password?</button>
               </div>
             </div>
 

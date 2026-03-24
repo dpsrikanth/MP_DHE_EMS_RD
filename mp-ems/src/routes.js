@@ -3,6 +3,8 @@ import { Route, Routes } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import ViewStudentsAndUniversities from "./pages/viewStudentsAndUniversitys"
 import ProtectedRoute from "./components/ProtectedRoute";
 import Universities from "./pages/Universities";
@@ -41,13 +43,17 @@ import GradingPolicy from "./pages/UniversityAdmin/GradingPolicy";
 import HallTicket from "./pages/Student/HallTicket";
 import ResultSheet from "./pages/Student/ResultSheet";
 import ManageCredits from "./pages/UniversityAdmin/ManageCredits";
+import PaperSetterDashboard from "./pages/PaperSetter/Dashboard";
 import Layout from "./components/Layout";
 
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
+      <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
 
       {/* Protected Routes wrapped in common Layout */}
       <Route path="/dashboard" element={<Layout><ProtectedRoute element={<Dashboard />} /></Layout>} />
@@ -98,6 +104,9 @@ const AppRoutes = () => {
       {/* External Faculty Routes */}
       <Route path="/external-faculty/dashboard" element={<Layout><ProtectedRoute element={<ExternalFacultyDashboard />} /></Layout>} />
       <Route path="/external-faculty/marks-entry" element={<Layout><ProtectedRoute element={<ExternalMarksEntry />} /></Layout>} />
+
+      {/* Paper Setter Workflow */}
+      <Route path="/paper-setter/dashboard" element={<Layout><ProtectedRoute element={<PaperSetterDashboard />} /></Layout>} />
 
       {/* University Admin / Super Admin specialized routes */}
       <Route path="/university/external-assignment" element={<Layout><ProtectedRoute element={<ExternalAssignment />} /></Layout>} />
