@@ -36,9 +36,9 @@ router.get('/faculty/check-assigned', checkRole(['Faculty', 'Teacher', 'External
 router.get('/faculty/assignments', checkRole(['Faculty', 'Teacher', 'External Faculty']), paperSetterController.getFacultyAssignments);
 router.post('/faculty/upload', checkRole(['Faculty', 'Teacher', 'External Faculty']), upload.single('paperFile'), paperSetterController.uploadPaper);
 
-// Chief Examiner Endpoints (admin/super_admin)
-router.get('/chief/dashboard', checkRole(['admin', 'SUPER_ADMIN']), paperSetterController.getReviewDashboard);
-router.post('/chief/finalize', checkRole(['admin', 'SUPER_ADMIN']), paperSetterController.finalizePaper);
+// Chief Examiner Endpoints (admin/super_admin/HOD)
+router.get('/chief/dashboard', checkRole(['admin', 'SUPER_ADMIN', 'college_admin', 'HOD']), paperSetterController.getReviewDashboard);
+router.post('/chief/finalize', checkRole(['admin', 'SUPER_ADMIN', 'college_admin', 'HOD']), paperSetterController.finalizePaper);
 
 // Shared Download
 router.get('/download/:paper_id', paperSetterController.downloadPaper);

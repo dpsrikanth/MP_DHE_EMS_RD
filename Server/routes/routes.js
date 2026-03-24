@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { register, changePassword, getDashboardStats, getUsers, createUser, updateUser, deleteUser, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, createRole, updateRole, deleteRole, Login, refreshToken, getUniversities, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, updateTeacher, getExams, createExam, updateExam, deleteExam, publishExam, toggleStudentApplication, getMarks , getMasterSemesters, createMasterSemester, updateMasterSemester, deleteMasterSemester, getMasterSemester, getMasterSubjects, createMasterSubject, updateMasterSubject, deleteMasterSubject, getMasterSubject, getMasterPrograms, createMasterProgram, getMasterProgram, updateMasterProgram, deleteMasterProgram, getMasterPolicies, getMasterPolicy, createMasterPolicy, updateMasterPolicy, deleteMasterPolicy, getCollegeMasterPolicy, createStudent, updateStudent, deleteStudent, getMasterTeachers, getMasterTeacher, createMasterTeacher, updateMasterTeacher, deleteMasterTeacher, getMasterDesignations, createMasterDesignation, getMasterDepartments, createMasterDepartment, getCollegeSemesters, getCollegePrograms, getCollegePolicies, getCollegeAcademicYears,getMasterDepartment, updateMasterDepartment, deleteMasterDepartment, getStudentsForMarks, saveTeacherMarks, getMarksForApproval, approveRejectMarks, getMasterBatches, createMasterBatch, updateMasterBatch, deleteMasterBatch, getSubjectMappings, createSubjectMapping, updateSubjectMapping, deleteSubjectMapping, getStudentExams, registerForExam, publishResults, getStudentResults, getHallTicketData, getResultSheetData, forgotPassword, resetPassword } = require('../controllers/controller');
 const { getMasters, getUniversityConfig, updateUniversityConfig, getCollegeConfig, updateCollegeConfig } = require('../controllers/masterController');
+const { getSmtpConfig, updateSmtpConfig } = require('../controllers/configController');
 const { verifyToken } = require('../middleware/auth.middleware');
 
 router.post('/register', register);
@@ -146,5 +147,9 @@ router.get('/student/results', verifyToken, getStudentResults);
 router.get('/student/hall-ticket/:examName/:semesterId', verifyToken, getHallTicketData);
 router.get('/student/result-sheet/:examName', verifyToken, getResultSheetData);
 router.post('/student/exams/register', verifyToken, registerForExam);
+
+// SMTP Config endpoints
+router.get('/config/smtp', verifyToken, getSmtpConfig);
+router.post('/config/smtp', verifyToken, updateSmtpConfig);
 
 module.exports = router;

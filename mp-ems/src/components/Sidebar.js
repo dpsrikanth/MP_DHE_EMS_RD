@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import authUtils from "../utils/authUtils";
 import {
   LayoutDashboard,
   School,
@@ -18,7 +19,8 @@ import {
   Menu,
   X,
   UserPlus,
-  TrendingUp
+  TrendingUp,
+  Mail
 } from "lucide-react";
 
 /**
@@ -39,9 +41,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }
       })
-      .then(res => res.json())
-      .then(data => setIsAssignedPaperSetter(data.isAssigned))
-      .catch(err => console.error(err));
+        .then(res => res.json())
+        .then(data => setIsAssignedPaperSetter(data.isAssigned))
+        .catch(err => console.error(err));
     } else {
       setIsAssignedPaperSetter(true);
     }
@@ -80,8 +82,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       { id: 17, name: 'Result Hub', path: '/university/external-marks', icon: <TrendingUp size={20} /> },
       { id: 18, name: 'Grading Policy', path: '/university/grading-policy', icon: <ShieldCheck size={20} /> },
       { id: 19, name: 'Manage Credits', path: '/university/manage-credits', icon: <BookOpen size={20} /> },
-      { id: 22, name: 'Paper Setter', path: '/paper-setter/dashboard', icon: <FileText size={20} /> },
+      // { id: 22, name: 'Paper Setter', path: '/paper-setter/dashboard', icon: <FileText size={20} /> },
     ];
+
+    if (authUtils.isSystemAdmin()) {
+      menuItems.push({ id: 100, name: 'SMTP Settings', path: '/smtp-settings', icon: <Mail size={20} /> });
+    }
 
     if (roleName === 'college_admin') {
       menuItems = [

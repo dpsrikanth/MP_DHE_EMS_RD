@@ -44,6 +44,7 @@ import HallTicket from "./pages/Student/HallTicket";
 import ResultSheet from "./pages/Student/ResultSheet";
 import ManageCredits from "./pages/UniversityAdmin/ManageCredits";
 import PaperSetterDashboard from "./pages/PaperSetter/Dashboard";
+import SmtpSettings from "./pages/SmtpSettings";
 import Layout from "./components/Layout";
 
 const AppRoutes = () => {
@@ -113,6 +114,7 @@ const AppRoutes = () => {
       <Route path="/university/external-marks" element={<Layout><ProtectedRoute element={<UniversityMarksView />} /></Layout>} />
       <Route path="/university/grading-policy" element={<Layout><ProtectedRoute element={<GradingPolicy />} /></Layout>} />
       <Route path="/university/manage-credits" element={<Layout><ProtectedRoute element={<ManageCredits />} /></Layout>} />
+      <Route path="/smtp-settings" element={<Layout><ProtectedRoute element={<SmtpSettings />} /></Layout>} />
     </Routes>
   );
 };

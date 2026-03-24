@@ -220,7 +220,7 @@ const Login = () => {
                 </button>
               </div>
               <div className="flex justify-end pr-1">
-                <button type="button" onClick={() => navigate("/forgot-password")} className="text-xs font-bold text-sky-500 hover:text-sky-600 hover:underline transition-colors mt-1">Forgot Password?</button>
+                <button type="button" onClick={() => navigate("/forgot-password", { state: { email: formData.email } })} className="text-xs font-bold text-sky-500 hover:text-sky-600 hover:underline transition-colors mt-1">Forgot Password?</button>
               </div>
             </div>
 

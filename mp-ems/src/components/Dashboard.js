@@ -14,6 +14,7 @@ import {
   Award
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
+import authUtils from "../utils/authUtils";
 
 const Dashboard = () => {
   const [stats, setStats] = useState({

@@ -16,8 +16,35 @@ export const authUtils = {
     roleName: localStorage.getItem("roleName"),
     userId: localStorage.getItem("userId"),
     collegeId: localStorage.getItem("collegeId"),
+    collegeId: localStorage.getItem("collegeId"),
     departmentId: localStorage.getItem("departmentId"),
   }),
+
+  getUserEmail: () => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        return user.email;
+      }
+    } catch (e) {
+      console.error("Error parsing user from localStorage", e);
+    }
+    return null;
+  },
+
+  isSystemAdmin: () => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        return user.email === "admin@example.com";
+      }
+    } catch (e) {
+      console.error("Error checking system admin", e);
+    }
+    return false;
+  },
 
   // Check if user is authenticated
   isAuthenticated: () => {
