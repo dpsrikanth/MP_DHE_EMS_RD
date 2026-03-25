@@ -84,6 +84,18 @@ export const authUtils = {
     return roleName === "External Faculty";
   },
 
+  isSecrecy: () => {
+    const roleName = localStorage.getItem("roleName");
+    if (!roleName) return false;
+    const normalized = roleName.toLowerCase();
+    return normalized === "secrecy" || normalized === "secrecy_dept";
+  },
+
+  isPaperSetter: () => {
+    const roleName = localStorage.getItem("roleName");
+    return roleName === "PAPER_SETTER";
+  },
+
   // Logout and clear auth data
   logout: () => {
     localStorage.removeItem("token");

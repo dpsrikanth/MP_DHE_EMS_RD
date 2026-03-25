@@ -20,11 +20,11 @@ exports.assignSet = async (req, res) => {
 
     // Insert or update assignment
     const query = `
-      INSERT INTO paper_assignments (subject_id, exam_id, set_name, assigned_faculty_id, assigned_by_hod_id, status, assigned_chief_id)
+      INSERT INTO paper_assignments (subject_id, exam_id, set_name, paper_setter_id, assigned_by_id, status, assigned_chief_id)
       VALUES ($1, $2, $3, $4, $5, 'Pending', $6)
       ON CONFLICT (subject_id, exam_id, set_name) 
-      DO UPDATE SET assigned_faculty_id = EXCLUDED.assigned_faculty_id,
-                    assigned_by_hod_id = EXCLUDED.assigned_by_hod_id,
+      DO UPDATE SET paper_setter_id = EXCLUDED.paper_setter_id,
+                    assigned_by_id = EXCLUDED.assigned_by_id,
                     assigned_chief_id = EXCLUDED.assigned_chief_id,
                     status = 'Pending'
       RETURNING *;
@@ -41,14 +41,14 @@ exports.getAssignmentsByHOD = async (req, res) => {
   try {
     const hod_id = req.user.id;
     const query = `
-      SELECT pa.id, pa.subject_id, ms.name as subject_name, mp.name as program_name, pa.exam_id, pa.set_name, pa.assigned_faculty_id, 
+      SELECT pa.id, pa.subject_id, ms.name as subject_name, mp.name as program_name, pa.exam_id, pa.set_name, pa.paper_setter_id, 
              pa.status, u.name as faculty_name, pa.created_at as assign_date, c.name as chief_name
       FROM paper_assignments pa
-      LEFT JOIN users u ON pa.assigned_faculty_id = u.id
+      LEFT JOIN users u ON pa.paper_setter_id = u.id
       LEFT JOIN users c ON pa.assigned_chief_id = c.id
       LEFT JOIN master_subjects ms ON pa.subject_id = ms.id
       LEFT JOIN master_programs mp ON ms.program_id = mp.id
-      WHERE pa.assigned_by_hod_id = $1
+      WHERE pa.assigned_by_id = $1
       ORDER BY pa.created_at DESC
     `;
     const { rows } = await pool.query(query, [hod_id]);
@@ -185,7 +185,7 @@ exports.getFacultyAssignments = async (req, res) => {
       FROM paper_assignments pa
       LEFT JOIN question_papers qp ON qp.assignment_id = pa.id
       LEFT JOIN master_subjects ms ON pa.subject_id = ms.id
-      WHERE pa.assigned_faculty_id = $1
+      WHERE pa.paper_setter_id = $1
     `;
     const { rows } = await pool.query(query, [faculty_id]);
     res.json(rows);
@@ -195,10 +195,80 @@ exports.getFacultyAssignments = async (req, res) => {
   }
 };
 
+exports.getSetterDashData = async (req, res) => {
+  try {
+    const setter_id = req.user.id;
+    
+    // 1. Assigned Exams (Grouped)
+    const assignedExamsQuery = `
+      SELECT 
+        ms.id as subject_id,
+        ms.name as subject_name,
+        e.id as exam_id,
+        e.name as exam_name,
+        e.start_time as exam_date,
+        COALESCE(sub_stats.sets_required, 0) as sets_required,
+        COALESCE(sub_stats.sets_submitted, 0) as sets_submitted,
+        sub_stats.latest_status,
+        (SELECT id FROM paper_assignments 
+         WHERE subject_id = ms.id AND exam_id = e.id AND file_path IS NULL 
+         LIMIT 1) as assignment_id
+      FROM paper_setter_subjects pss
+      JOIN master_subjects ms ON pss.subject_id = ms.id
+      CROSS JOIN (
+        SELECT id, name, start_time FROM exams 
+        ORDER BY start_time DESC LIMIT 1
+      ) e
+      LEFT JOIN (
+        SELECT 
+          subject_id, exam_id,
+          COUNT(id) as sets_required,
+          COUNT(file_path) as sets_submitted,
+          MAX(status) as latest_status
+        FROM paper_assignments
+        GROUP BY subject_id, exam_id
+      ) sub_stats ON ms.id = sub_stats.subject_id AND e.id = sub_stats.exam_id
+      WHERE pss.user_id = $1
+      GROUP BY ms.id, ms.name, e.id, e.name, e.start_time, sub_stats.sets_required, sub_stats.sets_submitted, sub_stats.latest_status
+    `;
+    
+    // 2. Submitted Papers
+    const submittedPapersQuery = `
+      SELECT 
+        pa.id as assignment_id,
+        ms.name as subject_name,
+        pa.set_name,
+        pa.status,
+        pa.feedback,
+        pa.updated_at as submitted_date,
+        qp.id as paper_id
+      FROM paper_assignments pa
+      JOIN master_subjects ms ON pa.subject_id = ms.id
+      LEFT JOIN question_papers qp ON qp.assignment_id = pa.id
+      WHERE pa.subject_id IN (SELECT subject_id FROM paper_setter_subjects WHERE user_id = $1)
+        AND (pa.file_path IS NOT NULL OR qp.id IS NOT NULL)
+      ORDER BY pa.updated_at DESC
+    `;
+
+    const [assignedRes, submittedRes] = await Promise.all([
+      pool.query(assignedExamsQuery, [setter_id]),
+      pool.query(submittedPapersQuery, [setter_id])
+    ]);
+
+    res.json({
+      assignedExams: assignedRes.rows,
+      submittedPapers: submittedRes.rows
+    });
+  } catch (error) {
+    console.error('Error fetching paper setter dash data:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
 exports.checkIfAssigned = async (req, res) => {
   try {
     const faculty_id = req.user.id;
-    const { rows } = await pool.query('SELECT id FROM paper_assignments WHERE assigned_faculty_id = $1 LIMIT 1', [faculty_id]);
+    const { rows } = await pool.query('SELECT id FROM paper_assignments WHERE paper_setter_id = $1 LIMIT 1', [faculty_id]);
     res.json({ isAssigned: rows.length > 0 });
   } catch (error) {
     res.json({ isAssigned: false });
@@ -207,17 +277,42 @@ exports.checkIfAssigned = async (req, res) => {
 
 exports.uploadPaper = async (req, res) => {
   try {
-    const { assignment_id, title } = req.body;
+    const { assignment_id, subject_id, exam_id, title } = req.body;
     const file = req.file;
     const setter_id = req.user.id;
 
     if (!file) return res.status(400).json({ message: 'No file uploaded.' });
 
-    // Validate assignment ownership
-    const checkQuery = await pool.query('SELECT * FROM paper_assignments WHERE id = $1 AND assigned_faculty_id = $2', [assignment_id, setter_id]);
-    if (checkQuery.rows.length === 0) {
-      fs.unlinkSync(file.path);
-      return res.status(403).json({ message: 'Unauthorized assignment ID.' });
+    let active_assignment_id = assignment_id !== 'null' ? parseInt(assignment_id) : null;
+
+    if (active_assignment_id) {
+      // Validate assignment ownership
+      // Check permission: must be in authorized subjects for this user
+      const checkQuery = await pool.query(`
+        SELECT pa.* FROM paper_assignments pa
+        JOIN paper_setter_subjects pss ON pa.subject_id = pss.subject_id
+        WHERE pa.id = $1 AND pss.user_id = $2
+      `, [active_assignment_id, setter_id]);
+      
+      if (checkQuery.rows.length === 0) {
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        return res.status(403).json({ message: 'Unauthorized subject authorization required.' });
+      }
+    } else {
+      // User is uploading for an authorized subject ad-hoc
+      // Validate they are actually authorized for this subject
+      const checkSub = await pool.query("SELECT * FROM paper_setter_subjects WHERE user_id = $1 AND subject_id = $2", [setter_id, subject_id]);
+      if (checkSub.rows.length === 0) {
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        return res.status(403).json({ message: 'Unauthorized subject authorization required.' });
+      }
+      
+      // Auto-create assignment since they are authorized
+      const newAssign = await pool.query(
+        "INSERT INTO paper_assignments (subject_id, exam_id, paper_setter_id, set_name, status) VALUES ($1, $2, $3, 'A', 'Pending') RETURNING id",
+        [subject_id, exam_id, setter_id]
+      );
+      active_assignment_id = newAssign.rows[0].id;
     }
 
     // Encrypt
@@ -231,24 +326,45 @@ exports.uploadPaper = async (req, res) => {
     const input = fs.createReadStream(file.path);
     const output = fs.createWriteStream(encryptedFilePath);
     
-    input.pipe(cipher).pipe(output);
+    input.on('error', (err) => {
+      console.error('Input stream error:', err);
+      if (!res.headersSent) res.status(500).json({ message: 'Error reading uploaded file.' });
+    });
+
+    output.on('error', (err) => {
+      console.error('Output stream error:', err);
+      if (!res.headersSent) res.status(500).json({ message: 'Error saving encrypted file.' });
+    });
+
+    cipher.on('error', (err) => {
+      console.error('Cipher error:', err);
+      if (!res.headersSent) res.status(500).json({ message: 'Encryption error.' });
+    });
 
     output.on('finish', async () => {
-      fs.unlinkSync(file.path); // remove raw file
-      
-      const insertQ = `
-        INSERT INTO question_papers (assignment_id, title, setter_id, file_path, iv)
-        VALUES ($1, $2, $3, $4, $5) RETURNING id
-      `;
-      await pool.query(insertQ, [assignment_id, title, setter_id, encryptedFileName, iv.toString('hex')]);
-      
-      await pool.query("UPDATE paper_assignments SET status = 'Uploaded' WHERE id = $1", [assignment_id]);
-      
-      res.status(201).json({ message: 'Paper securely encrypted and uploaded.' });
+      try {
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path); // remove raw file
+        
+        const insertQ = `
+          INSERT INTO question_papers (assignment_id, title, setter_id, file_path, iv)
+          VALUES ($1, $2, $3, $4, $5)
+        `;
+        await pool.query(insertQ, [active_assignment_id, title, setter_id, encryptedFileName, iv.toString('hex')]);
+        
+        // Update paper_assignments status, file_path, and paper_setter_id (to reflect who actually uploaded)
+        await pool.query("UPDATE paper_assignments SET status = 'Uploaded', file_path = $1, paper_setter_id = $2 WHERE id = $3", [encryptedFileName, setter_id, active_assignment_id]);
+        
+        res.status(201).json({ message: 'Paper securely encrypted and uploaded.' });
+      } catch (err) {
+        console.error('Error in upload completion:', err);
+        if (!res.headersSent) res.status(500).json({ message: 'Internal Server Error during database update.' });
+      }
     });
+
+    input.pipe(cipher).pipe(output);
   } catch (error) {
-    console.error('Error during upload:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error('Error in uploadPaper function:', error);
+    if (!res.headersSent) res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 

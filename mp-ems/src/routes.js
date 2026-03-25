@@ -44,6 +44,7 @@ import HallTicket from "./pages/Student/HallTicket";
 import ResultSheet from "./pages/Student/ResultSheet";
 import ManageCredits from "./pages/UniversityAdmin/ManageCredits";
 import PaperSetterDashboard from "./pages/PaperSetter/Dashboard";
+import SecrecyDashboard from "./pages/Secrecy/Dashboard";
 import SmtpSettings from "./pages/SmtpSettings";
 import Layout from "./components/Layout";
 
@@ -108,6 +109,7 @@ const AppRoutes = () => {
 
       {/* Paper Setter Workflow */}
       <Route path="/paper-setter/dashboard" element={<Layout><ProtectedRoute element={<PaperSetterDashboard />} /></Layout>} />
+      <Route path="/secrecy/dashboard" element={<Layout><ProtectedRoute element={<SecrecyDashboard />} /></Layout>} />
 
       {/* University Admin / Super Admin specialized routes */}
       <Route path="/university/external-assignment" element={<Layout><ProtectedRoute element={<ExternalAssignment />} /></Layout>} />

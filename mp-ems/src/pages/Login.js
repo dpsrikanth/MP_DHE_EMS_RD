@@ -76,6 +76,12 @@ const Login = () => {
         } else if (authUtils.isExternalFaculty()) {
           console.log("Navigating to External Faculty Dashboard");
           navigate("/external-faculty/dashboard");
+        } else if (authUtils.isSecrecy()) {
+          console.log("Navigating to Secrecy Dashboard");
+          navigate("/secrecy/dashboard");
+        } else if (authUtils.isPaperSetter()) {
+          console.log("Navigating to Paper Setter Dashboard");
+          navigate("/paper-setter/dashboard");
         } else {
           console.log("Access denied, role:", data.user.role);
           setError("Access denied. Appropriate role required.");

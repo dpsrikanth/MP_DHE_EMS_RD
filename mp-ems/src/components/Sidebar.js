@@ -20,7 +20,9 @@ import {
   X,
   UserPlus,
   TrendingUp,
-  Mail
+  Mail,
+  CreditCard,
+  CheckCircle2
 } from "lucide-react";
 
 /**
@@ -127,6 +129,20 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       if (isAssignedPaperSetter) {
         menuItems.push({ id: 3, name: 'Paper Setter', path: '/paper-setter/dashboard', icon: <FileText size={20} /> });
       }
+    } else if (roleName === 'Secrecy') {
+      menuItems = [
+        { id: 1, name: 'Dashboard', path: '/secrecy/dashboard', icon: <LayoutDashboard size={20} /> },
+        { id: 2, name: 'Paper Setters', path: '/secrecy/dashboard', icon: <Users size={20} /> },
+        { id: 3, name: 'Question Papers', path: '/secrecy/dashboard', icon: <FileText size={20} /> },
+        { id: 4, name: 'Payments', path: '/secrecy/dashboard', icon: <CreditCard size={20} /> },
+      ];
+    } else if (roleName === 'PAPER_SETTER') {
+      menuItems = [
+        { id: 1, name: 'Dashboard', path: '/paper-setter/dashboard', icon: <LayoutDashboard size={20} /> },
+        { id: 2, name: 'Assigned Exams', path: '/paper-setter/dashboard', icon: <FileText size={20} /> },
+        { id: 3, name: 'Submitted Papers', path: '/paper-setter/dashboard', icon: <CheckCircle2 size={20} /> },
+        { id: 4, name: 'Guidelines', path: '/paper-setter/dashboard', icon: <BookOpen size={20} /> },
+      ];
     }
 
     return menuItems;

@@ -32,9 +32,10 @@ router.post('/hod/assign', checkRole(['HOD', 'admin', 'college_admin']), paperSe
 router.get('/hod/assignments', checkRole(['HOD', 'admin', 'college_admin']), paperSetterController.getAssignmentsByHOD);
 
 // Faculty Endpoints
-router.get('/faculty/check-assigned', checkRole(['Faculty', 'Teacher', 'External Faculty']), paperSetterController.checkIfAssigned);
-router.get('/faculty/assignments', checkRole(['Faculty', 'Teacher', 'External Faculty']), paperSetterController.getFacultyAssignments);
-router.post('/faculty/upload', checkRole(['Faculty', 'Teacher', 'External Faculty']), upload.single('paperFile'), paperSetterController.uploadPaper);
+router.get('/faculty/check-assigned', checkRole(['Faculty', 'Teacher', 'External Faculty', 'PAPER_SETTER']), paperSetterController.checkIfAssigned);
+router.get('/faculty/assignments', checkRole(['Faculty', 'Teacher', 'External Faculty', 'PAPER_SETTER']), paperSetterController.getFacultyAssignments);
+router.get('/faculty/dash-data', checkRole(['Faculty', 'Teacher', 'External Faculty', 'PAPER_SETTER']), paperSetterController.getSetterDashData);
+router.post('/faculty/upload', checkRole(['Faculty', 'Teacher', 'External Faculty', 'PAPER_SETTER']), upload.single('paperFile'), paperSetterController.uploadPaper);
 
 // Chief Examiner Endpoints (admin/super_admin/HOD)
 router.get('/chief/dashboard', checkRole(['admin', 'SUPER_ADMIN', 'college_admin', 'HOD']), paperSetterController.getReviewDashboard);

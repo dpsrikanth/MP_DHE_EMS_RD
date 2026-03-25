@@ -1,103 +1,60 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, FileText, Lock, Users, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { 
+  Upload, FileText, CheckCircle2, AlertCircle, Clock, 
+  BookOpen, ChevronRight, Download, Info, Calendar, 
+  CheckCircle, XCircle, Loader2, FileUp, Shield
+} from 'lucide-react';
+import { toast } from 'react-toastify';
 import authUtils from '../../utils/authUtils';
 
 const PaperSetterDashboard = () => {
-  const [role, setRole] = useState('');
-  const [assignments, setAssignments] = useState([]);
-  const [dashboardData, setDashboardData] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  // Form Data (Subjects & Faculties)
-  const [formDataLookup, setFormDataLookup] = useState({ subjects: [], faculties: [], chiefs: [], programs: [] });
-
-  // Forms
-  const [assignForm, setAssignForm] = useState({ program_id: '', subject_id: '', exam_id: '1', set_name: 'A', assigned_faculty_id: '', assigned_chief_id: '' });
-  const [uploadFile, setUploadFile] = useState(null);
+  const [activeTab, setActiveTab] = useState('assigned');
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(null); // stores assignment_id of currently uploading
+  const [dashData, setDashData] = useState({ assignedExams: [], submittedPapers: [] });
+  const [selectedFiles, setSelectedFiles] = useState({}); // state to track files for each assignment
 
   useEffect(() => {
-    const userRole = localStorage.getItem('roleName');
-    setRole(userRole);
-    fetchData(userRole);
+    fetchDashData();
   }, []);
 
-  const fetchData = async (currentRole) => {
+  const fetchDashData = async () => {
+    setLoading(true);
     try {
-      let endpoint = '';
-      if (['HOD', 'admin', 'college_admin'].includes(currentRole)) endpoint = '/paper-setter/hod/assignments';
-      if (['Faculty', 'Teacher', 'External Faculty'].includes(currentRole)) endpoint = '/paper-setter/faculty/assignments';
-      if (['admin', 'SUPER_ADMIN'].includes(currentRole)) endpoint = '/paper-setter/chief/dashboard';
-      
-      if (!endpoint) return;
-
-      const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}${endpoint}`, {
+      const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/paper-setter/faculty/dash-data`, {
         headers: authUtils.getAuthHeader()
       });
       if (res.ok) {
-        const data = await res.json();
-        if (endpoint.includes('chief')) setDashboardData(data);
-        else setAssignments(data);
+        setDashData(await res.json());
       }
-
-      // If HOD, ALSO fetch the chief review dashboard (since they are now chief examiners for their dept)
-      if (currentRole === 'HOD') {
-        const cRes = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/paper-setter/chief/dashboard`, {
-          headers: authUtils.getAuthHeader()
-        });
-        if (cRes.ok) {
-          const cData = await cRes.json();
-          setDashboardData(cData);
-        }
-      }
-
-      // If HOD, also fetch the form lookup lists
-      if (['HOD', 'admin', 'college_admin'].includes(currentRole)) {
-        const fRes = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/paper-setter/hod/form-data`, {
-          headers: authUtils.getAuthHeader()
-        });
-        if (fRes.ok) {
-           const fData = await fRes.json();
-           console.log("[PaperSetterDashboard] Form Data fetched:", fData);
-           if (fData.debug) console.log("[PaperSetterDashboard] Debug Info:", fData.debug);
-           
-           setFormDataLookup(fData);
-           
-           const currentUser = authUtils.getAuth();
-           
-           setAssignForm(prev => ({
-             ...prev,
-             program_id: fData.programs?.length > 0 ? fData.programs[0].id : '',
-             subject_id: fData.subjects?.length > 0 ? fData.subjects[0].id : '',
-             assigned_faculty_id: fData.faculties?.length > 0 ? fData.faculties[0].id : '',
-             assigned_chief_id: (currentRole === 'HOD' && currentUser.userId) ? currentUser.userId : (fData.chiefs?.length > 0 ? fData.chiefs[0].id : '')
-           }));
-        }
-      }
-    } catch(e) { console.error('Fetch error:', e); }
+    } catch (e) {
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAssign = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/paper-setter/hod/assign`, {
-        method: 'POST',
-        headers: { ...authUtils.getAuthHeader(), 'Content-Type': 'application/json' },
-        body: JSON.stringify(assignForm)
-      });
-      if(res.ok) {
-        alert("Assigned successfully!");
-        fetchData(role);
-      } else alert("Failed to assign.");
-    } catch(e) { alert("Network Error"); }
+  const handleFileChange = (e, subjectId) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFiles(prev => ({ ...prev, [subjectId]: file }));
+    }
   };
 
-  const handleUpload = async (assignment_id) => {
-    if(!uploadFile) return alert("Select a file");
-    setLoading(true);
+  const handleUpload = async (exam) => {
+    const file = selectedFiles[exam.subject_id];
+    if (!file) {
+      toast.warning('Please select a file first');
+      return;
+    }
+
+    setUploading(exam.subject_id);
     const formData = new FormData();
-    formData.append('paperFile', uploadFile);
-    formData.append('assignment_id', assignment_id);
-    formData.append('title', `Paper Set - Uploaded`);
+    formData.append('paperFile', selectedFiles[exam.subject_id]);
+    formData.append('assignment_id', exam.assignment_id || 'null');
+    formData.append('subject_id', exam.subject_id);
+    formData.append('exam_id', exam.exam_id);
+    formData.append('title', exam.subject_name + ' Question Paper');
 
     try {
       const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/paper-setter/faculty/upload`, {
@@ -105,208 +62,302 @@ const PaperSetterDashboard = () => {
         headers: { 'Authorization': `Bearer ${authUtils.getAuth().token}` },
         body: formData
       });
-      if(res.ok) {
-        alert("Uploaded Privately and Encrypted");
-        setUploadFile(null);
-        fetchData(role);
-      } else alert("Failed to upload.");
-    } catch(e) {}
-    setLoading(false);
-  };
 
-  const handleFinalize = async (assignment_id) => {
-    try {
-      const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/paper-setter/chief/finalize`, {
-        method: 'POST',
-        headers: { ...authUtils.getAuthHeader(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignment_id })
-      });
-      if(res.ok) {
-        alert("Paper Set Approved and Finalized!");
-        fetchData(role);
+      if (res.ok) {
+        toast.success(`Successfully uploaded paper for ${exam.subject_name}`);
+        setSelectedFiles(prev => {
+          const newState = { ...prev };
+          delete newState[exam.subject_id];
+          return newState;
+        });
+        fetchDashData();
       } else {
-        const errData = await res.json();
-        alert(errData.message || "Approval Failed securely.");
+        const err = await res.json();
+        toast.error(err.message || 'Upload failed');
       }
-    } catch(e) {
-      alert("Network Error");
+    } catch (e) {
+      toast.error('Network error during upload');
+    } finally {
+      setUploading(null);
     }
   };
 
-  const downloadPaper = async (paper_id) => {
-    try {
-      const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/paper-setter/download/${paper_id}`, {
-        headers: authUtils.getAuthHeader()
-      });
-      if(!res.ok) return alert('Failed to download paper.');
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Secure_Paper_${paper_id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (e) { console.error(e) }
-  };
+  const renderAssignedExams = () => (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="grid grid-cols-1 gap-6">
+        {dashData.assignedExams.length === 0 && !loading && (
+          <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+            <div className="bg-white w-16 h-16 rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 text-slate-300">
+               <FileText size={32} />
+            </div>
+            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No active assignments found</p>
+          </div>
+        )}
 
-  // Filtered Subjects based on selected Program
-  const filteredSubjects = formDataLookup.subjects.filter(s => 
-    !assignForm.program_id || s.program_id?.toString() === assignForm.program_id?.toString()
+        {dashData.assignedExams.map((exam) => (
+          <div key={`${exam.subject_id}-${exam.exam_id}`} className="bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all overflow-hidden group">
+            <div className="p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="space-y-4 flex-1">
+                <div>
+                   <div className="flex items-center gap-2 mb-1">
+                     <h3 className="text-2xl font-black text-slate-800 tracking-tight">{exam.subject_name}</h3>
+                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${exam.sets_submitted >= exam.sets_required ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                       {exam.sets_submitted >= exam.sets_required ? 'Completed' : 'Pending'}
+                     </span>
+                   </div>
+                   <p className="text-slate-400 text-sm font-bold uppercase tracking-tighter">Exam ID: {exam.exam_name || `EX${exam.exam_id}`} | Semester: {exam.semester || 'N/A'}</p>
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Exam Date</label>
+                    <p className="font-bold text-slate-700 flex items-center gap-1.5"><Calendar size={14} className="text-slate-300" /> {exam.exam_date ? new Date(exam.exam_date).toLocaleDateString() : 'TBD'}</p>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Deadline</label>
+                    <p className="font-bold text-rose-500 flex items-center gap-1.5"><Clock size={14} className="text-rose-300" /> {exam.deadline || '2025-01-10'}</p>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Sets Required</label>
+                    <p className="font-bold text-slate-700">{exam.sets_required}</p>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Sets Submitted</label>
+                    <p className="font-bold text-slate-700">{exam.sets_submitted}/{exam.sets_required}</p>
+                  </div>
+                </div>
+              </div>
+
+              {exam.sets_submitted < exam.sets_required && (
+                <div className="flex flex-col sm:flex-row items-center gap-3 pt-6 md:pt-0 border-t md:border-t-0 border-slate-50">
+                   <div className="relative group/input flex-1 sm:flex-none">
+                      <input 
+                        type="file" 
+                        id={`file-${exam.subject_id}`}
+                        onChange={(e) => handleFileChange(e, exam.subject_id)}
+                        className="hidden" 
+                      />
+                      <label 
+                        htmlFor={`file-${exam.subject_id}`}
+                        className="flex items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold px-5 py-3 rounded-2xl cursor-pointer border-2 border-dashed border-slate-200 transition-all text-sm min-w-[180px]"
+                      >
+                         <Upload size={18} className="text-slate-400" />
+                         {selectedFiles[exam.subject_id] ? selectedFiles[exam.subject_id].name : 'Choose File'}
+                      </label>
+                   </div>
+                   <button 
+                    onClick={() => handleUpload(exam)}
+                    disabled={uploading === exam.subject_id || !selectedFiles[exam.subject_id]}
+                    className="flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-600 disabled:bg-slate-200 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-lg shadow-sky-500/20 active:scale-95 text-sm uppercase tracking-widest min-w-[200px]"
+                   >
+                     {uploading === exam.subject_id ? <Loader2 className="animate-spin" size={18} /> : <FileUp size={18} />}
+                     {uploading === exam.subject_id ? 'Encrypting...' : 'Upload Question Paper'}
+                   </button>
+                </div>
+              )}
+            </div>
+            
+            <div className="px-8 pb-4">
+               <p className="text-[10px] text-slate-400 font-bold italic tracking-tight">Accepted formats: PDF, DOC, DOCX (Max size: 10MB)</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 
-  // Filtered Faculties based on selected Program
-  const filteredFaculties = formDataLookup.faculties.filter(f => {
-    if (!assignForm.program_id) return true;
-    // Show faculty if they belong to this program OR have no assignments yet (available for new sets)
-    if (!f.program_ids || f.program_ids.length === 0) return true; 
-    return f.program_ids.some(pid => pid?.toString() === assignForm.program_id?.toString());
-  });
+  const renderSubmittedPapers = () => (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="grid grid-cols-1 gap-4">
+        {dashData.submittedPapers.length === 0 && (
+           <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+             <div className="bg-white w-16 h-16 rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 text-slate-300 transition-colors group-hover:text-indigo-400">
+                <Shield size={32} />
+             </div>
+             <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No papers submitted yet</p>
+           </div>
+        )}
+
+        {dashData.submittedPapers.map((paper) => (
+          <div key={paper.assignment_id} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative group overflow-hidden">
+            <div className="absolute top-0 left-0 w-1.5 h-full bg-slate-100 group-hover:bg-indigo-500 transition-colors" />
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-xl font-black text-slate-800">{paper.subject_name}</h3>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Paper ID: QP00{paper.paper_id} | Set {paper.set_name} | Exam: EX00{paper.assignment_id}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-8">
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Submitted Date</label>
+                    <p className="font-bold text-slate-700">{new Date(paper.submitted_date).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Status</label>
+                    <p className={`font-black uppercase text-[11px] tracking-wider ${
+                      paper.status === 'Approved' ? 'text-emerald-500' : 
+                      paper.status === 'Rejected' ? 'text-rose-500' : 'text-amber-500'
+                    }`}>{paper.status}</p>
+                  </div>
+                </div>
+
+                {paper.feedback && (
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Feedback:</p>
+                    <p className="text-sm font-semibold text-slate-600 italic tracking-tight">{paper.feedback}</p>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-4 pt-2">
+                   <button className="text-sky-500 hover:text-sky-600 font-bold text-sm flex items-center gap-1.5 transition-colors">
+                      <BookOpen size={16} /> View Paper
+                   </button>
+                   <button className="text-emerald-500 hover:text-emerald-600 font-bold text-sm flex items-center gap-1.5 transition-colors">
+                      <Download size={16} /> Download
+                   </button>
+                </div>
+              </div>
+
+              <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 ${
+                paper.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 
+                paper.status === 'Rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 
+                'bg-blue-50 text-blue-600 border border-blue-100'
+              }`}>
+                {paper.status === 'Approved' ? <CheckCircle2 size={12} /> : 
+                 paper.status === 'Rejected' ? <XCircle size={12} /> : <Clock size={12} />}
+                {paper.status}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderGuidelines = () => (
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+      <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-8 text-slate-50 rotate-12 -z-0">
+           <Info size={120} />
+        </div>
+        <div className="relative z-10 space-y-6">
+          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Question Paper Guidelines</h2>
+          
+          <div className="space-y-8 max-w-2xl">
+            <section className="space-y-4">
+              <h3 className="text-sm font-black text-sky-600 uppercase tracking-[0.2em] flex items-center gap-2">General Instructions</h3>
+              <ul className="space-y-3">
+                {[
+                  'Each subject requires minimum 3 question paper sets (A, B, C)',
+                  'Question papers must follow university format and syllabus',
+                  'Submit papers at least 5 days before examination date',
+                  'All papers must be reviewed and approved by secrecy department'
+                ].map((text, i) => (
+                  <li key={i} className="flex items-start gap-3 group">
+                     <div className="w-5 h-5 bg-sky-100 rounded-full flex items-center justify-center text-sky-600 flex-shrink-0 group-hover:scale-110 transition-transform mt-0.5">•</div>
+                     <p className="text-slate-600 font-bold tracking-tight text-sm leading-relaxed">{text}</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="space-y-4">
+              <h3 className="text-sm font-black text-emerald-600 uppercase tracking-[0.2em] flex items-center gap-2">Format Requirements</h3>
+              <ul className="space-y-3">
+                {[
+                  'Use official university letterhead',
+                  'Include subject code, name, and semester',
+                  'Specify time duration and maximum marks',
+                  'Include clear instructions for students'
+                ].map((text, i) => (
+                  <li key={i} className="flex items-start gap-3 group">
+                     <div className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 flex-shrink-0 group-hover:scale-110 transition-transform mt-0.5">•</div>
+                     <p className="text-slate-600 font-bold tracking-tight text-sm leading-relaxed">{text}</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="space-y-4">
+              <h3 className="text-sm font-black text-purple-600 uppercase tracking-[0.2em] flex items-center gap-2">Quality Standards</h3>
+              <ul className="space-y-3">
+                {[
+                  'Questions should cover entire syllabus appropriately',
+                  'Maintain appropriate difficulty level distribution',
+                  'Ensure no grammatical or factual errors',
+                  'Provide clear marking scheme'
+                ].map((text, i) => (
+                  <li key={i} className="flex items-start gap-3 group">
+                     <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 flex-shrink-0 group-hover:scale-110 transition-transform mt-0.5">•</div>
+                     <p className="text-slate-600 font-bold tracking-tight text-sm leading-relaxed">{text}</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight">Paper Setter Modules</h1>
-          <p className="text-slate-500 font-medium">Secured Role: <span className="text-indigo-600 font-bold uppercase">{role}</span></p>
+    <div className="min-h-screen bg-slate-50/50 font-sans">
+      {/* Header section */}
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 md:px-8">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between py-4 gap-4">
+          <div className="flex items-center gap-4">
+            <div className="bg-sky-500 p-2 rounded-xl text-white">
+              <Shield size={24} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-slate-800 tracking-tight">Paper Setter <span className="text-sky-500">Portal</span></h1>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Secure Examination Management System</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-1">
+             {[
+               { id: 'assigned', label: 'Assigned Exams', icon: <BookOpen size={18} /> },
+               { id: 'submitted', label: 'Submitted Papers', icon: <FileText size={18} /> },
+               { id: 'guidelines', label: 'Guidelines', icon: <Shield size={18} /> }
+             ].map((tab) => (
+               <button
+                 key={tab.id}
+                 onClick={() => setActiveTab(tab.id)}
+                 className={`flex items-center gap-2 px-6 py-4 font-bold text-sm transition-all border-b-2 -mb-4 ${
+                   activeTab === tab.id 
+                   ? 'border-sky-500 text-sky-600' 
+                   : 'border-transparent text-slate-400 hover:text-slate-600'
+                 }`}
+               >
+                 {tab.icon}
+                 {tab.label}
+               </button>
+             ))}
+          </div>
         </div>
       </div>
 
-      {['HOD', 'admin', 'college_admin'].includes(role) && (
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <h2 className="text-xl font-bold flex items-center gap-2 mb-4"><Users size={20} className="text-sky-500"/> Assign Faculty to Paper Sets</h2>
-            <form className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-slate-100 pb-6 mb-6" onSubmit={handleAssign}>
-              <div className="flex-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Program</label>
-                <select 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 mt-1 font-bold text-slate-700" 
-                  value={assignForm.program_id} 
-                  onChange={e => setAssignForm({...assignForm, program_id: e.target.value, subject_id: ''})} 
-                  required
-                >
-                  <option value="">Select Program...</option>
-                  {formDataLookup.programs?.map(p => <option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
-                </select>
-              </div>
-              <div className="flex-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Subject</label>
-                <select 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 mt-1 font-bold text-slate-700" 
-                  value={assignForm.subject_id} 
-                  onChange={e => setAssignForm({...assignForm, subject_id: e.target.value})} 
-                  required
-                >
-                  <option value="">Select Subject...</option>
-                  {filteredSubjects.map(s => <option key={s.id} value={s.id}>{s.name} ({s.subject_code})</option>)}
-                </select>
-              </div>
-              <div className="flex-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Set Name</label>
-                <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 mt-1 font-bold text-slate-700" value={assignForm.set_name} onChange={e => setAssignForm({...assignForm, set_name: e.target.value})}>
-                  <option value="A">Set A</option>
-                  <option value="B">Set B</option>
-                  <option value="C">Set C</option>
-                </select>
-              </div>
-              <div className="flex-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Faculty Name</label>
-                <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 mt-1 font-bold text-slate-700" value={assignForm.assigned_faculty_id} onChange={e => setAssignForm({...assignForm, assigned_faculty_id: e.target.value})} required>
-                  <option value="">Select Faculty...</option>
-                  {filteredFaculties.map(f => <option key={f.id} value={f.id}>{f.name} ({f.email})</option>)}
-                </select>
-              </div>
-              <div className="flex-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Reviewing Chief Examiner</label>
-                <select 
-                  className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 mt-1 font-bold text-slate-700" 
-                  value={assignForm.assigned_chief_id} 
-                  onChange={e => setAssignForm({...assignForm, assigned_chief_id: e.target.value})} 
-                  required
-                  disabled={role === 'HOD'}
-                >
-                  {formDataLookup.chiefs?.map(c => <option key={c.id} value={c.id}>{c.name} ({c.email})</option>)}
-                </select>
-              </div>
-              <button className="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-6 rounded-xl h-[42px] transition-colors shadow-sm self-end">Assign Set</button>
-            </form>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-40 gap-4">
+            <Loader2 className="text-sky-500 animate-spin" size={48} />
+            <p className="text-slate-400 font-black uppercase tracking-widest text-sm animate-pulse">Syncing Secure Data...</p>
           </div>
-          
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-             <h2 className="text-lg font-bold flex items-center gap-2 mb-4">Recent Assignments</h2>
-             <div className="space-y-3">
-               {assignments.length === 0 && <p className="text-slate-400 font-medium">No sets assigned yet.</p>}
-               {assignments.map(a => (
-                  <div key={a.id} className="p-4 border rounded-xl bg-slate-50 flex items-center justify-between">
-                    <div>
-                      <h3 className="font-bold text-slate-800 text-sm">{a.subject_name || `Subject ${a.subject_id}`} — Set {a.set_name}</h3>
-                      <p className="text-xs font-medium text-slate-700 mt-1">
-                        Program: <span className="font-bold text-indigo-600">{a.program_name || 'N/A'}</span>
-                      </p>
-                      <p className="text-xs font-medium text-slate-500 mt-1">
-                        Assigned to: <span className="font-bold text-slate-700">{a.faculty_name}</span> | 
-                        Chief Reviewer: <span className="font-bold text-sky-600">{a.chief_name || 'Unassigned'}</span> • {new Date(a.assign_date).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <span className="font-bold text-xs bg-slate-200 text-slate-600 px-3 py-1 rounded-full">{a.status}</span>
-                  </div>
-               ))}
-             </div>
-          </div>
-        </div>
-      )}
+        ) : (
+          <>
+            {activeTab === 'assigned' && renderAssignedExams()}
+            {activeTab === 'submitted' && renderSubmittedPapers()}
+            {activeTab === 'guidelines' && renderGuidelines()}
+          </>
+        )}
+      </div>
 
-      {['Faculty', 'Teacher', 'External Faculty'].includes(role) && (
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <h2 className="text-xl font-bold flex items-center gap-2 mb-4"><Upload size={20} className="text-indigo-500"/> My Assignments (Uploader Portal)</h2>
-          <div className="space-y-4">
-            {assignments.length === 0 && <p className="text-slate-400 font-medium">No sets assigned to you yet.</p>}
-            {assignments.map(a => (
-              <div key={a.assignment_id} className="p-4 border rounded-xl bg-slate-50 flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-slate-800">{a.subject_name || `Subject ${a.subject_id}`} — Set {a.set_name}</h3>
-                  <p className="text-sm font-medium text-slate-500">Status: <span className="text-indigo-600">{a.status}</span></p>
-                </div>
-                {a.status === 'Pending' ? (
-                  <div className="flex items-center gap-2">
-                    <input type="file" onChange={e => setUploadFile(e.target.files[0])} className="text-sm"/>
-                    <button onClick={() => handleUpload(a.assignment_id)} disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm">{loading ? 'Encrypting...' : 'Upload & Encrypt'}</button>
-                  </div>
-                ) : (
-                  <button onClick={() => downloadPaper(a.paper_id)} className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-4 rounded-lg text-sm flex gap-2"><Lock size={16}/> View Secure Upload</button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {['admin', 'SUPER_ADMIN', 'HOD'].includes(role) && (
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <h2 className="text-xl font-bold flex items-center gap-2 mb-4"><ShieldCheck size={20} className="text-green-500"/> Chief Examiner Approval Dashboard</h2>
-          <div className="space-y-4">
-            {dashboardData.length === 0 && <p className="text-slate-400 font-medium">No uploaded papers pending review.</p>}
-            {dashboardData.map(d => (
-              <div key={d.assignment_id} className="p-4 border border-slate-200 rounded-xl bg-slate-50 flex items-center justify-between">
-                <div>
-                  <div className="flex gap-3 items-center">
-                    <h3 className="font-bold text-slate-800">{d.subject_name || `Subject ${d.subject_id}`} — Set {d.set_name}</h3>
-                    {d.status === 'Finalized' && <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-md text-xs font-bold flex items-center gap-1"><CheckCircle2 size={12}/> Approved</span>}
-                  </div>
-                  <p className="text-sm text-slate-500 font-medium mt-1">Setter: <span className="font-bold">{d.setter_name}</span></p>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => downloadPaper(d.paper_id)} className="bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2"><Lock size={14}/> Decrypt & View</button>
-                  {d.status !== 'Finalized' && (
-                     <button onClick={() => handleFinalize(d.assignment_id)} className="bg-green-500 hover:bg-green-600 text-white border-green-600 font-bold py-2 px-4 rounded-lg text-sm">Approve Final</button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
+      <footer className="pt-12 pb-8 text-center text-slate-400 font-bold text-[10px] uppercase tracking-widest">
+        2025 Secure EMS Portal • End-to-End Encryption Enabled
+      </footer>
     </div>
   );
 };
