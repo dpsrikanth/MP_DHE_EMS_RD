@@ -212,8 +212,8 @@ exports.getSetterDashData = async (req, res) => {
         COALESCE(sub_stats.sets_submitted, 0) as sets_submitted,
         sub_stats.latest_status,
         (SELECT id FROM paper_assignments 
-         WHERE subject_id = ms.id AND exam_id = e.id AND file_path IS NULL 
-         LIMIT 1) as assignment_id
+         WHERE subject_id = ms.id AND exam_id = e.id
+         ORDER BY id DESC LIMIT 1) as assignment_id
       FROM paper_setter_subjects pss
       JOIN master_subjects ms ON pss.subject_id = ms.id
       JOIN LATERAL (
@@ -351,11 +351,24 @@ exports.uploadPaper = async (req, res) => {
         // Remove raw temp file to securely protect the untampered version
         if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
         
-        const insertQ = `
-          INSERT INTO question_papers (assignment_id, title, setter_id, file_path, iv)
-          VALUES ($1, $2, $3, $4, $5)
-        `;
-        await pool.query(insertQ, [active_assignment_id, title, setter_id, encryptedFileName, iv.toString('hex')]);
+        const existingPaper = await pool.query('SELECT id, file_path FROM question_papers WHERE assignment_id = $1', [active_assignment_id]);
+        
+        if (existingPaper.rows.length > 0) {
+          // If a previous paper exists (e.g. for Revision), replace its record to prevent duplicates
+          const oldFilePath = path.join(uploadsDir, existingPaper.rows[0].file_path);
+          if (fs.existsSync(oldFilePath)) fs.unlinkSync(oldFilePath);
+          
+          await pool.query(
+            "UPDATE question_papers SET title = $1, setter_id = $2, file_path = $3, iv = $4 WHERE assignment_id = $5",
+            [title, setter_id, encryptedFileName, iv.toString('hex'), active_assignment_id]
+          );
+        } else {
+          const insertQ = `
+            INSERT INTO question_papers (assignment_id, title, setter_id, file_path, iv)
+            VALUES ($1, $2, $3, $4, $5)
+          `;
+          await pool.query(insertQ, [active_assignment_id, title, setter_id, encryptedFileName, iv.toString('hex')]);
+        }
         
         // Update paper_assignments status, file_path, and paper_setter_id (to reflect who actually uploaded)
         await pool.query("UPDATE paper_assignments SET status = 'Uploaded', file_path = $1, paper_setter_id = $2 WHERE id = $3", [encryptedFileName, setter_id, active_assignment_id]);

@@ -71,7 +71,7 @@ const SecrecyQuestionPapers = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-black text-slate-800">{paper.subject_name} — Set {paper.set_name}</h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Paper ID: {paper.id || 'QP00' + paper.assignment_id} | Semester: {paper.semester_number || 4}</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Exam: {paper.exam_name || `EX00${paper.exam_id}`} | Semester: {paper.semester || 'N/A'}</p>
                   </div>
                   <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest ${
                     paper.status === 'Finalized' ? 'bg-emerald-100 text-emerald-700' : 
@@ -98,7 +98,7 @@ const SecrecyQuestionPapers = () => {
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase">Exam Date</p>
-                    <p className="font-bold text-slate-700 text-sm mt-0.5">2025-01-15</p>
+                    <p className="font-bold text-slate-700 text-sm mt-0.5">{paper.exam_date && !isNaN(new Date(paper.exam_date)) ? new Date(paper.exam_date).toLocaleDateString() : 'TBD'}</p>
                   </div>
                 </div>
 

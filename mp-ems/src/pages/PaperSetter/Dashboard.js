@@ -118,8 +118,8 @@ const PaperSetterDashboard = () => {
                       <div>
                          <div className="flex items-center gap-2 mb-1">
                            <h3 className="text-2xl font-black text-slate-800 tracking-tight">{exam.subject_name}</h3>
-                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${exam.sets_submitted > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
-                             {exam.sets_submitted > 0 ? 'Completed' : 'Pending'}
+                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${exam.latest_status === 'Revision' ? 'bg-rose-100 text-rose-600' : exam.sets_submitted > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                             {exam.latest_status === 'Revision' ? 'Revision Needed' : exam.sets_submitted > 0 ? 'Completed' : 'Pending'}
                            </span>
                          </div>
                          <p className="text-slate-400 text-sm font-bold uppercase tracking-tighter">Exam ID: {exam.exam_name || `EX${exam.exam_id}`} | Semester: {exam.semester || 'N/A'}</p>
@@ -141,7 +141,7 @@ const PaperSetterDashboard = () => {
                       </div>
                     </div>
 
-                    {Number(exam.sets_submitted) === 0 && (
+                    {(Number(exam.sets_submitted) === 0 || exam.latest_status === 'Revision') && (
                       <div className="flex flex-col sm:flex-row items-center gap-3 pt-6 md:pt-0 border-t md:border-t-0 border-slate-50">
                          <div className="relative group/input flex-1 sm:flex-none">
                             <input 
