@@ -22,9 +22,8 @@ exports.assignSet = async (req, res) => {
     const query = `
       INSERT INTO paper_assignments (subject_id, exam_id, set_name, paper_setter_id, assigned_by_id, status, assigned_chief_id)
       VALUES ($1, $2, $3, $4, $5, 'Pending', $6)
-      ON CONFLICT (subject_id, exam_id, set_name) 
-      DO UPDATE SET paper_setter_id = EXCLUDED.paper_setter_id,
-                    assigned_by_id = EXCLUDED.assigned_by_id,
+      ON CONFLICT (subject_id, exam_id, set_name, paper_setter_id) 
+      DO UPDATE SET assigned_by_id = EXCLUDED.assigned_by_id,
                     assigned_chief_id = EXCLUDED.assigned_chief_id,
                     status = 'Pending'
       RETURNING *;
@@ -212,7 +211,7 @@ exports.getSetterDashData = async (req, res) => {
         COALESCE(sub_stats.sets_submitted, 0) as sets_submitted,
         sub_stats.latest_status,
         (SELECT id FROM paper_assignments 
-         WHERE subject_id = ms.id AND exam_id = e.id
+         WHERE subject_id = ms.id AND exam_id = e.id AND paper_setter_id = $1
          ORDER BY id DESC LIMIT 1) as assignment_id
       FROM paper_setter_subjects pss
       JOIN master_subjects ms ON pss.subject_id = ms.id
@@ -231,6 +230,7 @@ exports.getSetterDashData = async (req, res) => {
           COUNT(file_path) as sets_submitted,
           MAX(status) as latest_status
         FROM paper_assignments
+        WHERE paper_setter_id = $1
         GROUP BY subject_id, exam_id
       ) sub_stats ON ms.id = sub_stats.subject_id AND e.id = sub_stats.exam_id
       WHERE pss.user_id = $1
@@ -250,7 +250,7 @@ exports.getSetterDashData = async (req, res) => {
       FROM paper_assignments pa
       JOIN master_subjects ms ON pa.subject_id = ms.id
       LEFT JOIN question_papers qp ON qp.assignment_id = pa.id
-      WHERE pa.subject_id IN (SELECT subject_id FROM paper_setter_subjects WHERE user_id = $1)
+      WHERE pa.paper_setter_id = $1
         AND (pa.file_path IS NOT NULL OR qp.id IS NOT NULL)
       ORDER BY pa.updated_at DESC
     `;
@@ -312,9 +312,11 @@ exports.uploadPaper = async (req, res) => {
         return res.status(403).json({ message: 'Unauthorized subject authorization required.' });
       }
       
-      // Auto-create assignment since they are authorized
+      // Auto-create assignment since they are authorized, default to next available set letter
       const newAssign = await pool.query(
-        "INSERT INTO paper_assignments (subject_id, exam_id, paper_setter_id, assigned_by_id, set_name, status) VALUES ($1, $2, $3, $4, 'A', 'Pending') RETURNING id",
+        `INSERT INTO paper_assignments (subject_id, exam_id, paper_setter_id, assigned_by_id, set_name, status) 
+         VALUES ($1, $2, $3, $4, (SELECT CHR(ASCII(COALESCE(MAX(set_name), '@')) + 1) FROM paper_assignments WHERE subject_id = $1 AND exam_id = $2), 'Pending') 
+         RETURNING id`,
         [subject_id, exam_id, setter_id, setter_id]
       );
       active_assignment_id = newAssign.rows[0].id;
@@ -436,7 +438,7 @@ exports.downloadPaper = async (req, res) => {
 
     const paper = rows[0];
     const isOwner = paper.setter_id === userId;
-    const isChief = ['admin', 'SUPER_ADMIN', 'college_admin', 'HOD'].includes(userRole) && 
+    const isChief = ['admin', 'SUPER_ADMIN', 'college_admin', 'HOD', 'Secrecy'].includes(userRole) && 
                     (userRole === 'HOD' ? (paper.assigned_chief_id === userId) : true);
 
     if (!isOwner && !isChief) {

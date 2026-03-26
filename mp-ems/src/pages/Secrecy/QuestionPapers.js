@@ -8,6 +8,7 @@ const SecrecyQuestionPapers = () => {
   const [loading, setLoading] = useState(true);
   const [showSelectSetsModal, setShowSelectSetsModal] = useState(false);
   const [selectedPaperForSets, setSelectedPaperForSets] = useState(null);
+  const [selectedSets, setSelectedSets] = useState([]);
 
   useEffect(() => {
     fetchPapers();
@@ -44,6 +45,79 @@ const SecrecyQuestionPapers = () => {
     } catch (e) { toast.error('Network error'); }
   };
 
+  const handleDownload = async (paper_id, viewOnly = false) => {
+    if (!paper_id) return;
+    try {
+      const response = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/paper-setter/download/${paper_id}`, {
+        headers: authUtils.getAuthHeader()
+      });
+      if (!response.ok) throw new Error('Download failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      if (viewOnly) {
+        window.open(url, '_blank');
+      } else {
+        const a = document.createElement('a');
+        a.href = url;
+        // Try to get filename from content-disposition
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = 'question_paper.pdf';
+        if (contentDisposition && contentDisposition.includes('filename=')) {
+          filename = contentDisposition.split('filename=')[1].replace(/["']/g, '');
+        }
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to download paper');
+    }
+  };
+
+  const toggleSetSelection = (assignment_id) => {
+    setSelectedSets(prev => {
+      if (prev.includes(assignment_id)) {
+        return prev.filter(id => id !== assignment_id);
+      }
+      if (prev.length < 3) {
+        return [...prev, assignment_id];
+      }
+      return prev;
+    });
+  };
+
+  const handleApproveSelectedSets = async () => {
+    try {
+      setLoading(true);
+      for (const assignment_id of selectedSets) {
+        await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/secrecy/papers/status`, {
+          method: 'POST',
+          headers: { ...authUtils.getAuthHeader(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assignment_id, status: 'Printed', feedback: 'Approved for Printing' })
+        });
+      }
+      toast.success('Selected sets approved for printing');
+      setShowSelectSetsModal(false);
+      setSelectedSets([]);
+      fetchPapers();
+    } catch (e) { 
+      toast.error('Failed to approve sets');
+      setLoading(false);
+    }
+  };
+
+  const availableSets = questionPapers.filter(p => 
+    selectedPaperForSets && 
+    p.subject_id === selectedPaperForSets.subject_id && 
+    p.exam_id === selectedPaperForSets.exam_id &&
+    p.status === 'Finalized'
+  );
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-20 space-y-4 min-h-[60vh]">
@@ -76,10 +150,15 @@ const SecrecyQuestionPapers = () => {
                   <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest ${
                     paper.status === 'Finalized' ? 'bg-emerald-100 text-emerald-700' : 
                     paper.status === 'Uploaded' ? 'bg-orange-100 text-orange-700' : 
+                    paper.status === 'Rejected' ? 'bg-rose-100 text-rose-700' :
+                    paper.status === 'Revision' ? 'bg-amber-100 text-amber-700' :
                     'bg-slate-100 text-slate-600'
                   }`}>
                     {paper.status === 'Finalized' ? 'Approved' : 
-                     paper.status === 'Uploaded' ? 'Under Review' : 'Pending'}
+                     paper.status === 'Uploaded' ? 'Under Review' : 
+                     paper.status === 'Rejected' ? 'Rejected' :
+                     paper.status === 'Revision' ? 'Revision' : 
+                     'Pending'}
                   </span>
                 </div>
 
@@ -145,8 +224,20 @@ const SecrecyQuestionPapers = () => {
               </div>
 
               <div className="flex md:flex-col gap-2 justify-start items-center">
-                 <button className="p-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 transition-colors"><Eye size={20} /></button>
-                 <button className="p-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 transition-colors"><Download size={20} /></button>
+                 <button 
+                   onClick={() => handleDownload(paper.paper_id, true)}
+                   disabled={!paper.paper_id}
+                   className="p-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 transition-colors disabled:opacity-50"
+                 >
+                   <Eye size={20} />
+                 </button>
+                 <button 
+                   onClick={() => handleDownload(paper.paper_id, false)}
+                   disabled={!paper.paper_id}
+                   className="p-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 transition-colors disabled:opacity-50"
+                 >
+                   <Download size={20} />
+                 </button>
               </div>
             </div>
           </div>
@@ -163,7 +254,7 @@ const SecrecyQuestionPapers = () => {
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in slide-in-from-bottom-8 duration-300">
              <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 italic"><FileText size={22} className="text-sky-500" /> Select Question Sets - {selectedPaperForSets?.subject_name}</h3>
-               <button onClick={() => setShowSelectSetsModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X size={24} /></button>
+               <button onClick={() => { setShowSelectSetsModal(false); setSelectedSets([]); }} className="text-slate-400 hover:text-slate-600 transition-colors"><X size={24} /></button>
              </div>
              
              <div className="p-8 space-y-6">
@@ -176,11 +267,11 @@ const SecrecyQuestionPapers = () => {
                      </div>
                      <div>
                        <span className="text-xs font-bold text-slate-400">Exam Date: </span>
-                       <span className="text-sm font-black text-slate-700">Not Set</span>
+                       <span className="text-sm font-black text-slate-700">{selectedPaperForSets?.exam_date && !isNaN(new Date(selectedPaperForSets.exam_date)) ? new Date(selectedPaperForSets.exam_date).toLocaleDateString() : 'TBD'}</span>
                      </div>
                      <div>
                        <span className="text-xs font-bold text-slate-400">Semester: </span>
-                       <span className="text-sm font-black text-slate-700">4</span>
+                       <span className="text-sm font-black text-slate-700">{selectedPaperForSets?.semester || 'N/A'}</span>
                      </div>
                      <div>
                        <span className="text-xs font-bold text-slate-400">Students: </span>
@@ -192,31 +283,57 @@ const SecrecyQuestionPapers = () => {
                 <div className="bg-amber-50/50 p-6 rounded-2xl border border-amber-100">
                    <h4 className="text-xs font-black text-amber-600 uppercase mb-2">Selection Instructions</h4>
                    <ul className="text-xs font-bold text-amber-700 space-y-1 ml-4 list-disc">
-                     <li>Select exactly 3 question sets for this examination</li>
+                     <li>Select exactly {Math.min(3, availableSets.length)} question sets for this examination</li>
                      <li>Selected sets will be used for printing and distribution</li>
                      <li>Ensure sets cover the complete syllabus appropriately</li>
-                     <li className="text-amber-800 font-black pt-1 italic">Selected sets: 0/3</li>
+                     <li className="text-amber-800 font-black pt-1 italic">Selected sets: {selectedSets.length}/{Math.min(3, availableSets.length)}</li>
                    </ul>
                 </div>
 
                 <div className="space-y-4">
                   <h4 className="text-sm font-black text-slate-800 italic">Available Question Sets</h4>
                   <div className="divide-y divide-slate-100 border border-slate-100 rounded-2xl overflow-hidden">
-                    {[1, 2, 3, 4, 5].map(i => (
-                      <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer group">
+                    {availableSets.map(p => (
+                      <div 
+                        key={p.assignment_id} 
+                        onClick={() => toggleSetSelection(p.assignment_id)}
+                        className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer group"
+                      >
                         <div className="flex items-center gap-4">
-                           <div className="w-5 h-5 rounded border-2 border-slate-200 group-hover:border-sky-400 transition-colors" />
-                           <span className="text-sm font-bold text-slate-700">Question Set {String.fromCharCode(64 + i)}</span>
+                           <div className={`w-5 h-5 rounded border-2 transition-colors flex items-center justify-center ${
+                             selectedSets.includes(p.assignment_id) ? 'bg-sky-500 border-sky-500' : 'border-slate-200 group-hover:border-sky-400'
+                           }`}>
+                             {selectedSets.includes(p.assignment_id) && <div className="w-2 h-2 bg-white rounded-full" />}
+                           </div>
+                           <div>
+                              <span className="text-sm font-bold text-slate-700 block">Question Set {p.set_name}</span>
+                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{p.setter_name}</span>
+                           </div>
                         </div>
-                        <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded-md uppercase tracking-tighter">Uploaded • Dec 20, 2024</span>
+                        <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded-md uppercase tracking-tighter">
+                          Uploaded • {p.updated_at ? new Date(p.updated_at).toLocaleDateString() : 'N/A'}
+                        </span>
                       </div>
                     ))}
+                    {availableSets.length === 0 && (
+                      <div className="p-10 text-center text-slate-400 font-bold uppercase tracking-widest text-xs italic">
+                        No approved sets available for this subject.
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">
-                   <button onClick={() => setShowSelectSetsModal(false)} className="px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all">Cancel</button>
-                   <button className="px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-white bg-slate-300 cursor-not-allowed transition-all shadow-sm">Approve Selected Sets</button>
+                   <button onClick={() => { setShowSelectSetsModal(false); setSelectedSets([]); }} className="px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all">Cancel</button>
+                   <button 
+                     onClick={handleApproveSelectedSets}
+                     disabled={selectedSets.length !== Math.min(3, availableSets.length)}
+                     className={`px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-sm ${
+                       selectedSets.length === Math.min(3, availableSets.length) ? 'bg-sky-500 hover:bg-sky-600 text-white cursor-pointer' : 'bg-slate-300 text-white cursor-not-allowed'
+                     }`}
+                   >
+                     Approve Selected Sets
+                   </button>
                 </div>
              </div>
           </div>

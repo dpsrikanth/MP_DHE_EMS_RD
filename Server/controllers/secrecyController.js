@@ -225,6 +225,7 @@ exports.getQuestionPapers = async (req, res) => {
       LEFT JOIN master_subjects ms ON pa.subject_id = ms.id
       LEFT JOIN exams e ON pa.exam_id = e.id
       LEFT JOIN master_semesters sem ON e.semester_id = sem.id
+      WHERE pa.status IN ('Uploaded', 'Finalized', 'Revision', 'Rejected')
       ORDER BY pa.updated_at DESC
     `;
     const { rows } = await pool.query(query);
@@ -251,7 +252,7 @@ exports.updatePaperStatus = async (req, res) => {
       // Auto-create payment entry if finalized
       await pool.query(`
         INSERT INTO paper_setter_payments (assignment_id, paper_setter_id, amount, status)
-        SELECT id, assigned_faculty_id, 5000, 'Pending' -- Default amount 5000
+        SELECT id, paper_setter_id, 5000, 'Pending' -- Default amount 5000
         FROM paper_assignments WHERE id = $1
         ON CONFLICT DO NOTHING
       `, [assignment_id]);

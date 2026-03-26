@@ -64,17 +64,25 @@ const SecrecyPayments = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100">
           <p className="text-xs font-black text-emerald-600 uppercase">Total Payments</p>
-          <h3 className="text-3xl font-black text-emerald-700 mt-1">₹2,45,000</h3>
+          <h3 className="text-3xl font-black text-emerald-700 mt-1">
+            ₹{payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0).toLocaleString()}
+          </h3>
           <p className="text-xs font-bold text-emerald-500 mt-1">This month</p>
         </div>
         <div className="bg-amber-50/50 p-6 rounded-2xl border border-amber-100">
           <p className="text-xs font-black text-amber-600 uppercase">Pending Payments</p>
-          <h3 className="text-3xl font-black text-amber-700 mt-1">₹35,000</h3>
-          <p className="text-xs font-bold text-amber-500 mt-1">5 pending</p>
+          <h3 className="text-3xl font-black text-amber-700 mt-1">
+            ₹{payments.filter(p => p.status !== 'Paid').reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0).toLocaleString()}
+          </h3>
+          <p className="text-xs font-bold text-amber-500 mt-1">{payments.filter(p => p.status !== 'Paid').length} pending</p>
         </div>
         <div className="bg-sky-50/50 p-6 rounded-2xl border border-sky-100">
           <p className="text-xs font-black text-sky-600 uppercase">Average per Paper</p>
-          <h3 className="text-3xl font-black text-sky-700 mt-1">₹5,000</h3>
+          <h3 className="text-3xl font-black text-sky-700 mt-1">
+            ₹{payments.length > 0 
+              ? Math.round(payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0) / payments.length).toLocaleString()
+              : 0}
+          </h3>
           <p className="text-xs font-bold text-sky-500 mt-1">Standard rate</p>
         </div>
       </div>
