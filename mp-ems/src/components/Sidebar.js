@@ -132,16 +132,15 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     } else if (roleName === 'Secrecy') {
       menuItems = [
         { id: 1, name: 'Dashboard', path: '/secrecy/dashboard', icon: <LayoutDashboard size={20} /> },
-        { id: 2, name: 'Paper Setters', path: '/secrecy/dashboard', icon: <Users size={20} /> },
-        { id: 3, name: 'Question Papers', path: '/secrecy/dashboard', icon: <FileText size={20} /> },
-        { id: 4, name: 'Payments', path: '/secrecy/dashboard', icon: <CreditCard size={20} /> },
+        { id: 2, name: 'Paper Setters', path: '/secrecy/paper-setters', icon: <Users size={20} /> },
+        { id: 3, name: 'Question Papers', path: '/secrecy/question-papers', icon: <FileText size={20} /> },
+        { id: 4, name: 'Payments', path: '/secrecy/payments', icon: <CreditCard size={20} /> },
       ];
     } else if (roleName === 'PAPER_SETTER') {
       menuItems = [
-        { id: 1, name: 'Dashboard', path: '/paper-setter/dashboard', icon: <LayoutDashboard size={20} /> },
         { id: 2, name: 'Assigned Exams', path: '/paper-setter/dashboard', icon: <FileText size={20} /> },
-        { id: 3, name: 'Submitted Papers', path: '/paper-setter/dashboard', icon: <CheckCircle2 size={20} /> },
-        { id: 4, name: 'Guidelines', path: '/paper-setter/dashboard', icon: <BookOpen size={20} /> },
+        { id: 3, name: 'Submitted Papers', path: '/paper-setter/submitted-papers', icon: <CheckCircle2 size={20} /> },
+        { id: 4, name: 'Guidelines', path: '/paper-setter/guidelines', icon: <BookOpen size={20} /> },
       ];
     }
 
@@ -174,7 +173,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
         <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Main Menu</p>
         {menuItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          let isActive = false;
+          if (item.path.includes('?')) {
+            isActive = (location.pathname + location.search) === item.path || (location.pathname === item.path.split('?')[0] && !location.search && (item.path.includes('tab=overview') || item.path.includes('tab=assigned')) && (item.name === 'Dashboard'));
+          } else {
+            isActive = location.pathname === item.path;
+          }
           return (
             <button
               key={item.id}

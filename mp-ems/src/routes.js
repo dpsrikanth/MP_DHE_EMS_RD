@@ -44,7 +44,12 @@ import HallTicket from "./pages/Student/HallTicket";
 import ResultSheet from "./pages/Student/ResultSheet";
 import ManageCredits from "./pages/UniversityAdmin/ManageCredits";
 import PaperSetterDashboard from "./pages/PaperSetter/Dashboard";
+import PaperSetterSubmittedPapers from "./pages/PaperSetter/SubmittedPapers";
+import PaperSetterGuidelines from "./pages/PaperSetter/Guidelines";
 import SecrecyDashboard from "./pages/Secrecy/Dashboard";
+import SecrecyPaperSetters from "./pages/Secrecy/PaperSetters";
+import SecrecyQuestionPapers from "./pages/Secrecy/QuestionPapers";
+import SecrecyPayments from "./pages/Secrecy/Payments";
 import SmtpSettings from "./pages/SmtpSettings";
 import Layout from "./components/Layout";
 
@@ -109,7 +114,13 @@ const AppRoutes = () => {
 
       {/* Paper Setter Workflow */}
       <Route path="/paper-setter/dashboard" element={<Layout><ProtectedRoute element={<PaperSetterDashboard />} /></Layout>} />
+      <Route path="/paper-setter/assigned-exams" element={<Layout><ProtectedRoute element={<PaperSetterDashboard />} /></Layout>} />
+      <Route path="/paper-setter/submitted-papers" element={<Layout><ProtectedRoute element={<PaperSetterSubmittedPapers />} /></Layout>} />
+      <Route path="/paper-setter/guidelines" element={<Layout><ProtectedRoute element={<PaperSetterGuidelines />} /></Layout>} />
       <Route path="/secrecy/dashboard" element={<Layout><ProtectedRoute element={<SecrecyDashboard />} /></Layout>} />
+      <Route path="/secrecy/paper-setters" element={<Layout><ProtectedRoute element={<SecrecyPaperSetters />} /></Layout>} />
+      <Route path="/secrecy/question-papers" element={<Layout><ProtectedRoute element={<SecrecyQuestionPapers />} /></Layout>} />
+      <Route path="/secrecy/payments" element={<Layout><ProtectedRoute element={<SecrecyPayments />} /></Layout>} />
 
       {/* University Admin / Super Admin specialized routes */}
       <Route path="/university/external-assignment" element={<Layout><ProtectedRoute element={<ExternalAssignment />} /></Layout>} />

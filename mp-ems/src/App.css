@@ -961,4 +961,7 @@ th, td {
 .logout-btn{
   display: none !important;
 }
+.bg-white{
+  z-index: 0;
+}
 

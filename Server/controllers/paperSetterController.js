@@ -206,7 +206,8 @@ exports.getSetterDashData = async (req, res) => {
         ms.name as subject_name,
         e.id as exam_id,
         e.name as exam_name,
-        e.start_time as exam_date,
+        e.exam_date as exam_date,
+        sem.semester_name as semester,
         COALESCE(sub_stats.sets_required, 0) as sets_required,
         COALESCE(sub_stats.sets_submitted, 0) as sets_submitted,
         sub_stats.latest_status,
@@ -215,10 +216,14 @@ exports.getSetterDashData = async (req, res) => {
          LIMIT 1) as assignment_id
       FROM paper_setter_subjects pss
       JOIN master_subjects ms ON pss.subject_id = ms.id
-      CROSS JOIN (
-        SELECT id, name, start_time FROM exams 
-        ORDER BY start_time DESC LIMIT 1
-      ) e
+      JOIN LATERAL (
+        SELECT id, name, exam_date, semester_id 
+        FROM exams 
+        WHERE subject_id = ms.id 
+           OR subject_id IS NULL -- fallback for older exams
+        ORDER BY subject_id DESC NULLS LAST, created_at DESC LIMIT 1
+      ) e ON true
+      LEFT JOIN master_semesters sem ON e.semester_id = sem.id
       LEFT JOIN (
         SELECT 
           subject_id, exam_id,
@@ -229,7 +234,7 @@ exports.getSetterDashData = async (req, res) => {
         GROUP BY subject_id, exam_id
       ) sub_stats ON ms.id = sub_stats.subject_id AND e.id = sub_stats.exam_id
       WHERE pss.user_id = $1
-      GROUP BY ms.id, ms.name, e.id, e.name, e.start_time, sub_stats.sets_required, sub_stats.sets_submitted, sub_stats.latest_status
+      GROUP BY ms.id, ms.name, e.id, e.name, e.exam_date, sem.semester_name, sub_stats.sets_required, sub_stats.sets_submitted, sub_stats.latest_status
     `;
     
     // 2. Submitted Papers
@@ -309,8 +314,8 @@ exports.uploadPaper = async (req, res) => {
       
       // Auto-create assignment since they are authorized
       const newAssign = await pool.query(
-        "INSERT INTO paper_assignments (subject_id, exam_id, paper_setter_id, set_name, status) VALUES ($1, $2, $3, 'A', 'Pending') RETURNING id",
-        [subject_id, exam_id, setter_id]
+        "INSERT INTO paper_assignments (subject_id, exam_id, paper_setter_id, assigned_by_id, set_name, status) VALUES ($1, $2, $3, $4, 'A', 'Pending') RETURNING id",
+        [subject_id, exam_id, setter_id, setter_id]
       );
       active_assignment_id = newAssign.rows[0].id;
     }
@@ -343,7 +348,8 @@ exports.uploadPaper = async (req, res) => {
 
     output.on('finish', async () => {
       try {
-        if (fs.existsSync(file.path)) fs.unlinkSync(file.path); // remove raw file
+        // Remove raw temp file to securely protect the untampered version
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
         
         const insertQ = `
           INSERT INTO question_papers (assignment_id, title, setter_id, file_path, iv)
@@ -435,10 +441,20 @@ exports.downloadPaper = async (req, res) => {
     res.setHeader('Content-Disposition', 'attachment; filename="' + rawFileName + '"');
     res.setHeader('Content-Type', 'application/octet-stream');
     
+    input.on('error', (err) => {
+      console.error('File read error:', err);
+      if (!res.headersSent) res.status(500).json({ message: 'Error reading file on server.' });
+    });
+
+    decipher.on('error', (err) => {
+      console.error('Decryption error:', err);
+      if (!res.headersSent) res.status(500).json({ message: 'Decryption failed: ' + err.message });
+    });
+
     input.pipe(decipher).pipe(res);
   } catch (error) {
     console.error('Error downloading:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: error.message || 'Internal server error' });
   }
 };
 
