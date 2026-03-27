@@ -835,21 +835,34 @@ const getColleges = async (req, res) => {
 
 const getTeachers = async (req, res) => {
   try {
-    const result = await client.query(
-      `SELECT 
-    t.id,
-    u.name AS teacher_name,
-    u.email,
-    c.name AS college_name,
-    t.department,
-    t.designation,
-    t.experience,
-    t.status
-FROM teachers t
-LEFT JOIN users u ON t.user_id = u.id
-LEFT JOIN colleges c ON t.college_id = c.id
-ORDER BY t.id DESC;`
-    );
+    const { role, college_id, department_id } = req.user;
+    let query = `
+      SELECT 
+        t.id,
+        u.name AS teacher_name,
+        u.email,
+        c.name AS college_name,
+        t.department,
+        t.designation,
+        t.experience,
+        t.status
+      FROM teachers t
+      LEFT JOIN users u ON t.user_id = u.id
+      LEFT JOIN colleges c ON t.college_id = c.id
+    `;
+    const params = [];
+
+    if (role === 'college_admin') {
+      query += ` WHERE t.college_id = $1`;
+      params.push(college_id);
+    } else if (role === 'HOD') {
+      query += ` WHERE t.college_id = $1 AND t.department = (SELECT department_name FROM master_departments WHERE id = $2)`;
+      params.push(college_id, department_id);
+    }
+
+    query += ` ORDER BY t.id DESC`;
+
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Get teachers error:", error);
@@ -962,11 +975,11 @@ const getExams = async (req, res) => {
     let visibilityClause = '';
 
     if (role === 'college_admin') {
-      visibilityClause = `WHERE (e.college_id = $1 OR (e.exam_type = 2 AND e.college_id IS NULL))`;
+      visibilityClause = `WHERE (e.college_id = $1 OR (e.exam_type = 2 AND e.college_id IS NULL AND e.university_id = (SELECT university_id FROM colleges WHERE id = $1)))`;
       params.push(college_id);
     } else if (role === 'HOD') {
       const { department_id } = req.user;
-      visibilityClause = `WHERE (e.college_id = $1 OR (e.exam_type = 2 AND e.college_id IS NULL)) AND e.department_id = $2`;
+      visibilityClause = `WHERE (e.college_id = $1 OR (e.exam_type = 2 AND e.college_id IS NULL AND e.university_id = (SELECT university_id FROM colleges WHERE id = $1))) AND e.department_id = $2`;
       params.push(college_id, department_id);
     }
 
@@ -977,7 +990,8 @@ const getExams = async (req, res) => {
         e.semester_id, 
         ms.semester_name,
         e.college_id, 
-        COALESCE(c.name, 'University-wide') as college_name,
+        e.university_id,
+        COALESCE(c.name, COALESCE(u.name, 'University-wide')) as college_name,
         e.exam_type, 
         et.type_name as exam_type_name,
         e.department_id,
@@ -1004,6 +1018,7 @@ const getExams = async (req, res) => {
       FROM exams e
       LEFT JOIN master_semesters ms ON e.semester_id = ms.id
       LEFT JOIN colleges c ON e.college_id = c.id
+      LEFT JOIN universities u ON e.university_id = u.id
       LEFT JOIN exam_types et ON e.exam_type = et.id
       LEFT JOIN master_departments md ON e.department_id = md.id
       LEFT JOIN master_programs mp ON e.program_id = mp.id
@@ -1024,8 +1039,11 @@ const getExams = async (req, res) => {
 const createExam = async (req, res) => {
   try {
     const { role, college_id: userCollegeId, department_id: userDepartmentId } = req.user;
-    let { name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, start_time, end_time, subjects } = req.body;
+    let { name, semester_id, college_id, university_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, start_time, end_time, subjects } = req.body;
     
+    // Normalize empty string to null (university-wide exam)
+    college_id = college_id === '' ? null : college_id;
+
     // Enforce college_id and department_id for restricted roles
     if (role === 'college_admin') {
       college_id = userCollegeId;
@@ -1054,10 +1072,10 @@ const createExam = async (req, res) => {
 
         const result = await client.query(
           `INSERT INTO exams (
-            name, semester_id, college_id, exam_type, exam_date, start_time, end_time, 
+            name, semester_id, college_id, university_id, exam_type, exam_date, start_time, end_time, 
             status, department_id, program_id, academic_year_id, subject_id
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
-          [name, semester_id, college_id, exam_type, exam_date, start_time, end_time, status ?? true, department_id || null, program_id || null, academic_year_id || null, subject_id]
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+          [name, semester_id, college_id, university_id || null, exam_type, exam_date, start_time, end_time, status ?? true, department_id || null, program_id || null, academic_year_id || null, subject_id]
         );
         createdExams.push(result.rows[0]);
       }
@@ -1072,8 +1090,8 @@ const createExam = async (req, res) => {
     }
 
     const result = await client.query(
-      "INSERT INTO exams (name, semester_id, college_id, exam_type, exam_date, start_time, end_time, status, department_id, program_id, academic_year_id, subject_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *",
-      [name, semester_id, college_id, exam_type, exam_date, start_time, end_time, status ?? true, department_id || null, program_id || null, academic_year_id || null, subject_id || null]
+      "INSERT INTO exams (name, semester_id, college_id, university_id, exam_type, exam_date, start_time, end_time, status, department_id, program_id, academic_year_id, subject_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *",
+      [name, semester_id, college_id, university_id || null, exam_type, exam_date, start_time, end_time, status ?? true, department_id || null, program_id || null, academic_year_id || null, subject_id || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -1086,12 +1104,15 @@ const updateExam = async (req, res) => {
   try {
     const { id } = req.params;
     const { role, college_id: userCollegeId, department_id: userDepartmentId } = req.user;
-    let { name, semester_id, college_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, start_time, end_time, subjects } = req.body;
+    let { name, semester_id, college_id, university_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, start_time, end_time, subjects } = req.body;
     
     // Check if exists
     const checkResult = await client.query('SELECT name, semester_id, college_id, exam_type, program_id, academic_year_id, department_id FROM exams WHERE id = $1', [id]);
     if (checkResult.rows.length === 0) return res.status(404).json({ message: "Exam not found" });
     const original = checkResult.rows[0];
+
+    // Normalize empty string to null (university-wide exam)
+    college_id = college_id === '' ? null : college_id;
 
     // Enforce constraints for restricted roles
     if (role === 'college_admin') {
@@ -1136,26 +1157,28 @@ const updateExam = async (req, res) => {
               name = COALESCE($1, name), 
               semester_id = COALESCE($2, semester_id), 
               college_id = $3, 
-              exam_type = COALESCE($4, exam_type), 
-              exam_date = COALESCE($5, exam_date), 
-              status = COALESCE($6, status),
-              department_id = COALESCE($7, department_id),
-              program_id = COALESCE($8, program_id),
-              academic_year_id = COALESCE($9, academic_year_id),
-              subject_id = COALESCE($10, subject_id),
-              start_time = COALESCE($11, start_time),
-              end_time = COALESCE($12, end_time)
-             WHERE id = $13`,
-            [name, semester_id, college_id || null, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, start_time, end_time, subId]
+              university_id = COALESCE($4, university_id),
+              exam_type = COALESCE($5, exam_type), 
+              exam_date = COALESCE($6, exam_date), 
+              status = COALESCE($7, status),
+              department_id = COALESCE($8, department_id),
+              program_id = COALESCE($9, program_id),
+              academic_year_id = COALESCE($10, academic_year_id),
+              subject_id = COALESCE($11, subject_id),
+              start_time = COALESCE($12, start_time),
+              end_time = COALESCE($13, end_time),
+              updated_at = CURRENT_TIMESTAMP
+             WHERE id = $14`,
+            [name, semester_id, college_id, university_id || null, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, start_time, end_time, subId]
           );
         } else {
           // Insert new (Added to existing series during edit)
           await client.query(
             `INSERT INTO exams (
-              name, semester_id, college_id, exam_type, exam_date, start_time, end_time, 
+              name, semester_id, college_id, university_id, exam_type, exam_date, start_time, end_time, 
               status, department_id, program_id, academic_year_id, subject_id
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-            [name, semester_id, college_id || null, exam_type, exam_date, start_time, end_time, status ?? true, department_id || null, program_id || null, academic_year_id || null, subject_id]
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+            [name, semester_id, college_id, university_id || null, exam_type, exam_date, start_time, end_time, status ?? true, department_id || null, program_id || null, academic_year_id || null, subject_id]
           );
         }
       }
@@ -1167,17 +1190,18 @@ const updateExam = async (req, res) => {
        SET name = COALESCE($1, name), 
            semester_id = COALESCE($2, semester_id), 
            college_id = $3, 
-           exam_type = COALESCE($4, exam_type), 
-           exam_date = COALESCE($5, exam_date), 
-           status = COALESCE($6, status),
-           department_id = COALESCE($7, department_id),
-           program_id = COALESCE($8, program_id),
-           academic_year_id = COALESCE($9, academic_year_id),
-           subject_id = COALESCE($10, subject_id),
-           start_time = COALESCE($11, start_time),
-           end_time = COALESCE($12, end_time)
-       WHERE id = $13 RETURNING *`,
-      [name, semester_id, college_id || null, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, start_time, end_time, id]
+           university_id = $4,
+           exam_type = COALESCE($5, exam_type), 
+           exam_date = COALESCE($6, exam_date), 
+           status = COALESCE($7, status),
+           department_id = COALESCE($8, department_id),
+           program_id = COALESCE($9, program_id),
+           academic_year_id = COALESCE($10, academic_year_id),
+           subject_id = COALESCE($11, subject_id),
+           start_time = COALESCE($12, start_time),
+           end_time = COALESCE($13, end_time)
+       WHERE id = $14 RETURNING *`,
+      [name, semester_id, college_id || null, university_id || null, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, start_time, end_time, id]
     );
     res.json(result.rows[0]);
   } catch (error) {
@@ -2176,7 +2200,7 @@ const getCollegeMasterPolicy = async (req, res) => {
 // Master Teachers Functions
 const getMasterTeachers = async (req, res) => {
   try {
-    const { roleName, collegeId, departmentId } = req.user;
+    const { role: roleName, college_id: collegeId, department_id: departmentId } = req.user;
     let query = `SELECT 
         mt.id,
         u.name,

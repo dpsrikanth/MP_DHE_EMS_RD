@@ -15,6 +15,7 @@ const Exams = () => {
 
   // Dropdown data
   const [colleges, setColleges] = useState([]);
+  const [universities, setUniversities] = useState([]);
   const [semesters, setSemesters] = useState([]);
   const [examTypes, setExamTypes] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -32,7 +33,8 @@ const Exams = () => {
     name: '',
     semester_id: '',
     college_id: '',
-    exam_type: '',
+    university_id: '',
+    exam_type: authUtils.isCollegeAdmin() ? '1' : '',
     department_id: '',
     program_id: '',
     academic_year_id: '',
@@ -111,8 +113,9 @@ const Exams = () => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const [colRes, semRes, typeRes, depRes, progRes, yearRes, subRes, mapRes] = await Promise.all([
+      const [colRes, uniRes, semRes, typeRes, depRes, progRes, yearRes, subRes, mapRes] = await Promise.all([
         fetch('http://localhost:8080/api/colleges', { headers }),
+        fetch('http://localhost:8080/api/universities', { headers }),
         fetch('http://localhost:8080/api/master-semesters', { headers }),
         fetch('http://localhost:8080/api/exam-types', { headers }),
         fetch('http://localhost:8080/api/master-departments', { headers }),
@@ -123,6 +126,7 @@ const Exams = () => {
       ]);
 
       if (colRes.ok) setColleges(await colRes.json());
+      if (uniRes.ok) setUniversities(await uniRes.json());
       if (semRes.ok) setSemesters(await semRes.json());
       if (typeRes.ok) setExamTypes(await typeRes.json());
       if (depRes.ok) setDepartments(await depRes.json());
@@ -183,6 +187,43 @@ const Exams = () => {
     }
   }, [formData.college_id, formData.department_id, formData.program_id, formData.semester_id, formData.subject_id, isModalOpen]);
 
+  // Auto-generate exam name from selected field values
+  const generateExamName = () => {
+    const program = programs.find(p => p.id === parseInt(formData.program_id));
+    const semester = semesters.find(s => s.id === parseInt(formData.semester_id));
+    const examType = examTypes.find(t => t.id === parseInt(formData.exam_type));
+    const academicYear = academicYears.find(ay => ay.id === parseInt(formData.academic_year_id));
+    const college = colleges.find(c => c.id === parseInt(formData.college_id));
+    const university = universities.find(u => u.id === parseInt(formData.university_id));
+
+    const parts = [];
+    if (program) parts.push(program.name);
+    if (semester) {
+      // Extract number from semester name e.g. 'Semester 1' -> 'Sem-1'
+      const semNum = semester.semester_name?.match(/\d+/)?.[0];
+      parts.push(semNum ? `Sem-${semNum}` : semester.semester_name);
+    }
+    // Institution: college name or selected university
+    if (formData.exam_type == 2 && !formData.college_id) {
+      parts.push(university ? (university.name || 'University') : 'University');
+    } else {
+      parts.push(college ? college.name || college.college_name : 'University');
+    }
+    if (examType) parts.push(examType.type_name);
+    parts.push('Exam');
+    if (academicYear) parts.push(academicYear.year_name);
+
+    return parts.join(' ');
+  };
+
+  useEffect(() => {
+    if (!isModalOpen || editingId) return; // Don't override on edit
+    const generated = generateExamName();
+    if (generated && generated !== 'Exam') {
+      setFormData(prev => ({ ...prev, name: generated }));
+    }
+  }, [formData.program_id, formData.semester_id, formData.college_id, formData.university_id, formData.exam_type, formData.academic_year_id]);
+
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -207,9 +248,10 @@ const Exams = () => {
     const isRestricted = authUtils.isCollegeAdmin() || authUtils.isHOD();
     const defaultCollegeId = isRestricted ? auth.collegeId : '';
     const defaultDepartmentId = authUtils.isHOD() ? auth.departmentId : '';
+    const defaultExamType = authUtils.isCollegeAdmin() ? '1' : '';
 
     setFormData({ 
-      name: '', semester_id: '', college_id: defaultCollegeId, exam_type: '', 
+      name: '', semester_id: '', college_id: defaultCollegeId, university_id: '', exam_type: defaultExamType, 
       department_id: defaultDepartmentId, program_id: '', academic_year_id: '', 
       subjects: [{ id: Date.now(), subject_id: '', exam_date: '', start_time: '', end_time: '' }],
       status: true 
@@ -234,7 +276,7 @@ const Exams = () => {
     setFormData({
       name: exam.exam_name || '',
       semester_id: exam.semester_id || '',
-      college_id: exam.college_id || '',
+      college_id: exam.college_id || 'university_wide',
       exam_type: exam.exam_type || '',
       department_id: exam.department_id || '',
       program_id: exam.program_id || '',
@@ -367,9 +409,14 @@ const Exams = () => {
         : 'http://localhost:8080/api/exams';
       const method = editingId ? 'PUT' : 'POST';
 
+      // Normalize 'university_wide' sentinel back to empty string (null college)
+      const normalizedFormData = {
+        ...formData,
+        college_id: formData.college_id === 'university_wide' ? '' : formData.college_id
+      };
       const payload = editingId 
-        ? { ...formData } 
-        : { ...formData, subjects: formData.subjects };
+        ? { ...normalizedFormData } 
+        : { ...normalizedFormData, subjects: normalizedFormData.subjects };
 
       const res = await fetch(url, {
         method,
@@ -577,21 +624,23 @@ const Exams = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 mt-8 pt-6 border-t border-slate-200">
-                      <button 
-                        onClick={() => handleEdit(item)}
-                        className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm hover:shadow-indigo-500/10"
-                      >
-                        <Pencil size={14} />
-                        Modify
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(item)}
-                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-300 hover:text-red-500 hover:border-red-200 transition-all shadow-sm"
-                      >
-                        <MdDelete size={18} />
-                      </button>
-                    </div>
+                    {!(authUtils.isCollegeAdmin() && item.exam_type == 2) && (
+                      <div className="flex items-center gap-2 mt-8 pt-6 border-t border-slate-200">
+                        <button 
+                          onClick={() => handleEdit(item)}
+                          className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm hover:shadow-indigo-500/10"
+                        >
+                          <Pencil size={14} />
+                          Modify
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(item)}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-300 hover:text-red-500 hover:border-red-200 transition-all shadow-sm"
+                        >
+                          <MdDelete size={18} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -663,25 +712,91 @@ const Exams = () => {
               <form id="examForm" onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">College Context</label>
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Exam Type</label>
                     <div className="relative">
                       <select
-                        required={formData.exam_type != 2}
+                        required
                         disabled={authUtils.isCollegeAdmin()}
-                        value={formData.college_id}
-                        onChange={(e) => setFormData({ ...formData, college_id: e.target.value })}
-                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                        value={formData.exam_type}
+                        onChange={(e) => setFormData({ ...formData, exam_type: e.target.value, college_id: '', university_id: '' })}
+                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer"
                       >
-                        <option value="" className="font-medium text-slate-500">
-                          {formData.exam_type === '2' ? "University-wide (All Colleges)" : "Select College"}
-                        </option>
-                        {colleges.map(c => (
-                          <option key={c.id} value={c.id}>{c.name || c.college_name}</option>
+                        <option value="" disabled className="font-medium text-slate-500">Select Exam Type</option>
+                        {examTypes.map(t => (
+                          <option key={t.id} value={t.id}>{t.type_name}</option>
                         ))}
                       </select>
-                      <Layers className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                      <Hash className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
                     </div>
                   </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Exam Title</label>
+                    <div className="relative">
+                      <input
+                        required
+                        disabled={!formData.exam_type}
+                        type="text"
+                        placeholder="Auto-generated from selections below..."
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 pr-14 transition-all outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                      />
+                      <button
+                        type="button"
+                        disabled={!formData.exam_type}
+                        title="Regenerate name from selections"
+                        onClick={() => {
+                          const generated = generateExamName();
+                          if (generated && generated !== 'Exam') setFormData(prev => ({ ...prev, name: generated }));
+                        }}
+                        className={`absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-xl transition-all text-sm ${!formData.exam_type ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-purple-50 text-purple-500 hover:bg-purple-100'}`}
+                      >
+                        ✨
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 transition-opacity duration-300 ${!formData.exam_type ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+                  {(!authUtils.isCollegeAdmin() && !authUtils.isHOD() && formData.exam_type == 2) ? (
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">University Context</label>
+                      <div className="relative">
+                        <select
+                          required
+                          value={formData.university_id}
+                          onChange={(e) => setFormData({ ...formData, university_id: e.target.value, college_id: '' })}
+                          className="w-full h-14 bg-indigo-50 border border-indigo-200 text-indigo-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 px-5 transition-all outline-none appearance-none cursor-pointer disabled:opacity-70"
+                        >
+                          <option value="" disabled className="font-medium text-slate-500">Select University</option>
+                          {universities.map(u => (
+                            <option key={u.id} value={u.id}>🌐 {u.name}</option>
+                          ))}
+                        </select>
+                        <Globe className="absolute right-5 top-1/2 -translate-y-1/2 text-indigo-400 pointer-events-none" size={18} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">College Context</label>
+                      <div className="relative">
+                        <select
+                          required={formData.exam_type != 2}
+                          disabled={authUtils.isCollegeAdmin() || authUtils.isHOD()}
+                          value={formData.college_id}
+                          onChange={(e) => setFormData({ ...formData, college_id: e.target.value, university_id: '' })}
+                          className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                          <option value="" disabled className="font-medium text-slate-500">Select College</option>
+                          {colleges.map(c => (
+                            <option key={c.id} value={c.id}>{c.name || c.college_name}</option>
+                          ))}
+                        </select>
+                        <Layers className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Semester Cycle</label>
@@ -707,7 +822,7 @@ const Exams = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 transition-opacity duration-300 ${!formData.exam_type ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Department Context</label>
                     <div className="relative">
@@ -762,7 +877,7 @@ const Exams = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 transition-opacity duration-300 ${!formData.exam_type ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Academic Year</label>
                     <div className="relative">
@@ -782,48 +897,7 @@ const Exams = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Exam Type</label>
-                    <div className="relative">
-                      <select
-                        required
-                        value={formData.exam_type}
-                        onChange={(e) => setFormData({ ...formData, exam_type: e.target.value })}
-                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer"
-                      >
-                        <option value="" disabled className="font-medium text-slate-500">Select Exam Type</option>
-                        {examTypes.map(t => (
-                          <option key={t.id} value={t.id}>{t.type_name}</option>
-                        ))}
-                      </select>
-                      <Hash className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Assessment Component</label>
-                    <div className="relative">
-                      <select
-                        required
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer"
-                      >
-                         <option value="" disabled>Select Component</option>
-                         {/* We'll populate some common ones or allow manual if needed, 
-                             but here we'll use the ones available for the first subject if any */}
-                         <option value="Final Theory">Final Theory</option>
-                         <option value="Practical">Practical</option>
-                         <option value="Viva Voce">Viva Voce</option>
-                         <option value="Supplementary">Supplementary</option>
-                      </select>
-                      <BookOpen className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-4 border-t border-slate-100">
+                <div className={`space-y-4 pt-4 border-t border-slate-100 transition-opacity duration-300 ${!formData.exam_type ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
                   <div className="flex items-center justify-between mb-2">
                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Subjects & Schedule</label>
                      <button 

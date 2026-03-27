@@ -9,6 +9,7 @@ const SecrecyQuestionPapers = () => {
   const [showSelectSetsModal, setShowSelectSetsModal] = useState(false);
   const [selectedPaperForSets, setSelectedPaperForSets] = useState(null);
   const [selectedSets, setSelectedSets] = useState([]);
+  const [examFilter, setExamFilter] = useState('');
 
   useEffect(() => {
     fetchPapers();
@@ -111,7 +112,34 @@ const SecrecyQuestionPapers = () => {
     }
   };
 
-  const availableSets = questionPapers.filter(p => 
+  // Unique exams derived from loaded papers (group by normalized exam_name)
+  const examOptions = React.useMemo(() => {
+    const seen = new Set();
+    const options = [];
+    questionPapers.forEach(p => {
+      if (p.exam_name) {
+        // Normalize: trim, lowercase, remove extra spaces
+        const normName = p.exam_name.trim().replace(/\s+/g, ' ').toLowerCase();
+        if (!seen.has(normName)) {
+          seen.add(normName);
+          options.push({ id: normName, name: p.exam_name.trim().replace(/\s+/g, ' ') });
+        }
+      }
+    });
+    return options;
+  }, [questionPapers]);
+
+  // Papers filtered by selected normalized exam name
+  const filteredPapers = React.useMemo(() => {
+    if (!examFilter) return questionPapers;
+    return questionPapers.filter(p => {
+      if (!p.exam_name) return false;
+      const normName = p.exam_name.trim().replace(/\s+/g, ' ').toLowerCase();
+      return normName === examFilter;
+    });
+  }, [questionPapers, examFilter]);
+
+  const availableSets = filteredPapers.filter(p => 
     selectedPaperForSets && 
     p.subject_id === selectedPaperForSets.subject_id && 
     p.exam_id === selectedPaperForSets.exam_id &&
@@ -129,23 +157,43 @@ const SecrecyQuestionPapers = () => {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 bg-slate-50/30 min-h-screen pb-20 fade-in duration-500 animate-in">
-      <div className="flex items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <FileText size={32} className="text-sky-500" />
-        <div>
-          <h2 className="text-2xl font-black text-slate-800 italic">Question Papers Review</h2>
-          <p className="text-slate-500 text-sm font-medium">Review submitted papers and select sets for printing.</p>
+      <div className="flex items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div className="flex items-center gap-4">
+          <FileText size={32} className="text-sky-500" />
+          <div>
+            <h2 className="text-2xl font-black text-slate-800 italic">Question Papers Review</h2>
+            <p className="text-slate-500 text-sm font-medium">Review submitted papers and select sets for printing.</p>
+          </div>
+        </div>
+        {/* Exam Filter */}
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Exam</label>
+          <select
+            value={examFilter}
+            onChange={(e) => setExamFilter(e.target.value)}
+            className="h-10 bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl focus:ring-2 focus:ring-sky-400 focus:border-sky-400 px-4 outline-none cursor-pointer min-w-[220px]"
+          >
+            <option value="">All Exams</option>
+            {examOptions.map(ex => (
+              <option key={ex.id} value={ex.id}>{ex.name}</option>
+            ))}
+          </select>
         </div>
       </div>
       
       <div className="space-y-4">
-        {questionPapers && questionPapers.map((paper) => (
+        {filteredPapers && filteredPapers.map((paper) => (
           <div key={paper.assignment_id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 group transition-all hover:shadow-md">
             <div className="flex flex-col md:flex-row justify-between gap-6">
               <div className="flex-1 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-black text-slate-800">{paper.subject_name} — Set {paper.set_name}</h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Exam: {paper.exam_name || `EX00${paper.exam_id}`} | Semester: {paper.semester || 'N/A'}</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                      Exam: {paper.exam_name || `EX00${paper.exam_id}`}
+                      {paper.exam_type_name && <span className="ml-2 px-2 py-0.5 bg-sky-50 text-sky-600 rounded-md">{paper.exam_type_name}</span>}
+                      {' '}| Semester: {paper.semester || 'N/A'}
+                    </p>
                   </div>
                   <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest ${
                     paper.status === 'Finalized' ? 'bg-emerald-100 text-emerald-700' : 
@@ -242,7 +290,7 @@ const SecrecyQuestionPapers = () => {
             </div>
           </div>
         ))}
-        {questionPapers && questionPapers.length === 0 && (
+        {filteredPapers && filteredPapers.length === 0 && (
           <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 text-slate-400 font-bold uppercase">
             No question papers found.
           </div>

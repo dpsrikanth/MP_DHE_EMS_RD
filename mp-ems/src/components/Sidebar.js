@@ -96,7 +96,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 1, name: 'Dashboard', path: '/college-admin/dashboard', icon: <LayoutDashboard size={20} /> },
         { id: 2, name: 'Policy Config', path: '/college-admin/policies', icon: <ShieldCheck size={20} /> },
         { id: 3, name: 'Marks Structure', path: '/college-admin/marks-config', icon: <BarChart3 size={20} /> },
-        // { id: 4, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
+        { id: 4, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
         { id: 5, name: 'Verify & Lock', path: '/college-admin/marks-approval', icon: <ShieldCheck size={20} /> },
       ];
     } else if (roleName === 'Faculty' || roleName === 'Teacher') {
@@ -120,6 +120,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       menuItems = [
         { id: 1, name: 'Dashboard', path: '/student/dashboard', icon: <LayoutDashboard size={20} /> },
         { id: 2, name: 'Exam Schedule', path: '/student/exams', icon: <FileText size={20} /> },
+        { id: 3, name: 'Results', path: '/student/results', icon: <BarChart3 size={20} /> },
       ]
     } else if (roleName === 'External Faculty') {
       menuItems = [

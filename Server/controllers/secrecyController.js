@@ -218,13 +218,15 @@ exports.getQuestionPapers = async (req, res) => {
     const query = `
       SELECT pa.id as assignment_id, pa.subject_id, ms.name as subject_name, pa.exam_id, pa.set_name, pa.status,
              pa.feedback, qp.id as paper_id, qp.title, u.name as setter_name, pa.updated_at,
-             e.name as exam_name, e.exam_date, sem.semester_name as semester
+             e.name as exam_name, e.exam_date, sem.semester_name as semester,
+             e.exam_type, et.type_name as exam_type_name
       FROM paper_assignments pa
       LEFT JOIN question_papers qp ON qp.assignment_id = pa.id
       LEFT JOIN users u ON pa.paper_setter_id = u.id
       LEFT JOIN master_subjects ms ON pa.subject_id = ms.id
       LEFT JOIN exams e ON pa.exam_id = e.id
       LEFT JOIN master_semesters sem ON e.semester_id = sem.id
+      LEFT JOIN exam_types et ON e.exam_type = et.id
       WHERE pa.status IN ('Uploaded', 'Finalized', 'Revision', 'Rejected')
       ORDER BY pa.updated_at DESC
     `;
