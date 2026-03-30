@@ -98,6 +98,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 3, name: 'Marks Structure', path: '/college-admin/marks-config', icon: <BarChart3 size={20} /> },
         { id: 4, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
         { id: 5, name: 'Verify & Lock', path: '/college-admin/marks-approval', icon: <ShieldCheck size={20} /> },
+        { id: 6, name: 'Teachers', path: '/teachers', icon: <Users size={20} /> },
+        { id: 7, name: 'Students', path: '/students', icon: <UserCircle size={20} /> },
       ];
     } else if (roleName === 'Faculty' || roleName === 'Teacher') {
       menuItems = [

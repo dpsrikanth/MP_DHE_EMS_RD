@@ -588,9 +588,23 @@ const deleteProgram = async (req, res) => {
 
 const getStudents = async (req, res) => {
   try {
-    const result = await client.query(`SELECT * FROM public.students
-WHERE "deleteStatus" = true
-ORDER BY id ASC;`);
+    const { role, college_id } = req.user || {};
+    let query = `SELECT * FROM public.students WHERE "deleteStatus" = true`;
+    const params = [];
+
+    if (role === 'college_admin') {
+      query = `
+        SELECT s.* 
+        FROM public.students s
+        JOIN public.colleges c ON s."collageName" ILIKE c.name
+        WHERE s."deleteStatus" = true AND c.id = $1
+      `;
+      params.push(college_id);
+    }
+
+    query += ` ORDER BY id ASC`;
+
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (err) {
     console.error("Get students error:", err);
