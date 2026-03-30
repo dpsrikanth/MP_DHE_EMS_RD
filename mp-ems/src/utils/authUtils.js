@@ -1,12 +1,13 @@
 // Authentication utility functions
 
 export const authUtils = {
-  setAuth: (token, roleName, userId, collegeId, userObj, departmentId) => {
+  setAuth: (token, roleName, userId, collegeId, userObj, departmentId, universityId) => {
     localStorage.setItem("token", token);
     localStorage.setItem("roleName", roleName);
     localStorage.setItem("userId", userId);
     if (collegeId) localStorage.setItem("collegeId", collegeId);
     if (departmentId) localStorage.setItem("departmentId", departmentId);
+    if (universityId) localStorage.setItem("universityId", universityId);
     if (userObj) localStorage.setItem("user", JSON.stringify(userObj));
   },
 
@@ -105,6 +106,7 @@ export const authUtils = {
     localStorage.removeItem("userId");
     localStorage.removeItem("collegeId");
     localStorage.removeItem("departmentId");
+    localStorage.removeItem("universityId");
     localStorage.removeItem("user");
   },
 
@@ -112,6 +114,10 @@ export const authUtils = {
   getAuthHeader: () => ({
     Authorization: `Bearer ${localStorage.getItem("token")}`,
   }),
+
+  getUniversityId: () => {
+    return localStorage.getItem("universityId");
+  },
 };
 
 export default authUtils;

@@ -12,13 +12,12 @@ async function check() {
   const client = new Client(dbConfig);
   try {
     await client.connect();
-    console.log('--- Checking Master Tables Schema ---');
     
-    const tables = ['master_programs', 'master_departments'];
-    for (const table of tables) {
-      const res = await client.query(`SELECT column_name FROM information_schema.columns WHERE table_name = '${table}'`);
-      console.log(`Columns for ${table}:`, res.rows.map(r => r.column_name));
-    }
+    const ay = await client.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'master_academic_years'");
+    console.log('master_academic_years:', ay.rows.map(r => r.column_name));
+
+    const md = await client.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'master_departments'");
+    console.log('master_departments:', md.rows.map(r => r.column_name));
 
   } catch (err) {
     console.error('Check failed:', err.message);

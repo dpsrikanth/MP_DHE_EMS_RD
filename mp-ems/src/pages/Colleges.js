@@ -14,6 +14,7 @@ import {
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import authUtils from '../utils/authUtils';
 
 const CheckboxOption = (props) => {
   return (
@@ -315,7 +316,8 @@ const Colleges = () => {
             <button 
               onClick={() => { 
                 setSelected(null); 
-                setForm({ name: '', college_code: '', address: '', university_id: '' }); 
+                const defaultUni = authUtils.isUniversityAdmin() ? authUtils.getUniversityId() : '';
+                setForm({ name: '', college_code: '', address: '', university_id: defaultUni }); 
                 setSelectedConfig({ policies: [], programs: [], academicYears: [], semesters: [] });
                 setShowModal(true); 
               }}
@@ -494,7 +496,8 @@ const Colleges = () => {
                       <select 
                         value={form.university_id} 
                         onChange={(e) => setForm({ ...form, university_id: e.target.value })}
-                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-slate-800 focus:bg-white focus:border-indigo-500 outline-none appearance-none transition-all font-semibold"
+                        disabled={authUtils.isUniversityAdmin()}
+                        className={`w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-slate-800 focus:bg-white focus:border-indigo-500 outline-none appearance-none transition-all font-semibold ${authUtils.isUniversityAdmin() ? 'opacity-70 cursor-not-allowed' : ''}`}
                       >
                         <option value="">Choose Parent Institution</option>
                         {universities.map(u => (

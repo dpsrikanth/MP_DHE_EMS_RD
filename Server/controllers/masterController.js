@@ -15,7 +15,7 @@ const getMasters = async (req, res) => {
       FROM master_subjects s ORDER BY s.id
     `);
 
-    if (user && user.college_id && user.role !== 'admin' && user.role !== 'superAdmin') {
+    if (user && user.college_id && user.role !== 'admin' && user.role !== 'superadmin' && user.role !== 'university_admin') {
       policies = await client.query(`
         SELECT p.id, p.name 
         FROM master_policies p
@@ -54,6 +54,34 @@ const getMasters = async (req, res) => {
         FROM master_departments 
         WHERE college_id = $1 AND status = 'Active' ORDER BY id
       `, [user.college_id]);
+    } else if (user && user.role === 'university_admin' && user.university_id) {
+      policies = await client.query("SELECT id, name FROM master_policies ORDER BY id");
+      
+      programs = await client.query(`
+        SELECT p.id, p.name, p.duration_years,
+               COALESCE(
+                 (SELECT json_agg(department_id) 
+                  FROM master_program_departments 
+                  WHERE program_id = p.id), 
+               '[]'::json) as department_ids
+        FROM master_programs p 
+        WHERE p.university_id IS NULL OR p.university_id = $1
+        ORDER BY p.id
+      `, [user.university_id]);
+
+      academicYears = await client.query(`
+        SELECT id, year_name FROM master_academic_years 
+        WHERE university_id IS NULL OR university_id = $1
+        ORDER BY id
+      `, [user.university_id]);
+
+      semesters = await client.query("SELECT id, semester_name FROM master_semesters ORDER BY id");
+      
+      departments = await client.query(`
+        SELECT id, department_name as name FROM master_departments 
+        WHERE status = 'Active' 
+        ORDER BY id
+      `);
     } else {
       policies = await client.query("SELECT id, name FROM master_policies ORDER BY id");
       programs = await client.query(`

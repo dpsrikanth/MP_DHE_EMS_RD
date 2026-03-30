@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, changePassword, getDashboardStats, getUsers, createUser, updateUser, deleteUser, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, createRole, updateRole, deleteRole, Login, refreshToken, getUniversities, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, updateTeacher, getExams, createExam, updateExam, deleteExam, publishExam, toggleStudentApplication, getMarks , getMasterSemesters, createMasterSemester, updateMasterSemester, deleteMasterSemester, getMasterSemester, getMasterSubjects, createMasterSubject, updateMasterSubject, deleteMasterSubject, getMasterSubject, getMasterPrograms, createMasterProgram, getMasterProgram, updateMasterProgram, deleteMasterProgram, getMasterPolicies, getMasterPolicy, createMasterPolicy, updateMasterPolicy, deleteMasterPolicy, getCollegeMasterPolicy, createStudent, updateStudent, deleteStudent, getMasterTeachers, getMasterTeacher, createMasterTeacher, updateMasterTeacher, deleteMasterTeacher, getMasterDesignations, createMasterDesignation, getMasterDepartments, createMasterDepartment, getCollegeSemesters, getCollegePrograms, getCollegePolicies, getCollegeAcademicYears,getMasterDepartment, updateMasterDepartment, deleteMasterDepartment, getStudentsForMarks, saveTeacherMarks, getMarksForApproval, approveRejectMarks, getMasterBatches, createMasterBatch, updateMasterBatch, deleteMasterBatch, getSubjectMappings, createSubjectMapping, updateSubjectMapping, deleteSubjectMapping, getStudentExams, registerForExam, publishResults, getStudentResults, getHallTicketData, getResultSheetData, forgotPassword, resetPassword } = require('../controllers/controller');
+const { register, changePassword, getDashboardStats, getUsers, createUser, updateUser, deleteUser, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, createRole, updateRole, deleteRole, Login, refreshToken, getUniversities, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, updateTeacher, getExams, createExam, updateExam, deleteExam, publishExam, toggleStudentApplication, getMarks , getMasterSemesters, createMasterSemester, updateMasterSemester, deleteMasterSemester, getMasterSemester, getMasterSubjects, createMasterSubject, updateMasterSubject, deleteMasterSubject, getMasterSubject, getMasterPrograms, createMasterProgram, getMasterProgram, updateMasterProgram, deleteMasterProgram, getMasterPolicies, getMasterPolicy, createMasterPolicy, updateMasterPolicy, deleteMasterPolicy, getCollegeMasterPolicy, createStudent, updateStudent, deleteStudent, getMasterTeachers, getMasterTeacher, createMasterTeacher, updateMasterTeacher, deleteMasterTeacher, getMasterDesignations, createMasterDesignation, getMasterDepartments, createMasterDepartment, getCollegeSemesters, getCollegePrograms, getCollegePolicies, getCollegeAcademicYears,getMasterDepartment, updateMasterDepartment, deleteMasterDepartment, getStudentsForMarks, saveTeacherMarks, getMarksForApproval, approveRejectMarks, getMasterBatches, createMasterBatch, updateMasterBatch, deleteMasterBatch, getSubjectMappings, createSubjectMapping, updateSubjectMapping, deleteSubjectMapping, getStudentExams, registerForExam, publishResults, getStudentResults, getHallTicketData, getResultSheetData, forgotPassword, resetPassword, mapMasterProgram, unmapMasterProgram, mapMasterSemester, unmapMasterSemester, mapMasterAcademicYear, unmapMasterAcademicYear, mapMasterPolicy, unmapMasterPolicy } = require('../controllers/controller');
 const { getMasters, getUniversityConfig, updateUniversityConfig, getCollegeConfig, updateCollegeConfig } = require('../controllers/masterController');
 const { getSmtpConfig, updateSmtpConfig } = require('../controllers/configController');
 const { verifyToken } = require('../middleware/auth.middleware');
@@ -606,13 +606,84 @@ router.put('/exams/:id/publish-results', verifyToken, publishResults);
 router.put('/exams/:id/toggle-applications', verifyToken, toggleStudentApplication);
 
 router.get('/marks', verifyToken, getMarks);
+  router.get('/master-semesters', verifyToken, getMasterSemesters);
+router.get('/master-semesters/:id', verifyToken, getMasterSemester);
+router.post('/master-semesters', verifyToken, createMasterSemester);
+router.put('/master-semesters/:id', verifyToken, updateMasterSemester);
+router.delete('/master-semesters/:id', verifyToken, deleteMasterSemester);
 
-/**
- * @swagger
- * tags:
- *   name: Student Services
- *   description: Endpoints for student results and registrations
- */
+// master subjects manage
+router.get('/master-subjects', verifyToken, getMasterSubjects);
+router.get('/master-subjects/:id', verifyToken, getMasterSubject);
+router.post('/master-subjects', verifyToken, createMasterSubject);
+router.put('/master-subjects/:id', verifyToken, updateMasterSubject);
+router.delete('/master-subjects/:id', verifyToken, deleteMasterSubject);
+
+// master programs manage
+router.get('/master-programs', verifyToken, getMasterPrograms);
+router.get('/master-programs/:id', verifyToken, getMasterProgram);
+router.post('/master-programs', verifyToken, createMasterProgram);
+router.put('/master-programs/:id', verifyToken, updateMasterProgram);
+router.delete('/master-programs/:id', verifyToken, deleteMasterProgram);
+
+router.post('/students', verifyToken, createStudent);
+
+// master policies manage
+router.get('/master-policies', verifyToken, getMasterPolicies);
+router.get('/master-policies/:id', verifyToken, getMasterPolicy);
+router.post('/master-policies', verifyToken, createMasterPolicy);
+router.put('/master-policies/:id', verifyToken, updateMasterPolicy);
+router.delete('/master-policies/:id', verifyToken, deleteMasterPolicy);
+
+// University Admin Mapping Routes
+router.post('/master-programs/map', verifyToken, mapMasterProgram);
+router.delete('/master-programs/unmap/:id', verifyToken, unmapMasterProgram);
+router.post('/master-semesters/map', verifyToken, mapMasterSemester);
+router.delete('/master-semesters/unmap/:id', verifyToken, unmapMasterSemester);
+router.post('/master-academic-years/map', verifyToken, mapMasterAcademicYear);
+router.delete('/master-academic-years/unmap/:id', verifyToken, unmapMasterAcademicYear);
+router.post('/master-policies/map', verifyToken, mapMasterPolicy);
+router.delete('/master-policies/unmap/:id', verifyToken, unmapMasterPolicy);
+
+// college master policies - get policy for a college
+router.get('/collage-master-policies/:collegeId', verifyToken, getCollegeMasterPolicy);
+
+// master teachers manage
+router.get('/master-teachers', verifyToken, getMasterTeachers);
+router.get('/master-teachers/:id', verifyToken, getMasterTeacher);
+router.post('/master-teachers', verifyToken, createMasterTeacher);
+router.put('/master-teachers/:id', verifyToken, updateMasterTeacher);
+router.delete('/master-teachers/:id', verifyToken, deleteMasterTeacher);
+
+// master designations manage
+router.get('/master-designations', verifyToken, getMasterDesignations);
+router.post('/master-designations', verifyToken, createMasterDesignation);
+
+// master departments manage
+router.get('/master-departments', verifyToken, getMasterDepartments);
+router.get('/master-departments/:id', verifyToken, getMasterDepartment);
+router.post('/master-departments', verifyToken, createMasterDepartment);
+router.put('/master-departments/:id', verifyToken, updateMasterDepartment);
+router.delete('/master-departments/:id', verifyToken, deleteMasterDepartment);
+
+// master batches manage
+router.get('/master-batches', verifyToken, getMasterBatches);
+router.post('/master-batches', verifyToken, createMasterBatch);
+router.put('/master-batches/:id', verifyToken, updateMasterBatch);
+router.delete('/master-batches/:id', verifyToken, deleteMasterBatch);
+
+// master subject mapping
+router.get('/subject-mappings', verifyToken, getSubjectMappings);
+router.post('/subject-mappings', verifyToken, createSubjectMapping);
+router.put('/subject-mappings/:id', verifyToken, updateSubjectMapping);
+router.delete('/subject-mappings/:id', verifyToken, deleteSubjectMapping);
+
+
+// Marks Management (60/40 Split and HOD Approval) module
+router.get('/marks/students', verifyToken, getStudentsForMarks);
+router.post('/marks/teacher-save', verifyToken, saveTeacherMarks);
+router.get('/marks/approvals', verifyToken, getMarksForApproval);
+router.post('/marks/approve-reject', verifyToken, approveRejectMarks);
 
 // Student Exam endpoints
 /**

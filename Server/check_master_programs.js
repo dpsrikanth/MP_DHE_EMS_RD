@@ -12,13 +12,10 @@ async function check() {
   const client = new Client(dbConfig);
   try {
     await client.connect();
-    console.log('--- Checking Master Tables Schema ---');
+    console.log('--- Checking Master Programs Data ---');
     
-    const tables = ['master_programs', 'master_departments'];
-    for (const table of tables) {
-      const res = await client.query(`SELECT column_name FROM information_schema.columns WHERE table_name = '${table}'`);
-      console.log(`Columns for ${table}:`, res.rows.map(r => r.column_name));
-    }
+    const res = await client.query("SELECT id, name FROM master_programs LIMIT 20");
+    console.log('Master Programs:', res.rows);
 
   } catch (err) {
     console.error('Check failed:', err.message);

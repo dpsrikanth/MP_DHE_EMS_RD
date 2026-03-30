@@ -19,6 +19,7 @@ import { MdDelete } from "react-icons/md";
 import Select, { components } from "react-select";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import authUtils from "../utils/authUtils";
 
 const Option = (props) => {
   return (
@@ -53,6 +54,9 @@ const Programs = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [availableMasters, setAvailableMasters] = useState([]);
+  const [mappingSelection, setMappingSelection] = useState(null);
   const [viewData, setViewData] = useState(null);
   const [selected, setSelected] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -99,7 +103,25 @@ const Programs = () => {
   useEffect(() => {
     fetchData();
     fetchDepartments();
+    if (authUtils.isUniversityAdmin()) {
+      fetchAvailableMasters();
+    }
   }, []);
+
+  const fetchAvailableMasters = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8080/api/masters', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const result = await res.json();
+        setAvailableMasters(result.programs.map(p => ({ value: p.id, label: p.name })));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchDepartments = async () => {
     try {
@@ -214,6 +236,40 @@ const Programs = () => {
     }
   };
 
+  const handleMap = async () => {
+    if (!mappingSelection) return toast.warning('Please select a program');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8080/api/master-programs/map', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ program_id: mappingSelection.value })
+      });
+      if (!res.ok) throw new Error('Mapping failed');
+      toast.success('Program assigned successfully');
+      setShowAssignModal(false);
+      setMappingSelection(null);
+      fetchData();
+    } catch (err) {
+      toast.error('Error: ' + err.message);
+    }
+  };
+
+  const handleUnmap = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:8080/api/master-programs/unmap/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Unmapping failed');
+      toast.success('Program removed from your university');
+      fetchData();
+    } catch (err) {
+      toast.error('Error: ' + err.message);
+    }
+  };
+
   const loadForEdit = (id) => {
     const item = data.find(x => x.id === id);
     if (item) {
@@ -292,13 +348,23 @@ const Programs = () => {
               visibleColumns={visibleColumns} 
               onToggle={toggleColumn} 
             />
-            <button 
-              onClick={() => { setSelected(null); setForm({ name: '', duration_years: '', department_ids: [] }); setShowAddModal(true); }}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
-            >
-              <Plus size={20} />
-              <span>Add Program</span>
-            </button>
+            {authUtils.isSuperAdmin() ? (
+              <button 
+                onClick={() => { setSelected(null); setForm({ name: '', duration_years: '', department_ids: [] }); setShowAddModal(true); }}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+              >
+                <Plus size={20} />
+                <span>Add Program</span>
+              </button>
+            ) : (
+              <button 
+                onClick={() => setShowAssignModal(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+              >
+                <Plus size={20} />
+                <span>Assign from Master</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -386,9 +452,9 @@ const Programs = () => {
                           <Pencil size={18} />
                         </button>
                         <button 
-                          onClick={() => handleDelete(item)}
+                          onClick={() => authUtils.isSuperAdmin() ? handleDelete(item) : handleUnmap(item.id)}
                           className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                          title="Delete Program"
+                          title={authUtils.isSuperAdmin() ? "Delete Program" : "Un-assign Program"}
                         >
                           <MdDelete size={20} />
                         </button>
@@ -425,6 +491,71 @@ const Programs = () => {
         />
       </div>
 
+      {/* Assign Modal for University Admin */}
+      {showAssignModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowAssignModal(false)} />
+          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden flex flex-col mb-20 animate-in zoom-in-95 duration-300">
+            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 leading-none mb-1">Assign Program</h2>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70">Master Catalog</p>
+              </div>
+              <button 
+                onClick={() => setShowAssignModal(false)}
+                className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-2xl transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-10 space-y-8">
+              <div className="space-y-3">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Select from Master</label>
+                <Select
+                  options={availableMasters.filter(m => !data.some(d => d.id === m.value))}
+                  value={mappingSelection}
+                  onChange={setMappingSelection}
+                  placeholder="Choose program..."
+                  className="react-select-container text-sm font-semibold"
+                  classNamePrefix="react-select"
+                  styles={{
+                    control: (base, state) => ({
+                      ...base,
+                      padding: '0.4rem',
+                      borderRadius: '1.25rem',
+                      borderColor: state.isFocused ? '#10b981' : '#f1f5f9',
+                      borderWidth: '2px',
+                      backgroundColor: '#f8fafc',
+                      boxShadow: 'none',
+                      '&:hover': { borderColor: state.isFocused ? '#10b981' : '#f1f5f9' }
+                    })
+                  }}
+                />
+                <p className="text-[10px] text-slate-400 font-medium px-1">If the program you need is not in the list, please contact the System Administrator.</p>
+              </div>
+            </div>
+
+            <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-5">
+              <button 
+                onClick={() => setShowAssignModal(false)}
+                className="text-sm font-bold text-slate-400 hover:text-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleMap}
+                disabled={!mappingSelection}
+                className="px-10 py-4 bg-emerald-600 disabled:opacity-50 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm uppercase tracking-widest flex items-center gap-3"
+              >
+                <Check size={20} />
+                <span>Assign Program</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add/Edit Modal */}
       {(showAddModal || showEditModal) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -437,7 +568,11 @@ const Programs = () => {
                 <h2 className="text-xl font-black text-slate-900 tracking-tight">
                   {showEditModal ? 'Update Program' : 'New Program'}
                 </h2>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5 opacity-60">Configuration</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-[10px] bg-slate-100 text-slate-500 font-bold uppercase tracking-widest px-2 py-0.5 rounded-md border border-slate-200">
+                    Configuration
+                  </span>
+                </div>
               </div>
               <button 
                 onClick={() => { setShowAddModal(false); setShowEditModal(false); setSelected(null); }}
@@ -448,8 +583,8 @@ const Programs = () => {
             </div>
             
             {/* Modal Body */}
-            <div className="p-8 space-y-6">
-              <div className="space-y-2">
+            <div className="p-8 pb-10 space-y-6 overflow-y-auto max-h-[calc(100vh-14rem)] scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent grid grid-cols-1 md:grid-cols-2 gap-x-6">
+              <div className="space-y-2 col-span-full">
                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Title of Degree</label>
                 <div className="relative">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
@@ -465,7 +600,6 @@ const Programs = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Duration in Years</label>
                   <div className="relative">
@@ -497,9 +631,7 @@ const Programs = () => {
                     />
                   </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Program Code</label>
                   <div className="relative">
@@ -533,9 +665,8 @@ const Programs = () => {
                     </select>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 col-span-full">
                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Enable Elective Selection</label>
                 <div className="relative">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
@@ -553,7 +684,7 @@ const Programs = () => {
               </div>
 
 
-              <div className="space-y-2">
+              <div className="space-y-2 col-span-full">
                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Departments</label>
                 <div className="relative">
                   <Select
@@ -577,7 +708,7 @@ const Programs = () => {
                       control: (base, state) => ({
                         ...base,
                         padding: '0.4rem',
-                        borderRadius: '1rem',
+                        borderRadius: '1.25rem',
                         borderColor: state.isFocused ? '#10b981' : '#f1f5f9',
                         borderWidth: '2px',
                         backgroundColor: state.isFocused ? '#ffffff' : '#f8fafc',
@@ -592,7 +723,7 @@ const Programs = () => {
               </div>
 
               {showEditModal && selected && (
-                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 col-span-full">
                   <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 shadow-sm border border-slate-100">
                     <Hash size={18} />
                   </div>

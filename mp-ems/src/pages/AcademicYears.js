@@ -13,6 +13,8 @@ import {
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import Select from "react-select";
+import authUtils from "../utils/authUtils";
 
 const AcademicYears = () => {
   const navigate = useNavigate();
@@ -25,6 +27,9 @@ const AcademicYears = () => {
     year_name: ''
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [availableMasters, setAvailableMasters] = useState([]);
+  const [mappingSelection, setMappingSelection] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const availableColumns = [
@@ -61,7 +66,25 @@ const AcademicYears = () => {
       return;
     }
     fetchData();
+    if (authUtils.isUniversityAdmin()) {
+      fetchAvailableMasters();
+    }
   }, [navigate]);
+
+  const fetchAvailableMasters = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8080/api/masters', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const result = await res.json();
+        setAvailableMasters(result.academicYears.map(ay => ({ value: ay.id, label: ay.year_name })));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -97,6 +120,40 @@ const AcademicYears = () => {
   const handleDeleteClick = (item) => {
     setDeleteTarget(item);
     setShowDeleteModal(true);
+  };
+
+  const handleMap = async () => {
+    if (!mappingSelection) return toast.warning('Please select an academic year');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8080/api/master-academic-years/map', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ academic_year_id: mappingSelection.value })
+      });
+      if (!res.ok) throw new Error('Mapping failed');
+      toast.success('Academic session assigned successfully');
+      setShowAssignModal(false);
+      setMappingSelection(null);
+      fetchData();
+    } catch (err) {
+      toast.error('Error: ' + err.message);
+    }
+  };
+
+  const handleUnmap = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:8080/api/master-academic-years/unmap/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Unmapping failed');
+      toast.success('Academic session removed from your university');
+      fetchData();
+    } catch (err) {
+      toast.error('Error: ' + err.message);
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -193,13 +250,23 @@ const AcademicYears = () => {
               visibleColumns={visibleColumns} 
               onToggle={toggleColumn} 
             />
-            <button 
-              onClick={handleAddClick}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-2xl shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
-            >
-              <Plus size={20} />
-              <span>Add Session</span>
-            </button>
+            {authUtils.isSuperAdmin() ? (
+              <button 
+                onClick={handleAddClick}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-2xl shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+              >
+                <Plus size={20} />
+                <span>Add Session</span>
+              </button>
+            ) : (
+              <button 
+                onClick={() => setShowAssignModal(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-2xl shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+              >
+                <Plus size={20} />
+                <span>Assign from Master</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -259,9 +326,9 @@ const AcademicYears = () => {
                           <Pencil size={18} />
                         </button>
                         <button 
-                          onClick={() => handleDeleteClick(item)}
+                          onClick={() => authUtils.isSuperAdmin() ? handleDeleteClick(item) : handleUnmap(item.id)}
                           className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                          title="Delete Session"
+                          title={authUtils.isSuperAdmin() ? "Delete Session" : "Un-assign Session"}
                         >
                           <MdDelete size={20} />
                         </button>
@@ -374,6 +441,71 @@ const AcademicYears = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Modal for University Admin */}
+      {showAssignModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowAssignModal(false)} />
+          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden flex flex-col mb-20 animate-in zoom-in-95 duration-300">
+            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 leading-none mb-1">Assign Session</h2>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70">Master Catalog</p>
+              </div>
+              <button 
+                onClick={() => setShowAssignModal(false)}
+                className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-2xl transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-10 space-y-8">
+              <div className="space-y-3">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Select from Master</label>
+                <Select
+                  options={availableMasters.filter(m => !data.some(d => d.id === m.value))}
+                  value={mappingSelection}
+                  onChange={setMappingSelection}
+                  placeholder="Choose session..."
+                  className="react-select-container text-sm font-semibold"
+                  classNamePrefix="react-select"
+                  styles={{
+                    control: (base, state) => ({
+                      ...base,
+                      padding: '0.4rem',
+                      borderRadius: '1.25rem',
+                      borderColor: state.isFocused ? '#0ea5e9' : '#f1f5f9',
+                      borderWidth: '2px',
+                      backgroundColor: '#f8fafc',
+                      boxShadow: 'none',
+                      '&:hover': { borderColor: state.isFocused ? '#0ea5e9' : '#f1f5f9' }
+                    })
+                  }}
+                />
+                <p className="text-[10px] text-slate-400 font-medium px-1">If the session you need is not in the list, please contact the System Administrator.</p>
+              </div>
+            </div>
+
+            <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-5">
+              <button 
+                onClick={() => setShowAssignModal(false)}
+                className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleMap}
+                disabled={!mappingSelection}
+                className="px-10 py-4 bg-sky-600 disabled:opacity-50 hover:bg-sky-700 text-white font-black rounded-2xl shadow-xl shadow-sky-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm uppercase tracking-widest flex items-center gap-3"
+              >
+                <Check size={20} />
+                <span>Assign Session</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

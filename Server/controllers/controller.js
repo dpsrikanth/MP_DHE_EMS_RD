@@ -41,8 +41,8 @@ const register = async (req, res) => {
 
     // Insert user
     const result = await client.query(
-      "INSERT INTO public.users (name, email, password_hash, role_id) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role_id",
-      [name, email, hashedPassword, roleId],
+      "INSERT INTO public.users (name, email, password_hash, role_id, college_id, university_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, role_id",
+      [name, email, hashedPassword, roleId, req.body.college_id || null, req.body.university_id || null],
     );
 
     res.status(201).json({
@@ -58,7 +58,8 @@ const register = async (req, res) => {
 // Dashboard endpoints - Get statistics and data
 const getDashboardStats = async (req, res) => {
   try {
-    const { role, university_id } = req.user || {};
+    const { id, role } = req.user || {};
+    const university_id = req.user?.university_id || req.user?.universityId;
     const params = [];
     let teacherSub = "SELECT COUNT(*) FROM master_teachers";
     let examSub = "SELECT COUNT(*) FROM exams";
@@ -67,14 +68,16 @@ const getDashboardStats = async (req, res) => {
     let subjectSub = "SELECT COUNT(*) FROM master_subjects";
     let yearSub = "SELECT COUNT(*) FROM master_academic_years";
 
-    if (role === 'university_admin' && university_id) {
-      teacherSub = `SELECT COUNT(*) FROM master_teachers mt JOIN colleges c ON mt.college_id = c.id WHERE c.university_id = $1`;
-      examSub = `SELECT COUNT(*) FROM exams e JOIN colleges c ON e.college_id = c.id WHERE c.university_id = $1`;
-      programSub = `SELECT COUNT(*) FROM programs WHERE university_id = $1`;
-      semesterSub = `SELECT COUNT(*) FROM semesters s JOIN programs p ON s.program_id = p.id WHERE p.university_id = $1`;
-      subjectSub = `SELECT COUNT(*) FROM subjects s JOIN programs p ON s.program_id = p.id WHERE p.university_id = $1`;
-      yearSub = `SELECT COUNT(*) FROM master_academic_years WHERE university_id = $1`;
-      params.push(university_id);
+    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
+
+    if (uId) {
+      teacherSub = `SELECT COUNT(*) FROM master_teachers mt JOIN colleges c ON mt.college_id = c.id WHERE c.university_id = $1 AND (mt.status = 'Active' OR mt.status IS NULL) AND (c.status = true OR c.status IS NULL)`;
+      examSub = `SELECT COUNT(*) FROM exams e JOIN colleges c ON e.college_id = c.id WHERE c.university_id = $1 AND (e.status = true OR e.status IS NULL) AND (c.status = true OR c.status IS NULL)`;
+      programSub = `SELECT COUNT(*) FROM university_master_programs WHERE university_id = $1`;
+      semesterSub = `SELECT COUNT(*) FROM university_master_semesters WHERE university_id = $1`;
+      subjectSub = `SELECT COUNT(*) FROM master_subjects s JOIN university_master_programs ump ON s.program_id = ump.program_id WHERE ump.university_id = $1 AND (s.status = 'Active' OR s.status IS NULL)`;
+      yearSub = `SELECT COUNT(*) FROM university_master_academic_years WHERE university_id = $1`;
+      params.push(uId);
     }
 
     const statsQueries = {
@@ -84,7 +87,7 @@ const getDashboardStats = async (req, res) => {
       totalSemesters: semesterSub,
       totalSubjects: subjectSub,
       totalAcademicYears: yearSub,
-      totalPolicies: "SELECT COUNT(*) FROM master_policies",
+      totalPolicies: "SELECT COUNT(*) FROM master_policies WHERE status = 'Active' OR status IS NULL OR status = true",
     };
 
     const stats = {};
@@ -101,22 +104,33 @@ const getDashboardStats = async (req, res) => {
 
 const getUsers = async (req, res) => {
   try {
-    const { role, university_id } = req.user || {};
+    const { role } = req.user || {};
+    const university_id = req.user?.university_id || req.user?.universityId;
     let query = `
-      SELECT u.id, u.name, u.email, u.role_id, u.is_active, u.created_at, 
-             r.role_name, c.name as college_name, univ.name as university_name
+      SELECT DISTINCT u.id, u.name, u.email, u.role_id, u.is_active, u.created_at, 
+             r.role_name, 
+             COALESCE(c.name, c_t.name, c_s.name) as college_name,
+             COALESCE(univ.name, univ_t.name, univ_s.name) as university_name
       FROM public.users u
       LEFT JOIN public.roles r ON u.role_id = r.id
       LEFT JOIN public.colleges c ON u.college_id = c.id
       LEFT JOIN public.universities univ ON u.university_id = univ.id
+      -- Teachers Join
+      LEFT JOIN public.teachers t ON u.id = t.user_id
+      LEFT JOIN public.colleges c_t ON t.college_id = c_t.id
+      LEFT JOIN public.universities univ_t ON c_t.university_id = univ_t.id
+      -- Students Join
+      LEFT JOIN public.students s ON u.email = s.email
+      LEFT JOIN public.colleges c_s ON s."collageName" ILIKE c_s.name
+      LEFT JOIN public.universities univ_s ON c_s.university_id = univ_s.id
     `;
     const params = [];
 
     if (role === 'university_admin' && university_id) {
-      query += " WHERE u.university_id = $1";
+      query += " WHERE (u.university_id = $1 OR c.university_id = $1 OR c_t.university_id = $1 OR c_s.university_id = $1)";
       params.push(university_id);
     } else if (role === 'college_admin' && req.user.college_id) {
-      query += " WHERE u.college_id = $1";
+      query += " WHERE (u.college_id = $1 OR t.college_id = $1 OR c_s.id = $1)";
       params.push(req.user.college_id);
     }
 
@@ -132,9 +146,27 @@ const getUsers = async (req, res) => {
 const createUser = async (req, res) => {
   try {
     const { name, email, password, role_id, college_id, university_id } = req.body;
+    const { role: requesterRole } = req.user || {};
+    const requesterUnivId = req.user?.university_id || req.user?.universityId;
+
     if (!name || !email || !password || !role_id) {
       return res.status(400).json({ message: "Name, email, password and role are required" });
     }
+
+    // Role-based security for user creation
+    if (requesterRole === 'university_admin') {
+      const roleResult = await client.query("SELECT role_name FROM roles WHERE id = $1", [role_id]);
+      if (roleResult.rows.length === 0) return res.status(400).json({ message: "Invalid role" });
+      const targetRole = roleResult.rows[0].role_name;
+      if (['superadmin', 'university_admin'].includes(targetRole)) {
+        return res.status(403).json({ message: "Unauthorized to assign this role" });
+      }
+      // Enforce university_id for university_admin
+      if (university_id != requesterUnivId) {
+        return res.status(403).json({ message: "Unauthorized to create user for another university" });
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await client.query(
       "INSERT INTO public.users (name, email, password_hash, role_id, college_id, university_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email",
@@ -151,17 +183,42 @@ const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, email, password, role_id, college_id, university_id, is_active } = req.body;
+    const { role: requesterRole } = req.user || {};
+    const requesterUnivId = req.user?.university_id || req.user?.universityId;
+
+    // Security check for university_admin
+    if (requesterRole === 'university_admin') {
+      const existingUser = await client.query("SELECT university_id FROM public.users WHERE id = $1", [id]);
+      if (existingUser.rows.length === 0) return res.status(404).json({ message: "User not found" });
+      if (existingUser.rows[0].university_id != requesterUnivId) {
+        return res.status(403).json({ message: "Unauthorized to update this user" });
+      }
+      
+      if (role_id) {
+        const roleResult = await client.query("SELECT role_name FROM roles WHERE id = $1", [role_id]);
+        if (roleResult.rows.length > 0) {
+          const targetRole = roleResult.rows[0].role_name;
+          if (['superadmin', 'university_admin'].includes(targetRole)) {
+            return res.status(403).json({ message: "Unauthorized to assign this role" });
+          }
+        }
+      }
+      // Enforce university_id stay the same if provided
+      if (university_id && university_id != requesterUnivId) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+    }
     
     if (password && password.trim() !== '') {
       const hashedPassword = await bcrypt.hash(password, 10);
       await client.query(
         "UPDATE public.users SET name = $1, email = $2, password_hash = $3, role_id = $4, college_id = $5, university_id = $6, is_active = $7 WHERE id = $8",
-        [name, email, hashedPassword, role_id, college_id || null, university_id || null, is_active, id]
+        [name, email, hashedPassword, role_id || null, college_id || null, university_id || null, is_active, id]
       );
     } else {
       await client.query(
         "UPDATE public.users SET name = $1, email = $2, role_id = $3, college_id = $4, university_id = $5, is_active = $6 WHERE id = $7",
-        [name, email, role_id, college_id || null, university_id || null, is_active, id]
+        [name, email, role_id || null, college_id || null, university_id || null, is_active, id]
       );
     }
     res.json({ message: "User updated successfully" });
@@ -188,9 +245,14 @@ const getPrograms = async (req, res) => {
     let query = "SELECT id, name, duration_years, university_id, status FROM programs";
     const params = [];
 
-    if (role === 'university_admin' && university_id) {
-      query += " WHERE university_id = $1";
-      params.push(university_id);
+    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
+
+    if (uId) {
+      query = `SELECT p.id, p.name, p.duration_years, p.university_id, p.status 
+               FROM master_programs p 
+               JOIN university_master_programs ump ON p.id = ump.program_id 
+               WHERE ump.university_id = $1 AND (p.status IS NULL OR p.status = 'Active')`;
+      params.push(uId);
     }
 
     const result = await client.query(query, params);
@@ -203,9 +265,17 @@ const getPrograms = async (req, res) => {
 
 const getSubjects = async (req, res) => {
   try {
-    const result = await client.query(
-      "SELECT id, name, program_id, semester_id, credits, status FROM subjects LIMIT 100"
-    );
+    const { role, university_id } = req.user || {};
+    let query = "SELECT s.id, s.name, s.program_id, s.semester_id, s.credits, s.status FROM subjects s";
+    const params = [];
+
+    if (role === 'university_admin' && university_id) {
+      query += ` JOIN programs p ON s.program_id = p.id 
+                 WHERE (p.university_id = $1 OR EXISTS (SELECT 1 FROM university_master_programs ump WHERE ump.program_id = p.id AND ump.university_id = $1))`;
+      params.push(university_id);
+    }
+
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Get subjects error:", error);
@@ -215,9 +285,22 @@ const getSubjects = async (req, res) => {
 
 const getAcademicYears = async (req, res) => {
   try {
-    const result = await client.query(
-      "SELECT id, year_name, created_at, created_by, updated_at, updated_by FROM master_academic_years WHERE deleteflag = true ORDER BY id DESC"
-    );
+    const { role, university_id } = req.user || {};
+    let query = "SELECT id, year_name, created_at, created_by, updated_at, updated_by FROM master_academic_years WHERE deleteflag = true";
+    const params = [];
+
+    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
+
+    if (uId) {
+      query = `SELECT ay.id, ay.year_name, ay.created_at, ay.created_by, ay.updated_at, ay.updated_by 
+               FROM master_academic_years ay
+               JOIN university_master_academic_years umay ON ay.id = umay.academic_year_id
+               WHERE ay.deleteflag = true AND umay.university_id = $1`;
+      params.push(uId);
+    }
+
+    query += " ORDER BY id DESC";
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Get academic years error:", error);
@@ -275,7 +358,21 @@ const deleteAcademicYear = async (req, res) => {
 
 const getSemesters = async (req, res) => {
   try {
-    const result = await client.query("SELECT id, semester_number, program_id, academic_year_id, start_date, end_date, status FROM semesters");
+    const { role, university_id } = req.user || {};
+    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
+    
+    let query = "SELECT id, semester_number, program_id, academic_year_id, start_date, end_date, status FROM semesters";
+    const params = [];
+
+    if (uId) {
+      query = `SELECT s.id, s.semester_name, s.status 
+               FROM master_semesters s 
+               JOIN university_master_semesters ums ON s.id = ums.semester_id 
+               WHERE ums.university_id = $1 AND (s.status IS NULL OR s.status = 'Active')`;
+      params.push(uId);
+    }
+
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Get semesters error:", error);
@@ -295,7 +392,20 @@ const getExamTypes = async (req, res) => {
 
 const getRoles = async (req, res) => {
   try {
-    const result = await client.query("SELECT id, role_name FROM roles ORDER BY id ASC");
+    const { role } = req.user || {};
+    let query = "SELECT id, role_name FROM roles";
+    const params = [];
+
+    if (role === 'university_admin') {
+      query += " WHERE role_name NOT IN ('superadmin', 'university_admin')";
+    } else if (role === 'college_admin') {
+      query += " WHERE role_name NOT IN ('superadmin', 'university_admin', 'college_admin')";
+    } else if (role === 'HOD') {
+      query += " WHERE role_name NOT IN ('superadmin', 'university_admin', 'college_admin', 'HOD')";
+    }
+
+    query += " ORDER BY id ASC";
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Get roles error:", error);
@@ -305,6 +415,10 @@ const getRoles = async (req, res) => {
 
 const createRole = async (req, res) => {
   try {
+    const { role } = req.user || {};
+    if (role !== 'superadmin') {
+      return res.status(403).json({ message: "Unauthorized to create roles" });
+    }
     const { role_name } = req.body;
     if (!role_name) return res.status(400).json({ message: "Role name is required" });
     const result = await client.query("INSERT INTO roles (role_name) VALUES ($1) RETURNING *", [role_name]);
@@ -317,6 +431,10 @@ const createRole = async (req, res) => {
 
 const updateRole = async (req, res) => {
   try {
+    const { role } = req.user || {};
+    if (role !== 'superadmin') {
+      return res.status(403).json({ message: "Unauthorized to update roles" });
+    }
     const { id } = req.params;
     const { role_name } = req.body;
     await client.query("UPDATE roles SET role_name = $1 WHERE id = $2", [role_name, id]);
@@ -329,6 +447,10 @@ const updateRole = async (req, res) => {
 
 const deleteRole = async (req, res) => {
   try {
+    const { role } = req.user || {};
+    if (role !== 'superadmin') {
+      return res.status(403).json({ message: "Unauthorized to delete roles" });
+    }
     const { id } = req.params;
     await client.query("DELETE FROM roles WHERE id = $1", [id]);
     res.json({ message: "Role deleted successfully" });
@@ -476,9 +598,9 @@ const getUniversities = async (req, res) => {
     const { role, university_id } = req.user || {};
     let query = `
       SELECT u.id, u.name, u.address, u.status, u.created_at,
-        (SELECT COUNT(*) FROM colleges WHERE university_id = u.id) as colleges_count,
-        (SELECT COUNT(*) FROM programs WHERE university_id = u.id) as programs_count,
-        (SELECT COUNT(*) FROM academic_years WHERE university_id = u.id) as academic_years_count
+        (SELECT COUNT(*) FROM colleges WHERE university_id = u.id AND (status = true OR status IS NULL)) as colleges_count,
+        (SELECT COUNT(*) FROM programs WHERE university_id = u.id AND (status = true OR status IS NULL)) as programs_count,
+        (SELECT COUNT(*) FROM academic_years WHERE university_id = u.id AND (status = true OR status IS NULL)) as academic_years_count
        FROM universities u
     `;
     const params = [];
@@ -636,7 +758,8 @@ const deleteProgram = async (req, res) => {
 
 const getStudents = async (req, res) => {
   try {
-    const { role, college_id, university_id } = req.user || {};
+    const { role, college_id } = req.user || {};
+    const university_id = req.user?.university_id || req.user?.universityId;
     let query = `SELECT s.* FROM public.students s`;
     const params = [];
 
@@ -897,7 +1020,23 @@ const deleteStudent = async (req, res) => {
 
 const getColleges = async (req, res) => {
   try {
-    const result = await client.query(`SELECT c.id, c.name AS college_name, c.college_code, c.university_id, u.name AS university_name, c.address, c.status, c.created_at FROM colleges c LEFT JOIN universities u ON c.university_id = u.id`);
+    const { role, university_id } = req.user || {};
+    let query = `
+      SELECT c.id, c.name AS college_name, c.college_code, c.university_id, 
+             u.name AS university_name, c.address, c.status, c.created_at 
+      FROM colleges c 
+      LEFT JOIN universities u ON c.university_id = u.id
+    `;
+    const params = [];
+
+    if (role === 'university_admin' && university_id) {
+      query += " WHERE c.university_id = $1 AND (c.status = true OR c.status IS NULL)";
+      params.push(university_id);
+    } else {
+      query += " WHERE (c.status = true OR c.status IS NULL)";
+    }
+
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Get colleges error:", error);
@@ -907,7 +1046,8 @@ const getColleges = async (req, res) => {
 
 const getTeachers = async (req, res) => {
   try {
-    const { role, college_id, department_id } = req.user;
+    const { role, college_id, department_id } = req.user || {};
+    const university_id = req.user?.university_id || req.user?.universityId;
     let query = `
       SELECT 
         t.id,
@@ -923,13 +1063,19 @@ const getTeachers = async (req, res) => {
       LEFT JOIN colleges c ON t.college_id = c.id
     `;
     const params = [];
+    const uId = university_id;
 
     if (role === 'college_admin') {
-      query += ` WHERE t.college_id = $1`;
+      query += ` WHERE t.college_id = $1 AND (t.status = true OR t.status IS NULL)`;
       params.push(college_id);
     } else if (role === 'HOD') {
-      query += ` WHERE t.college_id = $1 AND t.department = (SELECT department_name FROM master_departments WHERE id = $2)`;
+      query += ` WHERE t.college_id = $1 AND t.department = (SELECT department_name FROM master_departments WHERE id = $2) AND (t.status = true OR t.status IS NULL)`;
       params.push(college_id, department_id);
+    } else if (role === 'university_admin' && uId) {
+      query += ` WHERE c.university_id = $1 AND (t.status = true OR t.status IS NULL)`;
+      params.push(uId);
+    } else {
+      query += ` WHERE (t.status = true OR t.status IS NULL)`;
     }
 
     query += ` ORDER BY t.id DESC`;
@@ -1014,8 +1160,8 @@ const createTeacher = async (req, res) => {
     await dbClient.query('BEGIN');
     // insert user
     const userResult = await dbClient.query(
-      'INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id',
-      [teacher_name, email]
+      'INSERT INTO users (name, email, university_id, college_id) VALUES ($1, $2, $3, $4) RETURNING id',
+      [teacher_name, email, req.user?.university_id || req.user?.universityId || null, college_id || null]
     );
     const userId = userResult.rows[0].id;
 
@@ -1674,9 +1820,23 @@ const approveRejectMarks = async (req, res) => {
 
 const getMasterSemesters = async (req, res) => {
   try {
-    const result = await client.query(
-      `SELECT id, semester_name, status, created_at FROM master_semesters WHERE status IS NULL OR status = 'Active' ORDER BY id`
-    );
+    const { role } = req.user || {};
+    const university_id = req.user?.university_id || req.user?.universityId;
+    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
+    
+    let query = `SELECT s.id, s.semester_name, s.status, s.created_at 
+                 FROM master_semesters s`;
+    const params = [];
+
+    if (uId) {
+      query += ` JOIN university_master_semesters ums ON s.id = ums.semester_id WHERE ums.university_id = $1 AND (s.status = 'Active' OR s.status IS NULL)`;
+      params.push(uId);
+    } else {
+      query += ` WHERE (s.status = 'Active' OR s.status IS NULL)`;
+    }
+
+    query += ` ORDER BY s.id ASC`;
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Get master semesters error:", error);
@@ -1741,28 +1901,39 @@ const getMasterSemester = async (req, res) => {
   }
 };
 
+
 const getMasterSubjects = async (req, res) => {
   try {
-    const result = await client.query(
-      `SELECT ms.id, ms.subject_code, ms.name, ms.status, ms.created_at, 
-              ms.program_id, ms.semester_id, ms.mapping_type, ms.is_mandatory, 
-              ms.has_examination, ms.periods_per_week, ms.teacher_id, ms.credit,
-              mp.name AS program_name,
-              mse.semester_name,
-              u.name AS teacher_name,
-              COALESCE(
-                (SELECT json_agg(department_id) 
-                 FROM master_subject_departments 
-                 WHERE subject_id = ms.id), 
-              '[]'::json) as department_ids
-       FROM master_subjects ms 
-       LEFT JOIN master_programs mp ON ms.program_id = mp.id
-       LEFT JOIN master_semesters mse ON ms.semester_id = mse.id
-       LEFT JOIN master_teachers mt ON ms.teacher_id = mt.id
-       LEFT JOIN users u ON mt.user_id = u.id
-       WHERE ms.status IS NULL OR ms.status = 'Active' 
-       ORDER BY ms.id`
-    );
+    const { role } = req.user || {};
+    const university_id = req.user?.university_id || req.user?.universityId;
+    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
+    
+    let query = `SELECT ms.id, ms.subject_code, ms.name, ms.status, ms.created_at, 
+               ms.program_id, ms.semester_id, ms.mapping_type, ms.is_mandatory, 
+               ms.has_examination, ms.periods_per_week, ms.teacher_id, ms.credit, ms.university_id,
+               mp.name AS program_name,
+               mse.semester_name,
+               u.name AS teacher_name,
+               COALESCE(
+                 (SELECT json_agg(department_id) 
+                  FROM master_subject_departments 
+                  WHERE subject_id = ms.id), 
+               '[]'::json) as department_ids
+        FROM master_subjects ms 
+        LEFT JOIN master_programs mp ON ms.program_id = mp.id
+        LEFT JOIN master_semesters mse ON ms.semester_id = mse.id
+        LEFT JOIN master_teachers mt ON ms.teacher_id = mt.id
+        LEFT JOIN users u ON mt.user_id = u.id
+        WHERE (ms.status IS NULL OR ms.status = 'Active')`;
+    const params = [];
+
+    if (uId) {
+      query += " AND ms.university_id = $1";
+      params.push(uId);
+    }
+
+    query += " ORDER BY ms.id";
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Get master subjects error:", error);
@@ -1788,14 +1959,15 @@ const createMasterSubject = async (req, res) => {
       credit = 4;
     }
 
+    const { university_id } = req.user || {};
     await dbClient.query('BEGIN');
     const result = await dbClient.query(
       `INSERT INTO master_subjects (
         subject_code, name, program_id, semester_id, mapping_type, 
-        is_mandatory, has_examination, periods_per_week, teacher_id, status, credit
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Active', $10) 
+        is_mandatory, has_examination, periods_per_week, teacher_id, status, credit, university_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Active', $10, $11) 
       RETURNING *`,
-      [subject_code, name, program_id, semester_id, mapping_type, is_mandatory, has_examination, periods_per_week, teacher_id, credit]
+      [subject_code, name, program_id, semester_id, mapping_type, is_mandatory, has_examination, periods_per_week, teacher_id, credit, university_id]
     );
     const subjectId = result.rows[0].id;
     if (department_ids && Array.isArray(department_ids) && department_ids.length > 0) {
@@ -1852,16 +2024,23 @@ const updateMasterSubject = async (req, res) => {
       credit = 4;
     }
 
+    const { role, university_id } = req.user || {};
     await dbClient.query('BEGIN');
-    const result = await dbClient.query(
-      `UPDATE master_subjects 
-       SET subject_code = $1, name = $2, program_id = $3, semester_id = $4, 
-           mapping_type = $5, is_mandatory = $6, has_examination = $7, 
-           periods_per_week = $8, teacher_id = $9, credit = $10, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $11 
-       RETURNING *`,
-      [subject_code, name, program_id, semester_id, mapping_type, is_mandatory, has_examination, periods_per_week, teacher_id, credit, id]
-    );
+
+    let updateQuery = `UPDATE master_subjects 
+                       SET subject_code = $1, name = $2, program_id = $3, semester_id = $4, 
+                           mapping_type = $5, is_mandatory = $6, has_examination = $7, 
+                           periods_per_week = $8, teacher_id = $9, credit = $10, updated_at = CURRENT_TIMESTAMP`;
+    let queryParams = [subject_code, name, program_id, semester_id, mapping_type, is_mandatory, has_examination, periods_per_week, teacher_id, credit, id];
+    
+    if (role === 'university_admin' && university_id) {
+      updateQuery += ` WHERE id = $11 AND university_id = $12 RETURNING *`;
+      queryParams.push(university_id);
+    } else {
+      updateQuery += ` WHERE id = $11 RETURNING *`;
+    }
+
+    const result = await dbClient.query(updateQuery, queryParams);
 
     if (result.rows.length === 0) {
       await dbClient.query('ROLLBACK');
@@ -1906,18 +2085,23 @@ const deleteMasterSubject = async (req, res) => {
 
 const getMasterPrograms = async (req, res) => {
   try {
-    const result = await client.query(
-      `SELECT mp.id, mp.name, mp.duration_years, mp.status, mp.created_at, 
-              mp.section_name, mp.code, mp.grading_system_type, mp.enable_elective_subjects_selection,
-              COALESCE(
-                (SELECT json_agg(department_id) 
-                 FROM master_program_departments 
-                 WHERE program_id = mp.id), 
-              '[]'::json) as department_ids
-       FROM master_programs mp 
-       WHERE mp.status IS NULL OR mp.status = 'Active' 
-       ORDER BY mp.id`
-    );
+    const { role } = req.user || {};
+    const university_id = req.user?.university_id || req.user?.universityId;
+    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
+    
+    let query = `SELECT p.id, p.name, p.status, p.created_at 
+                 FROM master_programs p`;
+    const params = [];
+
+    if (uId) {
+      query += ` JOIN university_master_programs ump ON p.id = ump.program_id WHERE ump.university_id = $1 AND (p.status = 'Active' OR p.status IS NULL)`;
+      params.push(uId);
+    } else {
+      query += ` WHERE (p.status = 'Active' OR p.status IS NULL)`;
+    }
+
+    query += ` ORDER BY p.id ASC`;
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Get master programs error:", error);
@@ -1928,12 +2112,17 @@ const getMasterPrograms = async (req, res) => {
 const createMasterProgram = async (req, res) => {
   const dbClient = await client.connect();
   try {
-    const { name, duration_years, department_ids, section_name, code, grading_system_type, enable_elective_subjects_selection } = req.body;
+    const { role, university_id: userUniId } = req.user || {};
+    const { name, duration_years, department_ids, section_name, code, grading_system_type, enable_elective_subjects_selection, university_id } = req.body;
+    
+    // For university_admin, override university_id from body with their own
+    const targetUniId = role === 'university_admin' ? userUniId : university_id;
+
     if (!name || !duration_years) return res.status(400).json({ message: "Program name and duration are required" });
     await dbClient.query('BEGIN');
     const result = await dbClient.query(
-      "INSERT INTO master_programs (name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, status) VALUES ($1, $2, $3, $4, $5, $6, 'Active') RETURNING id, name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, status, created_at",
-      [name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection]
+      "INSERT INTO master_programs (name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, status, university_id) VALUES ($1, $2, $3, $4, $5, $6, 'Active', $7) RETURNING id, name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, status, created_at, university_id",
+      [name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, targetUniId]
     );
     const programId = result.rows[0].id;
     if (department_ids && Array.isArray(department_ids) && department_ids.length > 0) {
@@ -1955,9 +2144,19 @@ const createMasterProgram = async (req, res) => {
 const getMasterProgram = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await client.query("SELECT id, name, duration_years, status, created_at FROM master_programs WHERE id = $1", [id]);
+    const { role, university_id } = req.user || {};
+    let query = "SELECT id, name, duration_years, status, created_at, university_id FROM master_programs WHERE id = $1";
+    const params = [id];
+
+    const result = await client.query(query, params);
     if (result.rows.length === 0) return res.status(404).json({ message: "Master program not found" });
-    res.json(result.rows[0]);
+    
+    const program = result.rows[0];
+    if (role === 'university_admin' && university_id && program.university_id !== university_id) {
+        return res.status(403).json({ message: "Access denied to this university's program" });
+    }
+    
+    res.json(program);
   } catch (error) {
     console.error("Get master program error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -1968,17 +2167,27 @@ const updateMasterProgram = async (req, res) => {
   const dbClient = await client.connect();
   try {
     const { id } = req.params;
+    const { role, university_id: userUniId } = req.user || {};
     const { name, duration_years, department_ids, section_name, code, grading_system_type, enable_elective_subjects_selection } = req.body;
+    
     if (!name || !duration_years) return res.status(400).json({ message: "Program name and duration are required" });
-    await dbClient.query('BEGIN');
-    const result = await dbClient.query(
-      "UPDATE master_programs SET name = $1, duration_years = $2, section_name = $3, code = $4, grading_system_type = $5, enable_elective_subjects_selection = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING id, name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, created_at",
-      [name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, id]
-    );
-    if (result.rows.length === 0) {
-      await dbClient.query('ROLLBACK');
+
+    // Check ownership
+    const checkRes = await dbClient.query("SELECT university_id FROM master_programs WHERE id = $1", [id]);
+    if (checkRes.rows.length === 0) {
+      dbClient.release();
       return res.status(404).json({ message: "Master program not found" });
     }
+    if (role === 'university_admin' && userUniId && checkRes.rows[0].university_id !== userUniId) {
+      dbClient.release();
+      return res.status(403).json({ message: "Access denied to this university's program" });
+    }
+
+    await dbClient.query('BEGIN');
+    const result = await dbClient.query(
+      "UPDATE master_programs SET name = $1, duration_years = $2, section_name = $3, code = $4, grading_system_type = $5, enable_elective_subjects_selection = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING id, name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, created_at, university_id",
+      [name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, id]
+    );
     if (department_ids && Array.isArray(department_ids)) {
       await dbClient.query("DELETE FROM master_program_departments WHERE program_id = $1", [id]);
       for (const deptId of department_ids) {
@@ -2182,7 +2391,22 @@ const deleteSubjectMapping = async (req, res) => {
 
 const getMasterPolicies = async (req, res) => {
   try {
-    const result = await client.query('SELECT id, name, description, status, created_at FROM master_policies ORDER BY id');
+    const { role, university_id } = req.user || {};
+    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
+
+    let query = "SELECT id, name, description, status, created_at FROM master_policies";
+    const params = [];
+
+    if (uId) {
+      query = `SELECT p.id, p.name, p.description, p.status, p.created_at 
+               FROM master_policies p 
+               JOIN university_master_policies ump ON p.id = ump.policy_id 
+               WHERE ump.university_id = $1`;
+      params.push(uId);
+    }
+
+    query += " ORDER BY id";
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Get master policies error:", error);
@@ -2700,14 +2924,52 @@ const createMasterDesignation = async (req, res) => {
 };
 
 // Master Department Functions
+
+const getMasterAcademicYears = async (req, res) => {
+  try {
+    const { role } = req.user || {};
+    const university_id = req.user?.university_id || req.user?.universityId;
+    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
+    
+    let query = `SELECT y.id, y.academic_year, y.status, y.created_at 
+                 FROM master_academic_years y`;
+    const params = [];
+
+    if (uId) {
+      query += ` JOIN university_master_academic_years umy ON y.id = umy.academic_year_id WHERE umy.university_id = $1 AND (y.status = 'Active' OR y.status IS NULL)`;
+      params.push(uId);
+    } else {
+      query += ` WHERE (y.status = 'Active' OR y.status IS NULL)`;
+    }
+
+    query += ` ORDER BY y.id ASC`;
+    const result = await client.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get master academic years error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 const getMasterDepartments = async (req, res) => {
   try {
-    const result = await client.query(
-      `SELECT id, department_name, department_code, college_id, status
-       FROM master_departments
-       WHERE status = 'Active'
-       ORDER BY department_name ASC`
-    );
+    const { role } = req.user || {};
+    const university_id = req.user?.university_id || req.user?.universityId;
+    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
+    
+    let query = `SELECT md.id, md.department_name, md.department_code, md.college_id, md.status
+                 FROM master_departments md
+                 JOIN colleges c ON md.college_id = c.id
+                 WHERE (md.status = 'Active' OR md.status IS NULL)`;
+    const params = [];
+
+    if (uId) {
+      query += " AND c.university_id = $1";
+      params.push(uId);
+    }
+
+    query += " ORDER BY md.id ASC";
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Get master departments error:", error);
@@ -3193,6 +3455,119 @@ const resetPassword = async (req, res) => {
   }
 }
 
+// University Admin Mapping Functions
+const mapMasterProgram = async (req, res) => {
+  try {
+    const { program_id } = req.body;
+    const { university_id } = req.user;
+    await client.query(
+      "INSERT INTO university_master_programs (university_id, program_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+      [university_id, program_id]
+    );
+    res.json({ message: "Program mapped successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error mapping program", error: error.message });
+  }
+};
+
+const unmapMasterProgram = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { university_id } = req.user;
+    await client.query(
+      "DELETE FROM university_master_programs WHERE university_id = $1 AND program_id = $2",
+      [university_id, id]
+    );
+    res.json({ message: "Program unmapped successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error unmapping program", error: error.message });
+  }
+};
+
+const mapMasterSemester = async (req, res) => {
+  try {
+    const { semester_id } = req.body;
+    const { university_id } = req.user;
+    await client.query(
+      "INSERT INTO university_master_semesters (university_id, semester_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+      [university_id, semester_id]
+    );
+    res.json({ message: "Semester mapped successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error mapping semester", error: error.message });
+  }
+};
+
+const unmapMasterSemester = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { university_id } = req.user;
+    await client.query(
+      "DELETE FROM university_master_semesters WHERE university_id = $1 AND semester_id = $2",
+      [university_id, id]
+    );
+    res.json({ message: "Semester unmapped successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error unmapping semester", error: error.message });
+  }
+};
+
+const mapMasterAcademicYear = async (req, res) => {
+  try {
+    const { academic_year_id } = req.body;
+    const { university_id } = req.user;
+    await client.query(
+      "INSERT INTO university_master_academic_years (university_id, academic_year_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+      [university_id, academic_year_id]
+    );
+    res.json({ message: "Academic year mapped successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error mapping academic year", error: error.message });
+  }
+};
+
+const unmapMasterAcademicYear = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { university_id } = req.user;
+    await client.query(
+      "DELETE FROM university_master_academic_years WHERE university_id = $1 AND academic_year_id = $2",
+      [university_id, id]
+    );
+    res.json({ message: "Academic year unmapped successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error unmapping academic year", error: error.message });
+  }
+};
+
+const mapMasterPolicy = async (req, res) => {
+  try {
+    const { policy_id } = req.body;
+    const { university_id } = req.user;
+    await client.query(
+      "INSERT INTO university_master_policies (university_id, policy_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+      [university_id, policy_id]
+    );
+    res.json({ message: "Policy mapped successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error mapping policy", error: error.message });
+  }
+};
+
+const unmapMasterPolicy = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { university_id } = req.user;
+    await client.query(
+      "DELETE FROM university_master_policies WHERE university_id = $1 AND policy_id = $2",
+      [university_id, id]
+    );
+    res.json({ message: "Policy unmapped successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error unmapping policy", error: error.message });
+  }
+};
+
 module.exports = {
   register,
   changePassword,
@@ -3302,5 +3677,13 @@ module.exports = {
   getHallTicketData,
   getResultSheetData,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  mapMasterProgram,
+  unmapMasterProgram,
+  mapMasterSemester,
+  unmapMasterSemester,
+  mapMasterAcademicYear,
+  unmapMasterAcademicYear,
+  mapMasterPolicy,
+  unmapMasterPolicy
 };

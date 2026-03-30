@@ -54,7 +54,8 @@ const Login = () => {
           data.user.id || "",
           data.user.college_id || "",
           data.user,
-          data.user.department_id || ""
+          data.user.department_id || "",
+          data.user.university_id || ""
         );
 
         console.log("Login successful, user role:", data.user.role);

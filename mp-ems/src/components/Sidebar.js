@@ -88,7 +88,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     ];
 
     if (authUtils.isUniversityAdmin()) {
-      menuItems = menuItems.filter(item => item.name !== 'Universities');
+      menuItems = menuItems.filter(item => item.name !== 'Universities' && item.name !== 'Roles');
     }
 
     if (authUtils.isSystemAdmin()) {
