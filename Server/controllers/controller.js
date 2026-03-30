@@ -58,19 +58,38 @@ const register = async (req, res) => {
 // Dashboard endpoints - Get statistics and data
 const getDashboardStats = async (req, res) => {
   try {
+    const { role, university_id } = req.user || {};
+    const params = [];
+    let teacherSub = "SELECT COUNT(*) FROM master_teachers";
+    let examSub = "SELECT COUNT(*) FROM exams";
+    let programSub = "SELECT COUNT(*) FROM master_programs";
+    let semesterSub = "SELECT COUNT(*) FROM master_semesters";
+    let subjectSub = "SELECT COUNT(*) FROM master_subjects";
+    let yearSub = "SELECT COUNT(*) FROM master_academic_years";
+
+    if (role === 'university_admin' && university_id) {
+      teacherSub = `SELECT COUNT(*) FROM master_teachers mt JOIN colleges c ON mt.college_id = c.id WHERE c.university_id = $1`;
+      examSub = `SELECT COUNT(*) FROM exams e JOIN colleges c ON e.college_id = c.id WHERE c.university_id = $1`;
+      programSub = `SELECT COUNT(*) FROM programs WHERE university_id = $1`;
+      semesterSub = `SELECT COUNT(*) FROM semesters s JOIN programs p ON s.program_id = p.id WHERE p.university_id = $1`;
+      subjectSub = `SELECT COUNT(*) FROM subjects s JOIN programs p ON s.program_id = p.id WHERE p.university_id = $1`;
+      yearSub = `SELECT COUNT(*) FROM master_academic_years WHERE university_id = $1`;
+      params.push(university_id);
+    }
+
     const statsQueries = {
-      totalTeachers: "SELECT COUNT(*) FROM master_teachers",
-      activeExams: "SELECT COUNT(*) FROM exams",
-      totalPrograms: "SELECT COUNT(*) FROM master_programs",
-      totalSemesters: "SELECT COUNT(*) FROM master_semesters",
-      totalSubjects: "SELECT COUNT(*) FROM master_subjects",
-      totalAcademicYears: "SELECT COUNT(*) FROM master_academic_years",
+      totalTeachers: teacherSub,
+      activeExams: examSub,
+      totalPrograms: programSub,
+      totalSemesters: semesterSub,
+      totalSubjects: subjectSub,
+      totalAcademicYears: yearSub,
       totalPolicies: "SELECT COUNT(*) FROM master_policies",
     };
 
     const stats = {};
     for (const [key, query] of Object.entries(statsQueries)) {
-      const result = await client.query(query);
+      const result = await client.query(query, params);
       stats[key] = parseInt(result.rows[0].count, 10);
     }
     res.json(stats);
@@ -82,15 +101,27 @@ const getDashboardStats = async (req, res) => {
 
 const getUsers = async (req, res) => {
   try {
-    const result = await client.query(`
+    const { role, university_id } = req.user || {};
+    let query = `
       SELECT u.id, u.name, u.email, u.role_id, u.is_active, u.created_at, 
              r.role_name, c.name as college_name, univ.name as university_name
       FROM public.users u
       LEFT JOIN public.roles r ON u.role_id = r.id
       LEFT JOIN public.colleges c ON u.college_id = c.id
       LEFT JOIN public.universities univ ON u.university_id = univ.id
-      ORDER BY u.created_at DESC
-    `);
+    `;
+    const params = [];
+
+    if (role === 'university_admin' && university_id) {
+      query += " WHERE u.university_id = $1";
+      params.push(university_id);
+    } else if (role === 'college_admin' && req.user.college_id) {
+      query += " WHERE u.college_id = $1";
+      params.push(req.user.college_id);
+    }
+
+    query += " ORDER BY u.created_at DESC";
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Get users error:", error);
@@ -153,9 +184,16 @@ const deleteUser = async (req, res) => {
 
 const getPrograms = async (req, res) => {
   try {
-    const result = await client.query(
-      "SELECT id, name, duration_years, university_id, status FROM programs"
-    );
+    const { role, university_id } = req.user || {};
+    let query = "SELECT id, name, duration_years, university_id, status FROM programs";
+    const params = [];
+
+    if (role === 'university_admin' && university_id) {
+      query += " WHERE university_id = $1";
+      params.push(university_id);
+    }
+
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Get programs error:", error);
@@ -435,13 +473,23 @@ const changePassword = async (req, res) => {
 
 const getUniversities = async (req, res) => {
   try {
-    const result = await client.query(
-      `SELECT u.id, u.name, u.address, u.status, u.created_at,
+    const { role, university_id } = req.user || {};
+    let query = `
+      SELECT u.id, u.name, u.address, u.status, u.created_at,
         (SELECT COUNT(*) FROM colleges WHERE university_id = u.id) as colleges_count,
         (SELECT COUNT(*) FROM programs WHERE university_id = u.id) as programs_count,
         (SELECT COUNT(*) FROM academic_years WHERE university_id = u.id) as academic_years_count
-       FROM universities u ORDER BY u.id`
-    );
+       FROM universities u
+    `;
+    const params = [];
+
+    if (role === 'university_admin' && university_id) {
+      query += " WHERE u.id = $1";
+      params.push(university_id);
+    }
+
+    query += " ORDER BY u.id";
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error("Get universities error:", error);
@@ -588,11 +636,19 @@ const deleteProgram = async (req, res) => {
 
 const getStudents = async (req, res) => {
   try {
-    const { role, college_id } = req.user || {};
-    let query = `SELECT * FROM public.students WHERE "deleteStatus" = true`;
+    const { role, college_id, university_id } = req.user || {};
+    let query = `SELECT s.* FROM public.students s`;
     const params = [];
 
-    if (role === 'college_admin') {
+    if (role === 'university_admin' && university_id) {
+      query = `
+        SELECT s.* 
+        FROM public.students s
+        JOIN public.colleges c ON s."collageName" ILIKE c.name
+        WHERE s."deleteStatus" = true AND c.university_id = $1
+      `;
+      params.push(university_id);
+    } else if (role === 'college_admin') {
       query = `
         SELECT s.* 
         FROM public.students s
@@ -600,9 +656,11 @@ const getStudents = async (req, res) => {
         WHERE s."deleteStatus" = true AND c.id = $1
       `;
       params.push(college_id);
+    } else {
+      query += ` WHERE s."deleteStatus" = true`;
     }
 
-    query += ` ORDER BY id ASC`;
+    query += ` ORDER BY s.id ASC`;
 
     const result = await client.query(query, params);
     res.json(result.rows);

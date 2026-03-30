@@ -47,7 +47,8 @@ const Dashboard = () => {
         const token = localStorage.getItem("token");
         const authHeader = { headers: { Authorization: `Bearer ${token}` } };
         
-        const response = await fetch("http://localhost:8080/api/dashboard/stats", authHeader);
+        const apiBase = window.config?.api_base_url || "http://localhost:8080/api";
+        const response = await fetch(`${apiBase}/dashboard/stats`, authHeader);
         if (!response.ok) throw new Error("Failed to fetch dashboard stats");
         const data = await response.json();
 
@@ -69,10 +70,10 @@ const Dashboard = () => {
         setTeachersCount(data.totalTeachers || 0);
 
         const [tRes, sRes, cRes, uRes] = await Promise.all([
-          fetch("http://localhost:8080/api/master-teachers", authHeader),
-          fetch("http://localhost:8080/api/students", authHeader),
-          fetch("http://localhost:8080/api/colleges", authHeader),
-          fetch("http://localhost:8080/api/universities", authHeader)
+          fetch(`${apiBase}/master-teachers`, authHeader),
+          fetch(`${apiBase}/students`, authHeader),
+          fetch(`${apiBase}/colleges`, authHeader),
+          fetch(`${apiBase}/universities`, authHeader)
         ]);
 
         if (tRes.ok) setTeachers(await tRes.json());

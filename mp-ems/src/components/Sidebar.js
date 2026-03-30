@@ -87,6 +87,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       // { id: 22, name: 'Paper Setter', path: '/paper-setter/dashboard', icon: <FileText size={20} /> },
     ];
 
+    if (authUtils.isUniversityAdmin()) {
+      menuItems = menuItems.filter(item => item.name !== 'Universities');
+    }
+
     if (authUtils.isSystemAdmin()) {
       menuItems.push({ id: 100, name: 'SMTP Settings', path: '/smtp-settings', icon: <Mail size={20} /> });
     }

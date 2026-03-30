@@ -34,16 +34,8 @@ export const authUtils = {
   },
 
   isSystemAdmin: () => {
-    try {
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        return user.email === "admin@example.com";
-      }
-    } catch (e) {
-      console.error("Error checking system admin", e);
-    }
-    return false;
+    const roleName = localStorage.getItem("roleName");
+    return roleName === "superadmin" || roleName === "superAdmin";
   },
 
   // Check if user is authenticated
@@ -54,7 +46,17 @@ export const authUtils = {
   // Check if user is admin
   isAdmin: () => {
     const roleName = localStorage.getItem("roleName");
-    return roleName === "SUPER_ADMIN" || roleName === "admin" || roleName === "superAdmin";
+    return roleName === "superadmin" || roleName === "superAdmin" || roleName === "admin" || roleName === "university_admin";
+  },
+
+  isSuperAdmin: () => {
+    const roleName = localStorage.getItem("roleName");
+    return roleName === "superadmin" || roleName === "superAdmin";
+  },
+
+  isUniversityAdmin: () => {
+    const roleName = localStorage.getItem("roleName");
+    return roleName === "university_admin";
   },
 
   isCollegeAdmin: () => {
