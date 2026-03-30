@@ -18,26 +18,20 @@ window.fetch = async function () {
   let isUnauthorized = response.status === 401 && !isLoginRequest && !isChangePasswordRequest;
 
   if (response.status === 400) {
-    // Clone to read the body without consuming the original response stream
     const clone = response.clone();
     try {
       const data = await clone.json();
       if (data.message && data.message.toLowerCase().includes('token invalid')) {
         isUnauthorized = true;
       }
-    } catch (e) {
-      // Not JSON or unreadable
-    }
+    } catch (e) {}
   }
 
   if (isUnauthorized) {
-    // If unauthorized or token invalid, clear tokens and dispatch a custom event
     localStorage.removeItem('token');
     localStorage.removeItem('roleName');
     localStorage.removeItem('user');
     window.dispatchEvent(new CustomEvent('unauthorized'));
-    
-    // Halt the promise chain so local component catch blocks don't fire during redirect
     return new Promise(() => {});
   }
   
@@ -56,7 +50,7 @@ const App = () => {
     return () => window.removeEventListener('unauthorized', handleUnauthorized);
   }, [navigate]);
 
-  return(
+  return (
     <SessionMonitor>
       <AppRoutes />
       <ToastContainer 

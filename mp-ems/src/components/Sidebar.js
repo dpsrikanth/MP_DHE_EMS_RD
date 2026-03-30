@@ -15,7 +15,7 @@ import {
   BarChart3,
   ChevronRight,
   ShieldCheck,
-  Building,
+  Building2,
   Menu,
   X,
   UserPlus,
@@ -71,7 +71,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       { id: 5, name: 'Academic Years', path: '/academic-years', icon: <Calendar size={20} /> },
       { id: 6, name: 'Semesters', path: '/semesters', icon: <Layers size={20} /> },
       { id: 7, name: 'Subjects', path: '/subjects', icon: <Book size={20} /> },
-      { id: 8, name: 'Departments', path: '/departments', icon: <Building size={20} /> },
+      { id: 8, name: 'Departments', path: '/departments', icon: <Building2 size={20} /> },
       { id: 9, name: 'Teachers', path: '/teachers', icon: <Users size={20} /> },
       { id: 10, name: 'Students', path: '/students', icon: <UserCircle size={20} /> },
       { id: 20, name: 'Users', path: '/users', icon: <Users size={20} /> },
@@ -84,6 +84,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       { id: 17, name: 'Result Hub', path: '/university/external-marks', icon: <TrendingUp size={20} /> },
       { id: 18, name: 'Grading Policy', path: '/university/grading-policy', icon: <ShieldCheck size={20} /> },
       { id: 19, name: 'Manage Credits', path: '/university/manage-credits', icon: <BookOpen size={20} /> },
+      { id: 23, name: 'Hall Approvals', path: '/university/hall-approvals', icon: <Building2 size={20} /> },
       // { id: 22, name: 'Paper Setter', path: '/paper-setter/dashboard', icon: <FileText size={20} /> },
     ];
 
@@ -102,6 +103,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 3, name: 'Marks Structure', path: '/college-admin/marks-config', icon: <BarChart3 size={20} /> },
         { id: 4, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
         { id: 5, name: 'Verify & Lock', path: '/college-admin/marks-approval', icon: <ShieldCheck size={20} /> },
+        { id: 8, name: 'Exam Halls', path: '/college-admin/examination-halls', icon: <Building2 size={20} /> },
         { id: 6, name: 'Teachers', path: '/teachers', icon: <Users size={20} /> },
         { id: 7, name: 'Students', path: '/students', icon: <UserCircle size={20} /> },
       ];

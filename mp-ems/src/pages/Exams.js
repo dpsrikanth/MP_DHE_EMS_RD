@@ -42,6 +42,11 @@ const Exams = () => {
     status: true
   });
 
+  // Shortage Request Modal State
+  const [shortageData, setShortageData] = useState(null);
+  const [isShortageModalOpen, setIsShortageModalOpen] = useState(false);
+  const [shortageLoading, setShortageLoading] = useState(false);
+
   const availableColumns = [
     { key: 'id', label: 'ID Reference' },
     { key: 'details', label: 'Assessment Details' },
@@ -398,7 +403,8 @@ const Exams = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+
+  const handleImprovedSubmit = async (e) => {
     e.preventDefault();
     setSubmitLoading(true);
     setError(null);
@@ -409,14 +415,10 @@ const Exams = () => {
         : 'http://localhost:8080/api/exams';
       const method = editingId ? 'PUT' : 'POST';
 
-      // Normalize 'university_wide' sentinel back to empty string (null college)
       const normalizedFormData = {
         ...formData,
         college_id: formData.college_id === 'university_wide' ? '' : formData.college_id
       };
-      const payload = editingId 
-        ? { ...normalizedFormData } 
-        : { ...normalizedFormData, subjects: normalizedFormData.subjects };
 
       const res = await fetch(url, {
         method,
@@ -424,12 +426,19 @@ const Exams = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}` 
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(normalizedFormData)
       });
 
+      const resData = await res.json();
+
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.message || "Operation failed");
+        if (resData.capacityError) {
+           setShortageData(resData);
+           setIsShortageModalOpen(true);
+           setSubmitLoading(false);
+           return;
+        }
+        throw new Error(resData.message || "Operation failed");
       }
 
       await fetchData();
@@ -438,6 +447,38 @@ const Exams = () => {
       setError(err.message);
     } finally {
       setSubmitLoading(false);
+    }
+  };
+
+  const handleSendShortageRequest = async () => {
+    setShortageLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8080/api/examination-halls/shortage-request', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          college_id: shortageData.college_id,
+          program_id: shortageData.program_id,
+          semester_id: shortageData.semester_id,
+          student_count: shortageData.studentCount,
+          available_capacity: shortageData.totalCapacity,
+          shortage: shortageData.shortage
+        })
+      });
+
+      if (!res.ok) throw new Error("Failed to send request");
+      
+      alert("Shortage request sent to University Admin successfully.");
+      setIsShortageModalOpen(false);
+      setShortageData(null);
+    } catch (err) {
+      alert("Error sending shortage request: " + err.message);
+    } finally {
+      setShortageLoading(false);
     }
   };
 
@@ -709,7 +750,7 @@ const Exams = () => {
                 </div>
               )}
 
-              <form id="examForm" onSubmit={handleSubmit} className="space-y-6">
+              <form id="examForm" onSubmit={handleImprovedSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Exam Type</label>
@@ -1053,6 +1094,64 @@ const Exams = () => {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Shortage Alert Modal */}
+      {isShortageModalOpen && shortageData && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md sm:p-6">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-red-100 flex flex-col animate-premium-fade">
+             <div className="p-8 text-center">
+                <div className="w-20 h-20 bg-red-50 rounded-[2rem] flex items-center justify-center text-red-500 mx-auto mb-6 shadow-inner">
+                   <AlertCircle size={40} />
+                </div>
+                <h2 className="text-2xl font-black text-slate-900 leading-tight mb-2 uppercase tracking-tighter">Capacity Shortage</h2>
+                <p className="text-slate-500 font-medium mb-8">Selected college does not have sufficient approved examination halls for this academic cohort.</p>
+                
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Student Count</p>
+                      <p className="text-xl font-black text-slate-900">{shortageData.studentCount}</p>
+                   </div>
+                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Max Capacity</p>
+                      <p className="text-xl font-black text-slate-900">{shortageData.totalCapacity}</p>
+                   </div>
+                </div>
+
+                <div className="p-5 bg-red-50 rounded-3xl border border-red-100 flex items-center justify-between mb-8">
+                   <div className="text-left">
+                      <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-0.5">Shortage Detected</p>
+                      <p className="text-lg font-black text-red-600">{shortageData.shortage} Seats Needed</p>
+                   </div>
+                   <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-500">
+                      <X size={20} />
+                   </div>
+                </div>
+
+                <div className="space-y-3">
+                   <button 
+                     onClick={handleSendShortageRequest}
+                     disabled={shortageLoading}
+                     className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-900/10 active:scale-[0.98]"
+                   >
+                     {shortageLoading ? (
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                     ) : (
+                       <>
+                         <Globe size={18} />
+                         Request Infrastructure from University
+                       </>
+                     )}
+                   </button>
+                   <button 
+                     onClick={() => setIsShortageModalOpen(false)}
+                     className="w-full py-4 bg-white border border-slate-200 text-slate-400 font-bold rounded-2xl hover:bg-slate-50 transition-all text-sm"
+                   >
+                     Cancel Scheduling
+                   </button>
+                </div>
+             </div>
           </div>
         </div>
       )}

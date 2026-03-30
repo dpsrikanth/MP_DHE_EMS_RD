@@ -202,5 +202,8 @@ router.post('/reject-workflow-section', collegeAdminController.rejectWorkflow);
  */
 router.post('/unlock-marks', collegeAdminController.unlockMarks);
 router.get('/marks-report', collegeAdminController.getMarksReport);
+// Total Rooms Dashboard Setup
+router.get('/total-rooms', collegeAdminController.getCollegeTotalRooms);
+router.put('/total-rooms', collegeAdminController.updateCollegeTotalRooms);
 
 module.exports = router;

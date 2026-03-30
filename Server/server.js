@@ -13,6 +13,7 @@ const externalFacultyRoutes = require('./routes/externalFacultyRoutes');
 const gradingRoutes = require('./routes/gradingRoutes');
 const paperSetterRoutes = require('./routes/paperSetterRoutes');
 const secrecyRoutes = require('./routes/secrecyRoutes');
+const hallRoutes = require('./routes/hallRoutes');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./swagger');
@@ -38,6 +39,7 @@ app.use('/api/external-faculty', externalFacultyRoutes);
 app.use('/api/grading', gradingRoutes);
 app.use('/api/paper-setter', paperSetterRoutes);
 app.use('/api/secrecy', secrecyRoutes);
+app.use('/api/examination-halls', hallRoutes);
 
 app.get('/api', (req, res) => {
   res.json({ message: 'API is running' });

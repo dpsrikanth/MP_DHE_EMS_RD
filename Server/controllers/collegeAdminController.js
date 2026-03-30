@@ -878,3 +878,36 @@ exports.unlockMarks = async (req, res) => {
     }
 };
 
+// --- Total Rooms Config ---
+exports.getCollegeTotalRooms = async (req, res) => {
+    try {
+        const college_id = req.user?.college_id;
+        if (!college_id) return res.status(403).json({ error: "Unauthorized" });
+
+        const result = await db.query('SELECT total_rooms FROM colleges WHERE id = $1', [college_id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: "College not found" });
+
+        res.json({ total_rooms: result.rows[0].total_rooms || 0 });
+    } catch (error) {
+        console.error("Get total rooms error:", error);
+        res.status(500).json({ error: "Failed to get total rooms" });
+    }
+};
+
+exports.updateCollegeTotalRooms = async (req, res) => {
+    try {
+        const college_id = req.user?.college_id;
+        if (!college_id) return res.status(403).json({ error: "Unauthorized" });
+
+        const { total_rooms } = req.body;
+        if (total_rooms === undefined || total_rooms === null) {
+            return res.status(400).json({ error: "Total rooms value is required" });
+        }
+
+        await db.query('UPDATE colleges SET total_rooms = $1 WHERE id = $2', [parseInt(total_rooms), college_id]);
+        res.json({ message: "Total rooms updated successfully", total_rooms });
+    } catch (error) {
+        console.error("Update total rooms error:", error);
+        res.status(500).json({ error: "Failed to update total rooms" });
+    }
+};

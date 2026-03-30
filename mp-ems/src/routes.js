@@ -26,6 +26,7 @@ import PolicyConfig from "./pages/CollegeAdmin/PolicyConfig";
 import MarksConfig from "./pages/CollegeAdmin/MarksConfig";
 import FacultyAssignment from "./pages/CollegeAdmin/FacultyAssignment";
 import MarksApproval from "./pages/CollegeAdmin/MarksApproval";
+import ExaminationHalls from "./pages/CollegeAdmin/ExaminationHalls";
 import FacultyDashboard from "./pages/Faculty/Dashboard";
 import MarksEntry from "./pages/Faculty/MarksEntry";
 import MarksVerification from "./pages/CollegeAdmin/MarksVerification";
@@ -43,6 +44,7 @@ import GradingPolicy from "./pages/UniversityAdmin/GradingPolicy";
 import HallTicket from "./pages/Student/HallTicket";
 import ResultSheet from "./pages/Student/ResultSheet";
 import ManageCredits from "./pages/UniversityAdmin/ManageCredits";
+import HallApprovals from "./pages/UniversityAdmin/HallApprovals";
 import PaperSetterDashboard from "./pages/PaperSetter/Dashboard";
 import PaperSetterSubmittedPapers from "./pages/PaperSetter/SubmittedPapers";
 import PaperSetterGuidelines from "./pages/PaperSetter/Guidelines";
@@ -87,6 +89,7 @@ const AppRoutes = () => {
       <Route path="/college-admin/marks-config" element={<Layout><ProtectedRoute element={<MarksConfig />} /></Layout>} />
       <Route path="/college-admin/faculty-assign" element={<Layout><ProtectedRoute element={<FacultyAssignment />} /></Layout>} />
       <Route path="/college-admin/marks-approval" element={<Layout><ProtectedRoute element={<MarksApproval />} /></Layout>} />
+      <Route path="/college-admin/examination-halls" element={<Layout><ProtectedRoute element={<ExaminationHalls />} /></Layout>} />
 
       {/* Faculty Routes */}
       <Route path="/faculty/dashboard" element={<Layout><ProtectedRoute element={<FacultyDashboard />} /></Layout>} />
@@ -127,6 +130,7 @@ const AppRoutes = () => {
       <Route path="/university/external-marks" element={<Layout><ProtectedRoute element={<UniversityMarksView />} /></Layout>} />
       <Route path="/university/grading-policy" element={<Layout><ProtectedRoute element={<GradingPolicy />} /></Layout>} />
       <Route path="/university/manage-credits" element={<Layout><ProtectedRoute element={<ManageCredits />} /></Layout>} />
+      <Route path="/university/hall-approvals" element={<Layout><ProtectedRoute element={<HallApprovals />} /></Layout>} />
       <Route path="/smtp-settings" element={<Layout><ProtectedRoute element={<SmtpSettings />} /></Layout>} />
     </Routes>
   );

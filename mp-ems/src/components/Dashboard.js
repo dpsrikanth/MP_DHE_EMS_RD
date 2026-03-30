@@ -229,10 +229,7 @@ const Dashboard = () => {
                           <Mail size={12} className="text-slate-300" /> {t.email || ''}
                         </p>
                       </div>
-                      <div className="p-1.5 text-slate-200 group-hover:text-blue-400 transition-colors">
-                        <trending-up className="lucide lucide-trending-up animate-pulse" />
-                        <Activity size={18} />
-                      </div>
+                        <TrendingUp className="animate-pulse" size={18} />
                     </div>
                   </div>
                 ))}

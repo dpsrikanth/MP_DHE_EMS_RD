@@ -1270,6 +1270,44 @@ const createExam = async (req, res) => {
       department_id = userDepartmentId;
     }
 
+    // --- Capacity Validation Logic ---
+    if (college_id && program_id && semester_id) {
+       // 1. Get student count (Matching logic with students table strings)
+       const studentCountRes = await client.query(
+         `SELECT COUNT(*) FROM students 
+          WHERE "collageName" = (SELECT name FROM colleges WHERE id = $1)
+          AND "programName" = (SELECT name FROM master_programs WHERE id = $2)
+          AND semister = (SELECT semester_name FROM master_semesters WHERE id = $3)
+          AND "deleteStatus" = true`,
+         [college_id, program_id, semester_id]
+       );
+       const studentCount = parseInt(studentCountRes.rows[0].count);
+
+       // 2. Get total approved capacity for the college
+       const capacityRes = await client.query(
+         `SELECT SUM(rows * seats_per_row) as total_capacity 
+          FROM examination_halls 
+          WHERE college_id = $1 AND status = 'Approved'`,
+         [college_id]
+       );
+       const totalCapacity = parseInt(capacityRes.rows[0].total_capacity) || 0;
+
+       // 3. Compare and potentially block (Unless it's a dry run or user acknowledges?)
+       // User requirement: "block overbooking and send shortage request"
+       if (studentCount > totalCapacity) {
+         return res.status(400).json({ 
+           message: "Shortage of examination seats detected for this academic group.",
+           capacityError: true,
+           studentCount,
+           totalCapacity,
+           shortage: studentCount - totalCapacity,
+           college_id,
+           program_id,
+           semester_id
+         });
+       }
+    }
+
     // Handle Batch Creation if 'subjects' array is provided
     if (subjects && Array.isArray(subjects) && subjects.length > 0) {
       const createdExams = [];
@@ -1344,6 +1382,40 @@ const updateExam = async (req, res) => {
       }
       college_id = userCollegeId;
       department_id = userDepartmentId;
+    }
+
+    // --- Capacity Validation Logic (Same as creation) ---
+    if (college_id && program_id && semester_id) {
+       const studentCountRes = await client.query(
+         `SELECT COUNT(*) FROM students 
+          WHERE "collageName" = (SELECT name FROM colleges WHERE id = $1)
+          AND "programName" = (SELECT name FROM master_programs WHERE id = $2)
+          AND semister = (SELECT semester_name FROM master_semesters WHERE id = $3)
+          AND "deleteStatus" = true`,
+         [college_id, program_id, semester_id]
+       );
+       const studentCount = parseInt(studentCountRes.rows[0].count);
+
+       const capacityRes = await client.query(
+         `SELECT SUM(rows * seats_per_row) as total_capacity 
+          FROM examination_halls 
+          WHERE college_id = $1 AND status = 'Approved'`,
+         [college_id]
+       );
+       const totalCapacity = parseInt(capacityRes.rows[0].total_capacity) || 0;
+
+       if (studentCount > totalCapacity) {
+         return res.status(400).json({ 
+           message: "Shortage of examination seats detected for this academic group.",
+           capacityError: true,
+           studentCount,
+           totalCapacity,
+           shortage: studentCount - totalCapacity,
+           college_id,
+           program_id,
+           semester_id
+         });
+       }
     }
 
     // Handle Batch Sync if 'subjects' array is provided
@@ -3567,6 +3639,7 @@ const unmapMasterPolicy = async (req, res) => {
     res.status(500).json({ message: "Error unmapping policy", error: error.message });
   }
 };
+
 
 module.exports = {
   register,
