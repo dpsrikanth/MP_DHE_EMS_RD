@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
-import { BookOpen, Users, Save, CheckCircle, ShieldAlert } from "lucide-react";
+import { BookOpen, Users, Save, CheckCircle, ShieldAlert, Search, X } from "lucide-react";
 import { useLocation } from 'react-router-dom';
+import { TableSearch } from '../../components/TableControls';
 
 const MarksEntry = () => {
     const location = useLocation();
@@ -17,6 +18,7 @@ const MarksEntry = () => {
     const [marksDraft, setMarksDraft] = useState({});
     const [initialMarks, setInitialMarks] = useState({}); // Track initial state for change detection
     const [reviews, setReviews] = useState({}); // Per-student review statuses/comments
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         fetchAssignedSubjects();
@@ -127,6 +129,7 @@ const MarksEntry = () => {
         }
     };
 
+
     const handleAssignmentSelect = (selectedOption) => {
         setSelectedAssignment(selectedOption);
         const assignment = assignedSubjects.find(a => a.id === selectedOption.value);
@@ -221,6 +224,32 @@ const MarksEntry = () => {
 
         return { label: 'Pass', style: 'text-green-500' };
     };
+
+    const filteredStudents = React.useMemo(() => {
+        if (!searchQuery.trim()) return students;
+        
+        const query = searchQuery.toLowerCase().trim();
+        return students.filter(student => {
+            const sName = (student.name || "").toLowerCase();
+            const sRoll = (student.rollnumber || "").toLowerCase();
+            const total = calculateTotal(student.id).toString();
+            const status = determineStatus(student.id).label.toLowerCase();
+            
+            // Check individual component marks
+            let componentMatches = false;
+            if (marksDraft[student.id]) {
+                componentMatches = Object.values(marksDraft[student.id]).some(d => 
+                    String(d.marks).includes(query) || (d.isAbsent && query.includes('absent'))
+                );
+            }
+
+            return sName.includes(query) || 
+                   sRoll.includes(query) || 
+                   total.includes(query) || 
+                   status.includes(query) || 
+                   componentMatches;
+        });
+    }, [students, searchQuery, marksDraft, marksStructure]);
 
     const checkHasChanges = () => {
         for (const studentId in marksDraft) {
@@ -440,8 +469,17 @@ const MarksEntry = () => {
                             <Users size={20} className="text-indigo-500" />
                             <h3 className="text-lg font-bold text-slate-900">Student List</h3>
                         </div>
-                        <div className="flex items-center gap-4 text-sm font-bold text-slate-500">
-                            Total Students: {students.length}
+                        <div className="flex items-center gap-6">
+                            <div className="w-full md:w-64">
+                                <TableSearch 
+                                    value={searchQuery}
+                                    onChange={setSearchQuery}
+                                    placeholder="Filter students..."
+                                />
+                            </div>
+                            <div className="flex items-center gap-4 text-sm font-bold text-slate-500 whitespace-nowrap">
+                                Total Students: {students.length}
+                            </div>
                         </div>
                     </div>
 
@@ -461,7 +499,8 @@ const MarksEntry = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {students.map((student) => {
+                                {filteredStudents.length > 0 ? (
+                                    filteredStudents.map((student) => {
                                     const total = calculateTotal(student.id);
                                     const status = determineStatus(student.id);
                                     const review = reviews[student.id];
@@ -536,7 +575,23 @@ const MarksEntry = () => {
                                             </td>
                                         </tr>
                                     );
-                                })}
+                                })) : (
+                                    <tr>
+                                        <td colSpan={marksStructure.length + 3} className="px-6 py-20 text-center">
+                                            <div className="flex flex-col items-center gap-3">
+                                                <Search size={40} className="text-slate-200" />
+                                                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">No matching students found</h3>
+                                                <p className="text-slate-400 font-medium text-sm">Try searching with a different name or roll number.</p>
+                                                <button 
+                                                    onClick={() => setSearchQuery('')}
+                                                    className="mt-4 text-xs font-black text-indigo-600 hover:text-indigo-700 underline uppercase tracking-widest"
+                                                >
+                                                    Clear search
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>

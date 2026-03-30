@@ -6,6 +6,7 @@ import {
 import { useGradingPolicy } from '../../hooks/useGradingPolicy';
 import { getGradeAndPoints, isPass, calculateSGPA } from '../../utils/gradingUtils';
 import { toast } from 'react-toastify';
+import { TableSearch } from '../../components/TableControls';
 
 const StudentResults = () => {
   const [results, setResults] = useState([]);
@@ -13,6 +14,7 @@ const StudentResults = () => {
   const { config: gradingConfig, loading: configLoading } = useGradingPolicy();
   const [error, setError] = useState(null);
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchResults();
@@ -79,12 +81,30 @@ const StudentResults = () => {
       groups[key].totalCreditsAssigned += creditsAssigned;
       groups[key].totalCreditsEarned += creditsEarned;
     });
+    
+    // Calculate final stats and apply search filter to subjects
+    const query = searchQuery.toLowerCase().trim();
+    
+    return Object.values(groups).map(group => {
+      const allSubjects = group.subjects;
+      const filteredSubjects = query ? allSubjects.filter(sub => {
+        return (sub.subject_code || "").toLowerCase().includes(query) ||
+               (sub.subject_name || "").toLowerCase().includes(query) ||
+               String(sub.creditsAssigned).includes(query) ||
+               String(sub.creditsEarned).includes(query) ||
+               String(sub.total_marks || "").includes(query) ||
+               sub.grade.toLowerCase().includes(query) ||
+               String(sub.gradePoint).includes(query);
+      }) : allSubjects;
 
-    return Object.values(groups).map(group => ({
-      ...group,
-      sgpa: group.totalCreditsAssigned > 0 ? (group.totalCiGi / group.totalCreditsAssigned).toFixed(2) : '0.00'
-    }));
-  }, [results, gradingConfig]);
+      return {
+        ...group,
+        subjects: filteredSubjects,
+        hasMatches: filteredSubjects.length > 0,
+        sgpa: group.totalCreditsAssigned > 0 ? (group.totalCiGi / group.totalCreditsAssigned).toFixed(2) : '0.00'
+      };
+    }).filter(group => group.hasMatches); // Hide groups with no matching subjects
+  }, [results, gradingConfig, searchQuery]);
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
@@ -101,8 +121,15 @@ const StudentResults = () => {
           </div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Performance <span className="text-emerald-500 italic">Statement</span></h1>
         </div>
-        <div className="flex items-center gap-3">
-             <a href="/student/dashboard" className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20">
+        <div className="flex items-center gap-4">
+             <div className="w-full md:w-64">
+                <TableSearch 
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  placeholder="Filter results..."
+                />
+             </div>
+             <a href="/student/dashboard" className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20 whitespace-nowrap">
                 <LayoutDashboard size={16} /> Return to Home
              </a>
         </div>
@@ -111,8 +138,20 @@ const StudentResults = () => {
       {examSeriesResults.length === 0 ? (
         <div className="py-20 text-center bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200 shadow-sm">
            <Search size={40} className="text-slate-300 mx-auto mb-4" />
-           <h3 className="text-lg font-black text-slate-900 mb-1 uppercase tracking-tighter">No Published Statements</h3>
-           <p className="text-slate-500 max-w-xs mx-auto text-sm font-medium">Your examination results will be visible here once they are officially released.</p>
+           <h3 className="text-lg font-black text-slate-900 mb-1 uppercase tracking-tighter">
+             {searchQuery ? "No matching records" : "No Published Statements"}
+           </h3>
+           <p className="text-slate-500 max-w-xs mx-auto text-sm font-medium">
+             {searchQuery ? "Try refining your search terms to find specific courses." : "Your examination results will be visible here once they are officially released."}
+           </p>
+           {searchQuery && (
+             <button 
+               onClick={() => setSearchQuery('')}
+               className="mt-6 text-xs font-black text-emerald-600 hover:text-emerald-700 underline uppercase tracking-widest"
+             >
+               Clear All Filters
+             </button>
+           )}
         </div>
       ) : (
         <div className="space-y-12">

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
-import { ShieldCheck, Save, Pencil, Trash2, X } from "lucide-react";
+import { ShieldCheck, Save, Pencil, Trash2, X, Search } from "lucide-react";
+import { TableSearch } from '../../components/TableControls';
 
 const PolicyConfig = () => {
     const [policies, setPolicies] = useState([]);
@@ -22,6 +23,9 @@ const PolicyConfig = () => {
 
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    
+    const [loading, setLoading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const filteredPrograms = React.useMemo(() => {
         if (!selectedDepartment) return programs;
@@ -45,6 +49,20 @@ const PolicyConfig = () => {
         return subjects.filter(s => s.department_ids && s.department_ids.includes(selectedDepartment.value));
     }, [subjects, selectedDepartment]);
 
+    const filteredMappings = useMemo(() => {
+        if (!searchQuery.trim()) return savedMappings;
+        
+        const query = searchQuery.toLowerCase();
+        return savedMappings.filter(item => 
+            (item.policy_name?.toLowerCase().includes(query)) ||
+            (item.department_name?.toLowerCase().includes(query)) ||
+            (item.program_name?.toLowerCase().includes(query)) ||
+            (item.semester_name?.toLowerCase().includes(query)) ||
+            (item.subject_name?.toLowerCase().includes(query)) ||
+            (item.subject_code?.toLowerCase().includes(query))
+        );
+    }, [savedMappings, searchQuery]);
+
     useEffect(() => {
         if (selectedDepartment) {
             setSelectedProgram(null);
@@ -58,7 +76,7 @@ const PolicyConfig = () => {
         }
     }, [selectedProgram]);
 
-    const [loading, setLoading] = useState(false);
+
 
     useEffect(() => {
         fetchMasterData();
@@ -312,6 +330,13 @@ const PolicyConfig = () => {
                         <h2 className="text-lg font-bold text-slate-900">Configured Mappings</h2>
                         <p className="text-sm text-slate-500 mt-1">Currently saved policies and subject combinations</p>
                     </div>
+                    <div className="flex items-center gap-4">
+                        <TableSearch 
+                            value={searchQuery}
+                            onChange={setSearchQuery}
+                            placeholder="Search mappings..."
+                        />
+                    </div>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
@@ -325,8 +350,8 @@ const PolicyConfig = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {savedMappings.length > 0 ? (
-                                savedMappings.map((map) => (
+                            {filteredMappings.length > 0 ? (
+                                filteredMappings.map((map) => (
                                     <tr key={map.id} className="hover:bg-slate-50/50 transition-colors">
                                         <td className="py-4 px-6 text-sm font-semibold text-slate-800">{map.policy_name}</td>
                                         <td className="py-4 px-6 text-sm text-slate-600 font-medium bg-amber-50/30">{map.department_name}</td>
@@ -374,7 +399,17 @@ const PolicyConfig = () => {
                                     <td colSpan="5" className="py-12 px-6 text-center">
                                         <div className="flex flex-col items-center gap-2">
                                             <ShieldCheck size={32} className="text-slate-200" />
-                                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">No mappings found</p>
+                                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">
+                                                {searchQuery ? "No mappings found matching your search" : "No mappings found"}
+                                            </p>
+                                            {searchQuery && (
+                                                <button 
+                                                    onClick={() => setSearchQuery('')}
+                                                    className="text-xs font-black text-sky-600 hover:text-sky-700 underline uppercase tracking-tighter mt-2"
+                                                >
+                                                    Clear Search
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

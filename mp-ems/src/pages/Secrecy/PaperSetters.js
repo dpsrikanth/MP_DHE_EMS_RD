@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Eye, Edit3, X, UserPlus, FileText, Smartphone, HardDrive, GraduationCap } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Users, Eye, Edit3, X, UserPlus, FileText, Smartphone, HardDrive, GraduationCap, Search } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
 import { toast } from 'react-toastify';
+import { TableSearch } from '../../components/TableControls';
 
 const SecrecyPaperSetters = () => {
   const [paperSetters, setPaperSetters] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Modals
   const [showAddSetterModal, setShowAddSetterModal] = useState(false);
@@ -155,6 +157,28 @@ const SecrecyPaperSetters = () => {
       }
     } catch (e) { toast.error('Network error'); }
   };
+
+  const filteredSetters = useMemo(() => {
+    if (!searchQuery.trim()) return paperSetters;
+    const query = searchQuery.toLowerCase().trim();
+
+    return paperSetters.filter(setter => {
+      const sName = (setter.name || "").toLowerCase();
+      const sEmail = (setter.email || "").toLowerCase();
+      const sRole = (setter.role_name || "").toLowerCase();
+      const sStatus = setter.teacher_status ? 'active' : 'inactive';
+      
+      const subjectMatches = setter.subjects && setter.subjects.some(sub => 
+        sub.toLowerCase().includes(query)
+      );
+
+      return sName.includes(query) || 
+             sEmail.includes(query) || 
+             sRole.includes(query) || 
+             sStatus.includes(query) || 
+             subjectMatches;
+    });
+  }, [paperSetters, searchQuery]);
 
   const renderViewSetterModal = () => (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -388,13 +412,22 @@ const SecrecyPaperSetters = () => {
             <p className="text-slate-500 text-sm font-medium">Manage and assign subjects to paper setters.</p>
           </div>
         </div>
-        <button 
-          onClick={() => setShowAddSetterModal(true)}
-          className="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2.5 px-6 rounded-xl flex items-center gap-2 shadow-lg shadow-sky-500/20 transition-all active:scale-95"
-        >
-          <UserPlus size={18} />
-          Add Paper Setter
-        </button>
+        <div className="flex items-center gap-4">
+          <div className="w-64">
+            <TableSearch 
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search setters or subjects..."
+            />
+          </div>
+          <button 
+            onClick={() => setShowAddSetterModal(true)}
+            className="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2.5 px-6 rounded-xl flex items-center gap-2 shadow-lg shadow-sky-500/20 transition-all active:scale-95"
+          >
+            <UserPlus size={18} />
+            Add Paper Setter
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -409,7 +442,7 @@ const SecrecyPaperSetters = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {paperSetters.map((setter) => (
+            {filteredSetters.map((setter) => (
               <tr key={setter.id} className="hover:bg-slate-50/50 transition-colors group">
                 <td className="px-6 py-4">
                   <div className="font-bold text-slate-800">{setter.name}</div>
@@ -461,9 +494,27 @@ const SecrecyPaperSetters = () => {
                 </td>
               </tr>
             ))}
-            {paperSetters.length === 0 && (
+            {filteredSetters.length === 0 && (
               <tr>
-                <td colSpan="5" className="px-6 py-8 text-center text-slate-400 font-bold text-sm">No paper setters found.</td>
+                <td colSpan="5" className="px-6 py-20 text-center">
+                   <div className="flex flex-col items-center gap-3">
+                     <Search size={40} className="text-slate-200" />
+                     <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">
+                       {searchQuery ? "No matching setters found" : "No paper setters found"}
+                     </h3>
+                     <p className="text-slate-400 font-medium text-sm">
+                       {searchQuery ? "Try searching with a different name, role, or subject." : "Add paper setters to start managing assignments."}
+                     </p>
+                     {searchQuery && (
+                       <button 
+                         onClick={() => setSearchQuery('')}
+                         className="mt-4 text-xs font-black text-sky-600 hover:text-sky-700 underline uppercase tracking-widest"
+                       >
+                         Reset Filters
+                       </button>
+                     )}
+                   </div>
+                </td>
               </tr>
             )}
           </tbody>

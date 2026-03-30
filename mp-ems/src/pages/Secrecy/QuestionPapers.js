@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Eye, Download, X } from 'lucide-react';
+import { FileText, Eye, Download, X, Search } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
 import { toast } from 'react-toastify';
+import { TableSearch } from '../../components/TableControls';
 
 const SecrecyQuestionPapers = () => {
   const [questionPapers, setQuestionPapers] = useState([]);
@@ -10,6 +11,7 @@ const SecrecyQuestionPapers = () => {
   const [selectedPaperForSets, setSelectedPaperForSets] = useState(null);
   const [selectedSets, setSelectedSets] = useState([]);
   const [examFilter, setExamFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchPapers();
@@ -129,15 +131,41 @@ const SecrecyQuestionPapers = () => {
     return options;
   }, [questionPapers]);
 
-  // Papers filtered by selected normalized exam name
+  // Papers filtered by exam filter and search query
   const filteredPapers = React.useMemo(() => {
-    if (!examFilter) return questionPapers;
-    return questionPapers.filter(p => {
-      if (!p.exam_name) return false;
-      const normName = p.exam_name.trim().replace(/\s+/g, ' ').toLowerCase();
-      return normName === examFilter;
-    });
-  }, [questionPapers, examFilter]);
+    let result = questionPapers;
+
+    // 1. Apply Exam Filter (Dropdown)
+    if (examFilter) {
+      result = result.filter(p => {
+        if (!p.exam_name) return false;
+        const normName = p.exam_name.trim().replace(/\s+/g, ' ').toLowerCase();
+        return normName === examFilter;
+      });
+    }
+
+    // 2. Apply Search Query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(p => {
+        const sName = (p.subject_name || "").toLowerCase();
+        const setter = (p.setter_name || "").toLowerCase();
+        const sem = (p.semester || "").toLowerCase();
+        const exam = (p.exam_name || "").toLowerCase();
+        const sDate = p.updated_at ? new Date(p.updated_at).toLocaleDateString().toLowerCase() : "";
+        const eDate = p.exam_date && !isNaN(new Date(p.exam_date)) ? new Date(p.exam_date).toLocaleDateString().toLowerCase() : "";
+
+        return sName.includes(query) || 
+               setter.includes(query) || 
+               sem.includes(query) || 
+               exam.includes(query) || 
+               sDate.includes(query) ||
+               eDate.includes(query);
+      });
+    }
+
+    return result;
+  }, [questionPapers, examFilter, searchQuery]);
 
   const availableSets = filteredPapers.filter(p => 
     selectedPaperForSets && 
@@ -178,6 +206,15 @@ const SecrecyQuestionPapers = () => {
               <option key={ex.id} value={ex.id}>{ex.name}</option>
             ))}
           </select>
+        </div>
+        <div className="flex items-center gap-2">
+            <div className="w-64">
+                <TableSearch 
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Search papers..."
+                />
+            </div>
         </div>
       </div>
       
@@ -291,8 +328,23 @@ const SecrecyQuestionPapers = () => {
           </div>
         ))}
         {filteredPapers && filteredPapers.length === 0 && (
-          <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 text-slate-400 font-bold uppercase">
-            No question papers found.
+          <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 flex flex-col items-center gap-4">
+             <div className="p-4 bg-slate-50 text-slate-300 rounded-2xl">
+                 <Search size={48} />
+             </div>
+             <div className="space-y-1">
+                <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">
+                    {searchQuery || examFilter ? "No matching records found" : "No question papers found"}
+                </p>
+                {(searchQuery || examFilter) && (
+                    <button 
+                        onClick={() => { setSearchQuery(''); setExamFilter(''); }}
+                        className="text-xs font-black text-sky-500 hover:text-sky-600 underline uppercase tracking-widest"
+                    >
+                        Reset All Filters
+                    </button>
+                )}
+             </div>
           </div>
         )}
       </div>

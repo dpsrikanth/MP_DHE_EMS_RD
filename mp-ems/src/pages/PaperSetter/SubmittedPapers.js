@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { FileText, CheckCircle2, Clock, BookOpen, Download, AlertCircle, Shield, XCircle, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FileText, CheckCircle2, Clock, BookOpen, Download, AlertCircle, Shield, XCircle, Loader2, Search, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import authUtils from '../../utils/authUtils';
+import { TableSearch } from '../../components/TableControls';
 
 const SubmittedPapers = () => {
   const [loading, setLoading] = useState(true);
   const [submittedPapers, setSubmittedPapers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchDashData();
@@ -27,6 +29,25 @@ const SubmittedPapers = () => {
       setLoading(false);
     }
   };
+
+  const filteredPapers = useMemo(() => {
+    if (!searchQuery.trim()) return submittedPapers;
+    const query = searchQuery.toLowerCase().trim();
+    
+    return submittedPapers.filter(paper => {
+      const sName = (paper.subject_name || "").toLowerCase();
+      const pId = `qp00${paper.paper_id}`.toLowerCase();
+      const eId = `ex00${paper.assignment_id}`.toLowerCase();
+      const status = (paper.status || "").toLowerCase();
+      const sDate = new Date(paper.submitted_date).toLocaleDateString().toLowerCase();
+      
+      return sName.includes(query) || 
+             pId.includes(query) || 
+             eId.includes(query) || 
+             status.includes(query) || 
+             sDate.includes(query);
+    });
+  }, [submittedPapers, searchQuery]);
 
   const handleAction = async (paperId, actionName, fallbackTitle) => {
     let newWindow = null;
@@ -97,6 +118,13 @@ const SubmittedPapers = () => {
               <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Submitted Papers</p>
             </div>
           </div>
+          <div className="w-full md:w-80">
+            <TableSearch 
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search subjects, status, or IDs..."
+            />
+          </div>
         </div>
       </div>
 
@@ -106,19 +134,30 @@ const SubmittedPapers = () => {
             <Loader2 className="text-sky-500 animate-spin" size={48} />
             <p className="text-slate-400 font-black uppercase tracking-widest text-sm animate-pulse">Loading secure data...</p>
           </div>
+        ) : filteredPapers.length === 0 ? (
+          <div className="text-center py-24 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-200 group">
+            <div className="bg-white w-20 h-20 rounded-[2rem] shadow-xl shadow-slate-200/50 flex items-center justify-center mx-auto mb-6 text-slate-300 group-hover:scale-110 transition-transform duration-500">
+                {searchQuery ? <Search size={40} /> : <Shield size={40} />}
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">
+              {searchQuery ? "No matching papers found" : "No papers submitted yet"}
+            </h3>
+            <p className="text-slate-500 font-medium max-w-sm mx-auto mb-8">
+               {searchQuery ? "Try searching with a different subject name, status, or Paper ID." : "When you submit question papers for your assigned exams, they will appear here for tracking."}
+            </p>
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-sky-500 transition-all shadow-xl shadow-slate-900/20 active:scale-95"
+              >
+                Reset Filters
+              </button>
+            )}
+          </div>
         ) : (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="grid grid-cols-1 gap-4">
-              {submittedPapers.length === 0 && (
-                <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                  <div className="bg-white w-16 h-16 rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 text-slate-300 transition-colors group-hover:text-indigo-400">
-                      <Shield size={32} />
-                  </div>
-                  <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No papers submitted yet</p>
-                </div>
-              )}
-
-              {submittedPapers.map((paper) => (
+              {filteredPapers.map((paper) => (
                 <div key={paper.assignment_id} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative group overflow-hidden">
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-slate-100 group-hover:bg-indigo-500 transition-colors" />
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">

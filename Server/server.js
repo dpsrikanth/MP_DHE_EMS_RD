@@ -14,6 +14,9 @@ const gradingRoutes = require('./routes/gradingRoutes');
 const paperSetterRoutes = require('./routes/paperSetterRoutes');
 const secrecyRoutes = require('./routes/secrecyRoutes');
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpecs = require('./swagger');
+
 const corsOptions = {
   origin: 'http://localhost:3000',
   optionsSuccessStatus: 200,
@@ -23,6 +26,8 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 // Routes
 app.use('/api', routes);

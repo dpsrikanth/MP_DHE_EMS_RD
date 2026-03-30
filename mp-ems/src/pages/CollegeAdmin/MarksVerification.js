@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
-import { CheckCircle, Clock, ShieldAlert, FileText, ChevronRight, Lock, Building } from 'lucide-react';
+import { CheckCircle, Clock, ShieldAlert, FileText, ChevronRight, Lock, Building, Search, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { TableSearch } from '../../components/TableControls';
 
 const MarksVerification = () => {
     const [trackingData, setTrackingData] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const [isUnlocking, setIsUnlocking] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const isAdmin = user.role?.toLowerCase() === 'admin' || user.role === 'college_admin';
@@ -44,6 +46,17 @@ const MarksVerification = () => {
             setLoading(false);
         }
     };
+
+    const filteredData = useMemo(() => {
+        if (!searchQuery.trim()) return trackingData;
+        
+        const query = searchQuery.toLowerCase();
+        return trackingData.filter(item => 
+            (item.subject_name?.toLowerCase().includes(query)) ||
+            (item.semester?.toLowerCase().includes(query)) ||
+            (item.program_name?.toLowerCase().includes(query))
+        );
+    }, [trackingData, searchQuery]);
 
     const handleReviewClick = (item) => {
         navigate(`/admin/marks-review/${item.subject_id}/${item.section}`, {
@@ -108,19 +121,33 @@ const MarksVerification = () => {
                     <h1 className="text-2xl font-bold text-slate-900 leading-none">Marks Verification Tracking</h1>
                     <p className="text-sm text-slate-500 mt-1 font-medium">Monitor faculty internal marks submissions and verify 'Best of 3' automated calculations.</p>
                 </div>
+                
+                <div className="ml-auto">
+                    <TableSearch 
+                        value={searchQuery}
+                        onChange={setSearchQuery}
+                        placeholder="Search subject, semester or program..."
+                    />
+                </div>
             </div>
 
             {loading ? (
                 <div className="flex justify-center py-20">
                     <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
-            ) : trackingData.length === 0 ? (
+            ) : filteredData.length === 0 ? (
                 <div className="bg-white rounded-3xl p-12 text-center border border-slate-200">
-                    <p className="text-slate-500 font-medium">No marks tracking entries found.</p>
+                    <p className="text-slate-500 font-medium">No results found matching your search.</p>
+                    <button 
+                        onClick={() => setSearchQuery('')}
+                        className="mt-4 text-indigo-600 font-bold hover:underline"
+                    >
+                        Clear Search
+                    </button>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {trackingData.map((item) => {
+                    {filteredData.map((item) => {
                         const statusConfig = getStatusConfig(item.status);
                         const StatusIcon = statusConfig.icon;
 

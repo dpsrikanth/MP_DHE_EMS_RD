@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   BarChart3, Users, CheckCircle, Clock, 
   ArrowRight, FileText, LayoutDashboard,
-  Calendar, Award, ListChecks
+  Calendar, Award, ListChecks, Search, X
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { TableSearch } from "../../components/TableControls";
 
 const ExternalFacultyDashboard = () => {
   const [stats, setStats] = useState({
@@ -13,7 +14,8 @@ const ExternalFacultyDashboard = () => {
     evaluated: 0,
     submitted: 0
   });
-  const [recentAssignments, setRecentAssignments] = useState([]);
+  const [allAssignments, setAllAssignments] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -29,7 +31,7 @@ const ExternalFacultyDashboard = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        setRecentAssignments(data.slice(0, 5)); // Show top 5
+        setAllAssignments(data);
         
         const counts = data.reduce((acc, curr) => {
           acc.total++;
@@ -47,6 +49,26 @@ const ExternalFacultyDashboard = () => {
       setLoading(false);
     }
   };
+
+  const filteredAssignments = useMemo(() => {
+    if (!allAssignments.length) return [];
+    if (!searchQuery.trim()) return allAssignments.slice(0, 5);
+    
+    const query = searchQuery.toLowerCase().trim();
+    return allAssignments.filter(item => {
+      const sName = (item.student_name || "").toLowerCase();
+      const sRoll = (item.rollnumber || "").toLowerCase();
+      const subName = (item.subject_name || "").toLowerCase();
+      const exName = (item.exam_name || "").toLowerCase();
+      const status = (item.assignment_status || "").toLowerCase();
+
+      return sName.includes(query) || 
+             sRoll.includes(query) || 
+             subName.includes(query) || 
+             exName.includes(query) || 
+             status.includes(query);
+    });
+  }, [allAssignments, searchQuery]);
 
   if (loading) {
     return (
@@ -114,8 +136,15 @@ const ExternalFacultyDashboard = () => {
 
       {/* Recent Assignments Table */}
       <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-        <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between">
+        <div className="px-8 py-6 border-b border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4">
           <h3 className="text-xl font-bold text-slate-900">Recent Assignments</h3>
+          <div className="flex-1 w-full sm:max-w-md">
+            <TableSearch 
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search student, subject or status..."
+            />
+          </div>
           <button 
             onClick={() => navigate('/external-faculty/marks-entry')}
             className="text-xs font-black text-indigo-600 hover:text-indigo-700 underline uppercase tracking-tighter"
@@ -134,8 +163,8 @@ const ExternalFacultyDashboard = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {recentAssignments.length > 0 ? (
-                recentAssignments.map((row) => (
+              {filteredAssignments.length > 0 ? (
+                filteredAssignments.map((row) => (
                   <tr key={row.assignment_id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-3">
@@ -181,7 +210,19 @@ const ExternalFacultyDashboard = () => {
               ) : (
                 <tr>
                   <td colSpan="4" className="px-8 py-16 text-center">
-                    <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">No assignments found</p>
+                    <div className="flex flex-col items-center gap-2">
+                       <p className="text-slate-400 text-sm font-bold uppercase tracking-widest text-center">
+                        {searchQuery ? "No matching assignments found" : "No recent assignments found"}
+                      </p>
+                      {searchQuery && (
+                        <button 
+                          onClick={() => setSearchQuery('')}
+                          className="text-xs font-black text-indigo-600 hover:text-indigo-700 underline uppercase mt-2"
+                        >
+                          Clear Search
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )}

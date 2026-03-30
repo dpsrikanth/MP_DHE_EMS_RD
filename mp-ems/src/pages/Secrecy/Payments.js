@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { CreditCard } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { CreditCard, Search } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
 import { toast } from 'react-toastify';
+import { TableSearch } from '../../components/TableControls';
 
 const SecrecyPayments = () => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchPayments();
@@ -42,6 +44,23 @@ const SecrecyPayments = () => {
     } catch (e) { toast.error('Network error'); }
   };
 
+  const filteredPayments = useMemo(() => {
+    if (!searchQuery.trim()) return payments;
+    const query = searchQuery.toLowerCase().trim();
+
+    return payments.filter(p => {
+      const setter = (p.setter_name || "").toLowerCase();
+      const subject = (p.subject_name || "").toLowerCase();
+      const status = (p.status || "").toLowerCase();
+      const amount = (p.amount || "").toString();
+
+      return setter.includes(query) || 
+             subject.includes(query) || 
+             status.includes(query) || 
+             amount.includes(query);
+    });
+  }, [payments, searchQuery]);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-20 space-y-4 min-h-[60vh]">
@@ -58,6 +77,13 @@ const SecrecyPayments = () => {
         <div>
           <h2 className="text-2xl font-black text-slate-800 italic">Payment Management</h2>
           <p className="text-slate-500 text-sm font-medium">Manage and process paper setter payments.</p>
+        </div>
+        <div className="ml-auto w-64">
+          <TableSearch 
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search payments..."
+          />
         </div>
       </div>
 
@@ -99,7 +125,7 @@ const SecrecyPayments = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {payments && payments.map((p) => (
+            {filteredPayments && filteredPayments.map((p) => (
               <tr key={p.id} className="hover:bg-slate-50/30 transition-colors">
                 <td className="px-6 py-4 font-bold text-slate-700 text-sm">{p.setter_name}</td>
                 <td className="px-6 py-4 text-slate-500 font-medium text-sm">{p.subject_name}</td>
@@ -125,9 +151,24 @@ const SecrecyPayments = () => {
                 </td>
               </tr>
             ))}
-            {payments && payments.length === 0 && (
+            {filteredPayments && filteredPayments.length === 0 && (
               <tr>
-                <td colSpan="5" className="px-6 py-8 text-center text-slate-400 font-bold">No payments found.</td>
+                <td colSpan="5" className="px-6 py-20 text-center">
+                   <div className="flex flex-col items-center gap-3">
+                     <Search size={40} className="text-slate-200" />
+                     <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">
+                       {searchQuery ? "No matching payments found" : "No payments found"}
+                     </h3>
+                     {searchQuery && (
+                       <button 
+                         onClick={() => setSearchQuery('')}
+                         className="mt-2 text-xs font-black text-sky-600 hover:text-sky-700 underline uppercase tracking-widest"
+                       >
+                         Reset Search
+                       </button>
+                     )}
+                   </div>
+                </td>
               </tr>
             )}
           </tbody>

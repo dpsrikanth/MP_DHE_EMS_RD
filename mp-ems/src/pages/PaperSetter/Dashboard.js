@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Upload, FileText, Calendar, Clock, Loader2, FileUp, BookOpen, X } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Upload, FileText, Calendar, Clock, Loader2, FileUp, BookOpen, X, Search } from 'lucide-react';
 import { toast } from 'react-toastify';
 import authUtils from '../../utils/authUtils';
+import { TableSearch } from '../../components/TableControls';
 
 const PaperSetterDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(null);
   const [dashData, setDashData] = useState({ assignedExams: [], submittedPapers: [] });
   const [selectedFiles, setSelectedFiles] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchDashData();
@@ -77,6 +79,27 @@ const PaperSetterDashboard = () => {
     }
   };
 
+  const filteredExams = useMemo(() => {
+    if (!searchQuery.trim()) return dashData.assignedExams;
+    const query = searchQuery.toLowerCase().trim();
+    
+    return dashData.assignedExams.filter(exam => {
+      const sName = (exam.subject_name || "").toLowerCase();
+      const eName = (exam.exam_name || "").toLowerCase();
+      const eId = `ex${exam.exam_id}`.toLowerCase();
+      const sem = (exam.semester || "").toLowerCase();
+      const eDate = exam.exam_date && !isNaN(new Date(exam.exam_date)) 
+        ? new Date(exam.exam_date).toLocaleDateString().toLowerCase() 
+        : "";
+      
+      return sName.includes(query) || 
+             eName.includes(query) || 
+             eId.includes(query) || 
+             sem.includes(query) || 
+             eDate.includes(query);
+    });
+  }, [dashData.assignedExams, searchQuery]);
+
   return (
     <div className="min-h-screen bg-slate-50/50 font-sans">
       <div className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 md:px-8">
@@ -90,6 +113,13 @@ const PaperSetterDashboard = () => {
               <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Assigned Exams Dashboard</p>
             </div>
           </div>
+          <div className="w-full md:w-80">
+            <TableSearch 
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search subjects, exams, or dates..."
+            />
+          </div>
         </div>
       </div>
 
@@ -102,16 +132,26 @@ const PaperSetterDashboard = () => {
         ) : (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="grid grid-cols-1 gap-6">
-              {dashData.assignedExams.length === 0 && !loading && (
+              {filteredExams.length === 0 && !loading && (
                 <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
                   <div className="bg-white w-16 h-16 rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 text-slate-300">
-                     <FileText size={32} />
+                     {searchQuery ? <Search size={32} /> : <FileText size={32} />}
                   </div>
-                  <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No active assignments found</p>
+                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-2">
+                    {searchQuery ? "No matching assignments" : "No active assignments found"}
+                  </p>
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      className="text-[10px] font-black text-sky-600 hover:text-sky-700 underline uppercase tracking-widest"
+                    >
+                      Clear Search
+                    </button>
+                  )}
                 </div>
               )}
 
-              {dashData.assignedExams.map((exam) => (
+              {filteredExams.map((exam) => (
                 <div key={`${exam.subject_id}-${exam.exam_id}`} className="bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all overflow-hidden group">
                   <div className="p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="space-y-4 flex-1">

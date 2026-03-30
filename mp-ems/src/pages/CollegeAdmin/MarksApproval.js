@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
-import { FileText, CheckCircle2, XCircle, Search, Lock, Eye } from "lucide-react";
+import { FileText, CheckCircle2, XCircle, Search, Lock, Eye, X } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
+import { TableSearch } from '../../components/TableControls';
 
 const MarksApproval = () => {
     const [workflows, setWorkflows] = useState([]);
@@ -10,6 +11,7 @@ const MarksApproval = () => {
 
     const [selectedSemester, setSelectedSemester] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
     const navigate = useNavigate();
 
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -58,6 +60,23 @@ const MarksApproval = () => {
             setLoading(false);
         }
     };
+
+    const filteredWorkflows = useMemo(() => {
+        if (!searchQuery.trim()) return workflows;
+        
+        const query = searchQuery.toLowerCase();
+        return workflows.filter(wf => {
+            const subjectMatch = (wf.subject_name?.toLowerCase().includes(query)) || 
+                               (String(wf.subject_id).includes(query));
+            const semesterMatch = (wf.semester?.toLowerCase().includes(query)) || 
+                                (String(wf.semester_id).includes(query)) ||
+                                (wf.section?.toLowerCase().includes(query));
+            const statusMatch = wf.status?.toLowerCase().includes(query);
+            const dateMatch = new Date(wf.updated_at).toLocaleString().toLowerCase().includes(query);
+            
+            return subjectMatch || semesterMatch || statusMatch || dateMatch;
+        });
+    }, [workflows, searchQuery]);
 
     const handleFilterChange = (selected) => {
         setSelectedSemester(selected);
@@ -138,12 +157,11 @@ const MarksApproval = () => {
                             styles={{ control: (base) => ({ ...base, borderRadius: '1rem', borderColor: '#e2e8f0' }) }}
                         />
                     </div>
-                    <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 w-full sm:w-auto text-slate-400 focus-within:text-slate-600 focus-within:border-indigo-500 transition-colors">
-                        <Search size={18} />
-                        <input
-                            type="text"
-                            placeholder="Search subjects..."
-                            className="bg-transparent border-none outline-none text-sm w-full font-medium"
+                    <div className="flex-1 w-full sm:max-w-md ml-auto">
+                        <TableSearch 
+                            value={searchQuery}
+                            onChange={setSearchQuery}
+                            placeholder="Search by subject, status, or date..."
                         />
                     </div>
                 </div>
@@ -160,7 +178,7 @@ const MarksApproval = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {workflows.map((wf) => (
+                            {filteredWorkflows.map((wf) => (
                                 <tr key={wf.id} className="hover:bg-slate-50/50">
                                     <td className="px-6 py-4 text-sm font-semibold text-slate-900">
                                         {wf.subject_name || `Sub #${wf.subject_id}`}
@@ -218,12 +236,22 @@ const MarksApproval = () => {
                                     </td>
                                 </tr>
                             ))}
-                            {workflows.length === 0 && !loading && (
+                            {filteredWorkflows.length === 0 && !loading && (
                                 <tr>
                                     <td colSpan="5" className="text-center py-12 text-slate-500">
                                         <div className="flex flex-col items-center gap-2">
                                             <CheckCircle2 size={32} className="text-slate-300" />
-                                            <p className="text-sm font-bold uppercase tracking-widest mt-2">No workflows found</p>
+                                            <p className="text-sm font-bold uppercase tracking-widest mt-2">
+                                                {searchQuery ? "No matching workflows found" : "No workflows found"}
+                                            </p>
+                                            {searchQuery && (
+                                                <button 
+                                                    onClick={() => setSearchQuery('')}
+                                                    className="text-xs font-black text-indigo-600 hover:text-indigo-700 underline uppercase tracking-tighter mt-2"
+                                                >
+                                                    Clear Search
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

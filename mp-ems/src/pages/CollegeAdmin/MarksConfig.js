@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
-import { BookOpenCheck, Save, Plus, Trash2, Pencil, X, BarChart3 } from "lucide-react";
+import { BookOpenCheck, Save, Plus, Trash2, Pencil, X, BarChart3, Search } from "lucide-react";
+import { TableSearch } from '../../components/TableControls';
 
 const MarksConfig = () => {
     const [policies, setPolicies] = useState([]);
@@ -10,6 +11,7 @@ const MarksConfig = () => {
     const [subjects, setSubjects] = useState([]);
     const [departments, setDepartments] = useState([]);
     const [savedStructures, setSavedStructures] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const [selectedPolicy, setSelectedPolicy] = useState(null);
     const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -44,6 +46,22 @@ const MarksConfig = () => {
         if (!selectedDepartment) return subjects;
         return subjects.filter(s => s.department_ids && s.department_ids.includes(selectedDepartment.value));
     }, [subjects, selectedDepartment]);
+
+    const filteredStructures = useMemo(() => {
+        if (!searchQuery.trim()) return savedStructures;
+        
+        const query = searchQuery.toLowerCase();
+        return savedStructures.filter(item => 
+            (item.department_name?.toLowerCase().includes(query)) ||
+            (item.program_name?.toLowerCase().includes(query)) ||
+            (item.semester_name?.toLowerCase().includes(query)) ||
+            (item.subject_name?.toLowerCase().includes(query)) ||
+            (item.subject_code?.toLowerCase().includes(query)) ||
+            (item.component_name?.toLowerCase().includes(query)) ||
+            (String(item.max_marks).includes(query)) ||
+            (String(item.passing_marks).includes(query))
+        );
+    }, [savedStructures, searchQuery]);
 
     useEffect(() => {
         if (selectedDepartment) {
@@ -369,6 +387,13 @@ const MarksConfig = () => {
                         <h2 className="text-lg font-bold text-slate-900">Configured Marks Structures</h2>
                         <p className="text-sm text-slate-500 mt-1">Currently saved internal marks components and criteria</p>
                     </div>
+                    <div className="flex items-center gap-4">
+                        <TableSearch 
+                            value={searchQuery}
+                            onChange={setSearchQuery}
+                            placeholder="Search structures..."
+                        />
+                    </div>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
@@ -384,8 +409,8 @@ const MarksConfig = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {savedStructures.length > 0 ? (
-                                savedStructures.map((struct) => (
+                            {filteredStructures.length > 0 ? (
+                                filteredStructures.map((struct) => (
                                     <tr key={struct.id} className="hover:bg-slate-50/50 transition-colors">
                                         <td className="py-4 px-6 text-sm text-slate-600 font-medium bg-indigo-50/30">{struct.department_name}</td>
                                         <td className="py-4 px-6">
@@ -438,7 +463,17 @@ const MarksConfig = () => {
                                     <td colSpan="7" className="py-12 px-6 text-center">
                                         <div className="flex flex-col items-center gap-2">
                                             <BarChart3 size={32} className="text-slate-200" />
-                                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">No structures found</p>
+                                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">
+                                                {searchQuery ? "No structures found matching your search" : "No structures found"}
+                                            </p>
+                                            {searchQuery && (
+                                                <button 
+                                                    onClick={() => setSearchQuery('')}
+                                                    className="text-xs font-black text-indigo-600 hover:text-indigo-700 underline uppercase tracking-tighter mt-2"
+                                                >
+                                                    Clear Search
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

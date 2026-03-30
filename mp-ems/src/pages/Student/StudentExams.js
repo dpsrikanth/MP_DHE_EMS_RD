@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
-import { Calendar, Clock, BookOpen, CreditCard, CheckCircle, AlertCircle, Printer } from 'lucide-react';
+import { Calendar, Clock, BookOpen, CreditCard, CheckCircle, AlertCircle, Printer, Search, X } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
+import { TableSearch } from '../../components/TableControls';
 
 const StudentExams = () => {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchExams();
@@ -58,10 +60,23 @@ const StudentExams = () => {
     }
   };
 
+  const filteredExams = useMemo(() => {
+    if (!searchQuery.trim()) return exams;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return exams.filter(exam => {
+      const sName = (exam.subject_name || "").toLowerCase();
+      const sCode = (exam.subject_code || "").toLowerCase();
+      const eDate = new Date(exam.exam_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric', weekday: 'long' }).toLowerCase();
+      
+      return sName.includes(query) || sCode.includes(query) || eDate.includes(query);
+    });
+  }, [exams, searchQuery]);
+
   // Group exams by series
   const examGroups = React.useMemo(() => {
     const groups = {};
-    exams.forEach(exam => {
+    filteredExams.forEach(exam => {
       const key = `${exam.exam_name}_${exam.semester_id}`;
       if (!groups[key]) {
         groups[key] = {
@@ -79,7 +94,7 @@ const StudentExams = () => {
       }
     });
     return Object.values(groups);
-  }, [exams]);
+  }, [filteredExams]);
 
   if (loading) {
     return (
@@ -96,9 +111,18 @@ const StudentExams = () => {
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Exam Schedule</h1>
           <p className="text-slate-500 font-medium">View and register for your upcoming examinations</p>
         </div>
-        <div className="bg-sky-50 px-4 py-2 rounded-2xl border border-sky-100 flex items-center gap-2 text-sky-700 font-bold text-sm">
-          <Calendar size={18} />
-          {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
+        <div className="flex items-center gap-6">
+          <div className="w-full md:w-80">
+            <TableSearch 
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search subjects or dates..."
+            />
+          </div>
+          <div className="bg-sky-50 px-4 py-2 rounded-2xl border border-sky-100 flex items-center gap-2 text-sky-700 font-bold text-sm h-12">
+            <Calendar size={18} />
+            {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
+          </div>
         </div>
       </div>
 
@@ -107,8 +131,20 @@ const StudentExams = () => {
           <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 mx-auto mb-4">
             <AlertCircle size={32} />
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-2">No Exams Scheduled</h3>
-          <p className="text-slate-500">There are no exams currently open for registration in your program.</p>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">
+            {searchQuery ? "No matching exams found" : "No Exams Scheduled"}
+          </h3>
+          <p className="text-slate-500">
+            {searchQuery ? "Try searching with a different keyword." : "There are no exams currently open for registration in your program."}
+          </p>
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="mt-4 text-xs font-black text-sky-600 hover:text-sky-700 underline uppercase tracking-tighter"
+            >
+              Clear Search
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-12">

@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
-import { BookOpen, CheckCircle, Clock, ShieldAlert, ChevronRight, User } from "lucide-react";
+import { BookOpen, CheckCircle, Clock, ShieldAlert, ChevronRight, User, Search, X } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
+import { TableSearch } from '../../components/TableControls';
 
 const FacultyDashboard = () => {
     const [assignedSubjects, setAssignedSubjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [workflowStatus, setWorkflowStatus] = useState({});
+    const [searchQuery, setSearchQuery] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -51,6 +53,19 @@ const FacultyDashboard = () => {
             setLoading(false);
         }
     };
+
+    const filteredAssignments = useMemo(() => {
+        if (!searchQuery.trim()) return assignedSubjects;
+        
+        const query = searchQuery.toLowerCase().trim();
+        return assignedSubjects.filter(item => {
+            const sName = (item.subject_name || "").toLowerCase();
+            const sCode = (item.subject_code || "").toLowerCase();
+            const semName = (item.semester_name || "").toLowerCase();
+            
+            return sName.includes(query) || sCode.includes(query) || semName.includes(query);
+        });
+    }, [assignedSubjects, searchQuery]);
 
     const getStatusConfig = (subjectId, section) => {
         const status = workflowStatus[`${subjectId}_${section}`] || 'Pending';
@@ -102,23 +117,48 @@ const FacultyDashboard = () => {
             </div>
 
             {/* Assignments Grid */}
-            <div className="space-y-4">
-                <div className="flex items-center gap-2 px-2">
-                    <BookOpen size={20} className="text-indigo-500" />
-                    <h2 className="text-xl font-bold text-slate-800">My Subject Assignments</h2>
+            <div className="space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
+                    <div className="flex items-center gap-2">
+                        <BookOpen size={20} className="text-indigo-500" />
+                        <h2 className="text-xl font-bold text-slate-800">My Subject Assignments</h2>
+                    </div>
+                    <div className="w-full md:w-80">
+                        <TableSearch 
+                            value={searchQuery}
+                            onChange={setSearchQuery}
+                            placeholder="Search subjects, codes, or semesters..."
+                        />
+                    </div>
                 </div>
 
                 {loading ? (
                     <div className="flex justify-center py-20">
                         <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                     </div>
-                ) : assignedSubjects.length === 0 ? (
-                    <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-slate-300">
-                        <p className="text-slate-500 font-medium">No subjects assigned to you for the current academic year.</p>
+                ) : filteredAssignments.length === 0 ? (
+                    <div className="bg-white rounded-[3rem] p-20 text-center border-2 border-dashed border-slate-200 shadow-inner group">
+                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mx-auto mb-6 group-hover:scale-110 transition-transform duration-500">
+                           <Search size={32} />
+                        </div>
+                        <h3 className="text-xl font-black text-slate-900 mb-2">
+                            {searchQuery ? "No matching subjects" : "Awaiting Assignments"}
+                        </h3>
+                        <p className="text-slate-500 font-medium max-w-sm mx-auto">
+                            {searchQuery ? "Try searching with a different subject name or code." : "No subjects have been assigned specifically to your faculty profile yet."}
+                        </p>
+                        {searchQuery && (
+                            <button 
+                                onClick={() => setSearchQuery('')}
+                                className="mt-6 px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/20"
+                            >
+                                Clear All Searches
+                            </button>
+                        )}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {assignedSubjects.map((item) => {
+                        {filteredAssignments.map((item) => {
                             const statusConfig = getStatusConfig(item.subject_id, item.section);
                             const StatusIcon = statusConfig.icon;
 
