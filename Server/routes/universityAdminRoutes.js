@@ -6,7 +6,8 @@ const {
     getRegistrationsPendingAssignment, 
     assignExternalFaculty, 
     getExternalAssignments,
-    getFinalizedExternalMarks
+    getFinalizedExternalMarks,
+    getResultHubData
 } = require('../controllers/universityAdminController');
 
 /**
@@ -88,5 +89,26 @@ router.get('/external-assignments', verifyToken, getExternalAssignments);
  *       - bearerAuth: []
  */
 router.get('/finalized-external-marks', verifyToken, getFinalizedExternalMarks);
+
+/**
+ * @swagger
+ * /api/university-admin/result-hub-data:
+ *   get:
+ *     summary: Get comprehensive marks data for the Result Hub with optional filters
+ *     tags: [University Administration]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: exam_id
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: college_id
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: program_id
+ *         schema: { type: integer }
+ */
+router.get('/result-hub-data', verifyToken, getResultHubData);
 
 module.exports = router;

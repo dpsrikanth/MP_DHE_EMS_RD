@@ -12,7 +12,7 @@ return res.status(401).json({message:"header missing"})
     {
       return  res.status(403).json({message:"token is missing"});
     }
-    jwt_token.verify(token,process.env.jwt_key,(err,user)=>
+    jwt_token.verify(token,process.env.JWT_KEY,(err,user)=>
     {
         if(err)
         {

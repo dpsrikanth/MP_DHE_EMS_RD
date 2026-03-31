@@ -415,7 +415,7 @@ const StudentsForm = () => {
                       className={`w-full bg-slate-50 border-2 ${errors.programName ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-emerald-500'} rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white outline-none transition-all font-bold appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       <option value="">{form.collageName ? '-- Select Program --' : '-- Select College First --'}</option>
-                      {collegePrograms.map((program) => (
+                      {programs.map((program) => (
                         <option key={program.id} value={program.name}>
                           {program.name}
                         </option>

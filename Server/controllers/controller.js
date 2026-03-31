@@ -60,39 +60,39 @@ const getDashboardStats = async (req, res) => {
   try {
     const { id, role } = req.user || {};
     const university_id = req.user?.university_id || req.user?.universityId;
-    const params = [];
-    let teacherSub = "SELECT COUNT(*) FROM master_teachers";
-    let examSub = "SELECT COUNT(*) FROM exams";
-    let programSub = "SELECT COUNT(*) FROM master_programs";
-    let semesterSub = "SELECT COUNT(*) FROM master_semesters";
-    let subjectSub = "SELECT COUNT(*) FROM master_subjects";
-    let yearSub = "SELECT COUNT(*) FROM master_academic_years";
 
-    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
+    const uId = (role === 'superadmin' && req.query.universityId)
+      ? req.query.universityId
+      : (role === 'university_admin' ? university_id : null);
+
+    let statsQueries;
 
     if (uId) {
-      teacherSub = `SELECT COUNT(*) FROM master_teachers mt JOIN colleges c ON mt.college_id = c.id WHERE c.university_id = $1 AND (mt.status = 'Active' OR mt.status IS NULL) AND (c.status = true OR c.status IS NULL)`;
-      examSub = `SELECT COUNT(*) FROM exams e JOIN colleges c ON e.college_id = c.id WHERE c.university_id = $1 AND (e.status = true OR e.status IS NULL) AND (c.status = true OR c.status IS NULL)`;
-      programSub = `SELECT COUNT(*) FROM university_master_programs WHERE university_id = $1`;
-      semesterSub = `SELECT COUNT(*) FROM university_master_semesters WHERE university_id = $1`;
-      subjectSub = `SELECT COUNT(*) FROM master_subjects s JOIN university_master_programs ump ON s.program_id = ump.program_id WHERE ump.university_id = $1 AND (s.status = 'Active' OR s.status IS NULL)`;
-      yearSub = `SELECT COUNT(*) FROM university_master_academic_years WHERE university_id = $1`;
-      params.push(uId);
+      const p = [uId];
+      statsQueries = {
+        totalTeachers:     { q: `SELECT COUNT(*) FROM master_teachers mt JOIN colleges c ON mt.college_id = c.id WHERE c.university_id = $1 AND (mt.status = 'Active' OR mt.status IS NULL) AND (c.status = true OR c.status IS NULL)`, p },
+        activeExams:       { q: `SELECT COUNT(*) FROM exams e JOIN colleges c ON e.college_id = c.id WHERE c.university_id = $1 AND (e.status = true OR e.status IS NULL) AND (c.status = true OR c.status IS NULL)`, p },
+        totalPrograms:     { q: `SELECT COUNT(*) FROM university_master_programs WHERE university_id = $1`, p },
+        totalSemesters:    { q: `SELECT COUNT(*) FROM university_master_semesters WHERE university_id = $1`, p },
+        totalSubjects:     { q: `SELECT COUNT(*) FROM master_subjects s JOIN university_master_programs ump ON s.program_id = ump.program_id WHERE ump.university_id = $1 AND (s.status = 'Active' OR s.status IS NULL)`, p },
+        totalAcademicYears:{ q: `SELECT COUNT(*) FROM university_master_academic_years WHERE university_id = $1`, p },
+        totalPolicies:     { q: `SELECT COUNT(*) FROM master_policies WHERE status = true OR status IS NULL`, p: [] },
+      };
+    } else {
+      statsQueries = {
+        totalTeachers:     { q: "SELECT COUNT(*) FROM master_teachers", p: [] },
+        activeExams:       { q: "SELECT COUNT(*) FROM exams", p: [] },
+        totalPrograms:     { q: "SELECT COUNT(*) FROM master_programs", p: [] },
+        totalSemesters:    { q: "SELECT COUNT(*) FROM master_semesters", p: [] },
+        totalSubjects:     { q: "SELECT COUNT(*) FROM master_subjects", p: [] },
+        totalAcademicYears:{ q: "SELECT COUNT(*) FROM master_academic_years", p: [] },
+        totalPolicies:     { q: "SELECT COUNT(*) FROM master_policies WHERE status = true OR status IS NULL", p: [] },
+      };
     }
 
-    const statsQueries = {
-      totalTeachers: teacherSub,
-      activeExams: examSub,
-      totalPrograms: programSub,
-      totalSemesters: semesterSub,
-      totalSubjects: subjectSub,
-      totalAcademicYears: yearSub,
-      totalPolicies: "SELECT COUNT(*) FROM master_policies WHERE status = 'Active' OR status IS NULL OR status = true",
-    };
-
     const stats = {};
-    for (const [key, query] of Object.entries(statsQueries)) {
-      const result = await client.query(query, params);
+    for (const [key, { q, p }] of Object.entries(statsQueries)) {
+      const result = await client.query(q, p);
       stats[key] = parseInt(result.rows[0].count, 10);
     }
     res.json(stats);
@@ -109,13 +109,17 @@ const getUsers = async (req, res) => {
     let query = `
       SELECT DISTINCT u.id, u.name, u.email, u.role_id, u.is_active, u.created_at, 
              r.role_name, 
-             COALESCE(c.name, c_t.name, c_s.name) as college_name,
-             COALESCE(univ.name, univ_t.name, univ_s.name) as university_name
+             COALESCE(c_mt.name, c.name, c_t.name, c_s.name) as college_name,
+             COALESCE(univ_mt.name, univ.name, univ_t.name, univ_s.name) as university_name
       FROM public.users u
       LEFT JOIN public.roles r ON u.role_id = r.id
       LEFT JOIN public.colleges c ON u.college_id = c.id
       LEFT JOIN public.universities univ ON u.university_id = univ.id
-      -- Teachers Join
+      -- Master Teachers Join
+      LEFT JOIN public.master_teachers mt ON u.id = mt.user_id
+      LEFT JOIN public.colleges c_mt ON mt.college_id = c_mt.id
+      LEFT JOIN public.universities univ_mt ON c_mt.university_id = univ_mt.id
+      -- Old Teachers Join
       LEFT JOIN public.teachers t ON u.id = t.user_id
       LEFT JOIN public.colleges c_t ON t.college_id = c_t.id
       LEFT JOIN public.universities univ_t ON c_t.university_id = univ_t.id
@@ -127,10 +131,10 @@ const getUsers = async (req, res) => {
     const params = [];
 
     if (role === 'university_admin' && university_id) {
-      query += " WHERE (u.university_id = $1 OR c.university_id = $1 OR c_t.university_id = $1 OR c_s.university_id = $1)";
+      query += " WHERE (u.university_id = $1 OR c.university_id = $1 OR c_mt.university_id = $1 OR c_t.university_id = $1 OR c_s.university_id = $1)";
       params.push(university_id);
     } else if (role === 'college_admin' && req.user.college_id) {
-      query += " WHERE (u.college_id = $1 OR t.college_id = $1 OR c_s.id = $1)";
+      query += " WHERE (u.college_id = $1 OR mt.college_id = $1 OR t.college_id = $1 OR c_s.id = $1)";
       params.push(req.user.college_id);
     }
 
@@ -534,7 +538,15 @@ const refreshToken = async (req, res) => {
     if (!refreshTokenCookie) return res.status(401).json({ message: "No refresh token provided" });
     jwt.verify(refreshTokenCookie, process.env.REFRESH_SECRET, async (err, decoded) => {
       if (err) return res.status(403).json({ message: "Invalid refresh token" });
-      const payload = { id: decoded.id, email: decoded.email, role: decoded.role };
+      const payload = { 
+        id: decoded.id, 
+        email: decoded.email, 
+        role: decoded.role,
+        college_id: decoded.college_id,
+        university_id: decoded.university_id,
+        teacher_id: decoded.teacher_id,
+        department_id: decoded.department_id
+      };
       const newAccessToken = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: "15m" });
       res.json({ token: newAccessToken });
     });
@@ -763,7 +775,8 @@ const getStudents = async (req, res) => {
     let query = `SELECT s.* FROM public.students s`;
     const params = [];
 
-    if (role === 'university_admin' && university_id) {
+    if (role === 'university_admin') {
+      if (!university_id) return res.json([]);
       query = `
         SELECT s.* 
         FROM public.students s
@@ -1029,9 +1042,14 @@ const getColleges = async (req, res) => {
     `;
     const params = [];
 
-    if (role === 'university_admin' && university_id) {
+    if (role === 'university_admin') {
+      if (!university_id) return res.json([]);
       query += " WHERE c.university_id = $1 AND (c.status = true OR c.status IS NULL)";
       params.push(university_id);
+    } else if (role === 'college_admin') {
+      if (!req.user.college_id) return res.json([]);
+      query += " WHERE c.id = $1 AND (c.status = true OR c.status IS NULL)";
+      params.push(req.user.college_id);
     } else {
       query += " WHERE (c.status = true OR c.status IS NULL)";
     }
@@ -1199,6 +1217,10 @@ const getExams = async (req, res) => {
       const { department_id } = req.user;
       visibilityClause = `WHERE (e.college_id = $1 OR (e.exam_type = 2 AND e.college_id IS NULL AND e.university_id = (SELECT university_id FROM colleges WHERE id = $1))) AND e.department_id = $2`;
       params.push(college_id, department_id);
+    } else if (role === 'university_admin') {
+      const university_id = req.user?.university_id || req.user?.universityId;
+      visibilityClause = `WHERE (e.university_id = $1 OR c.university_id = $1)`;
+      params.push(university_id);
     }
 
     let query = `
@@ -1262,12 +1284,14 @@ const createExam = async (req, res) => {
     // Normalize empty string to null (university-wide exam)
     college_id = college_id === '' ? null : college_id;
 
-    // Enforce college_id and department_id for restricted roles
+    // Enforce college_id, department_id, and university_id for restricted roles
     if (role === 'college_admin') {
       college_id = userCollegeId;
     } else if (role === 'HOD') {
       college_id = userCollegeId;
       department_id = userDepartmentId;
+    } else if (role === 'university_admin') {
+      university_id = req.user?.university_id || req.user?.universityId;
     }
 
     // --- Capacity Validation Logic ---
@@ -2165,7 +2189,11 @@ const getMasterPrograms = async (req, res) => {
                  FROM master_programs p`;
     const params = [];
 
-    if (uId) {
+    if (role === 'university_admin') {
+      if (!university_id) return res.json([]);
+      query += ` JOIN university_master_programs ump ON p.id = ump.program_id WHERE ump.university_id = $1 AND (p.status = 'Active' OR p.status IS NULL)`;
+      params.push(university_id);
+    } else if (uId) {
       query += ` JOIN university_master_programs ump ON p.id = ump.program_id WHERE ump.university_id = $1 AND (p.status = 'Active' OR p.status IS NULL)`;
       params.push(uId);
     } else {
@@ -2601,6 +2629,10 @@ const getMasterTeachers = async (req, res) => {
     } else if (roleName === 'college_admin') {
       params.push(collegeId);
       query += ` AND mt.college_id = $1`;
+    } else if (roleName === 'university_admin') {
+      const universityId = req.user?.university_id || req.user?.universityId;
+      params.push(universityId);
+      query += ` AND c.university_id = $1`;
     }
 
     query += ` ORDER BY mt.id DESC`;

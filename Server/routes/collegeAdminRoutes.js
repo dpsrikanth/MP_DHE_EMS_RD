@@ -91,24 +91,41 @@ router.get('/policy-mappings', collegeAdminController.getPolicyMappings);
  *   put:
  *     summary: Edit an existing policy mapping
  *     tags: [College Administration]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- */
-router.put('/policy-mappings/:id', collegeAdminController.editPolicyMapping);
-
-/**
- * @swagger
- * /api/college-admin/policy-mappings/{id}:
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               policy_id: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Policy mapping updated
  *   delete:
  *     summary: Delete a policy mapping
  *     tags: [College Administration]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Policy mapping deleted
  */
+router.put('/policy-mappings/:id', collegeAdminController.editPolicyMapping);
 router.delete('/policy-mappings/:id', collegeAdminController.deletePolicyMapping);
 
 // Marks structure routes
@@ -162,6 +179,46 @@ router.get('/marks-structure/:subject_id', collegeAdminController.getMarksStruct
  */
 router.get('/all-marks-structures', collegeAdminController.getAllMarksStructures);
 router.get('/get-components', collegeAdminController.getMarksStructureComponents);
+/**
+ * @swagger
+ * /api/college-admin/marks-structure/{id}:
+ *   put:
+ *     summary: Edit an existing marks structure
+ *     tags: [College Administration]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               components: { type: object }
+ *     responses:
+ *       200:
+ *         description: Marks structure updated
+ *   delete:
+ *     summary: Delete a marks structure
+ *     tags: [College Administration]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Marks structure deleted
+ */
 router.put('/marks-structure/:id', collegeAdminController.editMarksStructure);
 router.delete('/marks-structure/:id', collegeAdminController.deleteMarksStructure);
 
@@ -209,6 +266,46 @@ router.delete('/marks-structure/:id', collegeAdminController.deleteMarksStructur
  */
 router.post('/assign-faculty', collegeAdminController.assignFacultyToSubject);
 router.get('/faculty-assignments/:college_id', collegeAdminController.getFacultyAssignments);
+/**
+ * @swagger
+ * /api/college-admin/faculty-assignments/{id}:
+ *   put:
+ *     summary: Edit an existing faculty assignment
+ *     tags: [College Administration]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               teacher_id: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Assignment updated
+ *   delete:
+ *     summary: Delete a faculty assignment
+ *     tags: [College Administration]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Assignment deleted
+ */
 router.put('/faculty-assignments/:id', collegeAdminController.editFacultyAssignment);
 router.delete('/faculty-assignments/:id', collegeAdminController.deleteFacultyAssignment);
 
@@ -279,7 +376,50 @@ router.get('/review-marks', collegeAdminController.reviewMarks);
  */
 router.post('/lock-marks', collegeAdminController.lockMarks);
 
+/**
+ * @swagger
+ * /api/college-admin/save-student-review:
+ *   post:
+ *     summary: Save specific review comments for a student's marks
+ *     tags: [College Administration]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               student_id: { type: integer }
+ *               marks_id: { type: integer }
+ *               review_status: { type: string }
+ *     responses:
+ *       200:
+ *         description: Review saved
+ */
 router.post('/save-student-review', collegeAdminController.saveStudentReview);
+/**
+ * @swagger
+ * /api/college-admin/reject-workflow-section:
+ *   post:
+ *     summary: Reject a submitted workflow section back to the teacher
+ *     tags: [College Administration]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               section: { type: string }
+ *               college_id: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Workflow section rejected
+ */
 router.post('/reject-workflow-section', collegeAdminController.rejectWorkflow);
 
 /**
@@ -290,10 +430,46 @@ router.post('/reject-workflow-section', collegeAdminController.rejectWorkflow);
  *     tags: [College Administration]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               subject_id: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Marks unlocked successfuly
  */
 router.post('/unlock-marks', collegeAdminController.unlockMarks);
 router.get('/marks-report', collegeAdminController.getMarksReport);
-// Total Rooms Dashboard Setup
+
+/**
+ * @swagger
+ * /api/college-admin/total-rooms:
+ *   get:
+ *     summary: Get total examination rooms for the college
+ *     tags: [College Administration]
+ *     security:
+ *       - bearerAuth: []
+ *   put:
+ *     summary: Update total examination rooms for the college
+ *     tags: [College Administration]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               total_rooms: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Room count updated
+ */
 router.get('/total-rooms', collegeAdminController.getCollegeTotalRooms);
 router.put('/total-rooms', collegeAdminController.updateCollegeTotalRooms);
 
