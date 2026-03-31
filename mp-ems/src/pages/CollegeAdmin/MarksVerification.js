@@ -68,9 +68,7 @@ const MarksVerification = () => {
     };
 
     const handleUnlockMarks = async (item) => {
-        if (!window.confirm(`Are you sure you want to UNLOCK marks for ${item.subject_name} (Section ${item.section})? This will delete individual reviews and calculated results.`)) {
-            return;
-        }
+        toast.info(`Unlocking marks for ${item.subject_name} (Section ${item.section})...`);
 
         setIsUnlocking(true);
         try {

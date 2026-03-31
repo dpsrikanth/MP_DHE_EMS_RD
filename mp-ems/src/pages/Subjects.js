@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Select from "react-select";
 import { toast } from 'react-toastify';
 import { 
@@ -25,11 +26,9 @@ const Subjects = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selected, setSelected] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const navigate = useNavigate();
 
   // Master Data
   const [departments, setDepartments] = useState([]);
@@ -159,72 +158,11 @@ const Subjects = () => {
     }
   };
 
-  const handleSubmit = async (isEdit = false) => {
-    if (!form.name || !form.subject_code) return toast.warning('Name and Code are required');
-    try {
-      const token = localStorage.getItem('token');
-      const payload = {
-        ...form,
-        department_ids: form.department_ids?.map(d => d.value) || [],
-        program_id: form.program_id?.value || null,
-        semester_id: form.semester_id?.value || null,
-        teacher_id: form.teacher_id?.value || null,
-        mapping_type: form.mapping_type?.value || 'Major',
-        is_mandatory: form.is_mandatory?.value || 'M',
-        credit: form.credit
-      };
-      
-      const res = await fetch(`http://localhost:8080/api/master-subjects${isEdit ? `/${selected.id}` : ''}`, {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(payload)
-      });
-      
-      if (!res.ok) throw new Error(isEdit ? 'Update failed' : 'Save failed');
-      toast.success(isEdit ? 'Subject updated!' : 'Subject added!');
-      setShowAddModal(false);
-      setShowEditModal(false);
-      resetForm();
-      fetchData();
-    } catch (err) {
-      toast.error(err.message);
-    }
-  };
+  // Removed handleSubmit in favor of route-based Form page
 
-  const loadForEdit = (item) => {
-    setSelected(item);
-    setForm({
-      name: item.name,
-      subject_code: item.subject_code,
-      department_ids: departments.filter(d => item.department_ids?.includes(d.value)) || [],
-      program_id: programs.find(p => p.value === item.program_id) || null,
-      semester_id: semesters.find(s => s.value === item.semester_id) || null,
-      teacher_id: teachers.find(t => t.value === item.teacher_id) || null,
-      mapping_type: mappingTypes.find(m => m.value === item.mapping_type) || mappingTypes[0],
-      is_mandatory: mandatoryOptions.find(m => m.value === item.is_mandatory) || mandatoryOptions[0],
-      has_examination: item.has_examination,
-      periods_per_week: item.periods_per_week || 1,
-      credit: item.credit || 0
-    });
-    setShowEditModal(true);
-  };
+  // Removed loadForEdit in favor of route-based Form page
 
-  const resetForm = () => {
-    setForm({
-      name: '',
-      subject_code: '',
-      department_ids: [],
-      program_id: null,
-      semester_id: null,
-      teacher_id: null,
-      mapping_type: mappingTypes[0],
-      is_mandatory: mandatoryOptions[0],
-      has_examination: true,
-      periods_per_week: 6,
-      credit: 4
-    });
-    setSelected(null);
-  };
+  // Removed resetForm
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
@@ -291,7 +229,7 @@ const Subjects = () => {
             <TableSearch value={searchQuery} onChange={setSearchQuery} placeholder="Search subjects..." />
             <ColumnVisibilitySelector columns={availableColumns} visibleColumns={visibleColumns} onToggle={toggleColumn} />
             <button 
-              onClick={() => { resetForm(); setShowAddModal(true); }}
+              onClick={() => navigate('/subjects/add')}
               className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-2xl shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
             >
               <Plus size={20} />
@@ -354,7 +292,7 @@ const Subjects = () => {
                   {visibleColumns.periods_per_week && <td className="px-4 py-5 text-center text-sm font-black text-slate-900">{item.periods_per_week}</td>}
                   <td className="px-8 py-5 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => loadForEdit(item)} className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"><Pencil size={18} /></button>
+                      <button onClick={() => navigate(`/subjects/edit/${item.id}`)} className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"><Pencil size={18} /></button>
                       <button onClick={() => { setDeleteTarget(item); setShowDeleteModal(true); }} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><MdDelete size={20} /></button>
                     </div>
                   </td>
@@ -366,117 +304,7 @@ const Subjects = () => {
         <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={totalItems} pageSize={pageSize} onPageSizeChange={setPageSize} />
       </div>
 
-      {(showAddModal || showEditModal) && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => { setShowAddModal(false); setShowEditModal(false); resetForm(); }} />
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
-              <div>
-                <h2 className="text-xl font-black tracking-tight">{showEditModal ? 'Update Subject' : 'New Subject Entry'}</h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70">Unified Subject Detail</p>
-              </div>
-              <button onClick={() => { setShowAddModal(false); setShowEditModal(false); resetForm(); }} className="p-2 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-xl transition-all"><X size={18} /></button>
-            </div>
-            
-            <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto max-h-[70vh]">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject Name</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10"><Book size={18} /></div>
-                    <input type="text" placeholder="e.g. Operating Systems" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white focus:border-amber-500 outline-none transition-all font-semibold" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject Code</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10"><Code size={18} /></div>
-                    <input type="text" placeholder="e.g. CS101" value={form.subject_code} onChange={(e) => setForm({ ...form, subject_code: e.target.value })} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white focus:border-amber-500 outline-none transition-all font-bold uppercase" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Departments</label>
-                  <Select isMulti options={departments} value={form.department_ids} onChange={(v) => setForm({ ...form, department_ids: v })} styles={customSelectStyles} placeholder="Select Departments..." />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Assigned Teacher</label>
-                  <Select options={teachers} isClearable value={form.teacher_id} onChange={(v) => setForm({ ...form, teacher_id: v })} styles={customSelectStyles} placeholder="Select Teacher (Optional)..." />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Program / Course</label>
-                  <Select options={programs} isClearable value={form.program_id} onChange={(v) => setForm({ ...form, program_id: v })} styles={customSelectStyles} placeholder="Select Program..." />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Semester</label>
-                  <Select options={semesters} isClearable value={form.semester_id} onChange={(v) => setForm({ ...form, semester_id: v })} styles={customSelectStyles} placeholder="Select Semester..." />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center block">Requirement</label>
-                    <Select options={mandatoryOptions} value={form.is_mandatory} onChange={(v) => setForm({ ...form, is_mandatory: v })} styles={customSelectStyles} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center block">Mapping Type</label>
-                    <Select options={mappingTypes} value={form.mapping_type} onChange={(v) => setForm({ ...form, mapping_type: v })} styles={customSelectStyles} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center block">Examination</label>
-                    <button 
-                      onClick={() => setForm({...form, has_examination: !form.has_examination})}
-                      className={`w-full py-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${
-                        form.has_examination ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400'
-                      }`}
-                    >
-                      {form.has_examination ? <FileCheck size={20} /> : <X size={20} />}
-                      <span className="text-[10px] font-bold uppercase">{form.has_examination ? 'Required' : 'None'}</span>
-                    </button>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center block">Periods/Week</label>
-                    <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><Calendar size={18} /></div>
-                      <input 
-                        type="number" 
-                        value={form.periods_per_week} 
-                        onChange={(e) => setForm({...form, periods_per_week: parseInt(e.target.value) || 0})}
-                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white focus:border-amber-500 outline-none transition-all font-bold"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center block">Credits</label>
-                    <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-500"><Layers size={18} /></div>
-                      <input 
-                        type="number" 
-                        value={form.credit} 
-                        onChange={(e) => setForm({...form, credit: parseInt(e.target.value) || 0})}
-                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white focus:border-amber-500 outline-none transition-all font-bold"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
-              <button className="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-800" onClick={() => { setShowAddModal(false); setShowEditModal(false); resetForm(); }}>Discard</button>
-              <button 
-                onClick={() => handleSubmit(showEditModal)}
-                className="px-8 py-3.5 bg-amber-600 hover:bg-amber-700 text-white font-black rounded-2xl shadow-xl shadow-amber-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm flex items-center gap-2"
-              >
-                <Check size={18} />
-                <span>{showEditModal ? 'Update Subject' : 'Save Subject'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Add/Edit Modal was removed in favor of route-based Form page */}
 
       {showDeleteModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">

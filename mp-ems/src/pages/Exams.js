@@ -7,6 +7,7 @@ import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, ColumnVisibilitySelector } from '../components/TableControls';
 import authUtils from "../utils/authUtils";
+import { toast } from 'react-toastify';
 
 const Exams = () => {
   const [data, setData] = useState([]);
@@ -380,7 +381,7 @@ const Exams = () => {
   };
 
   const handleDelete = async (series) => {
-    if (!window.confirm(`Are you sure you want to delete this entire exam series (${series.subjects.length} subjects)?`)) return;
+    toast.info(`Deleting exam series (${series.subjects.length} subjects)...`);
     try {
       const token = localStorage.getItem('token');
       setLoading(true);
@@ -394,10 +395,11 @@ const Exams = () => {
       );
       
       await Promise.all(deletePromises);
+      toast.success('Exam series deleted successfully!');
       fetchData();
     } catch (err) {
       console.error(err);
-      alert("Error deleting exam series");
+      toast.error('Error deleting exam series');
     } finally {
       setLoading(false);
     }
@@ -472,11 +474,11 @@ const Exams = () => {
 
       if (!res.ok) throw new Error("Failed to send request");
       
-      alert("Shortage request sent to University Admin successfully.");
+      toast.success('Shortage request sent to University Admin successfully.');
       setIsShortageModalOpen(false);
       setShortageData(null);
     } catch (err) {
-      alert("Error sending shortage request: " + err.message);
+      toast.error('Error sending shortage request: ' + err.message);
     } finally {
       setShortageLoading(false);
     }

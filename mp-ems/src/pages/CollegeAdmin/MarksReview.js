@@ -82,7 +82,7 @@ const MarksReview = () => {
     };
 
     const handleApproveSection = async () => {
-        if (!window.confirm("Are you sure you want to approve this section? It will be sent to the College Admin for final locking.")) return;
+        toast.info("Approving section...");
 
         setIsLocking(true); // Reusing isLocking for loading state
         try {
@@ -119,7 +119,7 @@ const MarksReview = () => {
     };
 
     const handleLockMarks = async () => {
-        if (!window.confirm("Are you sure you want to PERMANENTLY lock these marks and calculate results? This action cannot be undone.")) return;
+        toast.info("Locking marks and calculating results...");
 
         setIsLocking(true);
         try {
@@ -151,7 +151,7 @@ const MarksReview = () => {
     };
 
     const handleRejectWorkflow = async () => {
-        if (!window.confirm("Are you sure you want to reject this entire section and send it back to the faculty for corrections?")) return;
+        toast.info("Rejecting section and sending back to faculty...");
 
         setIsRejecting(true);
         try {

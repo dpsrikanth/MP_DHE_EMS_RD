@@ -21,11 +21,6 @@ const AcademicYears = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    year_name: ''
-  });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [availableMasters, setAvailableMasters] = useState([]);
@@ -105,17 +100,9 @@ const AcademicYears = () => {
     }
   };
 
-  const handleAddClick = () => {
-    setIsEditing(false);
-    setFormData({ year_name: '' });
-    setShowModal(true);
-  };
+  // Removed handleAddClick in favor of route-based Form page
 
-  const handleEditClick = (item) => {
-    setIsEditing(true);
-    setFormData({ year_name: item.year_name, id: item.id });
-    setShowModal(true);
-  };
+  // Removed handleEditClick in favor of route-based Form page
 
   const handleDeleteClick = (item) => {
     setDeleteTarget(item);
@@ -173,46 +160,11 @@ const AcademicYears = () => {
     }
   };
 
-  const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  // Removed handleInputChange
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.year_name.trim()) return toast.warning('Year name is required');
-    try {
-      const token = localStorage.getItem('token');
-      const url = isEditing 
-        ? `http://localhost:8080/api/academic-years/${formData.id}`
-        : 'http://localhost:8080/api/academic-years';
-      const method = isEditing ? 'PUT' : 'POST';
+  // Removed handleSubmit in favor of route-based Form page
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ year_name: formData.year_name })
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || 'Submit failed');
-      }
-      const result = await response.json();
-      toast.success(result.message || (isEditing ? 'Academic year updated successfully!' : 'Academic year added successfully!'));
-      setShowModal(false);
-      fetchData();
-    } catch (err) {
-      toast.error(`Error: ${err.message}`);
-    }
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setFormData({ year_name: '' });
-  };
+  // Removed handleCloseModal
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
@@ -252,7 +204,7 @@ const AcademicYears = () => {
             />
             {authUtils.isSuperAdmin() ? (
               <button 
-                onClick={handleAddClick}
+                onClick={() => navigate('/academic-years/add')}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-2xl shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
               >
                 <Plus size={20} />
@@ -319,7 +271,7 @@ const AcademicYears = () => {
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button 
-                          onClick={() => handleEditClick(item)}
+                          onClick={() => navigate(`/academic-years/edit/${item.id}`)}
                           className="p-2 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-xl transition-all"
                           title="Edit Session"
                         >
@@ -365,85 +317,7 @@ const AcademicYears = () => {
         />
       </div>
 
-      {/* Modern Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={handleCloseModal} />
-          
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
-            {/* Modal Header */}
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white">
-              <div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">
-                  {isEditing ? 'Update Session' : 'New Academic Cycle'}
-                </h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70">Chronology Settings</p>
-              </div>
-              <button 
-                onClick={handleCloseModal}
-                className="p-2 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-xl transition-all"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            
-            {/* Modal Body */}
-            <form onSubmit={handleSubmit}>
-              <div className="p-8 space-y-6">
-                <div className="space-y-2">
-                  <label htmlFor="year_name" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Year Reference</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                      <Calendar size={18} />
-                    </div>
-                    <input 
-                      type="text" 
-                      id="year_name"
-                      name="year_name"
-                      placeholder="e.g. 2024-2025" 
-                      value={formData.year_name} 
-                      onChange={handleInputChange}
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-bold tracking-tight"
-                      required
-                    />
-                  </div>
-                  <p className="text-[10px] text-slate-400 italic ml-1">* Format: YYYY-YYYY (e.g., 2023-2024)</p>
-                </div>
-
-                {isEditing && formData.id && (
-                  <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 shadow-sm border border-slate-100">
-                      <Hash size={18} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Session ID</p>
-                      <p className="text-sm font-bold text-slate-900 leading-none">CYCLE-{formData.id.toString().padStart(3, '0')}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Modal Footer */}
-              <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
-                <button 
-                  type="button"
-                  className="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-800"
-                  onClick={handleCloseModal}
-                >
-                  Discard
-                </button>
-                <button 
-                  type="submit"
-                  className="px-8 py-3.5 bg-sky-600 hover:bg-sky-700 text-white font-black rounded-2xl shadow-xl shadow-sky-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm flex items-center gap-2"
-                >
-                  <Check size={18} />
-                  <span>{isEditing ? 'Update Session' : 'Initialize Session'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Add/Edit Modal was removed in favor of route-based Form page */}
 
       {/* Assign Modal for University Admin */}
       {showAssignModal && (

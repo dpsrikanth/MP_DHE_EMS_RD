@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { 
   BookOpen, 
@@ -50,16 +51,14 @@ const Programs = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [availableMasters, setAvailableMasters] = useState([]);
   const [mappingSelection, setMappingSelection] = useState(null);
   const [viewData, setViewData] = useState(null);
-  const [selected, setSelected] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const navigate = useNavigate();
   const [departments, setDepartments] = useState([]);
   const [form, setForm] = useState({ 
     name: '', 
@@ -157,84 +156,7 @@ const Programs = () => {
     }
   };
 
-  const handleAdd = async () => {
-    if (!form.name || !form.duration_years) return toast.warning('Both fields are required');
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/master-programs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ 
-          name: form.name, 
-          duration_years: parseInt(form.duration_years),
-          department_ids: form.department_ids.map(d => d.value),
-          section_name: form.section_name,
-          code: form.code,
-          grading_system_type: form.grading_system_type,
-          enable_elective_subjects_selection: form.enable_elective_subjects_selection
-        })
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || 'Save failed');
-      }
-      const result = await res.json();
-      toast.success(result.message || 'Program added successfully!');
-      setShowAddModal(false);
-      setForm({ 
-        name: '', 
-        duration_years: '', 
-        department_ids: [],
-        section_name: '',
-        code: '',
-        grading_system_type: 'Normal',
-        enable_elective_subjects_selection: 'N'
-      });
-      fetchData();
-    } catch (err) {
-      toast.error('Error: ' + err.message);
-    }
-  };
-
-  const handleUpdate = async () => {
-    if (!form.name || !form.duration_years) return toast.warning('Both fields are required');
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/master-programs/${selected.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ 
-          name: form.name, 
-          duration_years: parseInt(form.duration_years),
-          department_ids: form.department_ids.map(d => d.value),
-          section_name: form.section_name,
-          code: form.code,
-          grading_system_type: form.grading_system_type,
-          enable_elective_subjects_selection: form.enable_elective_subjects_selection
-        })
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || 'Update failed');
-      }
-      const result = await res.json();
-      toast.success(result.message || 'Program updated successfully!');
-      setShowEditModal(false);
-      setSelected(null);
-      setForm({ 
-        name: '', 
-        duration_years: '', 
-        department_ids: [],
-        section_name: '',
-        code: '',
-        grading_system_type: 'Normal',
-        enable_elective_subjects_selection: 'N'
-      });
-      fetchData();
-    } catch (err) {
-      toast.error('Error: ' + err.message);
-    }
-  };
+  // Removed handleAdd and handleUpdate in favor of route-based Form page
 
   const handleMap = async () => {
     if (!mappingSelection) return toast.warning('Please select a program');
@@ -270,25 +192,7 @@ const Programs = () => {
     }
   };
 
-  const loadForEdit = (id) => {
-    const item = data.find(x => x.id === id);
-    if (item) {
-      setSelected(item);
-      const selectedDepts = item.department_ids && departments.length > 0
-        ? departments.filter(d => item.department_ids.includes(d.value))
-        : [];
-      setForm({ 
-        name: item.name, 
-        duration_years: item.duration_years, 
-        department_ids: selectedDepts,
-        section_name: item.section_name || '',
-        code: item.code || '',
-        grading_system_type: item.grading_system_type || 'Normal',
-        enable_elective_subjects_selection: item.enable_elective_subjects_selection || 'N'
-      });
-      setShowEditModal(true);
-    }
-  };
+  // Removed loadForEdit in favor of route-based Form page
 
   const handleDelete = (item) => {
     setDeleteTarget(item);
@@ -350,7 +254,7 @@ const Programs = () => {
             />
             {authUtils.isSuperAdmin() ? (
               <button 
-                onClick={() => { setSelected(null); setForm({ name: '', duration_years: '', department_ids: [] }); setShowAddModal(true); }}
+                onClick={() => navigate('/programs/add')}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
               >
                 <Plus size={20} />
@@ -445,7 +349,7 @@ const Programs = () => {
                           <Eye size={18} />
                         </button>
                         <button 
-                          onClick={() => loadForEdit(item.id)}
+                          onClick={() => navigate(`/programs/edit/${item.id}`)}
                           className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"
                           title="Edit Program"
                         >
@@ -556,217 +460,7 @@ const Programs = () => {
         </div>
       )}
 
-      {/* Add/Edit Modal */}
-      {(showAddModal || showEditModal) && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => { setShowAddModal(false); setShowEditModal(false); setSelected(null); }} />
-          
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
-            {/* Modal Header */}
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white">
-              <div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">
-                  {showEditModal ? 'Update Program' : 'New Program'}
-                </h2>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[10px] bg-slate-100 text-slate-500 font-bold uppercase tracking-widest px-2 py-0.5 rounded-md border border-slate-200">
-                    Configuration
-                  </span>
-                </div>
-              </div>
-              <button 
-                onClick={() => { setShowAddModal(false); setShowEditModal(false); setSelected(null); }}
-                className="p-2.5 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-xl transition-all"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            
-            {/* Modal Body */}
-            <div className="p-8 pb-10 space-y-6 overflow-y-auto max-h-[calc(100vh-14rem)] scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent grid grid-cols-1 md:grid-cols-2 gap-x-6">
-              <div className="space-y-2 col-span-full">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Title of Degree</label>
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                    <BookOpen size={18} />
-                  </div>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Bachelor of Technology" 
-                    value={form.name} 
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500 outline-none transition-all font-semibold"
-                  />
-                </div>
-              </div>
-
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Duration in Years</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                      <Calendar size={18} />
-                    </div>
-                    <input 
-                      type="number" 
-                      placeholder="e.g. 4" 
-                      value={form.duration_years} 
-                      onChange={(e) => setForm({ ...form, duration_years: e.target.value })}
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500 outline-none transition-all font-black"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Section Name</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                      <Layers size={18} />
-                    </div>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. A" 
-                      value={form.section_name} 
-                      onChange={(e) => setForm({ ...form, section_name: e.target.value })}
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Program Code</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                      <Hash size={18} />
-                    </div>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. BAG1" 
-                      value={form.code} 
-                      onChange={(e) => setForm({ ...form, code: e.target.value })}
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Grading System</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                      <Settings size={18} />
-                    </div>
-                    <select 
-                      value={form.grading_system_type} 
-                      onChange={(e) => setForm({ ...form, grading_system_type: e.target.value })}
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold appearance-none cursor-pointer"
-                    >
-                      <option value="Normal">Normal</option>
-                      <option value="CBCE">CBCE</option>
-                      <option value="Non-CBCE">Non-CBCE</option>
-                    </select>
-                  </div>
-                </div>
-
-              <div className="space-y-2 col-span-full">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Enable Elective Selection</label>
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                    <ListRestart size={18} />
-                  </div>
-                  <select 
-                    value={form.enable_elective_subjects_selection} 
-                    onChange={(e) => setForm({ ...form, enable_elective_subjects_selection: e.target.value })}
-                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold appearance-none cursor-pointer"
-                  >
-                    <option value="Y">Yes (Enabled)</option>
-                    <option value="N">No (Disabled)</option>
-                  </select>
-                </div>
-              </div>
-
-
-              <div className="space-y-2 col-span-full">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Departments</label>
-                <div className="relative">
-                  <Select
-                    isMulti
-                    options={[{value: 'all', label: 'Select All'}, ...departments]}
-                    value={form.department_ids}
-                    onChange={(selected) => {
-                      if (selected && selected.some(option => option.value === 'all')) {
-                         setForm({ ...form, department_ids: departments });
-                      } else {
-                         setForm({ ...form, department_ids: selected || [] });
-                      }
-                    }}
-                    components={{ Option }}
-                    hideSelectedOptions={false}
-                    closeMenuOnSelect={false}
-                    className="react-select-container text-sm font-semibold"
-                    classNamePrefix="react-select"
-                    placeholder="Select Departments..."
-                    styles={{
-                      control: (base, state) => ({
-                        ...base,
-                        padding: '0.4rem',
-                        borderRadius: '1.25rem',
-                        borderColor: state.isFocused ? '#10b981' : '#f1f5f9',
-                        borderWidth: '2px',
-                        backgroundColor: state.isFocused ? '#ffffff' : '#f8fafc',
-                        boxShadow: 'none',
-                        '&:hover': {
-                          borderColor: state.isFocused ? '#10b981' : '#f1f5f9'
-                        }
-                      })
-                    }}
-                  />
-                </div>
-              </div>
-
-              {showEditModal && selected && (
-                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 col-span-full">
-                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 shadow-sm border border-slate-100">
-                    <Hash size={18} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Internal ID</p>
-                    <p className="text-sm font-bold text-slate-900">REF-{selected.id.toString().padStart(4, '0')}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
-              <button 
-                className="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-800"
-                onClick={() => { 
-                  setShowAddModal(false); 
-                  setShowEditModal(false); 
-                  setSelected(null); 
-                  setForm({ 
-                    name: '', 
-                    duration_years: '', 
-                    department_ids: [],
-                    section_name: '',
-                    code: '',
-                    grading_system_type: 'Normal',
-                    enable_elective_subjects_selection: 'N'
-                  }); 
-                }}
-              >
-                Discard
-              </button>
-              <button 
-                onClick={showEditModal ? handleUpdate : handleAdd}
-                className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm flex items-center gap-2"
-              >
-                <Check size={18} />
-                <span>{showEditModal ? 'Update Program' : 'Save Program'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Add/Edit Modal was removed in favor of route-based Form page */}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (

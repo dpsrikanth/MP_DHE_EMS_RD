@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { 
   ShieldCheck, 
@@ -17,18 +18,15 @@ import Select from "react-select";
 import authUtils from "../utils/authUtils";
 
 const Policies = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [availableMasters, setAvailableMasters] = useState([]);
   const [mappingSelection, setMappingSelection] = useState(null);
-  const [selected, setSelected] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [form, setForm] = useState({ name: '', description: '' });
 
   const availableColumns = [
     { key: 'id', label: 'ID Reference' },
@@ -100,53 +98,9 @@ const Policies = () => {
     }
   };
 
-  const handleAdd = async () => {
-    if (!form.name) return toast.warning('Policy name is required');
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/master-policies', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || 'Save failed');
-      }
-      const result = await res.json();
-      toast.success(result.message || 'Policy added successfully!');
-      setShowAddModal(false);
-      setForm({ name: '', description: '' });
-      fetchData();
-    } catch (err) {
-      toast.error('Error: ' + err.message);
-    }
-  };
+  // Add/Update handled by /policies/add and /policies/edit/:id routes
 
-  const handleUpdate = async () => {
-    if (!form.name) return toast.warning('Policy name is required');
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/master-policies/${selected.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || 'Update failed');
-      }
-      const result = await res.json();
-      toast.success(result.message || 'Policy updated successfully!');
-      setShowEditModal(false);
-      setSelected(null);
-      setForm({ name: '', description: '' });
-      fetchData();
-    } catch (err) {
-      toast.error('Error: ' + err.message);
-    }
-  };
-
+  // Edit handled by navigate('/policies/edit/:id')
   const handleMap = async () => {
     if (!mappingSelection) return toast.warning('Please select a policy');
     try {
@@ -178,15 +132,6 @@ const Policies = () => {
       fetchData();
     } catch (err) {
       toast.error('Error: ' + err.message);
-    }
-  };
-
-  const loadForEdit = (id) => {
-    const item = data.find(x => x.id === id);
-    if (item) {
-      setSelected(item);
-      setForm({ name: item.name, description: item.description || '' });
-      setShowEditModal(true);
     }
   };
 
@@ -252,7 +197,7 @@ const Policies = () => {
             />
             {authUtils.isSuperAdmin() ? (
               <button 
-                onClick={() => { setSelected(null); setForm({ name: '', description: '' }); setShowAddModal(true); }}
+                onClick={() => navigate('/policies/add')}
                 className="inline-flex items-center gap-2 px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
               >
                 <Plus size={20} />
@@ -340,7 +285,7 @@ const Policies = () => {
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button 
-                          onClick={() => loadForEdit(item.id)}
+                          onClick={() => navigate(`/policies/edit/${item.id}`)}
                           className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
                           title="Edit Policy"
                         >
@@ -386,99 +331,7 @@ const Policies = () => {
         />
       </div>
 
-      {/* Unified Modal (Add/Edit) */}
-      {(showAddModal || showEditModal) && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => { setShowAddModal(false); setShowEditModal(false); setSelected(null); }} />
-          
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
-            {/* Modal Header */}
-            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1">
-                  {showEditModal ? 'Update Policy' : 'New Policy'}
-                </h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70 flex items-center gap-2">
-                  <ShieldCheck size={12} /> Institutional Rules
-                </p>
-              </div>
-              <button 
-                onClick={() => { setShowAddModal(false); setShowEditModal(false); setSelected(null); }}
-                className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-2xl transition-all"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            {/* Modal Body */}
-            <form onSubmit={(e) => { e.preventDefault(); showEditModal ? handleUpdate() : handleAdd(); }}>
-              <div className="p-10 space-y-6">
-                {showEditModal && selected && (
-                  <div className="flex items-center gap-4 p-5 bg-slate-50 rounded-2xl border-2 border-slate-100 transition-colors group hover:border-emerald-100">
-                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-slate-400 shadow-sm border border-slate-100 group-hover:text-emerald-400 group-hover:shadow-emerald-500/5 transition-all">
-                      <Hash size={24} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Entity ID</p>
-                      <p className="text-lg font-black text-slate-800 leading-none tracking-tighter">POL-{selected.id.toString().padStart(3, '0')}</p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Policy Name</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-emerald-500 transition-colors">
-                      <ShieldCheck size={18} />
-                    </div>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. Anti-Ragging Policy" 
-                      value={form.name} 
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold tracking-tight"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Description (Optional)</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-4 text-slate-400 pointer-events-none group-focus-within:text-emerald-500 transition-colors">
-                      <FileText size={18} />
-                    </div>
-                    <textarea 
-                      placeholder="Details about this policy..." 
-                      value={form.description} 
-                      onChange={(e) => setForm({ ...form, description: e.target.value })}
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium tracking-tight h-28 resize-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-5">
-                <button 
-                  type="button"
-                  className="text-sm font-bold text-slate-400 hover:text-slate-800 transition-colors"
-                  onClick={() => { setShowAddModal(false); setShowEditModal(false); setSelected(null); }}
-                >
-                  Discard
-                </button>
-                <button 
-                  type="submit"
-                  className="px-10 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm uppercase tracking-widest flex items-center gap-3"
-                >
-                  <Check size={20} />
-                  <span>{showEditModal ? 'Update Policy' : 'Register Policy'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Add/Edit Modal removed — handled by /policies/add and /policies/edit/:id routes */}
 
       {/* Assign Modal for University Admin */}
       {showAssignModal && (

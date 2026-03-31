@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { 
   Calendar, 
@@ -33,15 +34,11 @@ const Batches = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewData, setViewData] = useState(null);
-  const [selected, setSelected] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [programs, setPrograms] = useState([]);
-  const [academicYears, setAcademicYears] = useState([]);
+  const navigate = useNavigate();
   
   const batchNameOptions = [
     { value: 'July-November', label: 'July-November' },
@@ -51,14 +48,7 @@ const Batches = () => {
     { value: 'October-February', label: 'October-February' },
     { value: 'March-August', label: 'March-August' }
   ];
-  const [form, setForm] = useState({ 
-    batch_name: null, 
-    start_date: '', 
-    end_date: '',
-    academic_year: null,
-    import_fees_flag: 'N',
-    program_id: null
-  });
+  // Removed form state and fetch functions that are now in BatchesForm.js
 
   const availableColumns = [
     { key: 'id', label: 'ID' },
@@ -92,39 +82,9 @@ const Batches = () => {
 
   useEffect(() => {
     fetchData();
-    fetchPrograms();
-    fetchAcademicYears();
   }, []);
 
-  const fetchAcademicYears = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/academic-years', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const result = await res.json();
-        setAcademicYears(result.map(y => ({ value: y.year_name, label: y.year_name })));
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchPrograms = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/master-programs', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const result = await res.json();
-        setPrograms(result.map(p => ({ value: p.id, label: p.name })));
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  // Removed fetchAcademicYears and fetchPrograms as they are now in BatchesForm.js
 
   const fetchData = async () => {
     try {
@@ -145,93 +105,9 @@ const Batches = () => {
     }
   };
 
-  const handleAdd = async () => {
-    if (!form.batch_name || !form.program_id) return toast.warning('Batch Name and Program are required');
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/master-batches', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ 
-          ...form,
-          batch_name: form.batch_name?.value,
-          academic_year: form.academic_year?.value,
-          program_id: form.program_id?.value
-        })
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || 'Save failed');
-      }
-      const result = await res.json();
-      toast.success(result.message || 'Batch added successfully!');
-      setShowAddModal(false);
-      resetForm();
-      fetchData();
-    } catch (err) {
-      toast.error('Error: ' + err.message);
-    }
-  };
+  // Removed handleAdd and handleUpdate in favor of route-based Form page
 
-  const handleUpdate = async () => {
-    if (!form.batch_name || !form.program_id) return toast.warning('Batch Name and Program are required');
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/master-batches/${selected.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ 
-          ...form,
-          batch_name: form.batch_name?.value,
-          academic_year: form.academic_year?.value,
-          program_id: form.program_id?.value
-        })
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || 'Update failed');
-      }
-      const result = await res.json();
-      toast.success(result.message || 'Batch updated successfully!');
-      setShowEditModal(false);
-      setSelected(null);
-      resetForm();
-      fetchData();
-    } catch (err) {
-      toast.error('Error: ' + err.message);
-    }
-  };
-
-  const resetForm = () => {
-    setForm({ 
-      batch_name: null, 
-      start_date: '', 
-      end_date: '',
-      academic_year: null,
-      import_fees_flag: 'N',
-      program_id: null
-    });
-  };
-
-  const loadForEdit = (id) => {
-    const item = data.find(x => x.id === id);
-    if (item) {
-      setSelected(item);
-      const selectedProg = programs.find(p => p.value === item.program_id);
-      const selectedBatch = batchNameOptions.find(b => b.value === item.batch_name);
-      const selectedAY = academicYears.find(y => y.value === item.academic_year) || { value: item.academic_year, label: item.academic_year };
-      
-      setForm({ 
-        batch_name: selectedBatch || { value: item.batch_name, label: item.batch_name }, 
-        start_date: item.start_date ? item.start_date.split('T')[0] : '', 
-        end_date: item.end_date ? item.end_date.split('T')[0] : '',
-        academic_year: selectedAY,
-        import_fees_flag: item.import_fees_flag || 'N',
-        program_id: selectedProg || null
-      });
-      setShowEditModal(true);
-    }
-  };
+  // Removed resetForm and loadForEdit in favor of route-based Form page
 
   const handleDelete = (item) => {
     setDeleteTarget(item);
@@ -293,7 +169,7 @@ const Batches = () => {
               onToggle={toggleColumn} 
             />
             <button 
-              onClick={() => { setSelected(null); resetForm(); setShowAddModal(true); }}
+              onClick={() => navigate('/batches/add')}
               className="inline-flex items-center gap-2 px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-2xl shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
             >
               <Plus size={20} />
@@ -337,7 +213,7 @@ const Batches = () => {
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button onClick={() => { setViewData(item); setShowViewModal(true); }} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all" title="View Details"><Eye size={18} /></button>
-                        <button onClick={() => loadForEdit(item.id)} className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 rounded-xl transition-all" title="Edit Batch"><Pencil size={18} /></button>
+                        <button onClick={() => navigate(`/batches/edit/${item.id}`)} className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 rounded-xl transition-all" title="Edit Batch"><Pencil size={18} /></button>
                         <button onClick={() => handleDelete(item)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Delete Batch"><MdDelete size={20} /></button>
                       </div>
                     </td>
@@ -352,86 +228,7 @@ const Batches = () => {
         <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={totalItems} pageSize={pageSize} onPageSizeChange={setPageSize} />
       </div>
 
-      {/* Add/Edit Modal */}
-      {(showAddModal || showEditModal) && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => { setShowAddModal(false); setShowEditModal(false); setSelected(null); }} />
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
-              <div>
-                <h2 className="text-xl font-black tracking-tight">{showEditModal ? 'Update Batch' : 'New Batch'}</h2>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5 opacity-60">Configuration</p>
-              </div>
-              <button onClick={() => { setShowAddModal(false); setShowEditModal(false); setSelected(null); }} className="p-2.5 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-xl transition-all"><X size={18} /></button>
-            </div>
-            <div className="p-8 space-y-6 overflow-y-auto">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Batch Name</label>
-                  <Select 
-                    options={batchNameOptions} 
-                    value={form.batch_name} 
-                    onChange={(opt) => setForm({ ...form, batch_name: opt })} 
-                    className="react-select-container text-sm font-semibold" 
-                    classNamePrefix="react-select" 
-                    placeholder="Select Batch..." 
-                    styles={{ control: (base, state) => ({ ...base, padding: '0.4rem', borderRadius: '1rem', borderColor: state.isFocused ? '#0ea5e9' : '#f1f5f9', borderWidth: '2px', backgroundColor: state.isFocused ? '#ffffff' : '#f8fafc', boxShadow: 'none', '&:hover': { borderColor: state.isFocused ? '#0ea5e9' : '#f1f5f9' } }) }} 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Course/Program</label>
-                  <Select options={programs} value={form.program_id} onChange={(opt) => setForm({ ...form, program_id: opt })} className="react-select-container text-sm font-semibold" classNamePrefix="react-select" placeholder="Select Program..." styles={{ control: (base, state) => ({ ...base, padding: '0.4rem', borderRadius: '1rem', borderColor: state.isFocused ? '#0ea5e9' : '#f1f5f9', borderWidth: '2px', backgroundColor: state.isFocused ? '#ffffff' : '#f8fafc', boxShadow: 'none', '&:hover': { borderColor: state.isFocused ? '#0ea5e9' : '#f1f5f9' } }) }} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Start Date</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><Calendar size={18} /></div>
-                    <input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white focus:border-sky-500 outline-none transition-all font-bold" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">End Date</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><Calendar size={18} /></div>
-                    <input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white focus:border-sky-500 outline-none transition-all font-bold" />
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Academic Year</label>
-                  <Select 
-                    options={academicYears} 
-                    value={form.academic_year} 
-                    onChange={(opt) => setForm({ ...form, academic_year: opt })} 
-                    className="react-select-container text-sm font-semibold" 
-                    classNamePrefix="react-select" 
-                    placeholder="Select Year..." 
-                    styles={{ control: (base, state) => ({ ...base, padding: '0.4rem', borderRadius: '1rem', borderColor: state.isFocused ? '#0ea5e9' : '#f1f5f9', borderWidth: '2px', backgroundColor: state.isFocused ? '#ffffff' : '#f8fafc', boxShadow: 'none', '&:hover': { borderColor: state.isFocused ? '#0ea5e9' : '#f1f5f9' } }) }} 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Import Fees?</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><Settings size={18} /></div>
-                    <select value={form.import_fees_flag} onChange={(e) => setForm({ ...form, import_fees_flag: e.target.value })} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 focus:bg-white focus:border-sky-500 outline-none transition-all font-bold appearance-none cursor-pointer">
-                      <option value="Y">Yes (Y)</option>
-                      <option value="N">No (N)</option>
-                      <option value="NA">NA</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
-              <button className="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-800" onClick={() => { setShowAddModal(false); setShowEditModal(false); setSelected(null); resetForm(); }}>Discard</button>
-              <button onClick={showEditModal ? handleUpdate : handleAdd} className="px-8 py-3.5 bg-sky-600 hover:bg-sky-700 text-white font-black rounded-2xl shadow-xl shadow-sky-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm flex items-center gap-2"><Check size={18} /><span>{showEditModal ? 'Update Batch' : 'Save Batch'}</span></button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Add/Edit Modal was removed in favor of route-based Form page */}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (

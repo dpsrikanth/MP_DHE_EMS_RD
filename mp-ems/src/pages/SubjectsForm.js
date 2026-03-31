@@ -174,7 +174,7 @@ const SubjectsForm = () => {
         body: JSON.stringify(payload)
       });
       
-      if (!res.ok) throw new Error(isEdit ? 'Update failed' : 'Save failed');
+      if (!res.ok) throw new Error(isEditing ? 'Update failed' : 'Save failed');
       
       toast.success(isEditing ? 'Subject updated successfully!' : 'Subject added successfully!');
       navigate('/subjects');

@@ -36,16 +36,9 @@ const Universities = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [selected, setSelected] = useState(null);
-  const [form, setForm] = useState({ name: '', address: '', status: true });
   const [detailsModal, setDetailsModal] = useState(false);
   const [detailsType, setDetailsType] = useState(null);
   const [detailsList, setDetailsList] = useState([]);
-  const [programs, setPrograms] = useState([]);
-  const [academicYears, setAcademicYears] = useState([]);
-  const [programForm, setProgramForm] = useState({ name: '', duration_years: 1 });
-  const [yearForm, setYearForm] = useState({ year_name: '' });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
@@ -137,201 +130,6 @@ const Universities = () => {
     }
   };
 
-  useEffect(() => {
-    if (selected) {
-      setForm({ name: selected.name || selected.university_name || '', address: selected.address || '', status: selected.status === undefined ? true : selected.status });
-      loadRelatedData(selected.id);
-      loadConfigData(selected.id);
-    } else {
-      setForm({ name: '', address: '', status: true });
-      setPrograms([]);
-      setAcademicYears([]);
-      
-      setSelectedPolicies([]);
-      setSelectedPrograms([]);
-      setSelectedAcademicYears([]);
-      setSelectedSemesters([]);
-    }
-  }, [selected]);
-
-  const loadConfigData = async (universityId) => {
-    try {
-      setConfigLoading(true);
-      const token = localStorage.getItem('token');
-      const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-
-      // Fetch Current mapped Config
-      const configRes = await fetch(`http://localhost:8080/api/universities/${universityId}/config`, { headers });
-      if (!configRes.ok) throw new Error('Failed to fetch university config');
-      const configData = await configRes.json();
-
-      setSelectedPolicies(policyOptions.filter(opt => configData.policies.includes(opt.value)));
-      setSelectedPrograms(programOptions.filter(opt => configData.programs.includes(opt.value)));
-      setSelectedAcademicYears(academicYearOptions.filter(opt => configData.academicYears.includes(opt.value)));
-      setSelectedSemesters(semesterOptions.filter(opt => configData.semesters.includes(opt.value)));
-    } catch (err) {
-      console.error(err);
-      toast.error('Error loading configuration: ' + err.message);
-    } finally {
-      setConfigLoading(false);
-    }
-  };
-
-  const loadRelatedData = async (universityId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const [pRes, aRes] = await Promise.all([
-        fetch('http://localhost:8080/api/programs', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:8080/api/academic-years', { headers: { Authorization: `Bearer ${token}` } })
-      ]);
-      const p = pRes.ok ? (await pRes.json()).filter(x => x.university_id === universityId) : [];
-      const a = aRes.ok ? (await aRes.json()).filter(x => x.university_id === universityId) : [];
-      setPrograms(p);
-      setAcademicYears(a);
-    } catch (err) {
-      console.error('Error loading related data:', err);
-    }
-  };
-
-  // Removed handleAddCollege and handleDeleteCollege as they are now handled in Colleges.js
-
-  const handleAddProgram = async () => {
-    if (!programForm.name || !programForm.duration_years) return toast.warning('Name and duration are required');
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/programs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ...programForm, university_id: selected.id })
-      });
-      if (!res.ok) throw new Error('Failed to add program');
-      const newProgram = await res.json();
-      toast.success(newProgram.message || 'Program added successfully!');
-      setPrograms([...programs, newProgram.data || newProgram]);
-      setProgramForm({ name: '', duration_years: 1 });
-    } catch (err) {
-      toast.error('Error: ' + err.message);
-    }
-  };
-
-  const handleDeleteProgram = async (programId) => {
-    if (!window.confirm('Delete this program?')) return;
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/programs/${programId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Failed to delete');
-      setPrograms(programs.filter(p => p.id !== programId));
-    } catch (err) {
-      toast.error('Error: ' + err.message);
-    }
-  };
-
-  const handleAddYear = async () => {
-    if (!yearForm.year_name) return toast.warning('Year name is required');
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/academic-years', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ...yearForm, university_id: selected.id })
-      });
-      if (!res.ok) throw new Error('Failed to add year');
-      const newYear = await res.json();
-      toast.success(newYear.message || 'Academic year added successfully!');
-      setAcademicYears([...academicYears, newYear.data || newYear]);
-      setYearForm({ year_name: '' });
-    } catch (err) {
-      toast.error('Error: ' + err.message);
-    }
-  };
-
-  const handleDeleteYear = async (yearId) => {
-    if (!window.confirm('Delete this academic year?')) return;
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/academic-years/${yearId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Failed to delete');
-      setAcademicYears(academicYears.filter(y => y.id !== yearId));
-    } catch (err) {
-      toast.error('Error: ' + err.message);
-    }
-  };
-
-  const submitConfigPayload = async (univId) => {
-    const token = localStorage.getItem('token');
-    const payload = {
-      policies: selectedPolicies.map(p => p.value),
-      programs: selectedPrograms.map(p => p.value),
-      academicYears: selectedAcademicYears.map(a => a.value),
-      semesters: selectedSemesters.map(s => s.value)
-    };
-    const res = await fetch(`http://localhost:8080/api/universities/${univId}/config`, {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error('Failed to update config');
-  };
-
-  const handleSaveConfig = async () => {
-    if (!selected) return;
-    try {
-      setSavingConfig(true);
-      await submitConfigPayload(selected.id);
-      toast.success('Configuration updated successfully!');
-    } catch (err) {
-      toast.error('Error updating configuration: ' + err.message);
-    } finally {
-      setSavingConfig(false);
-    }
-  };
-
-  const handleSave = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!form.name) return toast.warning('Name is required');
-      let finalUniversityId = null;
-      let toastMessage = '';
-
-      if (selected) {
-        const res = await fetch(`http://localhost:8080/api/universities/${selected.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify(form)
-        });
-        if (!res.ok) { const t = await res.text(); throw new Error(t || 'Update failed'); }
-        const updatedUniv = await res.json();
-        toastMessage = updatedUniv.message || 'University updated successfully!';
-        finalUniversityId = selected.id;
-      } else {
-        const res = await fetch('http://localhost:8080/api/universities', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify(form)
-        });
-        if (!res.ok) { const t = await res.text(); throw new Error(t || 'Create failed'); }
-        const createdUniv = await res.json();
-        finalUniversityId = createdUniv.data ? createdUniv.data.id : createdUniv.id;
-        toastMessage = createdUniv.message || 'University added successfully!';
-        
-        // Colleges are now handled separately on the Colleges page
-        await submitConfigPayload(finalUniversityId);
-      }
-      toast.success(toastMessage);
-      setShowModal(false);
-      setSelected(null);
-      await fetchData();
-    } catch (err) {
-      toast.error('Error: ' + (err.message || err));
-    }
-  };
-
   const handleDelete = (item) => {
     setDeleteTarget(item);
     setShowDeleteModal(true);
@@ -413,7 +211,7 @@ const Universities = () => {
               onToggle={toggleColumn} 
             />
             <button 
-              onClick={() => { setSelected(null); setShowModal(true); }}
+              onClick={() => navigate('/universities/add')}
               className="inline-flex items-center gap-2 px-6 py-3 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-2xl shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
             >
               <Plus size={20} />
@@ -473,7 +271,7 @@ const Universities = () => {
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button 
-                          onClick={() => { setSelected(item); setShowModal(true); }}
+                          onClick={() => navigate(`/universities/edit/${item.id}`)}
                           className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 rounded-xl transition-all"
                           title="Edit University"
                         >
@@ -528,153 +326,7 @@ const Universities = () => {
         />
       </div>
 
-      {/* Main Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setShowModal(false)} />
-          
-          <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
-            {/* Modal Header */}
-            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                  {selected ? 'Edit University' : 'Register New University'}
-                </h2>
-                <p className="text-sm text-slate-500 font-medium">Please fill in the details below</p>
-              </div>
-              <button 
-                onClick={() => setShowModal(false)}
-                className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-2xl transition-all"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto px-10 py-10 space-y-10">
-              {/* Row 1: Basic Info */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Primary Information</h3>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700 ml-1">University Name</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. Barkatullah University" 
-                      value={form.name} 
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-medium"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700 ml-1">Full Address</label>
-                    <textarea 
-                      placeholder="Physical address of the main campus" 
-                      rows={3}
-                      value={form.address} 
-                      onChange={(e) => setForm({ ...form, address: e.target.value })}
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-medium resize-none"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-slate-900">Activation Status</p>
-                      <p className="text-[11px] text-slate-500 font-medium">Enable or disable this university record</p>
-                    </div>
-                    <button 
-                      onClick={() => setForm({ ...form, status: !form.status })}
-                      className={`relative w-14 h-8 rounded-full transition-all duration-300 shadow-inner ${form.status ? 'bg-sky-500' : 'bg-slate-300'}`}
-                    >
-                      <div className={`absolute top-1 left-1 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 ${form.status ? 'translate-x-6' : ''}`} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Configuration Section */}
-                <div className="space-y-6 bg-slate-50/50 rounded-3xl p-8 border border-slate-100">
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Master Mappings</h3>
-                  
-                  {configLoading && selected ? (
-                    <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                      <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
-                      <p className="text-xs font-bold text-slate-400">Loading Configuration...</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-black text-slate-500 ml-1 uppercase">Mapped Policies</label>
-                        <Select 
-                          isMulti 
-                          hideSelectedOptions={false}
-                          closeMenuOnSelect={false}
-                          components={{ Option: CheckboxOption }}
-                          options={policyOptions} 
-                          value={selectedPolicies} 
-                          onChange={setSelectedPolicies} 
-                          className="text-sm font-medium"
-                          styles={{
-                            control: (base) => ({
-                              ...base,
-                              borderRadius: '1rem',
-                              padding: '0.25rem',
-                              border: '2px solid #f1f5f9',
-                              backgroundColor: 'white',
-                              boxShadow: 'none',
-                              '&:hover': { border: '2px solid #0ea5e9' }
-                            })
-                          }}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-black text-slate-500 ml-1 uppercase">Available Programs</label>
-                        <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }} options={programOptions} value={selectedPrograms} onChange={setSelectedPrograms} styles={{ control: (base) => ({ ...base, borderRadius: '1rem', border: '2px solid #f1f5f9' }) }} />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-black text-slate-500 ml-1 uppercase">Academic Years</label>
-                        <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }} options={academicYearOptions} value={selectedAcademicYears} onChange={setSelectedAcademicYears} styles={{ control: (base) => ({ ...base, borderRadius: '1rem', border: '2px solid #f1f5f9' }) }} />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-black text-slate-500 ml-1 uppercase">Semesters Mapping</label>
-                        <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }} options={semesterOptions} value={selectedSemesters} onChange={setSelectedSemesters} styles={{ control: (base) => ({ ...base, borderRadius: '1rem', border: '2px solid #f1f5f9' }) }} />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4 sticky bottom-0 z-10">
-              <button 
-                className="px-8 py-3.5 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
-                onClick={() => setShowModal(false)}
-              >
-                Discard Changes
-              </button>
-              <button 
-                onClick={() => { handleSave(); if(selected) handleSaveConfig(); }}
-                disabled={savingConfig}
-                className="inline-flex items-center gap-2 px-10 py-3.5 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-xl shadow-slate-900/10 transition-all hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed text-sm uppercase tracking-wider"
-              >
-                {savingConfig ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    <span>Processing...</span>
-                  </>
-                ) : (
-                  <>
-                    <Check size={18} />
-                    <span>{selected ? 'Update Profile' : 'Register Now'}</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Main Modal was removed in favor of route-based Form page */}
 
       {/* Details View Modal */}
       {detailsModal && (

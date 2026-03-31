@@ -92,7 +92,7 @@ const ExternalMarksEntry = () => {
   };
 
   const handleFinalizeSubject = async (subjectGroup, examName) => {
-    if (!window.confirm(`Are you sure you want to finalize marks for ${subjectGroup.subject_name} in ${examName}? This action cannot be undone.`)) return;
+    toast.info(`Finalizing marks for ${subjectGroup.subject_name} in ${examName}...`);
 
     setSubmitting(true);
     try {

@@ -54,6 +54,20 @@ import SecrecyQuestionPapers from "./pages/Secrecy/QuestionPapers";
 import SecrecyPayments from "./pages/Secrecy/Payments";
 import SmtpSettings from "./pages/SmtpSettings";
 import Layout from "./components/Layout";
+import UniversitiesForm from "./pages/UniversitiesForm";
+import CollegesForm from "./pages/CollegesForm";
+import ProgramsForm from "./pages/ProgramsForm";
+import BatchesForm from "./pages/BatchesForm";
+import AcademicYearsForm from "./pages/AcademicYearsForm"; // Assuming this might be needed later or created
+import SemestersForm from "./pages/SemestersForm";
+import SubjectsForm from "./pages/SubjectsForm";
+import TeachersForm from "./pages/TeachersForm";
+import StudentsForm from "./pages/StudentsForm";
+import UsersForm from "./pages/UsersForm";
+import RolesForm from "./pages/RolesForm";
+import ExamsForm from "./pages/ExamsForm";
+import PoliciesForm from "./pages/PoliciesForm";
+import DepartmentsForm from "./pages/DepartmentsForm";
 
 const AppRoutes = () => {
   return (
@@ -82,6 +96,49 @@ const AppRoutes = () => {
       <Route path="/marks" element={<Layout><ProtectedRoute element={<Marks />} /></Layout>} />
       <Route path="/policies" element={<Layout><ProtectedRoute element={<Policies />} /></Layout>} />
       <Route path="/departments" element={<Layout><ProtectedRoute element={<Departments />} /></Layout>} />
+      
+      {/* Entity Add/Edit Routes */}
+      <Route path="/universities/add" element={<Layout><ProtectedRoute element={<UniversitiesForm />} /></Layout>} />
+      <Route path="/universities/edit/:id" element={<Layout><ProtectedRoute element={<UniversitiesForm />} /></Layout>} />
+      
+      <Route path="/colleges/add" element={<Layout><ProtectedRoute element={<CollegesForm />} /></Layout>} />
+      <Route path="/colleges/edit/:id" element={<Layout><ProtectedRoute element={<CollegesForm />} /></Layout>} />
+      
+      <Route path="/programs/add" element={<Layout><ProtectedRoute element={<ProgramsForm />} /></Layout>} />
+      <Route path="/programs/edit/:id" element={<Layout><ProtectedRoute element={<ProgramsForm />} /></Layout>} />
+      
+      <Route path="/batches/add" element={<Layout><ProtectedRoute element={<BatchesForm />} /></Layout>} />
+      <Route path="/batches/edit/:id" element={<Layout><ProtectedRoute element={<BatchesForm />} /></Layout>} />
+      
+      <Route path="/academic-years/add" element={<Layout><ProtectedRoute element={<AcademicYearsForm />} /></Layout>} />
+      <Route path="/academic-years/edit/:id" element={<Layout><ProtectedRoute element={<AcademicYearsForm />} /></Layout>} />
+      
+      <Route path="/semesters/add" element={<Layout><ProtectedRoute element={<SemestersForm />} /></Layout>} />
+      <Route path="/semesters/edit/:id" element={<Layout><ProtectedRoute element={<SemestersForm />} /></Layout>} />
+      
+      <Route path="/subjects/add" element={<Layout><ProtectedRoute element={<SubjectsForm />} /></Layout>} />
+      <Route path="/subjects/edit/:id" element={<Layout><ProtectedRoute element={<SubjectsForm />} /></Layout>} />
+      
+      <Route path="/teachers/add" element={<Layout><ProtectedRoute element={<TeachersForm />} /></Layout>} />
+      <Route path="/teachers/edit/:id" element={<Layout><ProtectedRoute element={<TeachersForm />} /></Layout>} />
+      
+      <Route path="/students/add" element={<Layout><ProtectedRoute element={<StudentsForm />} /></Layout>} />
+      <Route path="/students/edit/:id" element={<Layout><ProtectedRoute element={<StudentsForm />} /></Layout>} />
+      
+      <Route path="/users/add" element={<Layout><ProtectedRoute element={<UsersForm />} /></Layout>} />
+      <Route path="/users/edit/:id" element={<Layout><ProtectedRoute element={<UsersForm />} /></Layout>} />
+      
+      <Route path="/roles/add" element={<Layout><ProtectedRoute element={<RolesForm />} /></Layout>} />
+      <Route path="/roles/edit/:id" element={<Layout><ProtectedRoute element={<RolesForm />} /></Layout>} />
+      
+      <Route path="/exams/add" element={<Layout><ProtectedRoute element={<ExamsForm />} /></Layout>} />
+      <Route path="/exams/edit/:id" element={<Layout><ProtectedRoute element={<ExamsForm />} /></Layout>} />
+      
+      <Route path="/policies/add" element={<Layout><ProtectedRoute element={<PoliciesForm />} /></Layout>} />
+      <Route path="/policies/edit/:id" element={<Layout><ProtectedRoute element={<PoliciesForm />} /></Layout>} />
+      
+      <Route path="/departments/add" element={<Layout><ProtectedRoute element={<DepartmentsForm />} /></Layout>} />
+      <Route path="/departments/edit/:id" element={<Layout><ProtectedRoute element={<DepartmentsForm />} /></Layout>} />
 
       {/* College Admin Routes */}
       <Route path="/college-admin/dashboard" element={<Layout><ProtectedRoute element={<div className="p-6"><h1 className="text-2xl font-bold">College Admin Dashboard</h1><p>Welcome to College Admin Panel.</p></div>} /></Layout>} />

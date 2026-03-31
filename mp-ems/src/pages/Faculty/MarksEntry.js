@@ -341,7 +341,7 @@ const MarksEntry = () => {
             return;
         }
 
-        if (!window.confirm("Are you sure you want to submit these marks? You won't be able to edit them afterwards.")) return;
+        toast.info("Submitting marks...");
 
         setIsSaving(true);
         try {

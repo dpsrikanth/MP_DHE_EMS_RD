@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { 
   Building, 
@@ -16,16 +17,13 @@ import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 
 const Departments = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [colleges, setColleges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selected, setSelected] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [form, setForm] = useState({ department_name: '', department_code: '', college_id: '', status: 'Active' });
 
   const availableColumns = [
     { key: 'id', label: 'ID Reference' },
@@ -90,71 +88,6 @@ const Departments = () => {
     }
   };
 
-  const handleAdd = async () => {
-    if (!form.department_name) return toast.warning('Department name is required');
-    if (!form.college_id) return toast.warning('College is required');
-
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/master-departments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || 'Save failed');
-      }
-      const result = await res.json();
-      toast.success(result.message || 'Department added successfully!');
-      setShowAddModal(false);
-      setForm({ department_name: '', department_code: '', college_id: '', status: 'Active' });
-      fetchData();
-    } catch (err) {
-      toast.error('Error: ' + err.message);
-    }
-  };
-
-  const handleUpdate = async () => {
-    if (!form.department_name) return toast.warning('Department name is required');
-    if (!form.college_id) return toast.warning('College is required');
-
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/master-departments/${selected.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || 'Update failed');
-      }
-      const result = await res.json();
-      toast.success(result.message || 'Department updated successfully!');
-      setShowEditModal(false);
-      setSelected(null);
-      setForm({ department_name: '', department_code: '', college_id: '', status: 'Active' });
-      fetchData();
-    } catch (err) {
-      toast.error('Error: ' + err.message);
-    }
-  };
-
-  const loadForEdit = (id) => {
-    const item = data.find(x => x.id === id);
-    if (item) {
-      setSelected(item);
-      setForm({ 
-        department_name: item.department_name,
-        department_code: item.department_code,
-        college_id: item.college_id,
-        status: item.status
-      });
-      setShowEditModal(true);
-    }
-  };
-
   const handleDelete = (item) => {
     setDeleteTarget(item);
     setShowDeleteModal(true);
@@ -169,6 +102,7 @@ const Departments = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Delete failed');
+      toast.success('Department deleted successfully!');
       setShowDeleteModal(false);
       setDeleteTarget(null);
       fetchData();
@@ -220,7 +154,7 @@ const Departments = () => {
               onToggle={toggleColumn} 
             />
             <button 
-              onClick={() => { setSelected(null); setForm({ department_name: '', department_code: '', college_id: '', status: 'Active' }); setShowAddModal(true); }}
+              onClick={() => navigate('/departments/add')}
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
             >
               <Plus size={20} />
@@ -314,7 +248,7 @@ const Departments = () => {
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button 
-                          onClick={() => loadForEdit(item.id)}
+                          onClick={() => navigate(`/departments/edit/${item.id}`)}
                           className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
                           title="Edit Definition"
                         >
@@ -360,124 +294,7 @@ const Departments = () => {
         />
       </div>
 
-      {/* Unified Modal (Add/Edit) */}
-      {(showAddModal || showEditModal) && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => { setShowAddModal(false); setShowEditModal(false); setSelected(null); }} />
-          
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md flex flex-col animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-hidden">
-            {/* Modal Header */}
-            <div className="px-6 py-6 sm:px-8 sm:py-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1">
-                  {showEditModal ? 'Update Department' : 'New Department'}
-                </h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70 flex items-center gap-2">
-                  <Building size={12} /> College Configuration
-                </p>
-              </div>
-              <button 
-                onClick={() => { setShowAddModal(false); setShowEditModal(false); setSelected(null); }}
-                className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-2xl transition-all"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            {/* Modal Body */}
-            <form className="flex flex-col flex-1 overflow-hidden" onSubmit={(e) => { e.preventDefault(); showEditModal ? handleUpdate() : handleAdd(); }}>
-              <div className="p-6 sm:p-8 space-y-5 overflow-y-auto flex-1 custom-scrollbar">
-                {showEditModal && selected && (
-                  <div className="flex items-center gap-4 p-5 bg-slate-50 rounded-2xl border-2 border-slate-100 transition-colors group hover:border-indigo-100">
-                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-slate-400 shadow-sm border border-slate-100 group-hover:text-indigo-400 group-hover:shadow-indigo-500/5 transition-all">
-                      <Hash size={24} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Entity ID</p>
-                      <p className="text-lg font-black text-slate-800 leading-none tracking-tighter">DEPT-{selected.id.toString().padStart(3, '0')}</p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Department Name (Required)</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-indigo-500 transition-colors">
-                      <Activity size={18} />
-                    </div>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. Computer Science" 
-                      value={form.department_name} 
-                      onChange={(e) => setForm({ ...form, department_name: e.target.value })}
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold tracking-tight"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Department Code</label>
-                  <input 
-                    type="text" 
-                    placeholder="Auto-generated if left blank" 
-                    value={form.department_code} 
-                    onChange={(e) => setForm({ ...form, department_code: e.target.value })}
-                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold tracking-tight"
-                  />
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Assigned College (Required)</label>
-                  <select
-                    value={form.college_id}
-                    onChange={(e) => setForm({ ...form, college_id: e.target.value })}
-                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-slate-800 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold tracking-tight"
-                    required
-                  >
-                    <option value="">-- Select College --</option>
-                    {colleges.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.college_name || c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
-                  <select
-                    value={form.status}
-                    onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-slate-800 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold tracking-tight"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="px-6 py-6 sm:px-8 sm:py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4 shrink-0">
-                <button 
-                  type="button"
-                  className="text-sm font-bold text-slate-400 hover:text-slate-800 transition-colors"
-                  onClick={() => { setShowAddModal(false); setShowEditModal(false); setSelected(null); }}
-                >
-                  Discard
-                </button>
-                <button 
-                  type="submit"
-                  className="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm uppercase tracking-widest flex items-center gap-2"
-                >
-                  <Check size={18} />
-                  <span>{showEditModal ? 'Update Department' : 'Create Department'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Add/Edit Modal removed — handled by /departments/add and /departments/edit/:id routes */}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
