@@ -40,4 +40,7 @@ router.post('/shortage-request', hallController.createShortageRequest);
 // Route for University Admin to view shortage requests
 router.get('/shortage-requests', hallController.getAllShortageRequests);
 
+// Route for University Admin to allocate an external center
+router.put('/shortage-requests/:id/allocate', hallController.allocateCenter);
+
 module.exports = router;

@@ -1,22 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Building2, CheckCircle2, XCircle, Clock, MapPin, Search, AlertTriangle, ArrowRight } from "lucide-react";
+import { Building2, CheckCircle2, XCircle, Clock, MapPin, Search, AlertTriangle, ArrowRight, X } from "lucide-react";
 
 const HallApprovals = () => {
     const [halls, setHalls] = useState([]);
     const [shortageRequests, setShortageRequests] = useState([]);
+    const [colleges, setColleges] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [showAllocateModal, setShowAllocateModal] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState(null);
+    const [targetCollegeId, setTargetCollegeId] = useState('');
+    const [allocating, setAllocating] = useState(false);
 
     const fetchData = async () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const [hallsRes, shortagesRes] = await Promise.all([
+            const [hallsRes, shortagesRes, collegesRes] = await Promise.all([
                 fetch('http://localhost:8080/api/examination-halls/pending', {
                     headers: { Authorization: `Bearer ${token}` }
                 }),
                 fetch('http://localhost:8080/api/examination-halls/shortage-requests', {
+                    headers: { Authorization: `Bearer ${token}` }
+                }),
+                fetch('http://localhost:8080/api/colleges', {
                     headers: { Authorization: `Bearer ${token}` }
                 })
             ]);
@@ -31,6 +39,11 @@ const HallApprovals = () => {
             if (shortagesRes.ok) {
                 const sData = await shortagesRes.json();
                 setShortageRequests(sData);
+            }
+
+            if (collegesRes.ok) {
+                const cData = await collegesRes.json();
+                setColleges(cData);
             }
         } catch (error) {
             toast.error("Network error");
@@ -66,6 +79,37 @@ const HallApprovals = () => {
         }
     };
 
+    const handleAllocate = async () => {
+        if (!targetCollegeId) return toast.warning("Please select a target college");
+        setAllocating(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:8080/api/examination-halls/shortage-requests/${selectedRequest.id}/allocate`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}` 
+                },
+                body: JSON.stringify({ allocated_college_id: targetCollegeId })
+            });
+
+            if (res.ok) {
+                toast.success("External center allocated successfully");
+                setShowAllocateModal(false);
+                setSelectedRequest(null);
+                setTargetCollegeId('');
+                fetchData();
+            } else {
+                const data = await res.json();
+                toast.error(data.error || "Failed to allocate center");
+            }
+        } catch (err) {
+            toast.error("An error occurred during allocation");
+        } finally {
+            setAllocating(false);
+        }
+    };
+
     const getStatusStyle = (status) => {
         const s = status?.toLowerCase();
         switch (s) {
@@ -81,8 +125,35 @@ const HallApprovals = () => {
         h.hall_code.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        if (!lat1 || !lon1 || !lat2 || !lon2) return 9999;
+        const R = 6371; // Radius of Earth in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return parseFloat((R * c).toFixed(1));
+    };
+
+    const nearbyColleges = selectedRequest ? colleges
+        .filter(c => c.id !== selectedRequest.college_id)
+        .map(c => ({
+            ...c,
+            distance: calculateDistance(
+                selectedRequest.latitude, selectedRequest.longitude,
+                c.latitude, c.longitude
+            )
+        }))
+        .filter(c => c.distance < 50) // Within 50km
+        .sort((a, b) => a.distance - b.distance)
+        : [];
+
     return (
         <div className="p-8 space-y-8 animate-fade-in pb-20">
+            {/* Main content... */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
                     <div className="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-600 shadow-sm border border-purple-100">
@@ -134,7 +205,13 @@ const HallApprovals = () => {
                                         <div className="text-[9px] font-black text-rose-400 uppercase tracking-widest mt-0.5">Shortage</div>
                                     </div>
                                 </div>
-                                <button className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-colors flex items-center justify-center gap-2">
+                                <button 
+                                    onClick={() => {
+                                        setSelectedRequest(req);
+                                        setShowAllocateModal(true);
+                                    }}
+                                    className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-colors flex items-center justify-center gap-2"
+                                >
                                     Allocate Center <ArrowRight size={14} />
                                 </button>
                             </div>
@@ -211,6 +288,91 @@ const HallApprovals = () => {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Allocation Modal */}
+            {showAllocateModal && selectedRequest && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !allocating && setShowAllocateModal(false)} />
+                    <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden pointer-events-auto animate-in zoom-in-95 duration-200">
+                        <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div>
+                                <h3 className="text-xl font-black text-slate-900">External Allocation</h3>
+                                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">Assign alternative examination center</p>
+                            </div>
+                            <button 
+                                onClick={() => setShowAllocateModal(false)} 
+                                disabled={allocating}
+                                className="p-2 hover:bg-slate-200 text-slate-400 rounded-xl transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        
+                        <div className="p-8 space-y-6">
+                            <div className="bg-rose-50 rounded-2xl p-4 border border-rose-100 flex flex-col gap-1 text-center">
+                                <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest">Source Institution</span>
+                                <span className="text-sm font-black text-slate-900">{selectedRequest.college_name}</span>
+                                <div className="mt-2 text-xs font-bold text-rose-600 flex items-center justify-center gap-1">
+                                    <AlertTriangle size={14} /> Shortage: {selectedRequest.shortage} students
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Select Nearby College</label>
+                                    <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-500 font-bold whitespace-nowrap">Radius: 50KM</span>
+                                </div>
+                                
+                                {nearbyColleges.length > 0 ? (
+                                    <select 
+                                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500"
+                                        value={targetCollegeId}
+                                        onChange={(e) => setTargetCollegeId(e.target.value)}
+                                    >
+                                        <option value="">Choose a nearby center...</option>
+                                        {nearbyColleges.map(college => (
+                                            <option key={college.id} value={college.id}>
+                                                {college.college_name} — {college.distance} KM away
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <div className="p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl text-center">
+                                        <p className="text-sm font-bold text-slate-400">No colleges found within 50km radius</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="bg-blue-50/50 rounded-2xl p-4 border border-blue-100/50">
+                                <p className="text-[10px] font-bold text-blue-600 leading-relaxed text-center">
+                                    Optimized for logistical efficiency based on distance.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+                            <button 
+                                onClick={() => setShowAllocateModal(false)}
+                                disabled={allocating}
+                                className="flex-1 py-3 text-sm font-black text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={handleAllocate}
+                                disabled={allocating || !targetCollegeId}
+                                className="flex-[2] py-3 bg-purple-600 hover:bg-purple-700 text-white text-sm font-black rounded-xl shadow-lg shadow-purple-500/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-widest"
+                            >
+                                {allocating ? (
+                                    <Clock size={16} className="animate-spin" />
+                                ) : (
+                                    <>Assign Center <CheckCircle2 size={16} /></>
+                                )}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

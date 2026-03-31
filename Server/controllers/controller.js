@@ -686,11 +686,11 @@ const deleteUniversity = async (req, res) => {
 
 const createCollege = async (req, res) => {
   try {
-    const { name, college_code, university_id, address, status } = req.body;
+    const { name, college_code, university_id, address, status, latitude, longitude } = req.body;
     if (!name) return res.status(400).json({ message: 'Name is required' });
     const result = await client.query(
-      'INSERT INTO colleges (name, college_code, university_id, address, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [name, college_code || null, university_id, address || null, status === undefined ? true : status]
+      'INSERT INTO colleges (name, college_code, university_id, address, status, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [name, college_code || null, university_id, address || null, status === undefined ? true : status, latitude || null, longitude || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -701,11 +701,11 @@ const createCollege = async (req, res) => {
 
 const updateCollege = async (req, res) => {
   try {
-    const { name, college_code, address, status } = req.body;
+    const { name, college_code, address, status, latitude, longitude } = req.body;
     const id = req.params.id;
     const result = await client.query(
-      'UPDATE colleges SET name=$1, college_code=$2, address=$3, status=$4 WHERE id=$5 RETURNING *',
-      [name, college_code || null, address || null, status === undefined ? true : status, id]
+      'UPDATE colleges SET name=$1, college_code=$2, address=$3, status=$4, latitude=$5, longitude=$6 WHERE id=$7 RETURNING *',
+      [name, college_code || null, address || null, status === undefined ? true : status, latitude || null, longitude || null, id]
     );
     if (result.rows.length === 0) return res.status(404).json({ message: 'College not found' });
     res.json(result.rows[0]);
@@ -1036,7 +1036,8 @@ const getColleges = async (req, res) => {
     const { role, university_id } = req.user || {};
     let query = `
       SELECT c.id, c.name AS college_name, c.college_code, c.university_id, 
-             u.name AS university_name, c.address, c.status, c.created_at 
+             u.name AS university_name, c.address, c.status, c.created_at,
+             c.latitude, c.longitude 
       FROM colleges c 
       LEFT JOIN universities u ON c.university_id = u.id
     `;

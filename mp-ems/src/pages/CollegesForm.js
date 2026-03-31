@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Select, { components } from 'react-select';
-import { GraduationCap, ArrowLeft, Check, Search, ChevronDown } from "lucide-react";
+import { GraduationCap, ArrowLeft, Check, Search, ChevronDown, MapPin, Map, X } from "lucide-react";
 
 const CheckboxOption = (props) => {
   return (
@@ -32,7 +32,14 @@ const CollegesForm = () => {
   const [dataLoading, setDataLoading] = useState(false);
   
   const [universities, setUniversities] = useState([]);
-  const [form, setForm] = useState({ name: '', college_code: '', address: '', university_id: '' });
+  const [form, setForm] = useState({ 
+    name: '', 
+    college_code: '', 
+    address: '', 
+    university_id: '',
+    latitude: '',
+    longitude: ''
+  });
 
   // Config Mapping State
   const [masterData, setMasterData] = useState({ policies: [], programs: [], academicYears: [], semesters: [] });
@@ -40,6 +47,9 @@ const CollegesForm = () => {
   const [selectedConfig, setSelectedConfig] = useState({ policies: [], programs: [], academicYears: [], semesters: [] });
   const [isConfigLoading, setIsConfigLoading] = useState(false);
   const [savingConfig, setSavingConfig] = useState(false);
+  const [detectingLocation, setDetectingLocation] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
+  const [showMapModal, setShowMapModal] = useState(false);
 
   useEffect(() => {
     fetchUniversities();
@@ -87,7 +97,9 @@ const CollegesForm = () => {
           name: college.college_name || college.name || '',
           college_code: college.college_code || '',
           address: college.address || '',
-          university_id: college.university_id || ''
+          university_id: college.university_id || '',
+          latitude: college.latitude || '',
+          longitude: college.longitude || ''
         });
         fetchCollegeConfig(collegeId);
       } else {
@@ -133,6 +145,57 @@ const CollegesForm = () => {
       }
     } catch (err) {
       console.error('Error fetching college config:', err);
+    }
+  };
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      return toast.error("Geolocation is not supported by your browser");
+    }
+    
+    setDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setForm(prev => ({
+          ...prev,
+          latitude: position.coords.latitude.toFixed(8),
+          longitude: position.coords.longitude.toFixed(8)
+        }));
+        setDetectingLocation(false);
+        toast.success("Current location captured!");
+      },
+      (error) => {
+        setDetectingLocation(false);
+        toast.error("Failed to retrieve location: " + error.message);
+      },
+      { enableHighAccuracy: true }
+    );
+  };
+
+  const handleGeocode = async () => {
+    if (!form.address) return toast.warning("Please enter an address first");
+    
+    setGeocoding(true);
+    try {
+      // Using OpenStreetMap Nominatim API (Free)
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(form.address)}&limit=1`);
+      if (!res.ok) throw new Error("Geocoding service unavailable");
+      
+      const data = await res.json();
+      if (data && data.length > 0) {
+        setForm(prev => ({
+          ...prev,
+          latitude: parseFloat(data[0].lat).toFixed(8),
+          longitude: parseFloat(data[0].lon).toFixed(8)
+        }));
+        toast.success("Coordinates found from address!");
+      } else {
+        toast.error("Could not find coordinates for this address. Please try refining it or detect current location.");
+      }
+    } catch (err) {
+      toast.error("An error occurred during geocoding: " + err.message);
+    } finally {
+      setGeocoding(false);
     }
   };
 
@@ -183,6 +246,18 @@ const CollegesForm = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
+      {showMapModal && (
+        <MapPickerModal 
+          onClose={() => setShowMapModal(false)}
+          onConfirm={(lat, lon) => {
+            setForm(prev => ({ ...prev, latitude: lat, longitude: lon }));
+            setShowMapModal(false);
+            toast.success("Location updated via Map!");
+          }}
+          initialLat={form.latitude}
+          initialLon={form.longitude}
+        />
+      )}
       <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
         {/* Header */}
         <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
@@ -256,7 +331,17 @@ const CollegesForm = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700 ml-1">Address</label>
+                <div className="flex items-center justify-between ml-1">
+                  <label className="text-sm font-bold text-slate-700">Address</label>
+                  <button 
+                    onClick={handleGeocode}
+                    disabled={geocoding || !form.address}
+                    className="text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-700 flex items-center gap-1.5 bg-emerald-50 px-2 py-1 rounded-lg transition-all disabled:opacity-50"
+                  >
+                    <Search size={12} />
+                    {geocoding ? "Resolving..." : "Fetch Coordinates"}
+                  </button>
+                </div>
                 <textarea 
                   placeholder="Street, City, Pin Code" 
                   rows={3}
@@ -264,6 +349,55 @@ const CollegesForm = () => {
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
                   className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-medium resize-none"
                 />
+              </div>
+
+              {/* Dynamic Location Section */}
+              <div className="pt-4 space-y-4">
+                <div className="flex items-center justify-between px-1">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-4 h-px bg-slate-200"></span> Proximity Engine
+                  </h3>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={handleDetectLocation}
+                      disabled={detectingLocation}
+                      className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-700 flex items-center gap-1.5 bg-indigo-50 px-3 py-1.5 rounded-full transition-all active:scale-95"
+                    >
+                      <MapPin size={12} />
+                      {detectingLocation ? "Locating..." : "Auto-Detect"}
+                    </button>
+                    <button 
+                      onClick={() => setShowMapModal(true)}
+                      className="text-[10px] font-black uppercase tracking-widest text-purple-600 hover:text-purple-700 flex items-center gap-1.5 bg-purple-50 px-3 py-1.5 rounded-full transition-all active:scale-95"
+                    >
+                      <Map size={12} />
+                      Pick on Map
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wide">Latitude</label>
+                    <input 
+                      type="text" 
+                      placeholder="0.00000000" 
+                      value={form.latitude} 
+                      onChange={(e) => setForm({ ...form, latitude: e.target.value })}
+                      className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-3 text-slate-800 focus:border-indigo-500 outline-none transition-all font-mono text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wide">Longitude</label>
+                    <input 
+                      type="text" 
+                      placeholder="0.00000000" 
+                      value={form.longitude} 
+                      onChange={(e) => setForm({ ...form, longitude: e.target.value })}
+                      className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-3 text-slate-800 focus:border-indigo-500 outline-none transition-all font-mono text-sm"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -337,6 +471,122 @@ const CollegesForm = () => {
               </>
             )}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Map Picker Modal Component ---
+// This component dynamically loads Leaflet from CDN to avoid adding local dependencies 
+// while providing a full interactive map experience.
+const MapPickerModal = ({ onClose, onConfirm, initialLat, initialLon }) => {
+  const [loading, setLoading] = useState(true);
+  const mapRef = React.useRef(null);
+  const [markerCoords, setMarkerCoords] = useState({ 
+    lat: parseFloat(initialLat) || 22.9734, // Default to MP/India center
+    lon: parseFloat(initialLon) || 78.6569 
+  });
+
+  useEffect(() => {
+    // Load Leaflet CSS
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link');
+      link.id = 'leaflet-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
+
+    // Load Leaflet JS
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.async = true;
+    script.onload = () => {
+      setLoading(false);
+      setTimeout(initMap, 100);
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) document.body.removeChild(script);
+    };
+  }, []);
+
+  const initMap = () => {
+    if (!window.L) return;
+    const L = window.L;
+
+    const map = L.map('map-container').setView([markerCoords.lat, markerCoords.lon], 13);
+    mapRef.current = map;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const marker = L.marker([markerCoords.lat, markerCoords.lon], { draggable: true }).addTo(map);
+
+    map.on('click', (e) => {
+      const { lat, lng } = e.latlng;
+      marker.setLatLng([lat, lng]);
+      setMarkerCoords({ lat, lon: lng });
+    });
+
+    marker.on('dragend', (e) => {
+      const { lat, lng } = e.target.getLatLng();
+      setMarkerCoords({ lat, lon: lng });
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white w-full max-w-4xl h-[85vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden border border-white/20 animate-in zoom-in-95 duration-300">
+        {/* Modal Header */}
+        <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600">
+              <Map size={24} />
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-900 leading-tight">Interactive Map Picker</h3>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Select college location precisely</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-10 h-10 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 transition-all active:scale-95">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Map Body */}
+        <div className="flex-1 relative bg-slate-50">
+          {loading && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+              <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="mt-4 text-xs font-black text-slate-400 uppercase tracking-widest">Initialising Cartography Engine...</p>
+            </div>
+          )}
+          <div id="map-container" className="w-full h-full"></div>
+          
+          {/* Coordinates Overlay */}
+          <div className="absolute bottom-6 left-6 right-6 z-[1000] flex flex-col sm:flex-row items-center gap-4">
+            <div className="bg-white/90 backdrop-blur-md px-6 py-4 rounded-3xl shadow-xl border border-white flex gap-6">
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Latitude</p>
+                <p className="text-sm font-mono font-bold text-slate-900">{markerCoords.lat.toFixed(8)}</p>
+              </div>
+              <div className="w-px h-8 bg-slate-200 mt-2"></div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Longitude</p>
+                <p className="text-sm font-mono font-bold text-slate-900">{markerCoords.lon.toFixed(8)}</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => onConfirm(markerCoords.lat.toFixed(8), markerCoords.lon.toFixed(8))}
+              className="w-full sm:w-auto px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-3xl shadow-xl shadow-indigo-600/20 transition-all hover:translate-y-[-2px] active:translate-y-[1px]"
+            >
+              Confirm Location
+            </button>
+          </div>
         </div>
       </div>
     </div>

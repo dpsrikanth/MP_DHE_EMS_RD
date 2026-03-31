@@ -241,16 +241,62 @@ exports.createShortageRequest = async (req, res) => {
 exports.getAllShortageRequests = async (req, res) => {
     try {
         const query = `
-            SELECT DISTINCT ON (s.college_id) s.*, c.name as college_name 
-            FROM shortage_requests s
-            JOIN colleges c ON s.college_id = c.id
-            WHERE s.status = 'Pending'
-            ORDER BY s.college_id, s.created_at DESC;
+            SELECT * FROM (
+                SELECT DISTINCT ON (s.college_id)
+                    s.id, 
+                    s.college_id, 
+                    c.name as college_name, 
+                    c.latitude,
+                    c.longitude,
+                    s.status, 
+                    s.created_at,
+                    (SELECT COUNT(*) FROM students st WHERE st."collageName" ILIKE c.name AND st."deleteStatus" = true) as student_count,
+                    (SELECT COALESCE(SUM(h.rows * h.seats_per_row), 0) FROM examination_halls h WHERE h.college_id = s.college_id AND h.status = 'Approved') as available_capacity,
+                    (
+                        (SELECT COUNT(*) FROM students st WHERE st."collageName" ILIKE c.name AND st."deleteStatus" = true) - 
+                        (SELECT COALESCE(SUM(h.rows * h.seats_per_row), 0) FROM examination_halls h WHERE h.college_id = s.college_id AND h.status = 'Approved')
+                    ) as shortage
+                FROM shortage_requests s
+                JOIN colleges c ON s.college_id = c.id
+                WHERE s.status = 'Pending'
+                ORDER BY s.college_id, s.created_at DESC
+            ) AS live_shortage
+            WHERE shortage > 0
+            ORDER BY created_at DESC;
         `;
         const result = await db.query(query);
         res.status(200).json(result.rows);
     } catch (error) {
         console.error("Get shortage requests error:", error);
         res.status(500).json({ error: "Failed to fetch shortage requests" });
+    }
+};
+
+// University Admin: Allocate an external center (Another College)
+exports.allocateCenter = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { allocated_college_id } = req.body;
+
+        if (!allocated_college_id) {
+            return res.status(400).json({ error: "Allocated college ID is required" });
+        }
+
+        const query = `
+            UPDATE shortage_requests 
+            SET allocated_college_id = $1, status = 'Allocated', updated_at = CURRENT_TIMESTAMP
+            WHERE id = $2 AND status = 'Pending'
+            RETURNING *;
+        `;
+        const result = await db.query(query, [allocated_college_id, id]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Pending shortage request not found" });
+        }
+
+        res.status(200).json({ message: "External center allocated successfully", data: result.rows[0] });
+    } catch (error) {
+        console.error("Allocate center error:", error);
+        res.status(500).json({ error: "Failed to allocate center" });
     }
 };
