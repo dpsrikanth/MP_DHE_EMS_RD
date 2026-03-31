@@ -208,16 +208,28 @@ exports.createShortageRequest = async (req, res) => {
             return res.status(403).json({ error: "Unauthorized: No college assigned" });
         }
 
-        const query = `
-            INSERT INTO shortage_requests (college_id, student_count, available_capacity, shortage, status)
-            VALUES ($1, $2, $3, $4, 'Pending') RETURNING id;
-        `;
-        const result = await db.query(query, [
-            parseInt(college_id), 
-            student_count, 
-            available_capacity, 
-            shortage
-        ]);
+        // Check if a pending request already exists for this college
+        const existingQuery = `SELECT id FROM shortage_requests WHERE college_id = $1 AND status = 'Pending'`;
+        const existingResult = await db.query(existingQuery, [parseInt(college_id)]);
+
+        let result;
+        if (existingResult.rowCount > 0) {
+            // Update the existing pending request
+            const updateQuery = `
+                UPDATE shortage_requests 
+                SET student_count = $1, available_capacity = $2, shortage = $3
+                WHERE id = $4
+                RETURNING id;
+            `;
+            result = await db.query(updateQuery, [student_count, available_capacity, shortage, existingResult.rows[0].id]);
+        } else {
+            // Insert a new request
+            const insertQuery = `
+                INSERT INTO shortage_requests (college_id, student_count, available_capacity, shortage, status)
+                VALUES ($1, $2, $3, $4, 'Pending') RETURNING id;
+            `;
+            result = await db.query(insertQuery, [parseInt(college_id), student_count, available_capacity, shortage]);
+        }
 
         res.status(201).json({ message: "Shortage request sent to university successfully", id: result.rows[0].id });
     } catch (error) {
@@ -229,11 +241,11 @@ exports.createShortageRequest = async (req, res) => {
 exports.getAllShortageRequests = async (req, res) => {
     try {
         const query = `
-            SELECT s.*, c.name as college_name 
+            SELECT DISTINCT ON (s.college_id) s.*, c.name as college_name 
             FROM shortage_requests s
             JOIN colleges c ON s.college_id = c.id
             WHERE s.status = 'Pending'
-            ORDER BY s.created_at DESC;
+            ORDER BY s.college_id, s.created_at DESC;
         `;
         const result = await db.query(query);
         res.status(200).json(result.rows);
