@@ -25,6 +25,7 @@ import Departments from "./pages/Departments";
 import PolicyConfig from "./pages/CollegeAdmin/PolicyConfig";
 import MarksConfig from "./pages/CollegeAdmin/MarksConfig";
 import FacultyAssignment from "./pages/CollegeAdmin/FacultyAssignment";
+import FacultyAssignmentEdit from "./pages/CollegeAdmin/FacultyAssignmentEdit";
 import MarksApproval from "./pages/CollegeAdmin/MarksApproval";
 import ExaminationHalls from "./pages/CollegeAdmin/ExaminationHalls";
 import FacultyDashboard from "./pages/Faculty/Dashboard";
@@ -145,6 +146,7 @@ const AppRoutes = () => {
       <Route path="/college-admin/policies" element={<Layout><ProtectedRoute element={<PolicyConfig />} /></Layout>} />
       <Route path="/college-admin/marks-config" element={<Layout><ProtectedRoute element={<MarksConfig />} /></Layout>} />
       <Route path="/college-admin/faculty-assign" element={<Layout><ProtectedRoute element={<FacultyAssignment />} /></Layout>} />
+      <Route path="/college-admin/faculty-assign/edit/:id" element={<Layout><ProtectedRoute element={<FacultyAssignmentEdit />} /></Layout>} />
       <Route path="/college-admin/marks-approval" element={<Layout><ProtectedRoute element={<MarksApproval />} /></Layout>} />
       <Route path="/college-admin/examination-halls" element={<Layout><ProtectedRoute element={<ExaminationHalls />} /></Layout>} />
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   FileText, Plus, Pencil, X, Check, Calendar, Book, Layers, Hash, ArrowRight,
   AlertCircle, Globe, Users, BookOpen, Clock
@@ -10,6 +11,7 @@ import authUtils from "../utils/authUtils";
 import { toast } from 'react-toastify';
 
 const Exams = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -670,7 +672,7 @@ const Exams = () => {
                     {!(authUtils.isCollegeAdmin() && item.exam_type == 2) && (
                       <div className="flex items-center gap-2 mt-8 pt-6 border-t border-slate-200">
                         <button 
-                          onClick={() => handleEdit(item)}
+                          onClick={() => navigate(`/exams/edit/${item.id}`)}
                           className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm hover:shadow-indigo-500/10"
                         >
                           <Pencil size={14} />

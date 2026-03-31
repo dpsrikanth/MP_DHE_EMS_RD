@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import { Users, Save, List, Pencil, Trash2, X } from "lucide-react";
 
 const FacultyAssignment = () => {
+    const navigate = useNavigate();
     const [faculties, setFaculties] = useState([]);
     const [subjects, setSubjects] = useState([]);
     const [semesters, setSemesters] = useState([]);
@@ -139,8 +141,17 @@ const FacultyAssignment = () => {
     };
 
     const handleEditClick = (assignment) => {
-        setEditingAssignment(assignment);
-        setShowEditModal(true);
+        navigate(`/college-admin/faculty-assign/edit/${assignment.id}`, {
+            state: {
+                assignment: {
+                    ...assignment,
+                    teacher_id: parseInt(assignment.teacher_id),
+                    subject_id: parseInt(assignment.subject_id),
+                    semester_id: parseInt(assignment.semester_id),
+                    academic_year_id: parseInt(assignment.academic_year_id),
+                }
+            }
+        });
     };
 
     const handleUpdateAssignment = async () => {

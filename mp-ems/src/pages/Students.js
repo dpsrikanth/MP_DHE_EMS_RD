@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 import {
   GraduationCap,
   Plus,
@@ -28,6 +29,7 @@ import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 
 const Students = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -908,7 +910,7 @@ const Students = () => {
                           <Eye size={18} />
                         </button>
                         <button
-                          onClick={() => openEditModal(item)}
+                          onClick={() => navigate(`/students/edit/${item.id}`)}
                           className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
                           title="Edit Record"
                         >
