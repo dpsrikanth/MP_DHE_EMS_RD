@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const secrecyController = require('../controllers/secrecyController');
-const { verifyToken } = require('../middleware/auth.middleware.js');
+const { verifyToken } = require('../middleware/auth.middleware');
 
 router.use(verifyToken);
 
@@ -72,6 +72,18 @@ router.get('/setters', secrecyOnly, secrecyController.getPaperSetters);
  *     tags: [Secrecy Department]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               teacherId: { type: integer }
+ *               subjectIds: { type: array, items: { type: integer } }
+ *     responses:
+ *       200:
+ *         description: Teacher authorized successfully
  */
 router.post('/setters/add', secrecyOnly, secrecyController.addPaperSetter);
 
@@ -83,6 +95,20 @@ router.post('/setters/add', secrecyOnly, secrecyController.addPaperSetter);
  *     tags: [Secrecy Department]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string }
+ *               email: { type: string }
+ *               password: { type: string }
+ *               subjectIds: { type: array, items: { type: integer } }
+ *     responses:
+ *       201:
+ *         description: New setter created and authorized
  */
 router.post('/setters/new', secrecyOnly, secrecyController.createNewSetter);
 
@@ -96,8 +122,21 @@ router.post('/setters/new', secrecyOnly, secrecyController.createNewSetter);
  *       - in: path
  *         name: id
  *         required: true
+ *         schema:
+ *           type: integer
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               subjectIds: { type: array, items: { type: integer } }
+ *     responses:
+ *       200:
+ *         description: Setter updated successfully
  */
 router.put('/setters/:id', secrecyOnly, secrecyController.updatePaperSetter);
 
@@ -124,6 +163,19 @@ router.get('/papers', secrecyOnly, secrecyController.getQuestionPapers);
  *     tags: [Secrecy Department]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               paperId: { type: integer }
+ *               status: { type: string }
+ *               comments: { type: string }
+ *     responses:
+ *       200:
+ *         description: Status updated
  */
 router.post('/papers/status', secrecyOnly, secrecyController.updatePaperStatus);
 
@@ -150,6 +202,19 @@ router.get('/payments', secrecyOnly, secrecyController.getPayments);
  *     tags: [Secrecy Department]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               paymentId: { type: integer }
+ *               amount: { type: number }
+ *               transactionDetails: { type: string }
+ *     responses:
+ *       200:
+ *         description: Payment processed
  */
 router.post('/payments/process', secrecyOnly, secrecyController.processPayment);
 

@@ -36,6 +36,14 @@ router.get('/assignments', verifyToken, getAssignedStudents);
  *     tags: [External Examiner Operations]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               marksData: { type: array, items: { type: object } }
  *     responses:
  *       200:
  *         description: Marks saved successfully
@@ -50,6 +58,17 @@ router.post('/save-marks', verifyToken, saveExternalMarks);
  *     tags: [External Examiner Operations]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               assignmentId: { type: integer }
+ *     responses:
+ *       200:
+ *         description: External marks finalized
  */
 router.post('/finalize-marks', verifyToken, finalizeExternalMarks);
 

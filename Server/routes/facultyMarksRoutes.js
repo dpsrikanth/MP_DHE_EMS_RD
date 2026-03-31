@@ -73,6 +73,20 @@ router.get('/entered-marks', facultyMarksController.getEnteredMarks);
  *     tags: [Faculty Operations]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               marksData: { type: array, items: { type: object } }
+ *               subject_id: { type: integer }
+ *               academic_year_id: { type: integer }
+ *               semester_id: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Marks saved as draft
  */
 router.post('/enter-marks', facultyMarksController.enterStudentMarks);
 
@@ -84,6 +98,19 @@ router.post('/enter-marks', facultyMarksController.enterStudentMarks);
  *     tags: [Faculty Operations]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               subject_id: { type: integer }
+ *               academic_year_id: { type: integer }
+ *               semester_id: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Marks submitted successfully
  */
 router.post('/submit-marks', facultyMarksController.submitMarks);
 

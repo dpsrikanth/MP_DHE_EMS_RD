@@ -33,6 +33,19 @@ router.get('/config', verifyToken, gradingController.getGradingConfig);
  *     tags: [Grading System]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/GradingConfig'
+ *     responses:
+ *       200:
+ *         description: Grading configuration updated successfully
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Internal server error
  */
 router.post('/config', verifyToken, gradingController.updateGradingConfig);
 

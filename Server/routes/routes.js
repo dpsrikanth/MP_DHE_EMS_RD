@@ -70,6 +70,60 @@ router.post('/change-password', verifyToken, changePassword);
  *                 $ref: '#/components/schemas/Role'
  */
 router.get('/roles', getRoles);
+/**
+ * @swagger
+ * /api/roles:
+ *   post:
+ *     summary: Create a new role
+ *     tags: [Roles]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Role'
+ *     responses:
+ *       201:
+ *         description: Role created successfully
+ *
+ * /api/roles/{id}:
+ *   put:
+ *     summary: Update an existing role
+ *     tags: [Roles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Role'
+ *     responses:
+ *       200:
+ *         description: Role updated successfully
+ *   delete:
+ *     summary: Delete a role
+ *     tags: [Roles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Role deleted successfully
+ */
 router.post('/roles', verifyToken, createRole);
 router.put('/roles/:id', verifyToken, updateRole);
 router.delete('/roles/:id', verifyToken, deleteRole);
@@ -132,6 +186,60 @@ router.get('/dashboard/stats', verifyToken, getDashboardStats);
  *         description: List of users
  */
 router.get('/users', verifyToken, getUsers);
+/**
+ * @swagger
+ * /api/users:
+ *   post:
+ *     summary: Create a new user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *
+ * /api/users/{id}:
+ *   put:
+ *     summary: Update an existing user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *   delete:
+ *     summary: Delete a user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ */
 router.post('/users', verifyToken, createUser);
 router.put('/users/:id', verifyToken, updateUser);
 router.delete('/users/:id', verifyToken, deleteUser);
@@ -192,6 +300,68 @@ router.get('/exam-types', verifyToken, getExamTypes);
  *   description: Management of Universities and Colleges
  */
 
+/**
+ * @swagger
+ * /api/universities:
+ *   get:
+ *     summary: List all universities
+ *     tags: [Institutions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of universities
+ *   post:
+ *     summary: Create a new university
+ *     tags: [Institutions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/University'
+ *     responses:
+ *       201:
+ *         description: University created successfully
+ *
+ * /api/universities/{id}:
+ *   put:
+ *     summary: Update an existing university
+ *     tags: [Institutions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/University'
+ *     responses:
+ *       200:
+ *         description: University updated successfully
+ *   delete:
+ *     summary: Delete a university
+ *     tags: [Institutions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: University deleted successfully
+ */
 router.get('/universities', verifyToken, getUniversities);
 router.post('/universities', verifyToken, createUniversity);
 router.put('/universities/:id', verifyToken, updateUniversity);
@@ -224,6 +394,68 @@ router.put('/universities/:id/config', verifyToken, updateUniversityConfig);
  *     responses:
  *       200:
  *         description: List of colleges
+ */
+/**
+ * @swagger
+ * /api/colleges:
+ *   get:
+ *     summary: List all colleges
+ *     tags: [Institutions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of colleges
+ *   post:
+ *     summary: Create a new college
+ *     tags: [Institutions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/College'
+ *     responses:
+ *       201:
+ *         description: College created successfully
+ *
+ * /api/colleges/{id}:
+ *   put:
+ *     summary: Update an existing college
+ *     tags: [Institutions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/College'
+ *     responses:
+ *       200:
+ *         description: College updated successfully
+ *   delete:
+ *     summary: Delete a college
+ *     tags: [Institutions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: College deleted successfully
  */
 router.get('/colleges', verifyToken, getColleges);
 router.post('/colleges', verifyToken, createCollege);
@@ -298,6 +530,60 @@ router.get('/programs', verifyToken, getPrograms);
  *       201:
  *         description: Program created
  */
+/**
+ * @swagger
+ * /api/programs:
+ *   post:
+ *     summary: Create a new academic program
+ *     tags: [Academic Hierarchy]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Program'
+ *     responses:
+ *       201:
+ *         description: Program created successfully
+ *
+ * /api/programs/{id}:
+ *   put:
+ *     summary: Update an existing program
+ *     tags: [Academic Hierarchy]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Program'
+ *     responses:
+ *       200:
+ *         description: Program updated successfully
+ *   delete:
+ *     summary: Delete a program
+ *     tags: [Academic Hierarchy]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Program deleted successfully
+ */
 router.post('/programs', verifyToken, createProgram);
 router.put('/programs/:id', verifyToken, updateProgram);
 router.delete('/programs/:id', verifyToken, deleteProgram);
@@ -314,6 +600,64 @@ router.delete('/programs/:id', verifyToken, deleteProgram);
  *         description: List of academic years
  */
 router.get('/academic-years', verifyToken, getAcademicYears);
+/**
+ * @swagger
+ * /api/academic-years:
+ *   post:
+ *     summary: Create a new academic year
+ *     tags: [Academic Hierarchy]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               year_name: { type: string }
+ *     responses:
+ *       201:
+ *         description: Academic year created
+ *
+ * /api/academic-years/{id}:
+ *   put:
+ *     summary: Update an existing academic year
+ *     tags: [Academic Hierarchy]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               year_name: { type: string }
+ *     responses:
+ *       200:
+ *         description: Academic year updated
+ *   delete:
+ *     summary: Delete an academic year
+ *     tags: [Academic Hierarchy]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Academic year deleted
+ */
 router.post('/academic-years', verifyToken, createAcademicYear);
 router.put('/academic-years/:id', verifyToken, updateAcademicYear);
 router.delete('/academic-years/:id', verifyToken, deleteAcademicYear);
@@ -330,6 +674,60 @@ router.delete('/academic-years/:id', verifyToken, deleteAcademicYear);
  *         description: List of students
  */
 router.get('/students', verifyToken, getStudents);
+/**
+ * @swagger
+ * /api/students:
+ *   post:
+ *     summary: Create a new student
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Student'
+ *     responses:
+ *       201:
+ *         description: Student created successfuly
+ *
+ * /api/students/{id}:
+ *   put:
+ *     summary: Update an existing student
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Student'
+ *     responses:
+ *       200:
+ *         description: Student updated successfully
+ *   delete:
+ *     summary: Delete a student
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Student deleted successfully
+ */
 router.post('/students', verifyToken, createStudent);
 router.put('/students/:id', verifyToken, updateStudent);
 router.delete('/students/:id', verifyToken, deleteStudent);
@@ -347,6 +745,30 @@ router.delete('/students/:id', verifyToken, deleteStudent);
  *         description: List of teachers
  */
 router.get('/teachers', verifyToken, getTeachers);
+/**
+ * @swagger
+ * /api/teachers/{id}:
+ *   put:
+ *     summary: Update an existing teacher/faculty profile
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Teacher'
+ *     responses:
+ *       200:
+ *         description: Teacher updated successfully
+ */
 router.put('/teachers/:id', verifyToken, updateTeacher);
 router.get('/exams', verifyToken, getExams);
 router.post('/exams', verifyToken, createExam);
@@ -376,6 +798,56 @@ router.get('/marks', verifyToken, getMarks);
  *     responses:
  *       200:
  *         description: List of master semesters
+ *   post:
+ *     summary: Create a new master semester
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/MasterSemester'
+ *     responses:
+ *       201:
+ *         description: Master semester created
+ *
+ * /api/master-semesters/{id}:
+ *   put:
+ *     summary: Update an existing master semester
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/MasterSemester'
+ *     responses:
+ *       200:
+ *         description: Master semester updated
+ *   delete:
+ *     summary: Delete a master semester
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Master semester deleted
  */
 router.get('/master-semesters', verifyToken, getMasterSemesters);
 router.get('/master-semesters/:id', verifyToken, getMasterSemester);
@@ -394,6 +866,56 @@ router.delete('/master-semesters/:id', verifyToken, deleteMasterSemester);
  *     responses:
  *       200:
  *         description: List of master subjects
+ *   post:
+ *     summary: Create a new master subject
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/MasterSubject'
+ *     responses:
+ *       201:
+ *         description: Master subject created
+ *
+ * /api/master-subjects/{id}:
+ *   put:
+ *     summary: Update an existing master subject
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/MasterSubject'
+ *     responses:
+ *       200:
+ *         description: Master subject updated
+ *   delete:
+ *     summary: Delete a master subject
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Master subject deleted
  */
 router.get('/master-subjects', verifyToken, getMasterSubjects);
 router.get('/master-subjects/:id', verifyToken, getMasterSubject);
@@ -412,6 +934,56 @@ router.delete('/master-subjects/:id', verifyToken, deleteMasterSubject);
  *     responses:
  *       200:
  *         description: List of master programs
+ *   post:
+ *     summary: Create a new master program
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/MasterProgram'
+ *     responses:
+ *       201:
+ *         description: Master program created
+ *
+ * /api/master-programs/{id}:
+ *   put:
+ *     summary: Update an existing master program
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/MasterProgram'
+ *     responses:
+ *       200:
+ *         description: Master program updated
+ *   delete:
+ *     summary: Delete a master program
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Master program deleted
  */
 router.get('/master-programs', verifyToken, getMasterPrograms);
 router.get('/master-programs/:id', verifyToken, getMasterProgram);
@@ -432,6 +1004,62 @@ router.post('/students', verifyToken, createStudent);
  *     responses:
  *       200:
  *         description: List of master policies
+ *   post:
+ *     summary: Create a new master policy
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string }
+ *               description: { type: string }
+ *     responses:
+ *       201:
+ *         description: Master policy created
+ *
+ * /api/master-policies/{id}:
+ *   put:
+ *     summary: Update an existing master policy
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string }
+ *               description: { type: string }
+ *     responses:
+ *       200:
+ *         description: Master policy updated
+ *   delete:
+ *     summary: Delete a master policy
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Master policy deleted
  */
 router.get('/master-policies', verifyToken, getMasterPolicies);
 router.get('/master-policies/:id', verifyToken, getMasterPolicy);
@@ -453,6 +1081,56 @@ router.get('/collage-master-policies/:collegeId', verifyToken, getCollegeMasterP
  *     responses:
  *       200:
  *         description: List of master teachers
+ *   post:
+ *     summary: Create a new master teacher
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Teacher'
+ *     responses:
+ *       201:
+ *         description: Master teacher created
+ *
+ * /api/master-teachers/{id}:
+ *   put:
+ *     summary: Update an existing master teacher
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Teacher'
+ *     responses:
+ *       200:
+ *         description: Master teacher updated
+ *   delete:
+ *     summary: Delete a master teacher
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Master teacher deleted
  */
 router.get('/master-teachers', verifyToken, getMasterTeachers);
 router.get('/master-teachers/:id', verifyToken, getMasterTeacher);
@@ -486,6 +1164,64 @@ router.post('/master-designations', verifyToken, createMasterDesignation);
  *     responses:
  *       200:
  *         description: List of master departments
+ *   post:
+ *     summary: Create a new master department
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               department_code: { type: string }
+ *               department_name: { type: string }
+ *               college_id: { type: integer }
+ *     responses:
+ *       201:
+ *         description: Master department created
+ *
+ * /api/master-departments/{id}:
+ *   put:
+ *     summary: Update an existing master department
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               department_code: { type: string }
+ *               department_name: { type: string }
+ *               college_id: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Master department updated
+ *   delete:
+ *     summary: Delete a master department
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Master department deleted
  */
 router.get('/master-departments', verifyToken, getMasterDepartments);
 router.get('/master-departments/:id', verifyToken, getMasterDepartment);
@@ -504,6 +1240,61 @@ router.delete('/master-departments/:id', verifyToken, deleteMasterDepartment);
  *     responses:
  *       200:
  *         description: List of batches
+ *   post:
+ *     summary: Create a new admission batch
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               batch_name: { type: string }
+ *               academic_year_id: { type: integer }
+ *     responses:
+ *       201:
+ *         description: Batch created
+ *
+ * /api/master-batches/{id}:
+ *   put:
+ *     summary: Update an existing batch
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               batch_name: { type: string }
+ *     responses:
+ *       200:
+ *         description: Batch updated
+ *   delete:
+ *     summary: Delete a batch
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Batch deleted
  */
 router.get('/master-batches', verifyToken, getMasterBatches);
 router.post('/master-batches', verifyToken, createMasterBatch);
@@ -521,6 +1312,62 @@ router.delete('/master-batches/:id', verifyToken, deleteMasterBatch);
  *     responses:
  *       200:
  *         description: List of subject mappings
+ *   post:
+ *     summary: Create a new subject mapping
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               master_subject_id: { type: integer }
+ *               program_id: { type: integer }
+ *               semester_id: { type: integer }
+ *     responses:
+ *       201:
+ *         description: Mapping created
+ *
+ * /api/subject-mappings/{id}:
+ *   put:
+ *     summary: Update an existing mapping
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               semester_id: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Mapping updated
+ *   delete:
+ *     summary: Delete a mapping
+ *     tags: [Master Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Mapping deleted
  */
 router.get('/subject-mappings', verifyToken, getSubjectMappings);
 router.post('/subject-mappings', verifyToken, createSubjectMapping);
@@ -596,6 +1443,56 @@ router.post('/marks/approve-reject', verifyToken, approveRejectMarks);
  *     responses:
  *       200:
  *         description: List of exams
+ *   post:
+ *     summary: Create a new exam schedule
+ *     tags: [Examinations]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Exam'
+ *     responses:
+ *       201:
+ *         description: Exam created
+ *
+ * /api/exams/{id}:
+ *   put:
+ *     summary: Update an existing exam schedule
+ *     tags: [Examinations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Exam'
+ *     responses:
+ *       200:
+ *         description: Exam updated
+ *   delete:
+ *     summary: Delete an exam schedule
+ *     tags: [Examinations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Exam deleted
  */
 router.get('/exams', verifyToken, getExams);
 router.post('/exams', verifyToken, createExam);
@@ -754,6 +1651,18 @@ router.get('/student/result-sheet/:examName', verifyToken, getResultSheetData);
  *     tags: [Student Services]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               examId: { type: integer }
+ *               subjectIds: { type: array, items: { type: integer } }
+ *     responses:
+ *       200:
+ *         description: Registration successful
  */
 router.post('/student/exams/register', verifyToken, registerForExam);
 

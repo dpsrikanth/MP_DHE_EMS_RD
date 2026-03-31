@@ -51,6 +51,19 @@ router.get('/pending-external-assignments', verifyToken, getRegistrationsPending
  *     tags: [University Administration]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               teacherId: { type: integer }
+ *               registrationId: { type: integer }
+ *               examId: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Faculty assigned successfully
  */
 router.post('/assign-external-faculty', verifyToken, assignExternalFaculty);
 

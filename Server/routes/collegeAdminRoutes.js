@@ -32,6 +32,19 @@ router.use(isCollegeAdmin);
  *     tags: [College Administration]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               policy_id: { type: integer }
+ *               program_id: { type: integer }
+ *               semester_id: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Policy mapped successfuly
  */
 router.post('/map-policy', collegeAdminController.mapPolicyToProgramSemester);
 
@@ -43,6 +56,18 @@ router.post('/map-policy', collegeAdminController.mapPolicyToProgramSemester);
  *     tags: [College Administration]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               subject_ids: { type: array, items: { type: integer } }
+ *               policy_id: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Subjects mapped successfuly
  */
 router.post('/map-subject', collegeAdminController.mapSubjectsToPolicy);
 
@@ -95,6 +120,18 @@ router.delete('/policy-mappings/:id', collegeAdminController.deletePolicyMapping
  *     tags: [College Administration]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               subject_id: { type: integer }
+ *               components: { type: object }
+ *     responses:
+ *       200:
+ *         description: Marks structure configured
  */
 router.post('/marks-structure', collegeAdminController.configureMarksStructure);
 
@@ -147,6 +184,29 @@ router.delete('/marks-structure/:id', collegeAdminController.deleteMarksStructur
  *       200:
  *         description: List of faculty assignments
  */
+/**
+ * @swagger
+ * /api/college-admin/assign-faculty:
+ *   post:
+ *     summary: Assign a faculty member to a subject in a semester/academic year
+ *     tags: [College Administration]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               teacher_id: { type: integer }
+ *               subject_id: { type: integer }
+ *               academic_year_id: { type: integer }
+ *               semester_id: { type: integer }
+ *     responses:
+ *       201:
+ *         description: Faculty assigned
+ */
 router.post('/assign-faculty', collegeAdminController.assignFacultyToSubject);
 router.get('/faculty-assignments/:college_id', collegeAdminController.getFacultyAssignments);
 router.put('/faculty-assignments/:id', collegeAdminController.editFacultyAssignment);
@@ -161,6 +221,24 @@ router.delete('/faculty-assignments/:id', collegeAdminController.deleteFacultyAs
  *     tags: [College Administration]
  *     security:
  *       - bearerAuth: []
+ *   post:
+ *     summary: Update status of a workflow section (Lock/Unlock)
+ *     tags: [College Administration]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               section: { type: string }
+ *               status: { type: string }
+ *               college_id: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Workflow status updated
  */
 router.get('/workflow-status', collegeAdminController.getMarksWorkflowStatus);
 router.post('/workflow-status', collegeAdminController.updateWorkflowStatus);
@@ -185,6 +263,19 @@ router.get('/review-marks', collegeAdminController.reviewMarks);
  *     tags: [College Administration]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               subject_id: { type: integer }
+ *               academic_year_id: { type: integer }
+ *               semester_id: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Marks locked successfuly
  */
 router.post('/lock-marks', collegeAdminController.lockMarks);
 
