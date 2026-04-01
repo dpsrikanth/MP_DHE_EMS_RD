@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  UserPlus, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  User, 
-  ShieldCheck, 
-  ChevronDown, 
+import {
+  UserPlus,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  User,
+  ShieldCheck,
+  ChevronDown,
   CheckCircle2,
   School,
   Sparkles,
@@ -34,44 +34,26 @@ const Register = () => {
   const [rolesLoading, setRolesLoading] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [step, setStep] = useState(1); // 1: Email Check, 2: OTP, 3: Set Password
+  const [otp, setOtp] = useState('');
 
-  useEffect(() => {
-    fetchRoles();
-  }, []);
 
-  const fetchRoles = async () => {
-    try {
-      const response = await fetch('http://localhost:8080/api/roles');
-      if (response.ok) {
-        const data = await response.json();
-        setRoles(data);
-        if (data.length > 0) {
-          setFormData(prev => ({
-            ...prev,
-            role: data[0].role_name
-          }));
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching roles:', error);
-    } finally {
-      setRolesLoading(false);
-    }
-  };
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) newErrors.name = 'Full name is required';
-    if (!formData.email.trim()) newErrors.email = 'Email address is required';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
-    }
-    if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+    if (step === 1) {
+      if (!formData.email.trim()) newErrors.email = 'Institutional email is required';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        newErrors.email = 'Please enter a valid email format';
+      }
+    } else if (step === 3) {
+      if (formData.password.length < 6) {
+        newErrors.password = 'Password must be at least 6 characters';
+      }
+      if (formData.password !== formData.confirmPassword) {
+        newErrors.confirmPassword = 'Passwords do not match';
+      }
     }
 
     setErrors(newErrors);
@@ -94,40 +76,81 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateForm()) return;
+    if (step === 1) {
+      if (!validateForm()) return;
+      setLoading(true);
+      try {
+        const response = await fetch('http://localhost:8080/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email })
+        });
 
-    setLoading(true);
-    try {
-      const response = await fetch('http://localhost:8080/api/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          role: formData.role
-        })
-      });
+        const data = await response.json();
+        if (!response.ok) {
+          setMessage(data.message || 'Activation Failed');
+          return;
+        }
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setMessage(data.message || 'Registration failed');
+        setMessage('A 6-digit verification code has been sent to your email.');
+        setStep(2);
+      } catch (error) {
+        setMessage('Network error. Please try again.');
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    } else if (step === 2) {
+      if (!otp || otp.length !== 6) {
+        setMessage('Please enter a valid 6-digit code');
         return;
       }
+      setLoading(true);
+      try {
+        const response = await fetch('http://localhost:8080/api/verify-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email, otp: otp })
+        });
 
-      setMessage('Registration successful! Redirecting...');
-      
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
-    } catch (error) {
-      setMessage('Registration failed. Please try again.');
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
+        const data = await response.json();
+        if (!response.ok) {
+          setMessage(data.message || 'Verification Failed');
+          return;
+        }
+
+        setMessage('Identity Verified! Please set your new password.');
+        setStep(3); // Move to Set Password step
+      } catch (error) {
+        setMessage('Verification error. Please try again.');
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    } else if (step === 3) {
+      if (!validateForm()) return;
+      setLoading(true);
+      try {
+        const response = await fetch('http://localhost:8080/api/set-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email, password: formData.password })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          setMessage(data.message || 'Failed to set password');
+          return;
+        }
+
+        setMessage('Password Set Successfully! Redirecting to Portal...');
+        setTimeout(() => navigate('/'), 2000);
+      } catch (error) {
+        setMessage('Error setting password. Please try again.');
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -142,7 +165,7 @@ const Register = () => {
         </div>
 
         <div className="relative z-10 max-w-xl">
-          <button 
+          <button
             onClick={() => navigate('/')}
             className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-12 font-bold text-sm tracking-widest uppercase group"
           >
@@ -163,38 +186,21 @@ const Register = () => {
           <h2 className="text-5xl font-black text-white leading-[1.1] mb-8 tracking-tight">
             Design your <span className="text-sky-400 underline decoration-sky-500/30 underline-offset-8">Ideal</span> Academic Ecosystem.
           </h2>
-          
+
           <p className="text-lg text-slate-400 font-medium mb-12 leading-relaxed">
             Join the elite network of educational institutions utilizing our cloud-native management platform for unmatched institutional efficiency.
           </p>
 
-          <div className="space-y-6 mb-16">
-            <div className="flex gap-5 items-start">
-              <div className="mt-1 w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-sky-400 shrink-0 border border-slate-700/50">
-                <Sparkles size={20} />
-              </div>
-              <div>
-                <h3 className="text-white font-bold text-lg leading-tight mb-1">Modern Student Experience</h3>
-                <p className="text-slate-500 text-sm font-medium leading-relaxed">Personalized dashboards and real-time progress tracking for every student.</p>
-              </div>
+          <div className="grid grid-cols-2 gap-8 mb-16">
+            <div className="p-6 bg-white/5 backdrop-blur-md rounded-3xl border border-white/5">
+              <CheckCircle2 className="text-sky-400 mb-4" size={24} />
+              <h4 className="text-white font-bold mb-1">Pre-Authorized</h4>
+              <p className="text-sm text-slate-500 leading-snug">Synced with official institution records.</p>
             </div>
-            <div className="flex gap-5 items-start">
-              <div className="mt-1 w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-indigo-400 shrink-0 border border-slate-700/50">
-                <Target size={20} />
-              </div>
-              <div>
-                <h3 className="text-white font-bold text-lg leading-tight mb-1">Performance Intelligence</h3>
-                <p className="text-slate-500 text-sm font-medium leading-relaxed">Advanced data analytics to identify trends and improve learning outcomes.</p>
-              </div>
-            </div>
-            <div className="flex gap-5 items-start">
-              <div className="mt-1 w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-emerald-400 shrink-0 border border-slate-700/50">
-                <Rocket size={20} />
-              </div>
-              <div>
-                <h3 className="text-white font-bold text-lg leading-tight mb-1">Rapid Deployment</h3>
-                <p className="text-slate-500 text-sm font-medium leading-relaxed">Get your institution online in minutes with our streamlined setup process.</p>
-              </div>
+            <div className="p-6 bg-white/5 backdrop-blur-md rounded-3xl border border-white/5">
+              <ShieldCheck className="text-indigo-400 mb-4" size={24} />
+              <h4 className="text-white font-bold mb-1">OTP Verified</h4>
+              <p className="text-sm text-slate-500 leading-snug">Secure activation for your student identity.</p>
             </div>
           </div>
 
@@ -231,8 +237,16 @@ const Register = () => {
 
         <div className="max-w-md mx-auto lg:mx-0 w-full my-auto py-10">
           <div className="mb-10 text-center lg:text-left">
-            <h2 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">Create Account</h2>
-            <p className="text-slate-500 font-medium">Join the next generation of academic management</p>
+            <h2 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">
+              {step === 1 ? 'First Time Access' : step === 2 ? 'Identity Check' : 'Create Credentials'}
+            </h2>
+            <p className="text-slate-500 font-medium">
+              {step === 1 
+                ? 'Enter your institutional email to claim your profile' 
+                : step === 2 
+                ? 'Enter the secure code sent to your email'
+                : 'Set a strong password to secure your account'}
+            </p>
           </div>
 
           {message && (
@@ -245,109 +259,111 @@ const Register = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
-              <div className="relative group">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
-                  <User size={18} />
-                </div>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Enter your full name"
-                  className={`w-full bg-slate-50 border-2 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm ${errors.name ? 'border-red-200 bg-red-50/50' : 'border-slate-100'}`}
-                />
-              </div>
-              {errors.name && <p className="text-[10px] font-bold text-red-500 ml-1 uppercase">{errors.name}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-              <div className="relative group">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
-                  <Mail size={18} />
-                </div>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="admin@institution.edu"
-                  className={`w-full bg-slate-50 border-2 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm ${errors.email ? 'border-red-200 bg-red-50/50' : 'border-slate-100'}`}
-                />
-              </div>
-              {errors.email && <p className="text-[10px] font-bold text-red-500 ml-1 uppercase">{errors.email}</p>}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
-                <div className="relative group">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
-                    <Lock size={18} />
+            {step === 1 && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Institutional Email</label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
+                      <Mail size={18} />
+                    </div>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="student@institution.edu"
+                      className={`w-full bg-slate-50 border-2 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm ${errors.email ? 'border-red-200 bg-red-50/50' : 'border-slate-100'}`}
+                    />
                   </div>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="••••••••"
-                    className={`w-full bg-slate-50 border-2 rounded-2xl py-4 pl-14 pr-12 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm ${errors.password ? 'border-red-200 bg-red-50/50' : 'border-slate-100'}`}
-                  />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors">
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
+                  {errors.email && <p className="text-[10px] font-bold text-red-500 ml-1 uppercase">{errors.email}</p>}
                 </div>
-                {errors.password && <p className="text-[10px] font-bold text-red-500 ml-1 uppercase">{errors.password}</p>}
+                
+                <div className="p-4 bg-sky-50 text-sky-800 rounded-2xl border border-sky-100/50 text-sm font-medium">
+                  <strong>Note:</strong> You must have a pre-registered profile created by your administrator before you can claim your account.
+                </div>
               </div>
+            )}
 
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Confirm</label>
-                <div className="relative group">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
-                    <ShieldCheck size={18} />
+            {step === 2 && (
+
+              <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500 py-4">
+                <div className="space-y-2 text-center">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Enter Activation Code</label>
+                  <div className="relative group mt-4">
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-sky-500 transition-colors pointer-events-none">
+                      <ShieldCheck size={24} />
+                    </div>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      placeholder="000000"
+                      className="w-full bg-slate-50 border-4 border-sky-50 rounded-3xl py-6 pl-16 pr-6 text-4xl tracking-[0.6em] text-slate-800 placeholder:text-slate-100 focus:bg-white focus:border-sky-500 outline-none transition-all font-black shadow-inner text-center"
+                    />
                   </div>
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    placeholder="••••••••"
-                    className={`w-full bg-slate-50 border-2 rounded-2xl py-4 pl-14 pr-12 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm ${errors.confirmPassword ? 'border-red-200 bg-red-50/50' : 'border-slate-100'}`}
-                  />
-                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors">
-                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
+                  <p className="text-[10px] font-bold text-slate-400 mt-4 uppercase">
+                    Code sent to: <span className="text-slate-900">{formData.email}</span>
+                  </p>
                 </div>
-                {errors.confirmPassword && <p className="text-[10px] font-bold text-red-500 ml-1 uppercase">{errors.confirmPassword}</p>}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Assigned Role</label>
-              <div className="relative group">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
-                  <UserPlus size={18} />
-                </div>
-                <select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-12 text-slate-800 focus:bg-white focus:border-sky-500 outline-none appearance-none transition-all font-semibold shadow-sm"
-                  disabled={rolesLoading}
+                <button 
+                  type="button" 
+                  onClick={() => setStep(1)} 
+                  className="text-xs font-bold text-sky-500 hover:text-sky-600 flex items-center justify-center gap-2 w-full transition-colors group"
                 >
-                  {roles.length === 0 && <option value="">Loading roles...</option>}
-                  {roles.map((role) => (
-                    <option key={role.id} value={role.role_name}>{role.role_name}</option>
-                  ))}
-                </select>
-                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                  <ChevronDown size={18} />
+                  <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-1" />
+                  Change Email Address
+                </button>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">New Password</label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
+                      <Lock size={18} />
+                    </div>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="••••••••"
+                      className={`w-full bg-slate-50 border-2 rounded-2xl py-4 pl-14 pr-12 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm ${errors.password ? 'border-red-200 bg-red-50/50' : 'border-slate-100'}`}
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors">
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-[10px] font-bold text-red-500 ml-1 uppercase">{errors.password}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Confirm Password</label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
+                      <ShieldCheck size={18} />
+                    </div>
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      placeholder="••••••••"
+                      className={`w-full bg-slate-50 border-2 rounded-2xl py-4 pl-14 pr-12 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm ${errors.confirmPassword ? 'border-red-200 bg-red-50/50' : 'border-slate-100'}`}
+                    />
+                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors">
+                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                  {errors.confirmPassword && <p className="text-[10px] font-bold text-red-500 ml-1 uppercase">{errors.confirmPassword}</p>}
                 </div>
               </div>
-            </div>
+            )}
+
 
             <div className="pt-4">
               <button
@@ -361,7 +377,7 @@ const Register = () => {
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
                     <>
-                      <span>Submit Application</span>
+                      <span>{step === 1 ? 'Initiate Activation' : step === 2 ? 'Verify & Continue' : 'Secure Account'}</span>
                       <Rocket size={18} className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
                     </>
                   )}
@@ -372,7 +388,7 @@ const Register = () => {
 
           <p className="mt-12 text-center text-slate-500 text-sm font-medium">
             Already have an account?{' '}
-            <button 
+            <button
               onClick={() => navigate("/")}
               className="text-sky-500 font-black hover:text-sky-600 underline underline-offset-4 decoration-sky-200"
             >

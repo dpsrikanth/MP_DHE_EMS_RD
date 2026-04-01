@@ -1,20 +1,17 @@
-const pool = require('./db');
+const client = require('./db');
 
-async function checkUser() {
-  const email = 'john@gmail.com';
-  try {
-    const res = await pool.query("SELECT id, name, email FROM users WHERE email = $1", [email]);
-    console.log(`--- Exact match for ${email} ---`);
-    console.table(res.rows);
-
-    const res2 = await pool.query("SELECT id, name, email FROM users WHERE email ILIKE $1", [email]);
-    console.log(`--- ILIKE match for ${email} ---`);
-    console.table(res2.rows);
-
-  } catch (err) {
-    console.error(err);
-  }
-  process.exit();
+async function check() {
+    try {
+        const res = await client.query("SELECT * FROM users WHERE email = 'alokmalewar@gmail.com'");
+        console.log("Users found:", res.rows.length);
+        if (res.rows.length > 0) {
+            console.log(res.rows[0]);
+        }
+        process.exit(0);
+    } catch (err) {
+        console.error(err);
+        process.exit(1);
+    }
 }
 
-checkUser();
+check();

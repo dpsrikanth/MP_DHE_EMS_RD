@@ -4,56 +4,140 @@ const bcrypt = require("bcryptjs");
 const client = require("../db");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const sendEmail = require("../utils/sendEmail");// Register endpoint
-const register = async (req, res) => {
+const sendEmail = require("../utils/sendEmail");// -- Phase 1: Student Account Activation (Self-Onboarding) --
+
+const initiateRegistration = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { email } = req.body;
 
-    // Validation
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (!email) {
+      return res.status(400).json({ message: "Email is required to initiate activation" });
     }
 
-    // Check if email exists
+    // Role-based security: Students MUST be pre-registered by Admin in Phase 1
+    const studentProfile = await client.query(
+      'SELECT id, name, "collageName" FROM public.students WHERE email ILIKE $1 AND "deleteStatus" = true',
+      [email]
+    );
+    if (studentProfile.rows.length === 0) {
+      return res.status(403).json({ 
+        message: "This email is not pre-registered in our records. Please contact your college administrator." 
+      });
+    }
+
+    const { name, collageName } = studentProfile.rows[0];
+
+    // Find College ID and its associated University ID
+    let college_id = null;
+    let university_id = null;
+    
+    if (collageName) {
+      const collegeRes = await client.query('SELECT id, university_id FROM public.colleges WHERE name ILIKE $1', [collageName]);
+      if (collegeRes.rows.length > 0) {
+        college_id = collegeRes.rows[0].id;
+        university_id = collegeRes.rows[0].university_id;
+      }
+    }
+
+    // Existing user check (verified accounts only)
     const existingUser = await client.query(
-      "SELECT * FROM public.users WHERE email = $1",
-      [email],
+      "SELECT id, is_verified, password_hash FROM public.users WHERE email ILIKE $1",
+      [email]
     );
 
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({ message: "Email already registered" });
+    if (existingUser.rows.length > 0 && existingUser.rows[0].is_verified && existingUser.rows[0].password_hash !== null) {
+      return res.status(400).json({ message: "This account is already fully activated. Please proceed to login." });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Generate Verification Credentials
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 min
 
-    // Get role_id from roles table
-    const roleResult = await client.query(
-      "SELECT id FROM public.roles WHERE role_name = $1",
-      [role],
-    );
-
-    if (roleResult.rows.length === 0) {
-      return res.status(400).json({ message: `Invalid role: ${role}. Available roles: superAdmin, admin, student` });
-    }
-
+    const roleResult = await client.query("SELECT id FROM public.roles WHERE role_name = 'Student'");
+    if (roleResult.rows.length === 0) return res.status(400).json({ message: "Student role not found in system." });
     const roleId = roleResult.rows[0].id;
 
-    // Insert user
-    const result = await client.query(
-      "INSERT INTO public.users (name, email, password_hash, role_id, college_id, university_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, role_id",
-      [name, email, hashedPassword, roleId, req.body.college_id || null, req.body.university_id || null],
-    );
+    // Phase 2: Create/Update unverified user
+    if (existingUser.rows.length > 0) {
+      await client.query(
+        "UPDATE public.users SET name = $1, role_id = $2, otp = $3, otp_expiry = $4, is_verified = false WHERE email = $5",
+        [name, roleId, otp, otpExpiry, email]
+      );
+    } else {
+      await client.query(
+        "INSERT INTO public.users (name, email, role_id, college_id, university_id, otp, otp_expiry, is_verified) VALUES ($1, $2, $3, $4, $5, $6, $7, false)",
+        [name, email, roleId, college_id, university_id, otp, otpExpiry]
+      );
+    }
 
-    res.status(201).json({
-      message: "Registration successful",
-      user: result.rows[0],
-    });
+    // Deliver Identity Proof (OTP)
+    console.log(`\n\n========================================`);
+    console.log(`🔐 STUDENT ACTIVATION OTP GENERATED`);
+    console.log(`Email: ${email}`);
+    console.log(`OTP Code: ${otp}`);
+    console.log(`========================================\n\n`);
+
+    try {
+      await sendEmail({
+        email: email,
+        subject: "EMS Portal - Your Registration Verification Code",
+        message: `Your verification OTP is: ${otp}. This code is valid for 5 minutes and is required to activate your account.`
+      });
+    } catch (emailError) {
+      console.warn("⚠️ Email delivery failed, but OTP was generated (see console). Proceeding with registration.", emailError.message);
+    }
+
+    res.status(200).json({ message: "Verification OTP has been sent. Please check your email." });
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("Initiate registration error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ message: "Email and OTP are required" });
+
+    const result = await client.query("SELECT * FROM public.users WHERE email = $1", [email]);
+    if (result.rows.length === 0) return res.status(400).json({ message: "No registration found for this email." });
+
+    const user = result.rows[0];
+    if (user.is_verified) return res.status(400).json({ message: "Email already verified." });
+    if (user.otp !== otp) return res.status(400).json({ message: "Invalid OTP" });
+    if (new Date() > new Date(user.otp_expiry)) return res.status(400).json({ message: "OTP has expired. Please request a new one." });
+
+    await client.query("UPDATE public.users SET is_verified = true, otp = null, otp_expiry = null WHERE email = $1", [email]);
+    res.status(200).json({ message: "Identity verified! Please set your new password." });
+  } catch (error) {
+    console.error("Verify OTP error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const setInitialPassword = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ message: "Email and new password are required" });
+
+    const result = await client.query("SELECT id, is_verified FROM public.users WHERE email = $1", [email]);
+    if (result.rows.length === 0) return res.status(400).json({ message: "Account not found." });
+
+    const user = result.rows[0];
+    if (!user.is_verified) {
+      return res.status(400).json({ message: "Account must be verified with OTP before setting a password." });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await client.query("UPDATE public.users SET password_hash = $1 WHERE email = $2", [hashedPassword, email]);
+
+    res.status(200).json({ message: "Password set successfully! You can now log in." });
+  } catch (error) {
+    console.error("Set password error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 
 // Dashboard endpoints - Get statistics and data
 const getDashboardStats = async (req, res) => {
@@ -70,23 +154,23 @@ const getDashboardStats = async (req, res) => {
     if (uId) {
       const p = [uId];
       statsQueries = {
-        totalTeachers:     { q: `SELECT COUNT(*) FROM master_teachers mt JOIN colleges c ON mt.college_id = c.id WHERE c.university_id = $1 AND (mt.status = 'Active' OR mt.status IS NULL) AND (c.status = true OR c.status IS NULL)`, p },
-        activeExams:       { q: `SELECT COUNT(*) FROM exams e JOIN colleges c ON e.college_id = c.id WHERE c.university_id = $1 AND (e.status = true OR e.status IS NULL) AND (c.status = true OR c.status IS NULL)`, p },
-        totalPrograms:     { q: `SELECT COUNT(*) FROM university_master_programs WHERE university_id = $1`, p },
-        totalSemesters:    { q: `SELECT COUNT(*) FROM university_master_semesters WHERE university_id = $1`, p },
-        totalSubjects:     { q: `SELECT COUNT(*) FROM master_subjects s JOIN university_master_programs ump ON s.program_id = ump.program_id WHERE ump.university_id = $1 AND (s.status = 'Active' OR s.status IS NULL)`, p },
-        totalAcademicYears:{ q: `SELECT COUNT(*) FROM university_master_academic_years WHERE university_id = $1`, p },
-        totalPolicies:     { q: `SELECT COUNT(*) FROM master_policies WHERE status = true OR status IS NULL`, p: [] },
+        totalTeachers: { q: `SELECT COUNT(*) FROM master_teachers mt JOIN colleges c ON mt.college_id = c.id WHERE c.university_id = $1 AND (mt.status = 'Active' OR mt.status IS NULL) AND (c.status = true OR c.status IS NULL)`, p },
+        activeExams: { q: `SELECT COUNT(*) FROM exams e JOIN colleges c ON e.college_id = c.id WHERE c.university_id = $1 AND (e.status = true OR e.status IS NULL) AND (c.status = true OR c.status IS NULL)`, p },
+        totalPrograms: { q: `SELECT COUNT(*) FROM university_master_programs WHERE university_id = $1`, p },
+        totalSemesters: { q: `SELECT COUNT(*) FROM university_master_semesters WHERE university_id = $1`, p },
+        totalSubjects: { q: `SELECT COUNT(*) FROM master_subjects s JOIN university_master_programs ump ON s.program_id = ump.program_id WHERE ump.university_id = $1 AND (s.status = 'Active' OR s.status IS NULL)`, p },
+        totalAcademicYears: { q: `SELECT COUNT(*) FROM university_master_academic_years WHERE university_id = $1`, p },
+        totalPolicies: { q: `SELECT COUNT(*) FROM master_policies WHERE status = true OR status IS NULL`, p: [] },
       };
     } else {
       statsQueries = {
-        totalTeachers:     { q: "SELECT COUNT(*) FROM master_teachers", p: [] },
-        activeExams:       { q: "SELECT COUNT(*) FROM exams", p: [] },
-        totalPrograms:     { q: "SELECT COUNT(*) FROM master_programs", p: [] },
-        totalSemesters:    { q: "SELECT COUNT(*) FROM master_semesters", p: [] },
-        totalSubjects:     { q: "SELECT COUNT(*) FROM master_subjects", p: [] },
-        totalAcademicYears:{ q: "SELECT COUNT(*) FROM master_academic_years", p: [] },
-        totalPolicies:     { q: "SELECT COUNT(*) FROM master_policies WHERE status = true OR status IS NULL", p: [] },
+        totalTeachers: { q: "SELECT COUNT(*) FROM master_teachers", p: [] },
+        activeExams: { q: "SELECT COUNT(*) FROM exams", p: [] },
+        totalPrograms: { q: "SELECT COUNT(*) FROM master_programs", p: [] },
+        totalSemesters: { q: "SELECT COUNT(*) FROM master_semesters", p: [] },
+        totalSubjects: { q: "SELECT COUNT(*) FROM master_subjects", p: [] },
+        totalAcademicYears: { q: "SELECT COUNT(*) FROM master_academic_years", p: [] },
+        totalPolicies: { q: "SELECT COUNT(*) FROM master_policies WHERE status = true OR status IS NULL", p: [] },
       };
     }
 
@@ -197,7 +281,7 @@ const updateUser = async (req, res) => {
       if (existingUser.rows[0].university_id != requesterUnivId) {
         return res.status(403).json({ message: "Unauthorized to update this user" });
       }
-      
+
       if (role_id) {
         const roleResult = await client.query("SELECT role_name FROM roles WHERE id = $1", [role_id]);
         if (roleResult.rows.length > 0) {
@@ -212,7 +296,7 @@ const updateUser = async (req, res) => {
         return res.status(403).json({ message: "Unauthorized" });
       }
     }
-    
+
     if (password && password.trim() !== '') {
       const hashedPassword = await bcrypt.hash(password, 10);
       await client.query(
@@ -364,7 +448,7 @@ const getSemesters = async (req, res) => {
   try {
     const { role, university_id } = req.user || {};
     const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
-    
+
     let query = "SELECT id, semester_number, program_id, academic_year_id, start_date, end_date, status FROM semesters";
     const params = [];
 
@@ -468,7 +552,7 @@ const Login = async (req, res) => {
   try {
     const { email, password, rememberMe } = req.body;
     const user = await client.query(
-      `SELECT u.id, u.name, u.email, u.password, u.password_hash, 
+      `SELECT u.id, u.name, u.email, u.password, u.password_hash, u.is_verified,
               COALESCE(mt.college_id, sc.id, u.college_id) as college_id, 
               COALESCE(u.university_id, sc.university_id) as university_id, 
               r.role_name, mt.id as teacher_id, mt.department_id 
@@ -483,6 +567,14 @@ const Login = async (req, res) => {
     if (user.rows.length === 0) return res.status(400).json({ message: "User not found" });
 
     const result = user.rows[0];
+
+    // Role-based Verification Enforcement: Only students are required to complete OTP activation
+    if (result.role_name.toLowerCase() === 'student' && !result.is_verified) {
+      return res.status(401).json({ 
+        message: "Email not verified. Please complete your account activation on the Register page using the code sent to your email." 
+      });
+    }
+
     const { password: plainPassword, password_hash: hashedPassword } = result;
 
     // Verify password
@@ -538,9 +630,9 @@ const refreshToken = async (req, res) => {
     if (!refreshTokenCookie) return res.status(401).json({ message: "No refresh token provided" });
     jwt.verify(refreshTokenCookie, process.env.REFRESH_SECRET, async (err, decoded) => {
       if (err) return res.status(403).json({ message: "Invalid refresh token" });
-      const payload = { 
-        id: decoded.id, 
-        email: decoded.email, 
+      const payload = {
+        id: decoded.id,
+        email: decoded.email,
         role: decoded.role,
         college_id: decoded.college_id,
         university_id: decoded.university_id,
@@ -1268,7 +1360,7 @@ const getExams = async (req, res) => {
       ${visibilityClause}
       ORDER BY e.created_at DESC
     `;
-    
+
     const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
@@ -1281,7 +1373,7 @@ const createExam = async (req, res) => {
   try {
     const { role, college_id: userCollegeId, department_id: userDepartmentId } = req.user;
     let { name, semester_id, college_id, university_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, start_time, end_time, subjects } = req.body;
-    
+
     // Normalize empty string to null (university-wide exam)
     college_id = college_id === '' ? null : college_id;
 
@@ -1297,40 +1389,40 @@ const createExam = async (req, res) => {
 
     // --- Capacity Validation Logic ---
     if (college_id && program_id && semester_id) {
-       // 1. Get student count (Matching logic with students table strings)
-       const studentCountRes = await client.query(
-         `SELECT COUNT(*) FROM students 
+      // 1. Get student count (Matching logic with students table strings)
+      const studentCountRes = await client.query(
+        `SELECT COUNT(*) FROM students 
           WHERE "collageName" = (SELECT name FROM colleges WHERE id = $1)
           AND "programName" = (SELECT name FROM master_programs WHERE id = $2)
           AND semister = (SELECT semester_name FROM master_semesters WHERE id = $3)
           AND "deleteStatus" = true`,
-         [college_id, program_id, semester_id]
-       );
-       const studentCount = parseInt(studentCountRes.rows[0].count);
+        [college_id, program_id, semester_id]
+      );
+      const studentCount = parseInt(studentCountRes.rows[0].count);
 
-       // 2. Get total approved capacity for the college
-       const capacityRes = await client.query(
-         `SELECT SUM(rows * seats_per_row) as total_capacity 
+      // 2. Get total approved capacity for the college
+      const capacityRes = await client.query(
+        `SELECT SUM(rows * seats_per_row) as total_capacity 
           FROM examination_halls 
           WHERE college_id = $1 AND status = 'Approved'`,
-         [college_id]
-       );
-       const totalCapacity = parseInt(capacityRes.rows[0].total_capacity) || 0;
+        [college_id]
+      );
+      const totalCapacity = parseInt(capacityRes.rows[0].total_capacity) || 0;
 
-       // 3. Compare and potentially block (Unless it's a dry run or user acknowledges?)
-       // User requirement: "block overbooking and send shortage request"
-       if (studentCount > totalCapacity) {
-         return res.status(400).json({ 
-           message: "Shortage of examination seats detected for this academic group.",
-           capacityError: true,
-           studentCount,
-           totalCapacity,
-           shortage: studentCount - totalCapacity,
-           college_id,
-           program_id,
-           semester_id
-         });
-       }
+      // 3. Compare and potentially block (Unless it's a dry run or user acknowledges?)
+      // User requirement: "block overbooking and send shortage request"
+      if (studentCount > totalCapacity) {
+        return res.status(400).json({
+          message: "Shortage of examination seats detected for this academic group.",
+          capacityError: true,
+          studentCount,
+          totalCapacity,
+          shortage: studentCount - totalCapacity,
+          college_id,
+          program_id,
+          semester_id
+        });
+      }
     }
 
     // Handle Batch Creation if 'subjects' array is provided
@@ -1338,9 +1430,9 @@ const createExam = async (req, res) => {
       const createdExams = [];
       for (const sub of subjects) {
         const { subject_id, exam_date, start_time, end_time } = sub;
-        
+
         const isGlobalExternal = (exam_type == 2 && role === 'admin' && !college_id);
-        
+
         // Skip marks structure validation for global external exams
         if (!isGlobalExternal) {
           const structureCheck = await client.query(
@@ -1386,7 +1478,7 @@ const updateExam = async (req, res) => {
     const { id } = req.params;
     const { role, college_id: userCollegeId, department_id: userDepartmentId } = req.user;
     let { name, semester_id, college_id, university_id, exam_type, exam_date, status, department_id, program_id, academic_year_id, subject_id, start_time, end_time, subjects } = req.body;
-    
+
     // Check if exists
     const checkResult = await client.query('SELECT name, semester_id, college_id, exam_type, program_id, academic_year_id, department_id FROM exams WHERE id = $1', [id]);
     if (checkResult.rows.length === 0) return res.status(404).json({ message: "Exam not found" });
@@ -1411,36 +1503,36 @@ const updateExam = async (req, res) => {
 
     // --- Capacity Validation Logic (Same as creation) ---
     if (college_id && program_id && semester_id) {
-       const studentCountRes = await client.query(
-         `SELECT COUNT(*) FROM students 
+      const studentCountRes = await client.query(
+        `SELECT COUNT(*) FROM students 
           WHERE "collageName" = (SELECT name FROM colleges WHERE id = $1)
           AND "programName" = (SELECT name FROM master_programs WHERE id = $2)
           AND semister = (SELECT semester_name FROM master_semesters WHERE id = $3)
           AND "deleteStatus" = true`,
-         [college_id, program_id, semester_id]
-       );
-       const studentCount = parseInt(studentCountRes.rows[0].count);
+        [college_id, program_id, semester_id]
+      );
+      const studentCount = parseInt(studentCountRes.rows[0].count);
 
-       const capacityRes = await client.query(
-         `SELECT SUM(rows * seats_per_row) as total_capacity 
+      const capacityRes = await client.query(
+        `SELECT SUM(rows * seats_per_row) as total_capacity 
           FROM examination_halls 
           WHERE college_id = $1 AND status = 'Approved'`,
-         [college_id]
-       );
-       const totalCapacity = parseInt(capacityRes.rows[0].total_capacity) || 0;
+        [college_id]
+      );
+      const totalCapacity = parseInt(capacityRes.rows[0].total_capacity) || 0;
 
-       if (studentCount > totalCapacity) {
-         return res.status(400).json({ 
-           message: "Shortage of examination seats detected for this academic group.",
-           capacityError: true,
-           studentCount,
-           totalCapacity,
-           shortage: studentCount - totalCapacity,
-           college_id,
-           program_id,
-           semester_id
-         });
-       }
+      if (studentCount > totalCapacity) {
+        return res.status(400).json({
+          message: "Shortage of examination seats detected for this academic group.",
+          capacityError: true,
+          studentCount,
+          totalCapacity,
+          shortage: studentCount - totalCapacity,
+          college_id,
+          program_id,
+          semester_id
+        });
+      }
     }
 
     // Handle Batch Sync if 'subjects' array is provided
@@ -1464,7 +1556,7 @@ const updateExam = async (req, res) => {
       // 3. Update or Insert
       for (const sub of subjects) {
         const { id: subId, subject_id, exam_date, start_time, end_time } = sub;
-        
+
         if (subId && typeof subId === 'number' && existingSeriesIds.includes(subId)) {
           // Update existing
           await client.query(
@@ -1552,6 +1644,37 @@ const deleteExam = async (req, res) => {
   }
 };
 
+// Start: Bulk Student API
+const bulkUploadStudents = async (req, res) => {
+  try {
+    const { students } = req.body;
+    if (!students || !Array.isArray(students) || students.length === 0) {
+      return res.status(400).json({ message: "Invalid student payload" });
+    }
+
+    let addedCount = 0;
+    for (const s of students) {
+      if (!s.email || !s.name) continue;
+
+      // Ensure no duplicate email
+      const checkRes = await client.query('SELECT id FROM public.students WHERE email = $1', [s.email]);
+      if (checkRes.rows.length === 0) {
+        await client.query(
+          `INSERT INTO public.students (name, email, "collageName", "deleteStatus") VALUES ($1, $2, $3, true)`,
+          [s.name, s.email, s.collageName || null]
+        );
+        addedCount++;
+      }
+    }
+
+    res.status(200).json({ message: `Successfully imported ${addedCount} dynamic student profiles.` });
+  } catch (error) {
+    console.error("Bulk upload error:", error);
+    res.status(500).json({ message: "Bulk upload failed", error: error.message });
+  }
+};
+// End: Bulk Student API
+
 const publishExam = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1630,7 +1753,7 @@ const publishResults = async (req, res) => {
 const getStudentResults = async (req, res) => {
   try {
     const userId = req.user.id;
-    
+
     // Find student record for this user
     const studentRes = await client.query('SELECT id FROM students WHERE user_id = $1', [userId]);
     if (studentRes.rows.length === 0) return res.status(404).json({ message: "Student record not found" });
@@ -1777,7 +1900,7 @@ const saveTeacherMarks = async (req, res) => {
     // Expected body: { subject_id, exam_id, academic_year_id, marksData: [{ student_id, internal_marks, external_marks, status }] }
     const { subject_id, exam_id, academic_year_id, marksData } = req.body;
     const teacher_id = req.user.id; // From verifyToken middleware
-    
+
     // Attempt to lookup the real teacher record ID
     const teacherCheck = await dbClient.query('SELECT id FROM teachers WHERE user_id = $1', [req.user.id]);
     const actual_teacher_id = teacherCheck.rows.length > 0 ? teacherCheck.rows[0].id : null;
@@ -1920,7 +2043,7 @@ const getMasterSemesters = async (req, res) => {
     const { role } = req.user || {};
     const university_id = req.user?.university_id || req.user?.universityId;
     const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
-    
+
     let query = `SELECT s.id, s.semester_name, s.status, s.created_at 
                  FROM master_semesters s`;
     const params = [];
@@ -2004,7 +2127,7 @@ const getMasterSubjects = async (req, res) => {
     const { role } = req.user || {};
     const university_id = req.user?.university_id || req.user?.universityId;
     const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
-    
+
     let query = `SELECT ms.id, ms.subject_code, ms.name, ms.status, ms.created_at, 
                ms.program_id, ms.semester_id, ms.mapping_type, ms.is_mandatory, 
                ms.has_examination, ms.periods_per_week, ms.teacher_id, ms.credit, ms.university_id,
@@ -2129,7 +2252,7 @@ const updateMasterSubject = async (req, res) => {
                            mapping_type = $5, is_mandatory = $6, has_examination = $7, 
                            periods_per_week = $8, teacher_id = $9, credit = $10, updated_at = CURRENT_TIMESTAMP`;
     let queryParams = [subject_code, name, program_id, semester_id, mapping_type, is_mandatory, has_examination, periods_per_week, teacher_id, credit, id];
-    
+
     if (role === 'university_admin' && university_id) {
       updateQuery += ` WHERE id = $11 AND university_id = $12 RETURNING *`;
       queryParams.push(university_id);
@@ -2185,7 +2308,7 @@ const getMasterPrograms = async (req, res) => {
     const { role } = req.user || {};
     const university_id = req.user?.university_id || req.user?.universityId;
     const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
-    
+
     let query = `SELECT p.id, p.name, p.status, p.created_at 
                  FROM master_programs p`;
     const params = [];
@@ -2215,7 +2338,7 @@ const createMasterProgram = async (req, res) => {
   try {
     const { role, university_id: userUniId } = req.user || {};
     const { name, duration_years, department_ids, section_name, code, grading_system_type, enable_elective_subjects_selection, university_id } = req.body;
-    
+
     // For university_admin, override university_id from body with their own
     const targetUniId = role === 'university_admin' ? userUniId : university_id;
 
@@ -2251,12 +2374,12 @@ const getMasterProgram = async (req, res) => {
 
     const result = await client.query(query, params);
     if (result.rows.length === 0) return res.status(404).json({ message: "Master program not found" });
-    
+
     const program = result.rows[0];
     if (role === 'university_admin' && university_id && program.university_id !== university_id) {
-        return res.status(403).json({ message: "Access denied to this university's program" });
+      return res.status(403).json({ message: "Access denied to this university's program" });
     }
-    
+
     res.json(program);
   } catch (error) {
     console.error("Get master program error:", error);
@@ -2270,7 +2393,7 @@ const updateMasterProgram = async (req, res) => {
     const { id } = req.params;
     const { role, university_id: userUniId } = req.user || {};
     const { name, duration_years, department_ids, section_name, code, grading_system_type, enable_elective_subjects_selection } = req.body;
-    
+
     if (!name || !duration_years) return res.status(400).json({ message: "Program name and duration are required" });
 
     // Check ownership
@@ -3035,7 +3158,7 @@ const getMasterAcademicYears = async (req, res) => {
     const { role } = req.user || {};
     const university_id = req.user?.university_id || req.user?.universityId;
     const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
-    
+
     let query = `SELECT y.id, y.academic_year, y.status, y.created_at 
                  FROM master_academic_years y`;
     const params = [];
@@ -3061,7 +3184,7 @@ const getMasterDepartments = async (req, res) => {
     const { role } = req.user || {};
     const university_id = req.user?.university_id || req.user?.universityId;
     const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
-    
+
     let query = `SELECT md.id, md.department_name, md.department_code, md.college_id, md.status
                  FROM master_departments md
                  JOIN colleges c ON md.college_id = c.id
@@ -3272,7 +3395,7 @@ const deleteMasterDepartment = async (req, res) => {
 const getStudentExams = async (req, res) => {
   try {
     const userId = req.user.id;
-    
+
     // First, find the student details associated with this user
     const studentRes = await client.query(
       `SELECT id, "programName", semister, "collageName" 
@@ -3291,7 +3414,7 @@ const getStudentExams = async (req, res) => {
     // Note: students table stores these as strings, exams table stores them as IDs.
     // We need to resolve Name/Semester/College to IDs or join accurately.
     // Based on existing getExams logic, we filter by published and application open status.
-    
+
     // Improved query to handle string-based student fields
     const query = `
       SELECT 
@@ -3363,7 +3486,7 @@ const getHallTicketData = async (req, res) => {
   try {
     const { examName, semesterId } = req.params;
     const userId = req.user.id;
-    
+
     // 1. Get complete student details
     const studentRes = await client.query(
       `SELECT id, name, rollnumber, "programName", semister, "collageName", 
@@ -3406,7 +3529,7 @@ const getHallTicketData = async (req, res) => {
     `;
 
     const examRes = await client.query(query, [student.id, examName, semesterId]);
-    
+
     if (examRes.rows.length === 0) {
       return res.status(404).json({ message: "No paid registrations found for this exam series." });
     }
@@ -3427,7 +3550,7 @@ const getResultSheetData = async (req, res) => {
   try {
     const { examName } = req.params;
     const userId = req.user.id;
-    
+
     // 1. Get student details
     const studentRes = await client.query(
       `SELECT id, name, rollnumber, "programName", semister, "collageName", 
@@ -3478,7 +3601,7 @@ const getResultSheetData = async (req, res) => {
     `;
 
     const result = await client.query(query, [student.id, examName]);
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "No officially published results found for this exam series." });
     }
@@ -3675,7 +3798,9 @@ const unmapMasterPolicy = async (req, res) => {
 
 
 module.exports = {
-  register,
+  initiateRegistration,
+  verifyOtp,
+  setInitialPassword,
   changePassword,
   getDashboardStats,
   getUsers,
@@ -3708,6 +3833,7 @@ module.exports = {
   deleteProgram,
   getStudents,
   createStudent,
+  bulkUploadStudents,
   updateStudent,
   deleteStudent,
   getColleges,
