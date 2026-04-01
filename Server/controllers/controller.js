@@ -1134,26 +1134,30 @@ const deleteStudent = async (req, res) => {
 
 const getColleges = async (req, res) => {
   try {
-    const { role, university_id } = req.user || {};
+    const { role } = req.user || {};
+    const university_id = req.user?.university_id || req.user?.universityId;
+
     let query = `
       SELECT c.id, c.name AS college_name, c.college_code, c.university_id, 
              u.name AS university_name, c.address, c.status, c.created_at,
-             c.latitude, c.longitude 
+             c.latitude, c.longitude,
+             (SELECT COALESCE(SUM(h.rows * h.seats_per_row), 0) FROM examination_halls h WHERE h.college_id = c.id AND h.status = 'Approved') as internal_capacity
       FROM colleges c 
       LEFT JOIN universities u ON c.university_id = u.id
+      WHERE 1=1
     `;
     const params = [];
 
     if (role === 'university_admin') {
       if (!university_id) return res.json([]);
-      query += " WHERE c.university_id = $1 AND (c.status = true OR c.status IS NULL)";
+      query += " AND c.university_id = $1 AND (c.status = true OR c.status IS NULL)";
       params.push(university_id);
     } else if (role === 'college_admin') {
       if (!req.user.college_id) return res.json([]);
-      query += " WHERE c.id = $1 AND (c.status = true OR c.status IS NULL)";
+      query += " AND c.id = $1 AND (c.status = true OR c.status IS NULL)";
       params.push(req.user.college_id);
     } else {
-      query += " WHERE (c.status = true OR c.status IS NULL)";
+      query += " AND (c.status = true OR c.status IS NULL)";
     }
 
     const result = await client.query(query, params);

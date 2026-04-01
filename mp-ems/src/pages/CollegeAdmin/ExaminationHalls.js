@@ -9,6 +9,7 @@ const ExaminationHalls = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [totalRooms, setTotalRooms] = useState(0);
     const [totalStudents, setTotalStudents] = useState(0);
+    const [hostingSources, setHostingSources] = useState([]);
     const [isEditingRooms, setIsEditingRooms] = useState(false);
 
 
@@ -44,6 +45,7 @@ const ExaminationHalls = () => {
         }, { approved: 0, pending: 0, draft: 0, total: 0 });
     }, [halls]);
 
+    const approvedCapacity = capacityStats.approved;
 
     useEffect(() => {
         fetchHalls();
@@ -54,15 +56,16 @@ const ExaminationHalls = () => {
     const fetchStudentCount = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/students', {
+            const res = await fetch(`${apiBase}/seating-requirement`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
                 const data = await res.json();
-                setTotalStudents(data.length || 0);
+                setTotalStudents(parseInt(data.total_required) || 0);
+                setHostingSources(data.hosting_sources || []);
             }
         } catch (err) {
-            console.error("Failed to fetch students", err);
+            console.error("Failed to fetch seating requirement", err);
         }
     };
 
@@ -284,29 +287,31 @@ const ExaminationHalls = () => {
     );
 
     return (
-        <div className="p-6 md:p-8 space-y-6">
-            <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
-                    <Building2 size={28} />
-                </div>
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 leading-none">Examination Halls</h1>
-                    <p className="text-sm text-slate-500 mt-1 font-medium">Configure physical hall infrastructure and manage approvals.</p>
+        <div className="p-6 md:p-8 space-y-8 animate-fade-in pb-20">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
+                        <Building2 size={28} />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Examination Halls</h1>
+                        <p className="text-sm text-slate-500 font-medium tracking-wide mt-1 uppercase">Configure physical hall infrastructure and manage approvals.</p>
+                    </div>
                 </div>
             </div>
 
             {/* Total Structural Rooms Configuration */}
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-500">
-                        <Layers size={24} />
+            <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all hover:shadow-md">
+                <div className="flex items-center gap-5">
+                    <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500 shadow-inner">
+                        <Layers size={28} />
                     </div>
                     <div>
-                        <h2 className="text-sm font-bold text-slate-900 uppercase tracking-widest">Total Campus Rooms Configuration</h2>
-                        <p className="text-xs font-medium text-slate-500 mt-0.5">Define the absolute limit of physical rooms available in your institution</p>
+                        <h2 className="text-lg font-black text-slate-900">Total Campus Rooms Configuration</h2>
+                        <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">Define the absolute limit of physical rooms available in your institution</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                     {isEditingRooms ? (
                         <>
                             <input 
@@ -314,24 +319,24 @@ const ExaminationHalls = () => {
                                 min="0"
                                 value={totalRooms} 
                                 onChange={e => setTotalRooms(e.target.value)}
-                                className="w-24 p-3 bg-slate-50 border border-indigo-200 rounded-xl text-center text-lg font-black text-indigo-700 outline-none focus:ring-4 focus:ring-indigo-500/20"
+                                className="w-28 p-4 bg-slate-50 border border-indigo-200 rounded-2xl text-center text-xl font-black text-indigo-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
                                 autoFocus
                             />
                             <button 
                                 onClick={handleUpdateTotalRooms}
-                                className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all text-sm"
+                                className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 uppercase tracking-widest text-xs"
                             >
                                 Save Limit
                             </button>
                         </>
                     ) : (
                         <>
-                            <div className="w-24 p-3 bg-slate-50 border border-slate-200 rounded-xl text-center text-lg font-black text-slate-700">
+                            <div className="w-28 p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center text-xl font-black text-slate-700">
                                 {totalRooms}
                             </div>
                             <button 
                                 onClick={() => setIsEditingRooms(true)}
-                                className="px-5 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold rounded-xl transition-all text-sm"
+                                className="px-8 py-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-black rounded-2xl shadow-sm transition-all active:scale-95 uppercase tracking-widest text-xs"
                             >
                                 Edit Limit
                             </button>
@@ -340,178 +345,221 @@ const ExaminationHalls = () => {
                 </div>
             </div>
 
-
             {/* Capacity Statistics Dashboard */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Total Population (Students)</span>
-                        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
-                            <Users size={16} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between transition-all hover:border-indigo-200 group">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-indigo-400">Examination Seating Load</span>
+                            <span className="text-[9px] font-bold text-slate-400 lowercase group-hover:text-indigo-300 italic">(Internal + Guest Students)</span>
+                        </div>
+                        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-500 transition-colors">
+                            <Users size={18} />
                         </div>
                     </div>
                     <div>
-                        <span className="text-3xl font-black text-slate-800">{totalStudents}</span>
-                    </div>
-                </div>
-                <div className="bg-white p-5 rounded-3xl border border-emerald-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full translate-x-16 -translate-y-16 pointer-events-none" />
-                    <div className="flex items-center justify-between mb-2 relative z-10">
-                        <span className="text-xs font-black text-emerald-600/70 uppercase tracking-widest">Approved Capacity (Seats)</span>
-                        <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500">
-                            <CheckCircle2 size={16} />
-                        </div>
-                    </div>
-                    <div className="relative z-10">
-                        <span className="text-3xl font-black text-emerald-600">{capacityStats.approved}</span>
+                        <span className="text-4xl font-black text-slate-900">{totalStudents}</span>
                     </div>
                 </div>
 
-                {/* Shortage indicator */}
-                <div className={`p-5 rounded-3xl border shadow-sm flex flex-col justify-between relative overflow-hidden transition-all duration-500 ${
-                    capacityStats.approved < totalStudents 
+                <div className="bg-white p-6 rounded-[2rem] border border-emerald-100 shadow-sm flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full translate-x-16 -translate-y-16 pointer-events-none" />
+                    <div className="flex items-center justify-between mb-4 relative z-10">
+                        <span className="text-[10px] font-black text-emerald-600/70 uppercase tracking-widest">Approved Capacity (Seats)</span>
+                        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 transition-colors">
+                            <CheckCircle2 size={18} />
+                        </div>
+                    </div>
+                    <div className="relative z-10">
+                        <span className="text-4xl font-black text-emerald-600">{approvedCapacity}</span>
+                    </div>
+                </div>
+
+                <div className={`p-6 rounded-[2rem] border shadow-sm flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md ${
+                    approvedCapacity < totalStudents 
                     ? 'bg-rose-50 border-rose-100' 
                     : 'bg-white border-blue-100'
                 }`}>
                     <div className={`absolute top-0 right-0 w-32 h-32 rounded-full translate-x-16 -translate-y-16 pointer-events-none ${
-                        capacityStats.approved < totalStudents ? 'bg-rose-100/50' : 'bg-blue-50'
+                        approvedCapacity < totalStudents ? 'bg-rose-100/50' : 'bg-blue-50'
                     }`} />
-                    <div className="flex items-center justify-between mb-2 relative z-10">
-                        <span className={`text-xs font-black uppercase tracking-widest ${
-                            capacityStats.approved < totalStudents ? 'text-rose-600' : 'text-blue-500'
+                    <div className="flex items-center justify-between mb-4 relative z-10">
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${
+                            approvedCapacity < totalStudents ? 'text-rose-600' : 'text-blue-500'
                         }`}>
-                            {capacityStats.approved < totalStudents ? 'Shortage' : 'Surplus Capacity'}
+                            {approvedCapacity < totalStudents ? 'Shortage' : 'Surplus Capacity'}
                         </span>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                             capacityStats.approved < totalStudents ? 'bg-rose-100 text-rose-500' : 'bg-blue-50 text-blue-500'
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                             approvedCapacity < totalStudents ? 'bg-rose-100 text-rose-500' : 'bg-blue-50 text-blue-500'
                         }`}>
-                            {capacityStats.approved < totalStudents ? <XCircle size={16} /> : <CheckCircle2 size={16} />}
+                            {approvedCapacity < totalStudents ? <XCircle size={18} /> : <CheckCircle2 size={18} />}
                         </div>
                     </div>
                     <div className="relative z-10 flex items-center justify-between w-full">
                         <div className="flex items-baseline gap-1">
-                            <span className={`text-3xl font-black ${
-                                capacityStats.approved < totalStudents ? 'text-rose-700' : 'text-blue-600'
+                            <span className={`text-4xl font-black ${
+                                approvedCapacity < totalStudents ? 'text-rose-700' : 'text-blue-600'
                             }`}>
-                                {Math.abs(totalStudents - capacityStats.approved)}
+                                {Math.abs(totalStudents - approvedCapacity)}
                             </span>
-                            <span className={`text-[10px] font-black uppercase tracking-tighter ${
-                                capacityStats.approved < totalStudents ? 'text-rose-400' : 'text-blue-400'
+                            <span className={`text-xs font-black uppercase tracking-widest ml-1 ${
+                                approvedCapacity < totalStudents ? 'text-rose-400' : 'text-blue-400'
                             }`}>Seats</span>
                         </div>
-                        {capacityStats.approved < totalStudents && (
+                        {approvedCapacity < totalStudents && (
                             <button 
                                 onClick={handleReportShortage}
-                                className="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all shadow-sm active:scale-95 flex items-center gap-1"
+                                className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2"
                             >
-                                <SendHorizontal size={12} />
+                                <SendHorizontal size={14} />
                                 Report
                             </button>
                         )}
                     </div>
                 </div>
 
-                <div className="bg-white p-5 rounded-3xl border border-amber-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
+                <div className="bg-white p-6 rounded-[2rem] border border-amber-100 shadow-sm flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full translate-x-16 -translate-y-16 pointer-events-none" />
-                    <div className="flex items-center justify-between mb-2 relative z-10">
-                        <span className="text-xs font-black text-amber-600/70 uppercase tracking-widest">Awaiting Verification</span>
-                        <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
-                            <Clock size={16} />
+                    <div className="flex items-center justify-between mb-4 relative z-10">
+                        <span className="text-[10px] font-black text-amber-600/70 uppercase tracking-widest">Awaiting Verification</span>
+                        <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 transition-colors">
+                            <Clock size={18} />
                         </div>
                     </div>
                     <div className="relative z-10">
-                        <span className="text-3xl font-black text-amber-600">{capacityStats.pending}</span>
+                        <span className="text-4xl font-black text-amber-600">{capacityStats.pending}</span>
                     </div>
                 </div>
             </div>
 
-
-                        {/* Capacity Utilization Progress */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest">Campus Capacity Utilization</h3>
-                        <p className="text-xs font-medium text-slate-500 mt-0.5">Approved capacity vs required student seating</p>
+            {/* Institutional Breakdown and Utilization */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-200">
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
+                            <Users size={24} />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black text-slate-900">Seating Requirement Source</h3>
+                            <p className="text-sm text-slate-500 font-bold uppercase tracking-wider">Breakdown of internal & guest institutions</p>
+                        </div>
                     </div>
-                    <div className="text-right text-xs font-black uppercase tracking-widest">
-                        {totalStudents > 0 ? ((capacityStats.approved / totalStudents) * 100).toFixed(1) : 0}% Coverage
+
+                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                        {hostingSources.length > 0 ? (
+                            hostingSources.map((src, i) => (
+                                <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-indigo-200 transition-all">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-2 h-8 bg-indigo-500 rounded-full" />
+                                        <span className="text-sm font-black text-slate-800">{src.name}</span>
+                                    </div>
+                                    <div className="px-4 py-1.5 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-black text-indigo-600">
+                                        {src.count} <span className="text-[10px] text-slate-400 font-bold ml-1 uppercase">Students</span>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-12 bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
+                                <Users size={32} className="mx-auto text-slate-200 mb-3" />
+                                <p className="text-sm font-bold text-slate-400 italic">No students assigned to this center yet.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                <div className="h-6 bg-slate-100 rounded-full overflow-hidden flex shadow-inner border border-slate-200/50">
-                    {/* Approved Progress */}
-                    <div 
-                        className="h-full bg-emerald-500 transition-all duration-700 relative group"
-                        style={{ width: `${totalStudents > 0 ? Math.min(100, (capacityStats.approved / totalStudents) * 100) : 0}%` }}
-                    >
-                        <div className="absolute inset-y-0 right-0 w-px bg-white/20" />
-                    </div>
-                    {/* Pending Progress (Potential) */}
-                    <div 
-                        className="h-full bg-amber-400/50 transition-all duration-700 relative border-l border-white/30 border-dashed"
-                        style={{ width: `${totalStudents > 0 ? Math.min(100 - (capacityStats.approved / totalStudents) * 100, (capacityStats.pending / totalStudents) * 100) : 0}%` }}
-                    >
-                        <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0.15)_75%,transparent_75%,transparent)] bg-[length:1rem_1rem] animate-pulse" />
-                    </div>
-                </div>
+                <div className="bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[100px] -translate-y-1/2 translate-x-1/2" />
+                    <div className="relative z-10">
+                        <div className="flex justify-between items-start mb-12">
+                            <div>
+                                <h3 className="text-xl font-black text-white">Campus Capacity Utilization</h3>
+                                <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest mt-1">Approved capacity vs required student seating</p>
+                            </div>
+                            <div className="text-right">
+                                <span className="text-4xl font-black text-white">{((approvedCapacity / (totalStudents || 1)) * 100).toFixed(1)}%</span>
+                                <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mt-1">Total Coverage</p>
+                            </div>
+                        </div>
 
-                <div className="flex items-center gap-6 pt-2">
-                    <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Approved Seats ({capacityStats.approved})</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pending Validation ({capacityStats.pending})</span>
-                    </div>
-                    <div className="ml-auto flex items-center gap-2">
-                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Target Requirement: {totalStudents} Seats</span>
+                        <div className="space-y-6">
+                            <div className="h-4 bg-white/10 rounded-full overflow-hidden p-1 border border-white/5">
+                                <div 
+                                    className="h-full bg-emerald-500 rounded-full transition-all duration-1000 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                                    style={{ width: `${Math.min(100, (approvedCapacity / (totalStudents || 1)) * 100)}%` }}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 bg-emerald-500 rounded-full ring-4 ring-emerald-500/20" />
+                                    <div>
+                                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Approved Seats</p>
+                                        <p className="text-lg font-black text-white">{approvedCapacity}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 bg-amber-500 rounded-full ring-4 ring-amber-500/20" />
+                                    <div>
+                                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest/10 uppercase tracking-widest">Target Requirement</p>
+                                        <p className="text-lg font-black text-white">{totalStudents}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
-                <form onSubmit={handleCreateHall} className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
-                    <div className="space-y-2 col-span-1 md:col-span-1">
-                        <label className="text-sm font-bold text-slate-700 ml-1">Hall Code</label>
+
+            {/* Add Hall Form */}
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-8 transition-all hover:shadow-lg">
+                <div className="flex items-center gap-3 mb-8 ml-1">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center">
+                        <Layers size={18} />
+                    </div>
+                    <h3 className="text-lg font-black text-slate-800 uppercase tracking-widest">Add New Infrastructure</h3>
+                </div>
+                <form onSubmit={handleCreateHall} className="grid grid-cols-1 md:grid-cols-5 gap-8 items-end">
+                    <div className="space-y-3 col-span-1 md:col-span-1">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-4">Hall Code</label>
                         <input 
                             type="text"
                             value={newHall.hall_code}
                             onChange={(e) => setNewHall({...newHall, hall_code: e.target.value.toUpperCase()})}
                             placeholder="HALL-A"
-                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 uppercase"
+                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-[1.25rem] text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all uppercase placeholder:text-slate-300"
                         />
                     </div>
-                    <div className="space-y-2">
-                        <label className="text-sm font-bold text-slate-700 ml-1">Rows</label>
+                    <div className="space-y-3">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-4">Rows</label>
                         <input 
                             type="number"
                             min="1"
                             value={newHall.rows}
                             onChange={(e) => setNewHall({...newHall, rows: e.target.value})}
                             placeholder="10"
-                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-[1.25rem] text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300"
                         />
                     </div>
-                    <div className="space-y-2">
-                        <label className="text-sm font-bold text-slate-700 ml-1">Seats/Row</label>
+                    <div className="space-y-3">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-4">Seats/Row</label>
                         <input 
                             type="number"
                             min="1"
                             value={newHall.seats_per_row}
                             onChange={(e) => setNewHall({...newHall, seats_per_row: e.target.value})}
                             placeholder="8"
-                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-[1.25rem] text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300"
                         />
                     </div>
-                    <div className="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100 flex flex-col items-center justify-center">
-                        <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-tighter">Total Capacity</span>
-                        <span className="text-lg font-black text-indigo-600">
+                    <div className="bg-indigo-50/50 p-4 rounded-[1.25rem] border border-indigo-100 flex flex-col items-center justify-center min-h-[58px]">
+                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Total Capacity</span>
+                        <span className="text-xl font-black text-indigo-600 leading-none">
                             {(parseInt(newHall.rows) || 0) * (parseInt(newHall.seats_per_row) || 0)}
                         </span>
                     </div>
                     <button
                         type="submit"
-                        className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02]"
+                        className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-widest text-xs"
                     >
                         <Save size={18} />
                         <span>Add as Draft</span>
@@ -520,83 +568,88 @@ const ExaminationHalls = () => {
             </div>
 
             {/* Halls Table */}
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mt-8">
-                <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between">
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden mt-8 transition-all hover:shadow-lg">
+                <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-50/30">
                     <div>
-                        <h2 className="text-lg font-bold text-slate-900">Hall Infrastructure</h2>
-                        <p className="text-sm text-slate-500 mt-1">Review, edit, and submit halls for validation by university.</p>
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Hall Infrastructure Mapping</h2>
+                        <p className="text-sm text-slate-500 mt-1 font-bold uppercase tracking-wide">Review, edit, and submit halls for validation</p>
                     </div>
                     <div className="flex items-center gap-4">
-                        <TableSearch 
-                            value={searchQuery}
-                            onChange={setSearchQuery}
-                            placeholder="Search by hall code..."
-                        />
+                        <div className="relative">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                            <input 
+                                type="text" 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Filter by hall code..." 
+                                className="pl-11 pr-4 py-3 bg-white border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all w-full md:w-64"
+                            />
+                        </div>
                     </div>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-y border-slate-100/60">
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Hall Details</th>
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-center">Layout Configuration</th>
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-center">Net Capacity</th>
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-center">Approval Status</th>
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                                <th className="py-5 px-8 text-[10px] font-black text-slate-400 uppercase tracking-widest">Hall Details</th>
+                                <th className="py-5 px-8 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Layout Configuration</th>
+                                <th className="py-5 px-8 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Net Capacity</th>
+                                <th className="py-5 px-8 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Approval Status</th>
+                                <th className="py-5 px-8 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {filteredHalls.length > 0 ? (
                                 filteredHalls.map((hall) => (
-                                    <tr key={hall.id} className="hover:bg-slate-50/50 transition-colors">
-                                        <td className="py-4 px-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
-                                                    <Building2 size={20} />
+                                    <tr key={hall.id} className="hover:bg-indigo-50/30 transition-colors group">
+                                        <td className="py-5 px-8">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-white text-slate-400 rounded-2xl flex items-center justify-center border border-slate-200 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100 transition-all shadow-sm">
+                                                    <Building2 size={24} />
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-slate-800 uppercase tracking-tight">{hall.hall_code}</span>
-                                                    <span className="text-[10px] font-medium text-slate-400">Created: {new Date(hall.created_at).toLocaleDateString()}</span>
+                                                    <span className="text-sm font-black text-slate-800 uppercase tracking-tight">{hall.hall_code}</span>
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">ID: {String(hall.id).slice(0, 8)}</span>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="py-4 px-6 text-center">
-                                            <div className="flex items-center justify-center gap-4 text-slate-500">
+                                        <td className="py-5 px-8 text-center">
+                                            <div className="flex items-center justify-center gap-6 text-slate-500">
                                                 <div className="flex flex-col items-center">
-                                                    <span className="text-xs font-bold text-slate-900">{hall.rows}</span>
-                                                    <span className="text-[10px] font-medium text-slate-400 uppercase">Rows</span>
+                                                    <span className="text-sm font-black text-slate-900 leading-none">{hall.rows}</span>
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Rows</span>
                                                 </div>
-                                                <div className="w-px h-6 bg-slate-200"></div>
+                                                <div className="w-px h-8 bg-slate-200"></div>
                                                 <div className="flex flex-col items-center">
-                                                    <span className="text-xs font-bold text-slate-900">{hall.seats_per_row}</span>
-                                                    <span className="text-[10px] font-medium text-slate-400 uppercase">Seats/Row</span>
+                                                    <span className="text-sm font-black text-slate-900 leading-none">{hall.seats_per_row}</span>
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">S/Row</span>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="py-4 px-6 text-center">
-                                            <div className="inline-flex flex-col items-center p-2 min-w-[80px]">
-                                                <span className="text-sm font-black text-indigo-600">{hall.total_capacity}</span>
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Total Units</span>
+                                        <td className="py-5 px-8 text-center">
+                                            <div className="inline-flex flex-col items-center px-4 py-1.5 bg-indigo-50 text-indigo-700 rounded-xl border border-indigo-100 font-black shadow-sm h-12 justify-center min-w-[90px]">
+                                                <span className="text-base">{hall.total_capacity}</span>
+                                                <span className="text-[9px] uppercase tracking-widest opacity-60">Units</span>
                                             </div>
                                         </td>
-                                        <td className="py-4 px-6 text-center">
-                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all ${getStatusClasses(hall.status)}`}>
+                                        <td className="py-5 px-8 text-center">
+                                            <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all shadow-sm ${getStatusClasses(hall.status)}`}>
                                                 {getStatusIcon(hall.status)}
                                                 {hall.status}
                                             </span>
                                         </td>
-                                        <td className="py-4 px-6 text-right">
+                                        <td className="py-5 px-8 text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                {hall.status === 'Draft' || hall.status === 'Rejected' ? (
+                                                {(hall.status === 'Draft' || hall.status === 'Rejected') && (
                                                     <button 
                                                         onClick={() => handleSubmitHall(hall.id)}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl transition-all font-bold text-xs"
+                                                        className="h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-500/20 flex items-center gap-2"
                                                         title="Submit for Approval"
                                                     >
                                                         <SendHorizontal size={14} />
-                                                        <span>Submit</span>
+                                                        <span>Send</span>
                                                     </button>
-                                                ) : null}
+                                                )}
                                                 
                                                 <button 
                                                     disabled={!isEditable(hall.status)}
@@ -604,12 +657,11 @@ const ExaminationHalls = () => {
                                                         setEditingHall(hall);
                                                         setShowEditModal(true);
                                                     }}
-                                                    className={`p-2 rounded-xl transition-all ${
+                                                    className={`w-10 h-10 rounded-xl transition-all flex items-center justify-center border ${
                                                         isEditable(hall.status) 
-                                                        ? 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50' 
-                                                        : 'text-slate-200 cursor-not-allowed'
+                                                        ? 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 border-slate-200 hover:border-indigo-200' 
+                                                        : 'text-slate-200 border-slate-100 cursor-not-allowed'
                                                     }`}
-                                                    title={isEditable(hall.status) ? "Edit Hall" : "Editing Locked"}
                                                 >
                                                     <Pencil size={18} />
                                                 </button>
@@ -619,10 +671,10 @@ const ExaminationHalls = () => {
                                                         setDeleteTarget(hall);
                                                         setShowDeleteModal(true);
                                                     }}
-                                                    className={`p-2 rounded-xl transition-all ${
+                                                    className={`w-10 h-10 rounded-xl transition-all flex items-center justify-center border ${
                                                         isEditable(hall.status) 
-                                                        ? 'text-slate-400 hover:text-red-500 hover:bg-red-50' 
-                                                        : 'text-slate-200 cursor-not-allowed'
+                                                        ? 'text-slate-400 hover:text-red-500 hover:bg-red-50 border-slate-200 hover:border-red-200' 
+                                                        : 'text-slate-200 border-slate-100 cursor-not-allowed'
                                                     }`}
                                                 >
                                                     <Trash2 size={18} />
@@ -633,12 +685,19 @@ const ExaminationHalls = () => {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="5" className="py-12 px-6 text-center">
-                                        <div className="flex flex-col items-center gap-2">
-                                            <Building2 size={32} className="text-slate-200" />
-                                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">
-                                                No halls configured yet
-                                            </p>
+                                    <td colSpan="5" className="py-20 px-8 text-center bg-slate-50/50">
+                                        <div className="flex flex-col items-center gap-4">
+                                            <div className="w-20 h-20 bg-white rounded-[2rem] border border-dashed border-slate-200 flex items-center justify-center text-slate-200 shadow-sm">
+                                                <Building2 size={40} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">
+                                                    Zero Infrastructure Detected
+                                                </p>
+                                                <p className="text-xs text-slate-300 font-bold uppercase tracking-widest">
+                                                    Start by adding your first examination hall above
+                                                </p>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -651,58 +710,58 @@ const ExaminationHalls = () => {
             {/* Edit Modal */}
             {showEditModal && editingHall && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowEditModal(false)} />
-                    <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden pointer-events-auto border border-white/20">
-                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowEditModal(false)} />
+                    <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden pointer-events-auto animate-in zoom-in-95 duration-200">
+                        <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div>
-                                <h3 className="text-lg font-bold text-slate-900">Modify Hall</h3>
-                                <p className="text-xs text-slate-500 font-medium tracking-tight">Status: {editingHall.status}</p>
+                                <h3 className="text-lg font-black text-slate-900">Modify Hall</h3>
+                                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-0.5">Status: {editingHall.status}</p>
                             </div>
-                            <button onClick={() => setShowEditModal(false)} className="p-2 bg-white hover:bg-slate-200 text-slate-400 rounded-xl transition-colors border border-slate-200">
-                                <X size={16} />
+                            <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-slate-200 text-slate-400 rounded-xl transition-colors">
+                                <X size={20} />
                             </button>
                         </div>
-                        <div className="p-6 space-y-5">
-                            <div className="space-y-1.5 text-center p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100/50">
-                                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">New Capacity Preview</span>
-                                <div className="text-2xl font-black text-indigo-600">
+                        <div className="p-8 space-y-6">
+                            <div className="space-y-1.5 text-center p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex flex-col items-center">
+                                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Capacity Forecast</span>
+                                <div className="text-2xl font-black text-indigo-600 mt-1">
                                     {(parseInt(editingHall.rows) || 0) * (parseInt(editingHall.seats_per_row) || 0)}
                                 </div>
                             </div>
                             
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-500 ml-1">Hall Identification</label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hall Code</label>
                                 <input 
                                     type="text"
                                     value={editingHall.hall_code}
                                     onChange={(e) => setEditingHall({...editingHall, hall_code: e.target.value.toUpperCase()})}
-                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 uppercase"
+                                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 uppercase"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Rows</label>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rows</label>
                                     <input 
                                         type="number"
                                         value={editingHall.rows}
                                         onChange={(e) => setEditingHall({...editingHall, rows: e.target.value})}
-                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10"
                                     />
                                 </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Seats/Row</label>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Seats/Row</label>
                                     <input 
                                         type="number"
                                         value={editingHall.seats_per_row}
                                         onChange={(e) => setEditingHall({...editingHall, seats_per_row: e.target.value})}
-                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10"
                                     />
                                 </div>
                             </div>
                         </div>
-                        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-                            <button onClick={() => setShowEditModal(false)} className="px-5 py-2 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-tight">Cancel</button>
-                            <button onClick={handleUpdateHall} className="px-6 py-2 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition-all uppercase tracking-tight">Save Changes</button>
+                        <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+                            <button onClick={() => setShowEditModal(false)} className="flex-1 py-3 text-xs font-black text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest">Cancel</button>
+                            <button onClick={handleUpdateHall} className="flex-[2] py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 uppercase tracking-widest">Apply Changes</button>
                         </div>
                     </div>
                 </div>
@@ -712,27 +771,27 @@ const ExaminationHalls = () => {
             {showDeleteModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
-                    <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden">
-                        <div className="p-8 text-center flex flex-col items-center">
-                            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
-                                <Trash2 size={32} />
+                    <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-10 text-center flex flex-col items-center">
+                            <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-[2rem] flex items-center justify-center mb-8 shadow-inner ring-8 ring-rose-50 border border-rose-100">
+                                <Trash2 size={36} />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-2">Delete Configuration?</h3>
-                            <p className="text-slate-500 text-sm leading-relaxed mb-8 px-4">
-                                This will permanently remove <span className="font-bold text-slate-700">{deleteTarget?.hall_code}</span> and its infrastructure mapping.
+                            <h3 className="text-2xl font-black text-slate-900 mb-2">Delete Hall?</h3>
+                            <p className="text-slate-500 text-sm font-medium leading-relaxed mb-10 px-4">
+                                This will permanently remove <span className="font-black text-slate-900">{deleteTarget?.hall_code}</span> and its infrastructure mapping from the university records.
                             </p>
-                            <div className="flex gap-3 w-full">
+                            <div className="flex gap-4 w-full">
                                 <button 
-                                    className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all"
+                                    className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
                                     onClick={() => setShowDeleteModal(false)}
                                 >
                                     Abort
                                 </button>
                                 <button 
-                                    className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-500/20 transition-all font-bold"
+                                    className="flex-1 py-4 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-2xl shadow-lg shadow-rose-500/20 transition-all uppercase tracking-widest"
                                     onClick={handleDeleteConfirm}
                                 >
-                                    Confirm Delete
+                                    Confirm
                                 </button>
                             </div>
                         </div>

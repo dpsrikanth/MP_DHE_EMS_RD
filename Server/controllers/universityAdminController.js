@@ -295,3 +295,109 @@ exports.getFinalizedExternalMarks = async (req, res) => {
         res.status(500).json({ error: "Failed to fetch synchronized marks" });
     }
 };
+// University Admin: Get all colleges with their current sitting center mapping
+exports.getCollegesMapping = async (req, res) => {
+    try {
+        const { role } = req.user || {};
+        const university_id = req.user?.university_id || req.user?.universityId;
+
+        let query = `
+            SELECT 
+                c1.id, 
+                c1.name as college_name, 
+                c1.college_code,
+                c1.sitting_center_id,
+                c2.name as sitting_center_name,
+                (
+                SELECT COUNT(*) 
+                FROM students st 
+                JOIN colleges sc ON st."collageName" ILIKE sc.name 
+                WHERE sc.sitting_center_id = c1.id AND st."deleteStatus" = true
+            ) + (
+                SELECT COALESCE(SUM(sr1.shortage), 0) 
+                FROM shortage_requests sr1 
+                WHERE sr1.allocated_college_id = c1.id AND sr1.status = 'Allocated'
+            ) - (
+                SELECT COALESCE(SUM(sr2.shortage), 0) 
+                FROM shortage_requests sr2 
+                WHERE sr2.college_id = c1.id AND sr2.status = 'Allocated'
+            ) as student_count,
+                (SELECT COALESCE(SUM(h.rows * h.seats_per_row), 0) FROM examination_halls h WHERE h.college_id = c1.id AND h.status = 'Approved') as internal_capacity,
+                -- Total students from ALL colleges assigned to THIS college as their center
+                (
+                    SELECT COUNT(*) 
+                    FROM students s 
+                    JOIN colleges sc ON s."collageName" ILIKE sc.name 
+                    WHERE sc.sitting_center_id = c1.id AND s."deleteStatus" = true
+                ) + (
+                    SELECT COALESCE(SUM(sr3.shortage), 0) 
+                    FROM shortage_requests sr3 
+                    WHERE sr3.allocated_college_id = c1.id AND sr3.status = 'Allocated'
+                ) - (
+                    SELECT COALESCE(SUM(sr4.shortage) , 0)
+                    FROM shortage_requests sr4
+                    WHERE sr4.college_id = c1.id AND sr4.status = 'Allocated'
+                ) as total_assigned_students
+            FROM colleges c1
+            LEFT JOIN colleges c2 ON c1.sitting_center_id = c2.id
+            WHERE 1=1
+        `;
+        const params = [];
+
+        if (role === 'university_admin') {
+            if (!university_id) return res.status(200).json([]);
+            query += ` AND c1.university_id = $1`;
+            params.push(university_id);
+        }
+
+        query += ` ORDER BY c1.name ASC;`;
+
+        const result = await db.query(query, params);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("Get colleges mapping error:", error);
+        res.status(500).json({ error: "Failed to fetch college mappings" });
+    }
+};
+
+// University Admin: Update sitting center for a college
+exports.updateSittingCenter = async (req, res) => {
+    try {
+        const { collegeId } = req.params;
+        const { sitting_center_id } = req.body;
+
+        // Validation: Ensure the center has infrastructure (halls) before assigning it
+        if (sitting_center_id) {
+            const capacityCheck = await db.query(
+                `SELECT COALESCE(SUM(rows * seats_per_row), 0) as capacity 
+                 FROM examination_halls 
+                 WHERE college_id = $1 AND status = 'Approved'`,
+                [sitting_center_id]
+            );
+            const capacity = parseInt(capacityCheck.rows[0].capacity);
+            
+            if (capacity === 0) {
+                return res.status(400).json({ 
+                    error: "Target center has 0 approved seats. Please create halls for this college first." 
+                });
+            }
+        }
+
+        const query = `
+            UPDATE colleges 
+            SET sitting_center_id = $1, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $2
+            RETURNING *;
+        `;
+        const result = await db.query(query, [sitting_center_id || null, collegeId]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "College not found" });
+        }
+
+        res.status(200).json({ message: "Sitting center updated successfully", data: result.rows[0] });
+    } catch (error) {
+        console.error("Update sitting center error:", error);
+        res.status(500).json({ error: "Failed to update sitting center" });
+    }
+};

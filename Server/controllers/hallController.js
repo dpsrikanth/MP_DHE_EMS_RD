@@ -158,9 +158,48 @@ exports.deleteHall = async (req, res) => {
 exports.getAllHallsForApproval = async (req, res) => {
     try {
         const query = `
-            SELECT h.*, c.name as college_name 
+            SELECT 
+                h.*, 
+                c.name as college_name,
+                (
+                    SELECT COUNT(*) 
+                    FROM students s 
+                    JOIN colleges sc ON s."collageName" ILIKE sc.name 
+                    WHERE sc.sitting_center_id = c.id AND s."deleteStatus" = true
+                ) + (
+                    SELECT COALESCE(SUM(sr1.shortage), 0) 
+                    FROM shortage_requests sr1 
+                    WHERE sr1.allocated_college_id = c.id AND sr1.status = 'Allocated'
+                ) - (
+                    SELECT COALESCE(SUM(sr2.shortage), 0) 
+                    FROM shortage_requests sr2 
+                    WHERE sr2.college_id = c.id AND sr2.status = 'Allocated'
+                ) as total_required,
+                -- Total capacity already approved for this college
+                (
+                    SELECT COALESCE(SUM(h2.rows * h2.seats_per_row), 0) 
+                    FROM examination_halls h2 
+                    WHERE h2.college_id = c.id AND h2.status = 'Approved'
+                ) as college_approved_capacity,
+                -- Breakdown of guest institutions hosted here
+                (
+                    SELECT COALESCE(json_agg(json_build_object('name', src.name, 'count', src.count)), '[]'::json)
+                    FROM (
+                        SELECT sc.name, (SELECT COUNT(*) FROM students s2 WHERE s2."collageName" ILIKE sc.name AND s2."deleteStatus" = true) as count
+                        FROM colleges sc
+                        WHERE sc.sitting_center_id = c.id
+                        UNION ALL
+                        SELECT cx.name, sr3.shortage as count
+                        FROM shortage_requests sr3
+                        JOIN colleges cx ON sr3.college_id = cx.id
+                        WHERE sr3.allocated_college_id = c.id AND sr3.status = 'Allocated'
+                    ) src
+                ) as hosting_sources,
+                -- Where these college students are assigned (if not here)
+                c2.name as assigned_to_center
             FROM examination_halls h
             JOIN colleges c ON h.college_id = c.id
+            LEFT JOIN colleges c2 ON c.sitting_center_id = c2.id
             WHERE h.status != 'Draft'
             ORDER BY h.status = 'Pending' DESC, h.created_at DESC;
         `;
@@ -250,10 +289,50 @@ exports.getAllShortageRequests = async (req, res) => {
                     c.longitude,
                     s.status, 
                     s.created_at,
-                    (SELECT COUNT(*) FROM students st WHERE st."collageName" ILIKE c.name AND st."deleteStatus" = true) as student_count,
+                    -- Total students from ALL colleges that are assigned to THIS college as their sitting center
+                    (
+                        SELECT COUNT(*) 
+                        FROM students st 
+                        JOIN colleges sc ON st."collageName" ILIKE sc.name 
+                        WHERE sc.sitting_center_id = s.college_id AND st."deleteStatus" = true
+                    ) + (
+                        SELECT COALESCE(SUM(sr1.shortage), 0) 
+                        FROM shortage_requests sr1 
+                        WHERE sr1.allocated_college_id = s.college_id AND sr1.status = 'Allocated'
+                    ) - (
+                        SELECT COALESCE(SUM(sr2.shortage), 0) 
+                        FROM shortage_requests sr2 
+                        WHERE sr2.college_id = s.college_id AND sr2.status = 'Allocated'
+                    ) as student_count,
                     (SELECT COALESCE(SUM(h.rows * h.seats_per_row), 0) FROM examination_halls h WHERE h.college_id = s.college_id AND h.status = 'Approved') as available_capacity,
                     (
-                        (SELECT COUNT(*) FROM students st WHERE st."collageName" ILIKE c.name AND st."deleteStatus" = true) - 
+                        SELECT COALESCE(json_agg(json_build_object('name', src.name, 'count', src.count)), '[]'::json)
+                        FROM (
+                            SELECT sc.name, (SELECT COUNT(*) FROM students s2 WHERE s2."collageName" ILIKE sc.name AND s2."deleteStatus" = true) as count
+                            FROM colleges sc
+                            WHERE sc.sitting_center_id = s.college_id
+                            UNION ALL
+                            SELECT c.name, sr3.shortage as count
+                            FROM shortage_requests sr3
+                            JOIN colleges c ON sr3.college_id = c.id
+                            WHERE sr3.allocated_college_id = s.college_id AND sr3.status = 'Allocated'
+                        ) src
+                    ) as hosting_sources,
+                    (
+                        (
+                            SELECT COUNT(*) 
+                            FROM students st 
+                            JOIN colleges sc ON st."collageName" ILIKE sc.name 
+                            WHERE sc.sitting_center_id = s.college_id AND st."deleteStatus" = true
+                        ) + (
+                            SELECT COALESCE(SUM(sr4.shortage), 0) 
+                            FROM shortage_requests sr4 
+                            WHERE sr4.allocated_college_id = s.college_id AND sr4.status = 'Allocated'
+                        ) - (
+                            SELECT COALESCE(SUM(sr5.shortage), 0) 
+                            FROM shortage_requests sr5 
+                            WHERE sr5.college_id = s.college_id AND sr5.status = 'Allocated'
+                        ) - 
                         (SELECT COALESCE(SUM(h.rows * h.seats_per_row), 0) FROM examination_halls h WHERE h.college_id = s.college_id AND h.status = 'Approved')
                     ) as shortage
                 FROM shortage_requests s
@@ -282,6 +361,19 @@ exports.allocateCenter = async (req, res) => {
             return res.status(400).json({ error: "Allocated college ID is required" });
         }
 
+        // NEW: Strict Capacity Validation
+        const capacityCheck = await db.query(
+            `SELECT COALESCE(SUM(rows * seats_per_row), 0) as capacity 
+             FROM examination_halls 
+             WHERE college_id = $1 AND status = 'Approved'`,
+            [allocated_college_id]
+        );
+        if (parseInt(capacityCheck.rows[0].capacity) === 0) {
+            return res.status(400).json({ 
+                error: "Selected center has 0 approved seats. Allocation blocked." 
+            });
+        }
+
         const query = `
             UPDATE shortage_requests 
             SET allocated_college_id = $1, status = 'Allocated', updated_at = CURRENT_TIMESTAMP
@@ -298,5 +390,56 @@ exports.allocateCenter = async (req, res) => {
     } catch (error) {
         console.error("Allocate center error:", error);
         res.status(500).json({ error: "Failed to allocate center" });
+    }
+};
+
+// Get the total seating requirement (students from all colleges assigned here)
+exports.getSeatingRequirement = async (req, res) => {
+    try {
+        const college_id = req.user?.college_id;
+        if (!college_id) return res.status(403).json({ error: "Unauthorized" });
+
+        const query = `
+            WITH seating_metrics AS (
+                SELECT 
+                    (
+                        SELECT COUNT(*) 
+                        FROM students s 
+                        JOIN colleges sc ON s."collageName" ILIKE sc.name 
+                        WHERE sc.sitting_center_id = $1 AND s."deleteStatus" = true
+                    ) as permanent_load,
+                    (
+                        SELECT COALESCE(SUM(sr1.shortage), 0) 
+                        FROM shortage_requests sr1 
+                        WHERE sr1.allocated_college_id = $1 AND sr1.status = 'Allocated'
+                    ) as shortage_in,
+                    (
+                        SELECT COALESCE(SUM(sr2.shortage), 0) 
+                        FROM shortage_requests sr2 
+                        WHERE sr2.college_id = $1 AND sr2.status = 'Allocated'
+                    ) as shortage_out
+            )
+            SELECT 
+                (permanent_load + shortage_in - shortage_out) as total_required,
+                (
+                    SELECT COALESCE(json_agg(json_build_object('name', src.name, 'count', src.count)), '[]'::json)
+                    FROM (
+                        SELECT sc.name, (SELECT COUNT(*) FROM students s2 WHERE s2."collageName" ILIKE sc.name AND s2."deleteStatus" = true) as count
+                        FROM colleges sc
+                        WHERE sc.sitting_center_id = $1
+                        UNION ALL
+                        SELECT c.name, sr3.shortage as count
+                        FROM shortage_requests sr3
+                        JOIN colleges c ON sr3.college_id = c.id
+                        WHERE sr3.allocated_college_id = $1 AND sr3.status = 'Allocated'
+                    ) src
+                ) as hosting_sources
+            FROM seating_metrics;
+        `;
+        const result = await db.query(query, [college_id]);
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+        console.error("Get seating requirement error:", error);
+        res.status(500).json({ error: "Failed to fetch seating requirement" });
     }
 };

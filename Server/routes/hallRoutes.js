@@ -16,6 +16,9 @@ router.use(verifyToken);
 // Route to get all halls
 router.get('/', hallController.getHalls);
 
+// Route to get seating requirement (total students assigned here)
+router.get('/seating-requirement', hallController.getSeatingRequirement);
+
 // Route to create a new hall
 router.post('/', hallController.createHall);
 

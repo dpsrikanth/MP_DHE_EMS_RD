@@ -7,7 +7,9 @@ const {
     assignExternalFaculty, 
     getExternalAssignments,
     getFinalizedExternalMarks,
-    getResultHubData
+    getResultHubData,
+    getCollegesMapping,
+    updateSittingCenter
 } = require('../controllers/universityAdminController');
 
 /**
@@ -110,5 +112,32 @@ router.get('/finalized-external-marks', verifyToken, getFinalizedExternalMarks);
  *         schema: { type: integer }
  */
 router.get('/result-hub-data', verifyToken, getResultHubData);
+
+/**
+ * @swagger
+ * /api/university-admin/center-mapping:
+ *   get:
+ *     summary: Get all colleges and their designated examination sitting centers
+ *     tags: [University Administration]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/center-mapping', verifyToken, getCollegesMapping);
+
+/**
+ * @swagger
+ * /api/university-admin/center-mapping/{collegeId}:
+ *   put:
+ *     summary: Update the sitting center for a college
+ *     tags: [University Administration]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: collegeId
+ *         required: true
+ *         schema: { type: integer }
+ */
+router.put('/center-mapping/:collegeId', verifyToken, updateSittingCenter);
 
 module.exports = router;

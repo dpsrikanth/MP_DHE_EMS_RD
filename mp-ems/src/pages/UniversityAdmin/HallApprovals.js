@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Building2, CheckCircle2, XCircle, Clock, MapPin, Search, AlertTriangle, ArrowRight, X } from "lucide-react";
+import { Building2, CheckCircle2, XCircle, Clock, MapPin, Search, AlertTriangle, ArrowRight, X, Users, Info } from "lucide-react";
 
 const HallApprovals = () => {
     const [halls, setHalls] = useState([]);
@@ -81,6 +81,25 @@ const HallApprovals = () => {
 
     const handleAllocate = async () => {
         if (!targetCollegeId) return toast.warning("Please select a target college");
+        
+        // CHECK: If this is the self-college for these students
+        const targetCollege = colleges.find(c => String(c.id) === String(targetCollegeId));
+        
+        // NEW: Strict Capacity Check
+        if (targetCollege && (targetCollege.internal_capacity || 0) === 0) {
+            return toast.error(`Cannot allocate to ${targetCollege.college_name} because it has 0 approved seats. Add halls first.`);
+        }
+
+        const hostingSources = selectedRequest.hosting_sources 
+            ? (typeof selectedRequest.hosting_sources === 'string' ? JSON.parse(selectedRequest.hosting_sources) : selectedRequest.hosting_sources) 
+            : [];
+        const isSelfCollege = hostingSources.some(src => src.name.toLowerCase() === targetCollege.college_name.toLowerCase());
+
+        if (isSelfCollege) {
+            const proceed = window.confirm(`This is the SELF COLLEGE for these students. Do you want to proceed?`);
+            if (!proceed) return;
+        }
+
         setAllocating(true);
         try {
             const token = localStorage.getItem('token');
@@ -139,7 +158,7 @@ const HallApprovals = () => {
     };
 
     const nearbyColleges = selectedRequest ? colleges
-        .filter(c => c.id !== selectedRequest.college_id)
+        .filter(c => c.id !== selectedRequest.college_id) // Exclude the host itself
         .map(c => ({
             ...c,
             distance: calculateDistance(
@@ -195,14 +214,31 @@ const HallApprovals = () => {
                                     <span className="text-sm font-black text-slate-900">{req.college_name}</span>
                                     <span className="px-2 py-1 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded border border-amber-200">Pending</span>
                                 </div>
-                                <div className="grid grid-cols-2 gap-2 text-center">
-                                    <div className="bg-slate-50 rounded-xl p-2 border border-slate-100">
-                                        <div className="text-xs font-bold text-slate-900">{req.student_count}</div>
-                                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Students</div>
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-2 gap-2 text-center">
+                                        <div className="bg-slate-50 rounded-xl p-2 border border-slate-100">
+                                            <div className="text-xs font-bold text-slate-900">{req.student_count}</div>
+                                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Total Load</div>
+                                        </div>
+                                        <div className="bg-rose-50 rounded-xl p-2 border border-rose-100">
+                                            <div className="text-xs font-black text-rose-600">{req.shortage}</div>
+                                            <div className="text-[9px] font-black text-rose-400 uppercase tracking-widest mt-0.5">Shortage</div>
+                                        </div>
                                     </div>
-                                    <div className="bg-rose-50 rounded-xl p-2 border border-rose-100">
-                                        <div className="text-xs font-black text-rose-600">{req.shortage}</div>
-                                        <div className="text-[9px] font-black text-rose-400 uppercase tracking-widest mt-0.5">Shortage</div>
+                                    
+                                    {/* Source Institutions */}
+                                    <div className="px-3 py-2 bg-slate-50/50 rounded-xl border border-slate-100/50">
+                                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                                            <Users size={10} />
+                                            <span>Guest Sources</span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-1">
+                                            {req.hosting_sources && (typeof req.hosting_sources === 'string' ? JSON.parse(req.hosting_sources) : req.hosting_sources).map((src, i) => (
+                                                <span key={i} className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 text-[9px] font-bold rounded border border-indigo-100">
+                                                    {src.name} ({src.count})
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                                 <button 
@@ -253,18 +289,76 @@ const HallApprovals = () => {
                             <h3 className="text-2xl font-black text-slate-900 mb-1">{hall.hall_code}</h3>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-6">{hall.college_name}</p>
 
-                            <div className="grid grid-cols-2 gap-4 mb-8">
+                            <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col items-center justify-center">
                                     <span className="text-sm font-bold text-slate-900">{hall.rows} × {hall.seats_per_row}</span>
                                     <span className="text-[10px] uppercase font-black tracking-widest text-slate-400 mt-1">Grid Pattern</span>
                                 </div>
-                                <div className="p-4 bg-purple-50 border border-purple-100 rounded-2xl flex flex-col items-center justify-center">
-                                    <span className="text-lg font-black text-purple-700">{hall.total_capacity}</span>
-                                    <span className="text-[10px] uppercase font-black tracking-widest text-purple-400 mt-1">Net Capacity</span>
+                                <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col items-center justify-center">
+                                    <span className="text-lg font-black text-indigo-700">{hall.total_capacity}</span>
+                                    <span className="text-[10px] uppercase font-black tracking-widest text-indigo-400 mt-1">Net Capacity</span>
                                 </div>
                             </div>
 
-                            <div className="mt-auto grid grid-cols-2 gap-3 pt-6 border-t border-slate-100">
+                            <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100 space-y-3 mb-6">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Requirement</span>
+                                    <span className="text-xs font-black text-slate-900">{hall.total_required} Students</span>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="flex items-center justify-between text-[10px] font-bold">
+                                        <span className="text-slate-500 italic">Approved Coverage</span>
+                                        <span className={hall.college_approved_capacity < hall.total_required ? 'text-amber-600' : 'text-emerald-600'}>
+                                            {hall.college_approved_capacity} / {hall.total_required}
+                                        </span>
+                                    </div>
+                                    <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                        <div 
+                                            className={`h-full transition-all duration-700 ${hall.college_approved_capacity < hall.total_required ? 'bg-amber-400' : 'bg-emerald-500'}`}
+                                            style={{ width: `${Math.min(100, (hall.college_approved_capacity / hall.total_required) * 100)}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Institutional Breakdown */}
+                            <div className="border-t border-slate-100 pt-4 mt-2 space-y-4">
+                                {hall.total_required > 0 ? (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                            <Users size={12} />
+                                            <span>Hosting Institutions</span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {hall.hosting_sources && typeof hall.hosting_sources === 'string' 
+                                                ? JSON.parse(hall.hosting_sources).map((src, i) => (
+                                                    <span key={i} className="px-2 py-0.5 bg-indigo-50/50 text-indigo-600 text-[10px] font-bold rounded-md border border-indigo-100/50">
+                                                        {src.name} ({src.count})
+                                                    </span>
+                                                ))
+                                                : Array.isArray(hall.hosting_sources) && hall.hosting_sources.map((src, i) => (
+                                                    <span key={i} className="px-2 py-0.5 bg-indigo-50/50 text-indigo-600 text-[10px] font-bold rounded-md border border-indigo-100/50">
+                                                        {src.name} ({src.count})
+                                                    </span>
+                                                ))
+                                            }
+                                        </div>
+                                    </div>
+                                ) : hall.assigned_to_center ? (
+                                    <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
+                                        <Info size={14} className="text-amber-500 flex-shrink-0" />
+                                        <p className="text-[10px] font-bold text-amber-700 leading-tight">
+                                            Students assigned to <span className="font-black italic">{hall.assigned_to_center}</span> for mandatory external allocation.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="text-[10px] font-bold text-slate-400 italic text-center py-2">
+                                        No students mapped to this center yet.
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mt-6 grid grid-cols-2 gap-3 pt-6 border-t border-slate-100">
                                 {hall.status?.toLowerCase() === 'pending' ? (
                                     <>
                                         <button 
@@ -326,18 +420,30 @@ const HallApprovals = () => {
                                 </div>
                                 
                                 {nearbyColleges.length > 0 ? (
-                                    <select 
-                                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500"
-                                        value={targetCollegeId}
-                                        onChange={(e) => setTargetCollegeId(e.target.value)}
-                                    >
-                                        <option value="">Choose a nearby center...</option>
-                                        {nearbyColleges.map(college => (
-                                            <option key={college.id} value={college.id}>
-                                                {college.college_name} — {college.distance} KM away
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className="space-y-3">
+                                        <select 
+                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500"
+                                            value={targetCollegeId}
+                                            onChange={(e) => setTargetCollegeId(e.target.value)}
+                                        >
+                                            <option value="">Choose a nearby center...</option>
+                                            {nearbyColleges.map(college => (
+                                                <option key={college.id} value={college.id}>
+                                                    {college.college_name} — {college.distance}km ({college.internal_capacity || 0} Seats)
+                                                </option>
+                                            ))}
+                                        </select>
+
+                                        {targetCollegeId && nearbyColleges.find(c => String(c.id) === String(targetCollegeId))?.internal_capacity === 0 && (
+                                            <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-700 animate-in fade-in slide-in-from-top-1">
+                                                <AlertTriangle size={20} className="shrink-0" />
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-black uppercase tracking-wider">Infrastructure Alert</span>
+                                                    <span className="text-[10px] font-bold leading-tight mt-0.5">This college has no approved halls. Please verify infrastructure before assigning students.</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 ) : (
                                     <div className="p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl text-center">
                                         <p className="text-sm font-bold text-slate-400">No colleges found within 8km radius</p>
