@@ -1,14 +1,11 @@
-const client = require('./db.js');
-
-async function checkColumns() {
-  try {
-    const res = await client.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'students'");
-    console.log(res.rows.map(r => r.column_name));
-  } catch (err) {
-    console.error(err);
-  } finally {
-    process.exit(0);
-  }
-}
-
-setTimeout(checkColumns, 1000);
+const client = require('./db');
+client.query('SELECT id, name, email, "deleteStatus" FROM students')
+  .then(res => {
+     console.log('Students in database:');
+     console.table(res.rows);
+     process.exit(0);
+  })
+  .catch(err => {
+     console.error(err);
+     process.exit(1);
+  });

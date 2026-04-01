@@ -8,7 +8,7 @@ const sendEmail = require("../utils/sendEmail");// -- Phase 1: Student Account A
 
 const initiateRegistration = async (req, res) => {
   try {
-    const { email } = req.body;
+    const email = req.body.email?.trim();
 
     if (!email) {
       return res.status(400).json({ message: "Email is required to initiate activation" });
@@ -58,17 +58,26 @@ const initiateRegistration = async (req, res) => {
     const roleId = roleResult.rows[0].id;
 
     // Phase 2: Create/Update unverified user
+    let newUserId;
     if (existingUser.rows.length > 0) {
-      await client.query(
-        "UPDATE public.users SET name = $1, role_id = $2, otp = $3, otp_expiry = $4, is_verified = false WHERE email = $5",
+      const updateRes = await client.query(
+        "UPDATE public.users SET name = $1, role_id = $2, otp = $3, otp_expiry = $4, is_verified = false WHERE email = $5 RETURNING id",
         [name, roleId, otp, otpExpiry, email]
       );
+      newUserId = updateRes.rows[0].id;
     } else {
-      await client.query(
-        "INSERT INTO public.users (name, email, role_id, college_id, university_id, otp, otp_expiry, is_verified) VALUES ($1, $2, $3, $4, $5, $6, $7, false)",
+      const insertRes = await client.query(
+        "INSERT INTO public.users (name, email, role_id, college_id, university_id, otp, otp_expiry, is_verified) VALUES ($1, $2, $3, $4, $5, $6, $7, false) RETURNING id",
         [name, email, roleId, college_id, university_id, otp, otpExpiry]
       );
+      newUserId = insertRes.rows[0].id;
     }
+
+    // Link the user_id back to the students table to ensure login and dashboard work
+    await client.query(
+      "UPDATE public.students SET user_id = $1 WHERE email ILIKE $2",
+      [newUserId, email]
+    );
 
     // Deliver Identity Proof (OTP)
     console.log(`\n\n========================================`);
