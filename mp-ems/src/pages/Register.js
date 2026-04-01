@@ -15,13 +15,14 @@ import {
   Rocket,
   ArrowLeft
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Register = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
+    email: location.state?.email || '',
     password: '',
     confirmPassword: '',
     role: ''
@@ -36,6 +37,19 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [step, setStep] = useState(1); // 1: Email Check, 2: OTP, 3: Set Password
   const [otp, setOtp] = useState('');
+  const [timer, setTimer] = useState(300);
+
+  useEffect(() => {
+    let interval;
+    if (step === 2 && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (timer <= 0) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [step, timer]);
 
 
 
@@ -73,33 +87,39 @@ const Register = () => {
     }
   };
 
+  const sendOtp = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setMessage(data.message || 'Activation Failed');
+        return;
+      }
+
+      setMessage('A 6-digit verification code has been sent to your email.');
+      setStep(2);
+      setTimer(300);
+      setOtp('');
+    } catch (error) {
+      setMessage('Network error. Please try again.');
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (step === 1) {
       if (!validateForm()) return;
-      setLoading(true);
-      try {
-        const response = await fetch('http://localhost:8080/api/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: formData.email })
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-          setMessage(data.message || 'Activation Failed');
-          return;
-        }
-
-        setMessage('A 6-digit verification code has been sent to your email.');
-        setStep(2);
-      } catch (error) {
-        setMessage('Network error. Please try again.');
-        console.error('Error:', error);
-      } finally {
-        setLoading(false);
-      }
+      await sendOtp();
     } else if (step === 2) {
       if (!otp || otp.length !== 6) {
         setMessage('Please enter a valid 6-digit code');
@@ -116,6 +136,9 @@ const Register = () => {
         const data = await response.json();
         if (!response.ok) {
           setMessage(data.message || 'Verification Failed');
+          if (data.message && data.message.toLowerCase().includes('expire')) {
+            setTimer(0);
+          }
           return;
         }
 
@@ -153,6 +176,12 @@ const Register = () => {
       }
     }
   };
+
+  const isSuccessMessage = message && (
+    message.includes('sent to your email') || 
+    message.includes('Identity Verified') || 
+    message.includes('Successfully')
+  );
 
   return (
     <div className="min-h-screen bg-white flex flex-col md:flex-row font-sans overflow-hidden">
@@ -250,9 +279,9 @@ const Register = () => {
           </div>
 
           {message && (
-            <div className={`mb-8 p-5 rounded-2xl flex items-center gap-4 border animate-in slide-in-from-top-4 duration-300 ${message.includes('successful') ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${message.includes('successful') ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
-                {message.includes('successful') ? <CheckCircle2 size={20} /> : <Rocket size={20} className="rotate-45" />}
+            <div className={`mb-8 p-5 rounded-2xl flex items-center gap-4 border animate-in slide-in-from-top-4 duration-300 ${isSuccessMessage ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isSuccessMessage ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+                {isSuccessMessage ? <CheckCircle2 size={20} /> : <Rocket size={20} className="rotate-45" />}
               </div>
               <p className="text-sm font-bold leading-tight">{message}</p>
             </div>
@@ -307,6 +336,24 @@ const Register = () => {
                     Code sent to: <span className="text-slate-900">{formData.email}</span>
                   </p>
                 </div>
+
+                <div className="flex justify-center my-4">
+                  {timer > 0 ? (
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Resend code in <span className="text-slate-700 font-extrabold">{Math.floor(timer / 60).toString().padStart(2, '0')}:{(timer % 60).toString().padStart(2, '0')}</span>
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={sendOtp}
+                      disabled={loading}
+                      className="text-xs font-black text-sky-500 hover:text-sky-600 transition-colors underline underline-offset-4 decoration-sky-200 uppercase tracking-wider"
+                    >
+                      Resend OTP Code
+                    </button>
+                  )}
+                </div>
+
                 <button 
                   type="button" 
                   onClick={() => setStep(1)} 

@@ -264,10 +264,10 @@ const Login = () => {
           <p className="mt-8 xl:mt-10 text-center text-slate-500 text-sm font-medium">
             New to the system?{' '}
             <button
-              onClick={() => navigate("/register")}
+              onClick={() => navigate("/register", { state: { email: formData.email } })}
               className="text-sky-500 font-black hover:text-sky-600 underline underline-offset-4 decoration-sky-200"
             >
-              Register Institution
+              Register Students
             </button>
           </p>
 

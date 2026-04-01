@@ -147,7 +147,7 @@ const HallApprovals = () => {
                 c.latitude, c.longitude
             )
         }))
-        .filter(c => c.distance < 50) // Within 50km
+        .filter(c => c.distance <= 8) // Within 8km
         .sort((a, b) => a.distance - b.distance)
         : [];
 
@@ -322,7 +322,7 @@ const HallApprovals = () => {
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Select Nearby College</label>
-                                    <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-500 font-bold whitespace-nowrap">Radius: 50KM</span>
+                                    <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-500 font-bold whitespace-nowrap">Radius: 8KM</span>
                                 </div>
                                 
                                 {nearbyColleges.length > 0 ? (
@@ -340,7 +340,7 @@ const HallApprovals = () => {
                                     </select>
                                 ) : (
                                     <div className="p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl text-center">
-                                        <p className="text-sm font-bold text-slate-400">No colleges found within 50km radius</p>
+                                        <p className="text-sm font-bold text-slate-400">No colleges found within 8km radius</p>
                                     </div>
                                 )}
                             </div>
