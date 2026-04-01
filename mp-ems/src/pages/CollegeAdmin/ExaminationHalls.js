@@ -9,6 +9,7 @@ const ExaminationHalls = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [totalRooms, setTotalRooms] = useState(0);
     const [totalStudents, setTotalStudents] = useState(0);
+    const [shortageRequests, setShortageRequests] = useState([]);
     const [isEditingRooms, setIsEditingRooms] = useState(false);
 
 
@@ -34,7 +35,7 @@ const ExaminationHalls = () => {
     }, [halls, searchQuery]);
 
     const capacityStats = useMemo(() => {
-        return halls.reduce((acc, hall) => {
+        const stats = halls.reduce((acc, hall) => {
             const cap = parseInt(hall.total_capacity) || ((parseInt(hall.rows) || 0) * (parseInt(hall.seats_per_row) || 0));
             if (hall.status === 'Approved') acc.approved += cap;
             else if (hall.status === 'Pending') acc.pending += cap;
@@ -42,13 +43,20 @@ const ExaminationHalls = () => {
             acc.total += cap;
             return acc;
         }, { approved: 0, pending: 0, draft: 0, total: 0 });
-    }, [halls]);
+
+        const allocated = shortageRequests
+            .filter(r => r.status === 'Allocated')
+            .reduce((sum, r) => sum + (parseInt(r.shortage) || 0), 0);
+
+        return { ...stats, allocated };
+    }, [halls, shortageRequests]);
 
 
     useEffect(() => {
         fetchHalls();
         fetchTotalRooms();
         fetchStudentCount();
+        fetchShortageRequests();
     }, []);
 
     const fetchStudentCount = async () => {
@@ -63,6 +71,21 @@ const ExaminationHalls = () => {
             }
         } catch (err) {
             console.error("Failed to fetch students", err);
+        }
+    };
+
+    const fetchShortageRequests = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:8080/api/examination-halls/shortage', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setShortageRequests(data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch shortage requests", err);
         }
     };
 
@@ -378,22 +401,22 @@ const ExaminationHalls = () => {
                     }`} />
                     <div className="flex items-center justify-between mb-2 relative z-10">
                         <span className={`text-xs font-black uppercase tracking-widest ${
-                            capacityStats.approved < totalStudents ? 'text-rose-600' : 'text-blue-500'
+                            (capacityStats.approved + capacityStats.allocated) < totalStudents ? 'text-rose-600' : 'text-blue-500'
                         }`}>
-                            {capacityStats.approved < totalStudents ? 'Shortage' : 'Surplus Capacity'}
+                            {(capacityStats.approved + capacityStats.allocated) < totalStudents ? 'Shortage' : 'Surplus Capacity'}
                         </span>
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                             capacityStats.approved < totalStudents ? 'bg-rose-100 text-rose-500' : 'bg-blue-50 text-blue-500'
+                             (capacityStats.approved + capacityStats.allocated) < totalStudents ? 'bg-rose-100 text-rose-500' : 'bg-blue-50 text-blue-500'
                         }`}>
-                            {capacityStats.approved < totalStudents ? <XCircle size={16} /> : <CheckCircle2 size={16} />}
+                            {(capacityStats.approved + capacityStats.allocated) < totalStudents ? <XCircle size={16} /> : <CheckCircle2 size={16} />}
                         </div>
                     </div>
                     <div className="relative z-10 flex items-center justify-between w-full">
                         <div className="flex items-baseline gap-1">
                             <span className={`text-3xl font-black ${
-                                capacityStats.approved < totalStudents ? 'text-rose-700' : 'text-blue-600'
+                                (capacityStats.approved + capacityStats.allocated) < totalStudents ? 'text-rose-700' : 'text-blue-600'
                             }`}>
-                                {Math.abs(totalStudents - capacityStats.approved)}
+                                {Math.max(0, totalStudents - capacityStats.approved - capacityStats.allocated)}
                             </span>
                             <span className={`text-[10px] font-black uppercase tracking-tighter ${
                                 capacityStats.approved < totalStudents ? 'text-rose-400' : 'text-blue-400'
@@ -434,7 +457,7 @@ const ExaminationHalls = () => {
                         <p className="text-xs font-medium text-slate-500 mt-0.5">Approved capacity vs required student seating</p>
                     </div>
                     <div className="text-right text-xs font-black uppercase tracking-widest">
-                        {totalStudents > 0 ? ((capacityStats.approved / totalStudents) * 100).toFixed(1) : 0}% Coverage
+                        {totalStudents > 0 ? (((capacityStats.approved + capacityStats.allocated) / totalStudents) * 100).toFixed(1) : 0}% Coverage
                     </div>
                 </div>
 
@@ -446,35 +469,62 @@ const ExaminationHalls = () => {
                     >
                         <div className="absolute inset-y-0 right-0 w-px bg-white/20" />
                     </div>
+                    {/* External Allocated Progress */}
+                    <div 
+                        className="h-full bg-blue-500 transition-all duration-700 relative border-l border-white/30"
+                        style={{ width: `${totalStudents > 0 ? Math.min(100 - (capacityStats.approved / totalStudents) * 100, (capacityStats.allocated / totalStudents) * 100) : 0}%` }}
+                    >
+                        <div className="absolute inset-y-0 right-0 w-px bg-white/20" />
+                    </div>
                     {/* Pending Progress (Potential) */}
                     <div 
                         className="h-full bg-amber-400/50 transition-all duration-700 relative border-l border-white/30 border-dashed"
-                        style={{ width: `${totalStudents > 0 ? Math.min(100 - (capacityStats.approved / totalStudents) * 100, (capacityStats.pending / totalStudents) * 100) : 0}%` }}
+                        style={{ width: `${totalStudents > 0 ? Math.min(100 - ((capacityStats.approved + capacityStats.allocated) / totalStudents) * 100, (capacityStats.pending / totalStudents) * 100) : 0}%` }}
                     >
                         <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0.15)_75%,transparent_75%,transparent)] bg-[length:1rem_1rem] animate-pulse" />
                     </div>
                 </div>
 
-                <div className="flex items-center gap-6 pt-2">
-                    <div className="flex items-center gap-2">
+                <div className="flex items-center gap-6 pt-2 overflow-x-auto pb-1">
+                    <div className="flex items-center gap-2 whitespace-nowrap">
                         <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Approved Seats ({capacityStats.approved})</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pending Validation ({capacityStats.pending})</span>
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                        <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">External ({capacityStats.allocated})</span>
                     </div>
-                    <div className="ml-auto flex items-center gap-2">
-                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Target Requirement: {totalStudents} Seats</span>
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                        <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pending Validate ({capacityStats.pending})</span>
+                    </div>
+                    <div className="ml-auto flex items-center gap-2 whitespace-nowrap">
+                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic font-medium">Target Requirement: {totalStudents} Seats</span>
                     </div>
                 </div>
             </div>
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
-                <form onSubmit={handleCreateHall} className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 relative overflow-hidden">
+                {totalRooms < 1 && (
+                    <div className="absolute inset-0 bg-slate-50/60 backdrop-blur-[2px] z-20 flex items-center justify-center p-6">
+                        <div className="bg-white border border-amber-200 rounded-2xl p-4 shadow-xl max-w-sm flex items-start gap-4">
+                            <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-full flex-shrink-0 flex items-center justify-center">
+                                <Clock size={20} className="animate-pulse" />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-slate-900">Configuration Required</h4>
+                                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                                    Please set your <strong>Total Campus Rooms Configuration</strong> above to at least 1 before adding or editing examination halls.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                <form onSubmit={handleCreateHall} className={`grid grid-cols-1 md:grid-cols-5 gap-6 items-end ${totalRooms < 1 ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
                     <div className="space-y-2 col-span-1 md:col-span-1">
                         <label className="text-sm font-bold text-slate-700 ml-1">Hall Code</label>
                         <input 
                             type="text"
+                            disabled={totalRooms < 1}
                             value={newHall.hall_code}
                             onChange={(e) => setNewHall({...newHall, hall_code: e.target.value.toUpperCase()})}
                             placeholder="HALL-A"
@@ -486,6 +536,7 @@ const ExaminationHalls = () => {
                         <input 
                             type="number"
                             min="1"
+                            disabled={totalRooms < 1}
                             value={newHall.rows}
                             onChange={(e) => setNewHall({...newHall, rows: e.target.value})}
                             placeholder="10"
@@ -497,6 +548,7 @@ const ExaminationHalls = () => {
                         <input 
                             type="number"
                             min="1"
+                            disabled={totalRooms < 1}
                             value={newHall.seats_per_row}
                             onChange={(e) => setNewHall({...newHall, seats_per_row: e.target.value})}
                             placeholder="8"
@@ -511,7 +563,8 @@ const ExaminationHalls = () => {
                     </div>
                     <button
                         type="submit"
-                        className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02]"
+                        disabled={totalRooms < 1}
+                        className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] disabled:bg-slate-300 disabled:shadow-none"
                     >
                         <Save size={18} />
                         <span>Add as Draft</span>
@@ -589,9 +642,10 @@ const ExaminationHalls = () => {
                                             <div className="flex items-center justify-end gap-2">
                                                 {hall.status === 'Draft' || hall.status === 'Rejected' ? (
                                                     <button 
+                                                        disabled={totalRooms < 1}
                                                         onClick={() => handleSubmitHall(hall.id)}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl transition-all font-bold text-xs"
-                                                        title="Submit for Approval"
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl transition-all font-bold text-xs disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
+                                                        title={totalRooms < 1 ? "Set room limit first" : "Submit for Approval"}
                                                     >
                                                         <SendHorizontal size={14} />
                                                         <span>Submit</span>
@@ -599,33 +653,34 @@ const ExaminationHalls = () => {
                                                 ) : null}
                                                 
                                                 <button 
-                                                    disabled={!isEditable(hall.status)}
+                                                    disabled={!isEditable(hall.status) || totalRooms < 1}
                                                     onClick={() => {
                                                         setEditingHall(hall);
                                                         setShowEditModal(true);
                                                     }}
                                                     className={`p-2 rounded-xl transition-all ${
-                                                        isEditable(hall.status) 
+                                                        isEditable(hall.status) && totalRooms >= 1
                                                         ? 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50' 
-                                                        : 'text-slate-200 cursor-not-allowed'
+                                                        : 'text-slate-200 cursor-not-allowed grayscale opacity-50'
                                                     }`}
-                                                    title={isEditable(hall.status) ? "Edit Hall" : "Editing Locked"}
+                                                    title={totalRooms < 1 ? "Set room limit first" : isEditable(hall.status) ? "Edit Hall" : "Editing Locked"}
                                                 >
                                                     <Pencil size={18} />
                                                 </button>
                                                 <button 
-                                                    disabled={!isEditable(hall.status)}
+                                                    disabled={!isEditable(hall.status) && hall.status !== 'Pending'}
                                                     onClick={() => {
                                                         setDeleteTarget(hall);
                                                         setShowDeleteModal(true);
                                                     }}
                                                     className={`p-2 rounded-xl transition-all ${
-                                                        isEditable(hall.status) 
-                                                        ? 'text-slate-400 hover:text-red-500 hover:bg-red-50' 
-                                                        : 'text-slate-200 cursor-not-allowed'
+                                                        isEditable(hall.status) || hall.status === 'Pending'
+                                                        ? 'text-red-500 hover:text-red-700 hover:bg-red-50 shadow-sm' 
+                                                        : 'text-slate-200 cursor-not-allowed grayscale opacity-50'
                                                     }`}
+                                                    title={hall.status === 'Pending' ? "Delete Pending Request" : "Delete Hall"}
                                                 >
-                                                    <Trash2 size={18} />
+                                                    <Trash2 size={20} />
                                                 </button>
                                             </div>
                                         </td>
