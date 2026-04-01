@@ -40,6 +40,9 @@ router.put('/:id/approve-reject', hallController.approveRejectHall);
 // Route to send shortage request
 router.post('/shortage-request', hallController.createShortageRequest);
 
+// Route for College Admin to view their own shortage requests
+router.get('/shortage', hallController.getCollegeShortage);
+
 // Route for University Admin to view shortage requests
 router.get('/shortage-requests', hallController.getAllShortageRequests);
 

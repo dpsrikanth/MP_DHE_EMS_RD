@@ -16,17 +16,18 @@ exports.createHall = async (req, res) => {
 
         const requested_seats = parseInt(rows) * parseInt(seats_per_row);
         
-        // Fetch college room limit
         const collegeRes = await db.query('SELECT total_rooms FROM colleges WHERE id = $1', [college_id]);
         const max_rooms = collegeRes.rows[0]?.total_rooms || 0;
 
-        if (max_rooms > 0) {
-            const roomsRes = await db.query('SELECT COUNT(id) as current_rooms FROM examination_halls WHERE college_id = $1', [college_id]);
-            const current_rooms = parseInt(roomsRes.rows[0].current_rooms) || 0;
-            
-            if (current_rooms >= max_rooms) {
-                return res.status(400).json({ error: `Cannot add hall. It exceeds your campus physical limit of ${max_rooms} total rooms.` });
-            }
+        if (max_rooms <= 0) {
+            return res.status(400).json({ error: "Please configure your Total Campus Rooms limit first before adding examination halls." });
+        }
+
+        const roomsRes = await db.query('SELECT COUNT(id) as current_rooms FROM examination_halls WHERE college_id = $1', [college_id]);
+        const current_rooms = parseInt(roomsRes.rows[0].current_rooms) || 0;
+        
+        if (current_rooms >= max_rooms) {
+            return res.status(400).json({ error: `Cannot add hall. It exceeds your campus physical limit of ${max_rooms} total rooms.` });
         }
 
         const query = `
@@ -78,6 +79,13 @@ exports.updateHall = async (req, res) => {
         const checkQuery = `SELECT status FROM examination_halls WHERE id = $1 AND college_id = $2`;
         const checkResult = await db.query(checkQuery, [id, college_id]);
         if (checkResult.rowCount === 0) return res.status(404).json({ error: "Hall not found" });
+
+        // Enforce room limit check also for updates
+        const collegeRes = await db.query('SELECT total_rooms FROM colleges WHERE id = $1', [college_id]);
+        const max_rooms = collegeRes.rows[0]?.total_rooms || 0;
+        if (max_rooms <= 0) {
+            return res.status(400).json({ error: "Please configure your Total Campus Rooms limit first before managing examination halls." });
+        }
 
         const currentStatus = checkResult.rows[0].status;
         if (currentStatus !== 'Draft' && currentStatus !== 'Rejected' && currentStatus !== 'Approved') {
@@ -138,7 +146,7 @@ exports.deleteHall = async (req, res) => {
 
         const query = `
             DELETE FROM examination_halls 
-            WHERE id = $1 AND college_id = $2 AND (status = 'Draft' OR status = 'Rejected')
+            WHERE id = $1 AND college_id = $2 AND (status = 'Draft' OR status = 'Rejected' OR status = 'Pending')
             RETURNING *;
         `;
         const result = await db.query(query, [id, college_id]);
@@ -256,7 +264,7 @@ exports.createShortageRequest = async (req, res) => {
             // Update the existing pending request
             const updateQuery = `
                 UPDATE shortage_requests 
-                SET student_count = $1, available_capacity = $2, shortage = $3
+                SET student_count = $1, available_capacity = $2, shortage = $3, updated_at = CURRENT_TIMESTAMP
                 WHERE id = $4
                 RETURNING id;
             `;
@@ -441,5 +449,26 @@ exports.getSeatingRequirement = async (req, res) => {
     } catch (error) {
         console.error("Get seating requirement error:", error);
         res.status(500).json({ error: "Failed to fetch seating requirement" });
+    }
+};
+
+// Get shortage requests for the logged-in college
+exports.getCollegeShortage = async (req, res) => {
+    try {
+        const college_id = req.user?.college_id;
+        if (!college_id) {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const query = `
+            SELECT * FROM shortage_requests 
+            WHERE college_id = $1 
+            ORDER BY created_at DESC;
+        `;
+        const result = await db.query(query, [college_id]);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("Get college shortage error:", error);
+        res.status(500).json({ error: "Failed to fetch shortage requests" });
     }
 };

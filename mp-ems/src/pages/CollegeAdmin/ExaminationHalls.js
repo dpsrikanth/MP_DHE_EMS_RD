@@ -10,6 +10,7 @@ const ExaminationHalls = () => {
     const [totalRooms, setTotalRooms] = useState(0);
     const [totalStudents, setTotalStudents] = useState(0);
     const [hostingSources, setHostingSources] = useState([]);
+    const [shortageRequests, setShortageRequests] = useState([]);
     const [isEditingRooms, setIsEditingRooms] = useState(false);
 
 
@@ -35,7 +36,7 @@ const ExaminationHalls = () => {
     }, [halls, searchQuery]);
 
     const capacityStats = useMemo(() => {
-        return halls.reduce((acc, hall) => {
+        const stats = halls.reduce((acc, hall) => {
             const cap = parseInt(hall.total_capacity) || ((parseInt(hall.rows) || 0) * (parseInt(hall.seats_per_row) || 0));
             if (hall.status === 'Approved') acc.approved += cap;
             else if (hall.status === 'Pending') acc.pending += cap;
@@ -43,7 +44,13 @@ const ExaminationHalls = () => {
             acc.total += cap;
             return acc;
         }, { approved: 0, pending: 0, draft: 0, total: 0 });
-    }, [halls]);
+
+        const allocated = shortageRequests
+            .filter(r => r.status === 'Allocated')
+            .reduce((sum, r) => sum + (parseInt(r.shortage) || 0), 0);
+
+        return { ...stats, allocated };
+    }, [halls, shortageRequests]);
 
     const approvedCapacity = capacityStats.approved;
 
@@ -51,6 +58,7 @@ const ExaminationHalls = () => {
         fetchHalls();
         fetchTotalRooms();
         fetchStudentCount();
+        fetchShortageRequests();
     }, []);
 
     const fetchStudentCount = async () => {
@@ -66,6 +74,21 @@ const ExaminationHalls = () => {
             }
         } catch (err) {
             console.error("Failed to fetch seating requirement", err);
+        }
+    };
+
+    const fetchShortageRequests = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:8080/api/examination-halls/shortage', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setShortageRequests(data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch shortage requests", err);
         }
     };
 
@@ -469,40 +492,53 @@ const ExaminationHalls = () => {
 
                 <div className="bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[100px] -translate-y-1/2 translate-x-1/2" />
-                    <div className="relative z-10">
-                        <div className="flex justify-between items-start mb-12">
+                    <div className="relative z-10 flex flex-col h-full justify-between">
+                        <div className="flex justify-between items-start mb-8">
                             <div>
-                                <h3 className="text-xl font-black text-white">Campus Capacity Utilization</h3>
-                                <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest mt-1">Approved capacity vs required student seating</p>
+                                <h3 className="text-xl font-black text-white">Seating Governance</h3>
+                                <p className="text-emerald-400 text-[10px] font-black uppercase tracking-widest mt-1">Real-time capacity distribution</p>
                             </div>
                             <div className="text-right">
-                                <span className="text-4xl font-black text-white">{((approvedCapacity / (totalStudents || 1)) * 100).toFixed(1)}%</span>
-                                <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mt-1">Total Coverage</p>
+                                <span className="text-4xl font-black text-white">
+                                    {totalStudents > 0 ? (((capacityStats.approved + capacityStats.allocated) / totalStudents) * 100).toFixed(1) : 0}%
+                                </span>
+                                <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mt-1 text-right">Total Coverage</p>
                             </div>
                         </div>
 
                         <div className="space-y-6">
-                            <div className="h-4 bg-white/10 rounded-full overflow-hidden p-1 border border-white/5">
+                            <div className="h-4 bg-white/10 rounded-full overflow-hidden p-1 border border-white/5 flex">
                                 <div 
-                                    className="h-full bg-emerald-500 rounded-full transition-all duration-1000 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
-                                    style={{ width: `${Math.min(100, (approvedCapacity / (totalStudents || 1)) * 100)}%` }}
+                                    className="h-full bg-emerald-500 rounded-l-full transition-all duration-1000 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                                    style={{ width: `${totalStudents > 0 ? Math.min(100, (capacityStats.approved / totalStudents) * 100) : 0}%` }}
+                                />
+                                <div 
+                                    className="h-full bg-blue-500 transition-all duration-1000 border-l border-white/30"
+                                    style={{ width: `${totalStudents > 0 ? Math.min(100 - (capacityStats.approved / totalStudents) * 100, (capacityStats.allocated / totalStudents) * 100) : 0}%` }}
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-3 h-3 bg-emerald-500 rounded-full ring-4 ring-emerald-500/20" />
-                                    <div>
-                                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Approved Seats</p>
-                                        <p className="text-lg font-black text-white">{approvedCapacity}</p>
+                            <div className="grid grid-cols-3 gap-2">
+                                <div className="flex flex-col gap-1">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-emerald-500 rounded-full ring-4 ring-emerald-500/20" />
+                                        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Internal</span>
                                     </div>
+                                    <p className="text-sm font-black text-white">{capacityStats.approved}</p>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-3 h-3 bg-amber-500 rounded-full ring-4 ring-amber-500/20" />
-                                    <div>
-                                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest/10 uppercase tracking-widest">Target Requirement</p>
-                                        <p className="text-lg font-black text-white">{totalStudents}</p>
+                                <div className="flex flex-col gap-1">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full ring-4 ring-blue-500/20" />
+                                        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">External</span>
                                     </div>
+                                    <p className="text-sm font-black text-white">{capacityStats.allocated}</p>
+                                </div>
+                                <div className="flex flex-col gap-1 border-l border-white/10 pl-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-amber-500 rounded-full ring-4 ring-amber-500/20" />
+                                        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Target</span>
+                                    </div>
+                                    <p className="text-sm font-black text-white">{totalStudents}</p>
                                 </div>
                             </div>
                         </div>
@@ -511,18 +547,34 @@ const ExaminationHalls = () => {
             </div>
 
             {/* Add Hall Form */}
-            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-8 transition-all hover:shadow-lg">
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-8 relative overflow-hidden mb-12 transition-all hover:shadow-lg">
                 <div className="flex items-center gap-3 mb-8 ml-1">
                     <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center">
                         <Layers size={18} />
                     </div>
                     <h3 className="text-lg font-black text-slate-800 uppercase tracking-widest">Add New Infrastructure</h3>
                 </div>
-                <form onSubmit={handleCreateHall} className="grid grid-cols-1 md:grid-cols-5 gap-8 items-end">
-                    <div className="space-y-3 col-span-1 md:col-span-1">
+                {totalRooms < 1 && (
+                    <div className="absolute inset-0 bg-slate-50/60 backdrop-blur-[2px] z-20 flex items-center justify-center p-6">
+                        <div className="bg-white border border-amber-200 rounded-2xl p-4 shadow-xl max-w-sm flex items-start gap-4">
+                            <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-full flex-shrink-0 flex items-center justify-center">
+                                <Clock size={20} className="animate-pulse" />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-slate-900">Configuration Required</h4>
+                                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                                    Please set your <strong>Total Campus Rooms Configuration</strong> above to at least 1 before adding or editing examination halls.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                <form onSubmit={handleCreateHall} className={`grid grid-cols-1 md:grid-cols-5 gap-8 items-end ${totalRooms < 1 ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
+                    <div className="space-y-3 col-span-1 md:col-span-2">
                         <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-4">Hall Code</label>
                         <input 
                             type="text"
+                            disabled={totalRooms < 1}
                             value={newHall.hall_code}
                             onChange={(e) => setNewHall({...newHall, hall_code: e.target.value.toUpperCase()})}
                             placeholder="HALL-A"
@@ -534,6 +586,7 @@ const ExaminationHalls = () => {
                         <input 
                             type="number"
                             min="1"
+                            disabled={totalRooms < 1}
                             value={newHall.rows}
                             onChange={(e) => setNewHall({...newHall, rows: e.target.value})}
                             placeholder="10"
@@ -545,6 +598,7 @@ const ExaminationHalls = () => {
                         <input 
                             type="number"
                             min="1"
+                            disabled={totalRooms < 1}
                             value={newHall.seats_per_row}
                             onChange={(e) => setNewHall({...newHall, seats_per_row: e.target.value})}
                             placeholder="8"
@@ -559,7 +613,8 @@ const ExaminationHalls = () => {
                     </div>
                     <button
                         type="submit"
-                        className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-widest text-xs"
+                        disabled={totalRooms < 1}
+                        className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-widest text-xs disabled:bg-slate-300 disabled:shadow-none disabled:grayscale disabled:scale-100"
                     >
                         <Save size={18} />
                         <span>Add as Draft</span>
@@ -642,9 +697,10 @@ const ExaminationHalls = () => {
                                             <div className="flex items-center justify-end gap-2">
                                                 {(hall.status === 'Draft' || hall.status === 'Rejected') && (
                                                     <button 
+                                                        disabled={totalRooms < 1}
                                                         onClick={() => handleSubmitHall(hall.id)}
-                                                        className="h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-500/20 flex items-center gap-2"
-                                                        title="Submit for Approval"
+                                                        className="h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-500/20 flex items-center gap-2 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
+                                                        title={totalRooms < 1 ? "Set room limit first" : "Submit for Approval"}
                                                     >
                                                         <SendHorizontal size={14} />
                                                         <span>Send</span>
@@ -652,32 +708,34 @@ const ExaminationHalls = () => {
                                                 )}
                                                 
                                                 <button 
-                                                    disabled={!isEditable(hall.status)}
+                                                    disabled={!isEditable(hall.status) || totalRooms < 1}
                                                     onClick={() => {
                                                         setEditingHall(hall);
                                                         setShowEditModal(true);
                                                     }}
                                                     className={`w-10 h-10 rounded-xl transition-all flex items-center justify-center border ${
-                                                        isEditable(hall.status) 
+                                                        isEditable(hall.status) && totalRooms >= 1
                                                         ? 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 border-slate-200 hover:border-indigo-200' 
-                                                        : 'text-slate-200 border-slate-100 cursor-not-allowed'
+                                                        : 'text-slate-200 border-slate-100 cursor-not-allowed opacity-50'
                                                     }`}
+                                                    title={totalRooms < 1 ? "Set room limit first" : isEditable(hall.status) ? "Edit Hall" : "Editing Locked"}
                                                 >
                                                     <Pencil size={18} />
                                                 </button>
                                                 <button 
-                                                    disabled={!isEditable(hall.status)}
+                                                    disabled={(!isEditable(hall.status) && hall.status !== 'Pending') || totalRooms < 1}
                                                     onClick={() => {
                                                         setDeleteTarget(hall);
                                                         setShowDeleteModal(true);
                                                     }}
                                                     className={`w-10 h-10 rounded-xl transition-all flex items-center justify-center border ${
-                                                        isEditable(hall.status) 
+                                                        (isEditable(hall.status) || hall.status === 'Pending') && totalRooms >= 1
                                                         ? 'text-slate-400 hover:text-red-500 hover:bg-red-50 border-slate-200 hover:border-red-200' 
-                                                        : 'text-slate-200 border-slate-100 cursor-not-allowed'
+                                                        : 'text-slate-200 border-slate-100 cursor-not-allowed opacity-50'
                                                     }`}
+                                                    title={hall.status === 'Pending' ? "Delete Pending Request" : "Delete Hall"}
                                                 >
-                                                    <Trash2 size={18} />
+                                                    <Trash2 size={20} />
                                                 </button>
                                             </div>
                                         </td>
