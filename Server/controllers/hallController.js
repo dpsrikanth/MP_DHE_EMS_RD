@@ -173,15 +173,7 @@ exports.getAllHallsForApproval = async (req, res) => {
                     SELECT COUNT(*) 
                     FROM students s 
                     JOIN colleges sc ON s."collageName" ILIKE sc.name 
-                    WHERE sc.sitting_center_id = c.id AND s."deleteStatus" = true
-                ) + (
-                    SELECT COALESCE(SUM(sr1.shortage), 0) 
-                    FROM shortage_requests sr1 
-                    WHERE sr1.allocated_college_id = c.id AND sr1.status = 'Allocated'
-                ) - (
-                    SELECT COALESCE(SUM(sr2.shortage), 0) 
-                    FROM shortage_requests sr2 
-                    WHERE sr2.college_id = c.id AND sr2.status = 'Allocated'
+                    WHERE sc.id = c.id AND s."deleteStatus" = true
                 ) as total_required,
                 -- Total capacity already approved for this college
                 (
@@ -193,32 +185,28 @@ exports.getAllHallsForApproval = async (req, res) => {
                 (
                     SELECT COALESCE(json_agg(json_build_object('name', src.name, 'count', src.count)), '[]'::json)
                     FROM (
-                        -- Students mapped here via sitting_center_id, minus any overflow sent elsewhere
+                        -- Institutional students
+                        SELECT 
+                            c.name,
+                            (SELECT COUNT(*) FROM students s2 
+                             JOIN colleges sc2 ON s2."collageName" ILIKE sc2.name
+                             WHERE sc2.id = c.id AND s2."deleteStatus" = true) as count
+                        UNION ALL
+                        -- Guest students mapped here via sitting_center_id
                         SELECT 
                             sc.name,
-                            GREATEST(0,
-                                (SELECT COUNT(*) FROM students s2 
-                                 JOIN colleges sc2 ON s2."collageName" ILIKE sc2.name
-                                 WHERE sc2.id = sc.id AND s2."deleteStatus" = true)
-                                -
-                                COALESCE((
-                                    SELECT SUM(sr_out.shortage)
-                                    FROM shortage_requests sr_out
-                                    WHERE sr_out.college_id = sc.id
-                                      AND sr_out.allocated_college_id != c.id
-                                      AND sr_out.status = 'Allocated'
-                                ), 0)
-                            ) as count
+                            (SELECT COUNT(*) FROM students s2 
+                             JOIN colleges sc2 ON s2."collageName" ILIKE sc2.name
+                             WHERE sc2.id = sc.id AND s2."deleteStatus" = true) as count
                         FROM colleges sc
-                        WHERE sc.sitting_center_id = c.id
+                        WHERE sc.sitting_center_id = c.id AND sc.id != c.id
                         UNION ALL
-                        -- Overflow students landing here via shortage allocation
-                        SELECT cx.name, sr3.shortage as count
-                        FROM shortage_requests sr3
-                        JOIN colleges cx ON sr3.college_id = cx.id
-                        WHERE sr3.allocated_college_id = c.id 
-                          AND cx.sitting_center_id != c.id
-                          AND sr3.status = 'Allocated'
+                        -- Guest students via shortage requests
+                        SELECT c2.name, sr_guest.shortage as count
+                        FROM shortage_requests sr_guest
+                        JOIN colleges c2 ON sr_guest.college_id = c2.id
+                        WHERE sr_guest.allocated_college_id = c.id AND sr_guest.status = 'Allocated'
+                          AND c2.id != c.id
                     ) src
                     WHERE src.count > 0
                 ) as hosting_sources,
@@ -321,44 +309,39 @@ exports.getAllShortageRequests = async (req, res) => {
                         SELECT COUNT(*) 
                         FROM students st 
                         JOIN colleges sc ON st."collageName" ILIKE sc.name 
-                        WHERE sc.sitting_center_id = s.college_id AND st."deleteStatus" = true
-                    ) + (
-                        SELECT COALESCE(SUM(sr1.shortage), 0) 
-                        FROM shortage_requests sr1 
-                        WHERE sr1.allocated_college_id = s.college_id AND sr1.status = 'Allocated'
-                    ) - (
-                        SELECT COALESCE(SUM(sr2.shortage), 0) 
-                        FROM shortage_requests sr2 
-                        WHERE sr2.college_id = s.college_id AND sr2.status = 'Allocated'
+                        WHERE sc.id = s.college_id AND st."deleteStatus" = true
                     ) as student_count,
                     (SELECT COALESCE(SUM(h.rows * h.seats_per_row), 0) FROM examination_halls h WHERE h.college_id = s.college_id AND h.status = 'Approved') as available_capacity,
                     (
                         SELECT COALESCE(json_agg(json_build_object('name', src.name, 'count', src.count)), '[]'::json)
                         FROM (
-                            SELECT sc.name, (SELECT COUNT(*) FROM students s2 WHERE s2."collageName" ILIKE sc.name AND s2."deleteStatus" = true) as count
-                            FROM colleges sc
-                            WHERE sc.sitting_center_id = s.college_id
+                            -- Institutional students
+                            SELECT 
+                                sc2.name, 
+                                (SELECT COUNT(*) FROM students s2 WHERE s2."collageName" ILIKE sc2.name AND s2."deleteStatus" = true) as count
+                            FROM colleges sc2
+                            WHERE sc2.id = s.college_id
                             UNION ALL
-                            SELECT c.name, sr3.shortage as count
-                            FROM shortage_requests sr3
-                            JOIN colleges c ON sr3.college_id = c.id
-                            WHERE sr3.allocated_college_id = s.college_id AND sr3.status = 'Allocated'
+                            -- Other students assigned as sitting center
+                            SELECT c3.name, (SELECT COUNT(*) FROM students s3 WHERE s3."collageName" ILIKE c3.name AND s3."deleteStatus" = true) as count
+                            FROM colleges c3
+                            WHERE c3.sitting_center_id = s.college_id AND c3.id != s.college_id
+                            UNION ALL
+                            -- Guest students via shortage requests
+                            SELECT c2.name, sr_guest.shortage as count
+                            FROM shortage_requests sr_guest
+                            JOIN colleges c2 ON sr_guest.college_id = c2.id
+                            WHERE sr_guest.allocated_college_id = s.college_id AND sr_guest.status = 'Allocated'
+                              AND c2.id != s.college_id
                         ) src
+                        WHERE src.count > 0
                     ) as hosting_sources,
                     (
                         (
                             SELECT COUNT(*) 
                             FROM students st 
                             JOIN colleges sc ON st."collageName" ILIKE sc.name 
-                            WHERE sc.sitting_center_id = s.college_id AND st."deleteStatus" = true
-                        ) + (
-                            SELECT COALESCE(SUM(sr4.shortage), 0) 
-                            FROM shortage_requests sr4 
-                            WHERE sr4.allocated_college_id = s.college_id AND sr4.status = 'Allocated'
-                        ) - (
-                            SELECT COALESCE(SUM(sr5.shortage), 0) 
-                            FROM shortage_requests sr5 
-                            WHERE sr5.college_id = s.college_id AND sr5.status = 'Allocated'
+                            WHERE sc.id = s.college_id AND st."deleteStatus" = true
                         ) - 
                         (SELECT COALESCE(SUM(h.rows * h.seats_per_row), 0) FROM examination_halls h WHERE h.college_id = s.college_id AND h.status = 'Approved')
                     ) as shortage
@@ -433,33 +416,19 @@ exports.getSeatingRequirement = async (req, res) => {
                         SELECT COUNT(*) 
                         FROM students s 
                         JOIN colleges sc ON s."collageName" ILIKE sc.name 
-                        WHERE sc.sitting_center_id = $1 AND s."deleteStatus" = true
-                    ) as permanent_load,
-                    (
-                        SELECT COALESCE(SUM(sr1.shortage), 0) 
-                        FROM shortage_requests sr1 
-                        WHERE sr1.allocated_college_id = $1 AND sr1.status = 'Allocated'
-                    ) as shortage_in,
-                    (
-                        SELECT COALESCE(SUM(sr2.shortage), 0) 
-                        FROM shortage_requests sr2 
-                        WHERE sr2.college_id = $1 AND sr2.status = 'Allocated'
-                    ) as shortage_out
+                        WHERE sc.id = $1 AND s."deleteStatus" = true
+                    ) as internal_load
             )
             SELECT 
-                (permanent_load + shortage_in - shortage_out) as total_required,
+                internal_load as total_required,
                 (
                     SELECT COALESCE(json_agg(json_build_object('name', src.name, 'count', src.count)), '[]'::json)
                     FROM (
-                        SELECT sc.name, (SELECT COUNT(*) FROM students s2 WHERE s2."collageName" ILIKE sc.name AND s2."deleteStatus" = true) as count
-                        FROM colleges sc
-                        WHERE sc.sitting_center_id = $1
-                        UNION ALL
-                        SELECT c.name, sr3.shortage as count
-                        FROM shortage_requests sr3
-                        JOIN colleges c ON sr3.college_id = c.id
-                        WHERE sr3.allocated_college_id = $1 AND sr3.status = 'Allocated'
+                        -- Show ONLY Institutional students in the breakdown
+                        SELECT c1.name, (SELECT COUNT(*) FROM students s1 WHERE s1."collageName" ILIKE c1.name AND s1."deleteStatus" = true) as count
+                        FROM colleges c1 WHERE c1.id = $1
                     ) src
+                    WHERE src.count > 0
                 ) as hosting_sources
             FROM seating_metrics;
         `;

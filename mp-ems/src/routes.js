@@ -46,7 +46,6 @@ import HallTicket from "./pages/Student/HallTicket";
 import ResultSheet from "./pages/Student/ResultSheet";
 import ManageCredits from "./pages/UniversityAdmin/ManageCredits";
 import HallApprovals from "./pages/UniversityAdmin/HallApprovals";
-import CenterMapping from "./pages/UniversityAdmin/CenterMapping";
 import PaperSetterDashboard from "./pages/PaperSetter/Dashboard";
 import PaperSetterSubmittedPapers from "./pages/PaperSetter/SubmittedPapers";
 import PaperSetterGuidelines from "./pages/PaperSetter/Guidelines";
@@ -191,7 +190,6 @@ const AppRoutes = () => {
       <Route path="/university/grading-policy" element={<Layout><ProtectedRoute element={<GradingPolicy />} /></Layout>} />
       <Route path="/university/manage-credits" element={<Layout><ProtectedRoute element={<ManageCredits />} /></Layout>} />
       <Route path="/university/hall-approvals" element={<Layout><ProtectedRoute element={<HallApprovals />} /></Layout>} />
-      <Route path="/university/center-mapping" element={<Layout><ProtectedRoute element={<CenterMapping />} /></Layout>} />
       <Route path="/smtp-settings" element={<Layout><ProtectedRoute element={<SmtpSettings />} /></Layout>} />
     </Routes>
   );

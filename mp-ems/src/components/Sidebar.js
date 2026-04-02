@@ -85,7 +85,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       { id: 18, name: 'Grading Policy', path: '/university/grading-policy', icon: <ShieldCheck size={20} /> },
       { id: 19, name: 'Manage Credits', path: '/university/manage-credits', icon: <BookOpen size={20} /> },
       { id: 23, name: 'Hall Approvals', path: '/university/hall-approvals', icon: <Building2 size={20} /> },
-      { id: 24, name: 'Center Mapping', path: '/university/center-mapping', icon: <ShieldCheck size={20} /> },
       // { id: 22, name: 'Paper Setter', path: '/paper-setter/dashboard', icon: <FileText size={20} /> },
     ];
 

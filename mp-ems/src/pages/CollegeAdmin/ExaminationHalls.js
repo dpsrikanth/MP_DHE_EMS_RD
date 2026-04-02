@@ -373,8 +373,8 @@ const ExaminationHalls = () => {
                 <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between transition-all hover:border-indigo-200 group">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-indigo-400">Examination Seating Load</span>
-                            <span className="text-[9px] font-bold text-slate-400 lowercase group-hover:text-indigo-300 italic">(Internal + Guest Students)</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-indigo-400">Total Students</span>
+                            <span className="text-[9px] font-bold text-slate-400 lowercase group-hover:text-indigo-300 italic">(Internal)</span>
                         </div>
                         <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-500 transition-colors">
                             <Users size={18} />
@@ -455,96 +455,6 @@ const ExaminationHalls = () => {
                 </div>
             </div>
 
-            {/* Institutional Breakdown and Utilization */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-200">
-                    <div className="flex items-center gap-4 mb-8">
-                        <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
-                            <Users size={24} />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-black text-slate-900">Seating Requirement Source</h3>
-                            <p className="text-sm text-slate-500 font-bold uppercase tracking-wider">Breakdown of internal & guest institutions</p>
-                        </div>
-                    </div>
-
-                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                        {hostingSources.length > 0 ? (
-                            hostingSources.map((src, i) => (
-                                <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-indigo-200 transition-all">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-2 h-8 bg-indigo-500 rounded-full" />
-                                        <span className="text-sm font-black text-slate-800">{src.name}</span>
-                                    </div>
-                                    <div className="px-4 py-1.5 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-black text-indigo-600">
-                                        {src.count} <span className="text-[10px] text-slate-400 font-bold ml-1 uppercase">Students</span>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="text-center py-12 bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
-                                <Users size={32} className="mx-auto text-slate-200 mb-3" />
-                                <p className="text-sm font-bold text-slate-400 italic">No students assigned to this center yet.</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[100px] -translate-y-1/2 translate-x-1/2" />
-                    <div className="relative z-10 flex flex-col h-full justify-between">
-                        <div className="flex justify-between items-start mb-8">
-                            <div>
-                                <h3 className="text-xl font-black text-white">Seating Governance</h3>
-                                <p className="text-emerald-400 text-[10px] font-black uppercase tracking-widest mt-1">Real-time capacity distribution</p>
-                            </div>
-                            <div className="text-right">
-                                <span className="text-4xl font-black text-white">
-                                    {totalStudents > 0 ? (((capacityStats.approved + capacityStats.allocated) / totalStudents) * 100).toFixed(1) : 0}%
-                                </span>
-                                <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mt-1 text-right">Total Coverage</p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-6">
-                            <div className="h-4 bg-white/10 rounded-full overflow-hidden p-1 border border-white/5 flex">
-                                <div 
-                                    className="h-full bg-emerald-500 rounded-l-full transition-all duration-1000 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
-                                    style={{ width: `${totalStudents > 0 ? Math.min(100, (capacityStats.approved / totalStudents) * 100) : 0}%` }}
-                                />
-                                <div 
-                                    className="h-full bg-blue-500 transition-all duration-1000 border-l border-white/30"
-                                    style={{ width: `${totalStudents > 0 ? Math.min(100 - (capacityStats.approved / totalStudents) * 100, (capacityStats.allocated / totalStudents) * 100) : 0}%` }}
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-2">
-                                <div className="flex flex-col gap-1">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-emerald-500 rounded-full ring-4 ring-emerald-500/20" />
-                                        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Internal</span>
-                                    </div>
-                                    <p className="text-sm font-black text-white">{capacityStats.approved}</p>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-blue-500 rounded-full ring-4 ring-blue-500/20" />
-                                        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">External</span>
-                                    </div>
-                                    <p className="text-sm font-black text-white">{capacityStats.allocated}</p>
-                                </div>
-                                <div className="flex flex-col gap-1 border-l border-white/10 pl-2">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-amber-500 rounded-full ring-4 ring-amber-500/20" />
-                                        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Target</span>
-                                    </div>
-                                    <p className="text-sm font-black text-white">{totalStudents}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             {/* Add Hall Form */}
             <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-8 relative overflow-hidden mb-12 transition-all hover:shadow-lg">
@@ -569,7 +479,7 @@ const ExaminationHalls = () => {
                         </div>
                     </div>
                 )}
-                <form onSubmit={handleCreateHall} className={`grid grid-cols-1 md:grid-cols-5 gap-8 items-end ${totalRooms < 1 ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
+                <form onSubmit={handleCreateHall} className={`grid grid-cols-1 md:grid-cols-6 gap-6 items-end ${totalRooms < 1 ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
                     <div className="space-y-3 col-span-1 md:col-span-2">
                         <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-4">Hall Code</label>
                         <input 
@@ -606,7 +516,7 @@ const ExaminationHalls = () => {
                         />
                     </div>
                     <div className="bg-indigo-50/50 p-4 rounded-[1.25rem] border border-indigo-100 flex flex-col items-center justify-center min-h-[58px]">
-                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Total Capacity</span>
+                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1 text-center leading-tight">Total Capacity</span>
                         <span className="text-xl font-black text-indigo-600 leading-none">
                             {(parseInt(newHall.rows) || 0) * (parseInt(newHall.seats_per_row) || 0)}
                         </span>
@@ -614,10 +524,10 @@ const ExaminationHalls = () => {
                     <button
                         type="submit"
                         disabled={totalRooms < 1}
-                        className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-widest text-xs disabled:bg-slate-300 disabled:shadow-none disabled:grayscale disabled:scale-100"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-widest text-[10px] disabled:bg-slate-300 disabled:shadow-none disabled:grayscale disabled:scale-100 w-full min-h-[58px]"
                     >
-                        <Save size={18} />
-                        <span>Add as Draft</span>
+                        <Save size={16} />
+                        <span className="leading-tight">Add Draft</span>
                     </button>
                 </form>
             </div>
@@ -762,6 +672,97 @@ const ExaminationHalls = () => {
                             )}
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            {/* Institutional Breakdown and Utilization */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-200">
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
+                            <Users size={24} />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black text-slate-900">Seating Requirement Source</h3>
+                            <p className="text-sm text-slate-500 font-bold uppercase tracking-wider">Breakdown of internal & guest institutions</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                        {hostingSources.length > 0 ? (
+                            hostingSources.map((src, i) => (
+                                <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-indigo-200 transition-all">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-2 h-8 bg-indigo-500 rounded-full" />
+                                        <span className="text-sm font-black text-slate-800">{src.name}</span>
+                                    </div>
+                                    <div className="px-4 py-1.5 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-black text-indigo-600">
+                                        {src.count} <span className="text-[10px] text-slate-400 font-bold ml-1 uppercase">Students</span>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-12 bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
+                                <Users size={32} className="mx-auto text-slate-200 mb-3" />
+                                <p className="text-sm font-bold text-slate-400 italic">No students assigned to this center yet.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[100px] -translate-y-1/2 translate-x-1/2" />
+                    <div className="relative z-10 flex flex-col h-full justify-between">
+                        <div className="flex justify-between items-start mb-8">
+                            <div>
+                                <h3 className="text-xl font-black text-white">Seating Governance</h3>
+                                <p className="text-emerald-400 text-[10px] font-black uppercase tracking-widest mt-1">Real-time capacity distribution</p>
+                            </div>
+                            <div className="text-right">
+                                <span className="text-4xl font-black text-white">
+                                    {totalStudents > 0 ? (((capacityStats.approved + capacityStats.allocated) / totalStudents) * 100).toFixed(1) : 0}%
+                                </span>
+                                <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mt-1 text-right">Total Coverage</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="h-4 bg-white/10 rounded-full overflow-hidden p-1 border border-white/5 flex">
+                                <div 
+                                    className="h-full bg-emerald-500 rounded-l-full transition-all duration-1000 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                                    style={{ width: `${totalStudents > 0 ? Math.min(100, (capacityStats.approved / totalStudents) * 100) : 0}%` }}
+                                />
+                                <div 
+                                    className="h-full bg-blue-500 transition-all duration-1000 border-l border-white/30"
+                                    style={{ width: `${totalStudents > 0 ? Math.min(100 - (capacityStats.approved / totalStudents) * 100, (capacityStats.allocated / totalStudents) * 100) : 0}%` }}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2">
+                                <div className="flex flex-col gap-1">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-emerald-500 rounded-full ring-4 ring-emerald-500/20" />
+                                        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Internal</span>
+                                    </div>
+                                    <p className="text-sm font-black text-white">{capacityStats.approved}</p>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full ring-4 ring-blue-500/20" />
+                                        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">External</span>
+                                    </div>
+                                    <p className="text-sm font-black text-white">{capacityStats.allocated}</p>
+                                </div>
+                                <div className="flex flex-col gap-1 border-l border-white/10 pl-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-amber-500 rounded-full ring-4 ring-amber-500/20" />
+                                        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Target</span>
+                                    </div>
+                                    <p className="text-sm font-black text-white">{totalStudents}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
