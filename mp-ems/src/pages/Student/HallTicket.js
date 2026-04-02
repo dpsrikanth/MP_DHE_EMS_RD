@@ -61,7 +61,7 @@ const HallTicket = () => {
     );
   }
 
-  const { student, exams, university, center } = data;
+  const { student, exams, university } = data;
 
   return (
     <div className="min-h-screen bg-slate-100 py-12 px-4 sm:px-6">
@@ -124,53 +124,18 @@ const HallTicket = () => {
         </div>
 
         {/* Student Info Grid */}
-        <div className="p-8 sm:p-12 grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12 border-b border-slate-100">
+        <div className="p-8 sm:p-12 grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12 border-b border-slate-50">
           <div className="space-y-6">
             <InfoItem label="Candidate Name" value={student.name} icon={<User size={16}/>} />
             <InfoItem label="Roll Number" value={student.rollnumber} icon={<GraduationCap size={16}/>} bold />
             <InfoItem label="Program & Semester" value={`${student.programName} - ${student.semister}`} icon={<Building size={16}/>} />
-            <InfoItem label="Home College / Institute" value={student.collageName} icon={<Building size={16}/>} />
+            <InfoItem label="College / Institute" value={student.collageName} icon={<MapPin size={16}/>} />
           </div>
           <div className="space-y-6">
             <InfoItem label="Father's Name" value={student.fatherName || 'N/A'} icon={<User size={16}/>} />
             <InfoItem label="Examination" value={examName} icon={<Calendar size={16}/>} />
             <InfoItem label="Admission No" value={student.admission_no || 'N/A'} />
             <InfoItem label="Gender" value={student.gender || 'N/A'} />
-          </div>
-        </div>
-
-        {/* Examination Center Card */}
-        <div className="p-8 sm:p-12 border-b border-slate-100">
-          <h3 className="text-xl font-black text-slate-900 mb-6 tracking-tight flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
-              <MapPin size={18} />
-            </div>
-            Examination Center
-          </h3>
-          <div className={`relative rounded-[1.5rem] p-6 overflow-hidden border ${center?.is_external ? 'bg-indigo-50 border-indigo-100' : 'bg-emerald-50 border-emerald-100'}`}>
-            {/* Background blob */}
-            <div className={`absolute top-0 right-0 w-48 h-48 rounded-full blur-[80px] opacity-30 -mr-16 -mt-16 ${center?.is_external ? 'bg-indigo-400' : 'bg-emerald-400'}`} />
-            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${center?.is_external ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                  <MapPin size={26} />
-                </div>
-                <div>
-                  <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${center?.is_external ? 'text-indigo-500' : 'text-emerald-600'}`}>
-                    {center?.is_external ? 'External Examination Center' : 'Home Examination Center'}
-                  </p>
-                  <p className="text-xl font-black text-slate-900 leading-tight">{center?.name || student.collageName}</p>
-                  {(center?.address || center?.city) && (
-                    <p className="text-sm text-slate-500 font-medium mt-1">
-                      {[center.address, center.city].filter(Boolean).join(', ')}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className={`flex-shrink-0 px-5 py-2 rounded-2xl font-black text-xs uppercase tracking-widest border ${center?.is_external ? 'bg-indigo-600 text-white border-indigo-700 shadow-lg shadow-indigo-500/20' : 'bg-emerald-600 text-white border-emerald-700 shadow-lg shadow-emerald-500/20'}`}>
-                {center?.is_external ? 'External' : 'Home Center'}
-              </div>
-            </div>
           </div>
         </div>
 
