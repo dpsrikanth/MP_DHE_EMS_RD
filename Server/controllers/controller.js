@@ -3500,13 +3500,25 @@ const getHallTicketData = async (req, res) => {
     const { examName, semesterId } = req.params;
     const userId = req.user.id;
 
-    // 1. Get complete student details
+    // 1. Get complete student details including college info and sitting center
     const studentRes = await client.query(
-      `SELECT id, name, rollnumber, "programName", semister, "collageName", 
-              "fatherName", email, "contactNumber", address, adharnumber,
-              admission_no, batch, section, gender
-       FROM students 
-       WHERE user_id = $1 AND "deleteStatus" = true`,
+      `SELECT 
+          s.id, s.name, s.rollnumber, s."programName", s.semister, s."collageName", 
+          s."fatherName", s.email, s."contactNumber", s.address, s.adharnumber,
+          s.admission_no, s.batch, s.section, s.gender,
+          -- Home college details
+          home_col.id AS home_college_id,
+          home_col.address AS home_college_address,
+          home_col.city AS home_college_city,
+          -- Sitting center details (may be null if sitting at own college)
+          center_col.id AS center_id,
+          center_col.name AS center_name,
+          center_col.address AS center_address,
+          center_col.city AS center_city
+       FROM students s
+       LEFT JOIN colleges home_col ON home_col.name ILIKE s."collageName"
+       LEFT JOIN colleges center_col ON home_col.sitting_center_id = center_col.id
+       WHERE s.user_id = $1 AND s."deleteStatus" = true`,
       [userId]
     );
 
@@ -3514,7 +3526,41 @@ const getHallTicketData = async (req, res) => {
       return res.status(404).json({ message: "Student record not found." });
     }
 
-    const student = studentRes.rows[0];
+    const studentRow = studentRes.rows[0];
+
+    // Pull out student and center separately
+    const student = {
+      id: studentRow.id,
+      name: studentRow.name,
+      rollnumber: studentRow.rollnumber,
+      programName: studentRow.programName,
+      semister: studentRow.semister,
+      collageName: studentRow.collageName,
+      fatherName: studentRow.fatherName,
+      email: studentRow.email,
+      contactNumber: studentRow.contactNumber,
+      address: studentRow.address,
+      adharnumber: studentRow.adharnumber,
+      admission_no: studentRow.admission_no,
+      batch: studentRow.batch,
+      section: studentRow.section,
+      gender: studentRow.gender,
+    };
+
+    // Determine examination center: external center if set, otherwise own college
+    const center = studentRow.center_id
+      ? {
+          name: studentRow.center_name,
+          address: studentRow.center_address,
+          city: studentRow.center_city,
+          is_external: true,
+        }
+      : {
+          name: studentRow.collageName,
+          address: studentRow.home_college_address,
+          city: studentRow.home_college_city,
+          is_external: false,
+        };
 
     // 2. Fetch registered exams for this specific series
     const query = `
@@ -3549,8 +3595,9 @@ const getHallTicketData = async (req, res) => {
 
     res.json({
       student,
+      center,
       exams: examRes.rows,
-      university: "Madhya Pradesh University of Excellence", // Placeholder or fetch from config
+      university: "Madhya Pradesh University of Excellence",
       generatedAt: new Date()
     });
   } catch (error) {
