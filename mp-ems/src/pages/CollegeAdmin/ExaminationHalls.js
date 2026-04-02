@@ -30,7 +30,7 @@ const ExaminationHalls = () => {
     const filteredHalls = useMemo(() => {
         if (!searchQuery.trim()) return halls;
         const query = searchQuery.toLowerCase();
-        return halls.filter(hall => 
+        return halls.filter(hall =>
             hall.hall_code.toLowerCase().includes(query)
         );
     }, [halls, searchQuery]);
@@ -40,19 +40,26 @@ const ExaminationHalls = () => {
             const cap = parseInt(hall.total_capacity) || ((parseInt(hall.rows) || 0) * (parseInt(hall.seats_per_row) || 0));
             if (hall.status === 'Approved') acc.approved += cap;
             else if (hall.status === 'Pending') acc.pending += cap;
-            else acc.draft += cap;
-            acc.total += cap;
             return acc;
-        }, { approved: 0, pending: 0, draft: 0, total: 0 });
+        }, { approved: 0, pending: 0 });
 
-        const allocated = shortageRequests
-            .filter(r => r.status === 'Allocated')
-            .reduce((sum, r) => sum + (parseInt(r.shortage) || 0), 0);
+        // Calculate total physical load (Students actually staying in this building)
+        const buildingLoad = hostingSources.reduce((sum, src) => sum + (parseInt(src.count) || 0), 0);
+        
+        // Calculate guest students (non-institutional)
+        const guests = hostingSources
+            .filter(src => src.is_internal !== true)
+            .reduce((sum, src) => sum + (parseInt(src.count) || 0), 0);
 
-        return { ...stats, allocated };
-    }, [halls, shortageRequests]);
+        return {
+            approved: stats.approved,
+            pending: stats.pending,
+            allocated: guests,
+            totalLoad: buildingLoad
+        };
+    }, [halls, hostingSources]);
 
-    const approvedCapacity = capacityStats.approved;
+    const { approved: approvedCapacity, pending: pendingCapacity, totalLoad } = capacityStats;
 
     useEffect(() => {
         fetchHalls();
@@ -113,9 +120,9 @@ const ExaminationHalls = () => {
             const token = localStorage.getItem('token');
             const res = await fetch('http://localhost:8080/api/college-admin/total-rooms', {
                 method: 'PUT',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}` 
+                    Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({ total_rooms: totalRooms })
             });
@@ -161,9 +168,9 @@ const ExaminationHalls = () => {
             const token = localStorage.getItem('token');
             const res = await fetch(apiBase, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}` 
+                    Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify(newHall)
             });
@@ -190,9 +197,9 @@ const ExaminationHalls = () => {
             const token = localStorage.getItem('token');
             const res = await fetch(`${apiBase}/${editingHall.id}`, {
                 method: 'PUT',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}` 
+                    Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify(editingHall)
             });
@@ -238,9 +245,9 @@ const ExaminationHalls = () => {
 
             const res = await fetch(`${apiBase}/shortage-request`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}` 
+                    Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     student_count: totalStudents,
@@ -301,7 +308,7 @@ const ExaminationHalls = () => {
         }
     };
 
-    const isEditable = (status) => ['Draft', 'Rejected', 'Approved'].includes(status);
+    const isEditable = (status) => ['Draft', 'Rejected'].includes(status);
 
     if (loading && halls.length === 0) return (
         <div className="flex justify-center items-center h-64">
@@ -337,15 +344,15 @@ const ExaminationHalls = () => {
                 <div className="flex items-center gap-4">
                     {isEditingRooms ? (
                         <>
-                            <input 
-                                type="number" 
+                            <input
+                                type="number"
                                 min="0"
-                                value={totalRooms} 
+                                value={totalRooms}
                                 onChange={e => setTotalRooms(e.target.value)}
                                 className="w-28 p-4 bg-slate-50 border border-indigo-200 rounded-2xl text-center text-xl font-black text-indigo-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
                                 autoFocus
                             />
-                            <button 
+                            <button
                                 onClick={handleUpdateTotalRooms}
                                 className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 uppercase tracking-widest text-xs"
                             >
@@ -357,7 +364,7 @@ const ExaminationHalls = () => {
                             <div className="w-28 p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center text-xl font-black text-slate-700">
                                 {totalRooms}
                             </div>
-                            <button 
+                            <button
                                 onClick={() => setIsEditingRooms(true)}
                                 className="px-8 py-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-black rounded-2xl shadow-sm transition-all active:scale-95 uppercase tracking-widest text-xs"
                             >
@@ -398,39 +405,33 @@ const ExaminationHalls = () => {
                     </div>
                 </div>
 
-                <div className={`p-6 rounded-[2rem] border shadow-sm flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md ${
-                    approvedCapacity < totalStudents 
-                    ? 'bg-rose-50 border-rose-100' 
-                    : 'bg-white border-blue-100'
-                }`}>
-                    <div className={`absolute top-0 right-0 w-32 h-32 rounded-full translate-x-16 -translate-y-16 pointer-events-none ${
-                        approvedCapacity < totalStudents ? 'bg-rose-100/50' : 'bg-blue-50'
-                    }`} />
+                <div className={`p-6 rounded-[2rem] border shadow-sm flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md ${approvedCapacity < totalLoad
+                        ? 'bg-rose-50 border-rose-100'
+                        : 'bg-white border-blue-100'
+                    }`}>
+                    <div className={`absolute top-0 right-0 w-32 h-32 rounded-full translate-x-16 -translate-y-16 pointer-events-none ${approvedCapacity < totalLoad ? 'bg-rose-100/50' : 'bg-blue-50'
+                        }`} />
                     <div className="flex items-center justify-between mb-4 relative z-10">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${
-                            approvedCapacity < totalStudents ? 'text-rose-600' : 'text-blue-500'
-                        }`}>
-                            {approvedCapacity < totalStudents ? 'Shortage' : 'Surplus Capacity'}
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${approvedCapacity < totalLoad ? 'text-rose-600' : 'text-blue-500'
+                            }`}>
+                            {approvedCapacity < totalLoad ? 'Shortage' : 'Surplus Capacity'}
                         </span>
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                             approvedCapacity < totalStudents ? 'bg-rose-100 text-rose-500' : 'bg-blue-50 text-blue-500'
-                        }`}>
-                            {approvedCapacity < totalStudents ? <XCircle size={18} /> : <CheckCircle2 size={18} />}
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${approvedCapacity < totalLoad ? 'bg-rose-100 text-rose-500' : 'bg-blue-50 text-blue-500'
+                            }`}>
+                            {approvedCapacity < totalLoad ? <XCircle size={18} /> : <CheckCircle2 size={18} />}
                         </div>
                     </div>
                     <div className="relative z-10 flex items-center justify-between w-full">
                         <div className="flex items-baseline gap-1">
-                            <span className={`text-4xl font-black ${
-                                approvedCapacity < totalStudents ? 'text-rose-700' : 'text-blue-600'
-                            }`}>
-                                {Math.abs(totalStudents - approvedCapacity)}
+                            <span className={`text-4xl font-black ${approvedCapacity < totalLoad ? 'text-rose-700' : 'text-blue-600'
+                                }`}>
+                                {Math.abs(totalLoad - approvedCapacity)}
                             </span>
-                            <span className={`text-xs font-black uppercase tracking-widest ml-1 ${
-                                approvedCapacity < totalStudents ? 'text-rose-400' : 'text-blue-400'
-                            }`}>Seats</span>
+                            <span className={`text-xs font-black uppercase tracking-widest ml-1 ${approvedCapacity < totalLoad ? 'text-rose-400' : 'text-blue-400'
+                                }`}>Seats</span>
                         </div>
-                        {approvedCapacity < totalStudents && (
-                            <button 
+                        {approvedCapacity < totalLoad && (
+                            <button
                                 onClick={handleReportShortage}
                                 className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2"
                             >
@@ -450,7 +451,7 @@ const ExaminationHalls = () => {
                         </div>
                     </div>
                     <div className="relative z-10">
-                        <span className="text-4xl font-black text-amber-600">{capacityStats.pending}</span>
+                        <span className="text-4xl font-black text-amber-600">{pendingCapacity}</span>
                     </div>
                 </div>
             </div>
@@ -482,35 +483,35 @@ const ExaminationHalls = () => {
                 <form onSubmit={handleCreateHall} className={`grid grid-cols-1 md:grid-cols-6 gap-6 items-end ${totalRooms < 1 ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
                     <div className="space-y-3 col-span-1 md:col-span-2">
                         <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-4">Hall Code</label>
-                        <input 
+                        <input
                             type="text"
                             disabled={totalRooms < 1}
                             value={newHall.hall_code}
-                            onChange={(e) => setNewHall({...newHall, hall_code: e.target.value.toUpperCase()})}
+                            onChange={(e) => setNewHall({ ...newHall, hall_code: e.target.value.toUpperCase() })}
                             placeholder="HALL-A"
                             className="w-full p-4 bg-slate-50 border border-slate-200 rounded-[1.25rem] text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all uppercase placeholder:text-slate-300"
                         />
                     </div>
                     <div className="space-y-3">
                         <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-4">Rows</label>
-                        <input 
+                        <input
                             type="number"
                             min="1"
                             disabled={totalRooms < 1}
                             value={newHall.rows}
-                            onChange={(e) => setNewHall({...newHall, rows: e.target.value})}
+                            onChange={(e) => setNewHall({ ...newHall, rows: e.target.value })}
                             placeholder="10"
                             className="w-full p-4 bg-slate-50 border border-slate-200 rounded-[1.25rem] text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300"
                         />
                     </div>
                     <div className="space-y-3">
                         <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-4">Seats/Row</label>
-                        <input 
+                        <input
                             type="number"
                             min="1"
                             disabled={totalRooms < 1}
                             value={newHall.seats_per_row}
-                            onChange={(e) => setNewHall({...newHall, seats_per_row: e.target.value})}
+                            onChange={(e) => setNewHall({ ...newHall, seats_per_row: e.target.value })}
                             placeholder="8"
                             className="w-full p-4 bg-slate-50 border border-slate-200 rounded-[1.25rem] text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300"
                         />
@@ -542,11 +543,11 @@ const ExaminationHalls = () => {
                     <div className="flex items-center gap-4">
                         <div className="relative">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Filter by hall code..." 
+                                placeholder="Filter by hall code..."
                                 className="pl-11 pr-4 py-3 bg-white border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all w-full md:w-64"
                             />
                         </div>
@@ -606,7 +607,7 @@ const ExaminationHalls = () => {
                                         <td className="py-5 px-8 text-right">
                                             <div className="flex items-center justify-end gap-2">
                                                 {(hall.status === 'Draft' || hall.status === 'Rejected') && (
-                                                    <button 
+                                                    <button
                                                         disabled={totalRooms < 1}
                                                         onClick={() => handleSubmitHall(hall.id)}
                                                         className="h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-500/20 flex items-center gap-2 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
@@ -616,33 +617,31 @@ const ExaminationHalls = () => {
                                                         <span>Send</span>
                                                     </button>
                                                 )}
-                                                
-                                                <button 
+
+                                                <button
                                                     disabled={!isEditable(hall.status) || totalRooms < 1}
                                                     onClick={() => {
                                                         setEditingHall(hall);
                                                         setShowEditModal(true);
                                                     }}
-                                                    className={`w-10 h-10 rounded-xl transition-all flex items-center justify-center border ${
-                                                        isEditable(hall.status) && totalRooms >= 1
-                                                        ? 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 border-slate-200 hover:border-indigo-200' 
-                                                        : 'text-slate-200 border-slate-100 cursor-not-allowed opacity-50'
-                                                    }`}
+                                                    className={`w-10 h-10 rounded-xl transition-all flex items-center justify-center border ${isEditable(hall.status) && totalRooms >= 1
+                                                            ? 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 border-slate-200 hover:border-indigo-200'
+                                                            : 'text-slate-200 border-slate-100 cursor-not-allowed opacity-50'
+                                                        }`}
                                                     title={totalRooms < 1 ? "Set room limit first" : isEditable(hall.status) ? "Edit Hall" : "Editing Locked"}
                                                 >
                                                     <Pencil size={18} />
                                                 </button>
-                                                <button 
+                                                <button
                                                     disabled={(!isEditable(hall.status) && hall.status !== 'Pending') || totalRooms < 1}
                                                     onClick={() => {
                                                         setDeleteTarget(hall);
                                                         setShowDeleteModal(true);
                                                     }}
-                                                    className={`w-10 h-10 rounded-xl transition-all flex items-center justify-center border ${
-                                                        (isEditable(hall.status) || hall.status === 'Pending') && totalRooms >= 1
-                                                        ? 'text-slate-400 hover:text-red-500 hover:bg-red-50 border-slate-200 hover:border-red-200' 
-                                                        : 'text-slate-200 border-slate-100 cursor-not-allowed opacity-50'
-                                                    }`}
+                                                    className={`w-10 h-10 rounded-xl transition-all flex items-center justify-center border ${(isEditable(hall.status) || hall.status === 'Pending') && totalRooms >= 1
+                                                            ? 'text-slate-400 hover:text-red-500 hover:bg-red-50 border-slate-200 hover:border-red-200'
+                                                            : 'text-slate-200 border-slate-100 cursor-not-allowed opacity-50'
+                                                        }`}
                                                     title={hall.status === 'Pending' ? "Delete Pending Request" : "Delete Hall"}
                                                 >
                                                     <Trash2 size={20} />
@@ -728,11 +727,11 @@ const ExaminationHalls = () => {
 
                         <div className="space-y-6">
                             <div className="h-4 bg-white/10 rounded-full overflow-hidden p-1 border border-white/5 flex">
-                                <div 
+                                <div
                                     className="h-full bg-emerald-500 rounded-l-full transition-all duration-1000 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
                                     style={{ width: `${totalStudents > 0 ? Math.min(100, (capacityStats.approved / totalStudents) * 100) : 0}%` }}
                                 />
-                                <div 
+                                <div
                                     className="h-full bg-blue-500 transition-all duration-1000 border-l border-white/30"
                                     style={{ width: `${totalStudents > 0 ? Math.min(100 - (capacityStats.approved / totalStudents) * 100, (capacityStats.allocated / totalStudents) * 100) : 0}%` }}
                                 />
@@ -787,32 +786,32 @@ const ExaminationHalls = () => {
                                     {(parseInt(editingHall.rows) || 0) * (parseInt(editingHall.seats_per_row) || 0)}
                                 </div>
                             </div>
-                            
+
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hall Code</label>
-                                <input 
+                                <input
                                     type="text"
                                     value={editingHall.hall_code}
-                                    onChange={(e) => setEditingHall({...editingHall, hall_code: e.target.value.toUpperCase()})}
+                                    onChange={(e) => setEditingHall({ ...editingHall, hall_code: e.target.value.toUpperCase() })}
                                     className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 uppercase"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rows</label>
-                                    <input 
+                                    <input
                                         type="number"
                                         value={editingHall.rows}
-                                        onChange={(e) => setEditingHall({...editingHall, rows: e.target.value})}
+                                        onChange={(e) => setEditingHall({ ...editingHall, rows: e.target.value })}
                                         className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10"
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Seats/Row</label>
-                                    <input 
+                                    <input
                                         type="number"
                                         value={editingHall.seats_per_row}
-                                        onChange={(e) => setEditingHall({...editingHall, seats_per_row: e.target.value})}
+                                        onChange={(e) => setEditingHall({ ...editingHall, seats_per_row: e.target.value })}
                                         className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10"
                                     />
                                 </div>
@@ -840,13 +839,13 @@ const ExaminationHalls = () => {
                                 This will permanently remove <span className="font-black text-slate-900">{deleteTarget?.hall_code}</span> and its infrastructure mapping from the university records.
                             </p>
                             <div className="flex gap-4 w-full">
-                                <button 
+                                <button
                                     className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
                                     onClick={() => setShowDeleteModal(false)}
                                 >
                                     Abort
                                 </button>
-                                <button 
+                                <button
                                     className="flex-1 py-4 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-2xl shadow-lg shadow-rose-500/20 transition-all uppercase tracking-widest"
                                     onClick={handleDeleteConfirm}
                                 >

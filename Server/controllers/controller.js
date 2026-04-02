@@ -1141,7 +1141,13 @@ const getColleges = async (req, res) => {
       SELECT c.id, c.name AS college_name, c.college_code, c.university_id, 
              u.name AS university_name, c.address, c.status, c.created_at,
              c.latitude, c.longitude,
-             (SELECT COALESCE(SUM(h.rows * h.seats_per_row), 0) FROM examination_halls h WHERE h.college_id = c.id AND h.status = 'Approved') as internal_capacity
+             (SELECT COALESCE(SUM(h.rows * h.seats_per_row), 0) FROM examination_halls h WHERE h.college_id = c.id AND h.status = 'Approved') as internal_capacity,
+             (
+                -- Total Institutional Students (matches the College Admin's "Internal" view)
+                SELECT COUNT(*) FROM students s 
+                JOIN colleges sc ON s."collageName" ILIKE sc.name 
+                WHERE sc.id = c.id AND s."deleteStatus" = true
+             ) as occupied_seats
       FROM colleges c 
       LEFT JOIN universities u ON c.university_id = u.id
       WHERE 1=1

@@ -159,13 +159,22 @@ const HallApprovals = () => {
 
     const nearbyColleges = selectedRequest ? colleges
         .filter(c => c.id !== selectedRequest.college_id) // Exclude the host itself
-        .map(c => ({
-            ...c,
-            distance: calculateDistance(
+        .map(c => {
+            const distance = calculateDistance(
                 selectedRequest.latitude, selectedRequest.longitude,
                 c.latitude, c.longitude
-            )
-        }))
+            );
+            const internalCapacity = parseInt(c.internal_capacity) || 0;
+            const occupiedSeats = parseInt(c.occupied_seats) || 0;
+            const availableSeats = Math.max(0, internalCapacity - occupiedSeats);
+
+            return {
+                ...c,
+                distance,
+                availableSeats,
+                isFilled: availableSeats <= 0
+            };
+        })
         .filter(c => c.distance <= 8) // Within 8km
         .sort((a, b) => a.distance - b.distance)
         : [];
@@ -208,53 +217,38 @@ const HallApprovals = () => {
 
             {/* Shortage Requests */}
             {shortageRequests.length > 0 && (
-                <div className="relative bg-gradient-to-br from-rose-900 to-rose-800 rounded-[2rem] p-7 shadow-2xl shadow-rose-900/30 overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/20 rounded-full blur-[80px] -mr-20 -mt-20" />
+                <div className="relative bg-rose-50 rounded-[2rem] p-8 shadow-sm border border-rose-100 overflow-hidden">
                     <div className="relative z-10">
-                        <div className="flex items-center gap-3 mb-7">
-                            <div className="w-10 h-10 bg-white/10 text-rose-300 rounded-xl flex items-center justify-center border border-white/10">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="w-10 h-10 bg-rose-100 text-rose-500 rounded-xl flex items-center justify-center">
                                 <AlertTriangle size={20} />
                             </div>
                             <div>
-                                <h2 className="text-lg font-black text-white">Infrastructure Shortages</h2>
-                                <p className="text-[10px] font-black text-rose-300 uppercase tracking-[0.2em]">Colleges requiring external center allocation</p>
-                            </div>
-                            <div className="ml-auto px-3 py-1.5 bg-white/10 border border-white/10 rounded-full text-rose-200 text-xs font-black">
-                                {shortageRequests.length} Pending
+                                <h2 className="text-xl font-black text-slate-900">Infrastructure Shortages</h2>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Colleges requiring external center allocation</p>
                             </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {shortageRequests.map(req => (
-                                <div key={req.id} className="bg-white/10 backdrop-blur-sm p-5 rounded-2xl border border-white/10 flex flex-col gap-4 hover:bg-white/15 transition-all">
-                                    <div className="flex justify-between items-start gap-2">
-                                        <span className="text-sm font-black text-white leading-tight">{req.college_name}</span>
-                                        <span className="flex-shrink-0 px-2 py-1 bg-amber-400/20 text-amber-300 text-[9px] font-black uppercase tracking-widest rounded-lg border border-amber-400/30">Pending</span>
+                                <div key={req.id} className="bg-white p-6 rounded-2xl border border-rose-100/50 shadow-sm flex flex-col gap-5 hover:shadow-md transition-all">
+                                    <div className="flex justify-between items-start gap-4">
+                                        <span className="text-sm font-black text-slate-800 leading-tight">{req.college_name}</span>
+                                        <span className="flex-shrink-0 px-3 py-1 bg-amber-50 text-amber-600 text-[9px] font-black uppercase tracking-widest rounded-lg border border-amber-200">Pending</span>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-2 text-center">
-                                        <div className="bg-white/10 rounded-xl p-3 border border-white/10">
-                                            <div className="text-xl font-black text-white">{req.student_count}</div>
-                                            <div className="text-[9px] font-black text-rose-300 uppercase tracking-widest mt-0.5">Total Load</div>
+                                    <div className="grid grid-cols-2 gap-3 text-center">
+                                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                            <div className="text-xl font-black text-slate-800">{req.student_count}</div>
+                                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Students</div>
                                         </div>
-                                        <div className="bg-rose-500/30 rounded-xl p-3 border border-rose-400/30">
-                                            <div className="text-xl font-black text-rose-200">{req.shortage}</div>
-                                            <div className="text-[9px] font-black text-rose-400 uppercase tracking-widest mt-0.5">Shortage</div>
-                                        </div>
-                                    </div>
-                                    <div className="px-3 py-2 bg-white/5 rounded-xl border border-white/10">
-                                        <div className="text-[9px] font-black text-rose-300 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                                            <Users size={10} /><span>Guest Sources</span>
-                                        </div>
-                                        <div className="flex flex-wrap gap-1">
-                                            {parseHostingSources(req.hosting_sources).map((src, i) => (
-                                                <span key={i} className="px-2 py-0.5 bg-indigo-500/30 text-indigo-200 text-[9px] font-bold rounded-lg border border-indigo-400/20">
-                                                    {src.name} ({src.count})
-                                                </span>
-                                            ))}
+                                        <div className="bg-rose-50 rounded-xl p-4 border border-rose-100">
+                                            <div className="text-xl font-black text-rose-600">{req.shortage}</div>
+                                            <div className="text-[9px] font-black text-rose-400 uppercase tracking-widest mt-1">Shortage</div>
                                         </div>
                                     </div>
+                                    
                                     <button
                                         onClick={() => { setSelectedRequest(req); setShowAllocateModal(true); }}
-                                        className="w-full py-3 bg-white hover:bg-rose-50 text-rose-700 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg"
+                                        className="w-full py-3.5 bg-slate-900 hover:bg-black text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20"
                                     >
                                         Allocate Center <ArrowRight size={14} />
                                     </button>
@@ -359,34 +353,34 @@ const HallApprovals = () => {
                                     </div>
                                 </div>
 
-                                {/* Hosting Sources */}
-                                <div className="mb-5">
-                                    {sources.length > 0 ? (
-                                        <>
-                                            <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                                                <Users size={11} /><span>Hosting Institutions</span>
-                                            </div>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {sources.map((src, i) => (
-                                                    <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[10px] font-black rounded-xl border border-indigo-100">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
-                                                        <span>{src.name}</span>
-                                                        <span className="ml-0.5 px-2 py-0.5 bg-indigo-500 text-white rounded-full text-[8px] font-black whitespace-nowrap">{src.count} students</span>
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </>
-                                    ) : hall.assigned_to_center ? (
-                                        <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-xl border border-amber-100">
-                                            <Info size={14} className="text-amber-500 flex-shrink-0" />
-                                            <p className="text-[10px] font-bold text-amber-700 leading-tight">
-                                                Students at <span className="font-black italic">{hall.assigned_to_center}</span>
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        <p className="text-[10px] font-bold text-slate-300 italic text-center py-2">No students mapped yet</p>
-                                    )}
-                                </div>
+                                {/* Hosting Institutions Section */}
+                                 <div className="mb-5">
+                                     <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">
+                                         <Users size={11} /><span>Hosting Institutions</span>
+                                     </div>
+                                     <div className="space-y-2 max-h-[140px] overflow-y-auto custom-scrollbar pr-1">
+                                         {sources && sources.length > 0 ? (
+                                             sources.map((src, idx) => (
+                                                 <div key={idx} className="flex items-center justify-between p-3 bg-slate-50/80 rounded-[1.25rem] border border-slate-100/50 group-hover:border-purple-200/50 transition-all hover:bg-white hover:shadow-sm">
+                                                     <div className="flex items-center gap-3 min-w-0">
+                                                         <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.4)] shrink-0" />
+                                                         <span className="text-[11px] font-black text-slate-700 truncate tracking-tight">{src.name}</span>
+                                                     </div>
+                                                     <div className="flex items-center gap-1.5 shrink-0">
+                                                         <span className="text-[10px] font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100 whitespace-nowrap tabular-nums">
+                                                             {src.count}
+                                                         </span>
+                                                     </div>
+                                                 </div>
+                                             ))
+                                         ) : (
+                                             <div className="py-4 border-2 border-dashed border-slate-100 rounded-2xl flex flex-col items-center justify-center gap-1">
+                                                 <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No Guests</p>
+                                                 <p className="text-[9px] font-bold text-slate-300 tracking-tight">Dedicated Center</p>
+                                             </div>
+                                         )}
+                                     </div>
+                                 </div>
 
                                 {/* Action Buttons */}
                                 <div className="mt-auto pt-5 border-t border-slate-100">
@@ -467,12 +461,20 @@ const HallApprovals = () => {
                                             <option value="">Choose a nearby center...</option>
                                             {nearbyColleges.map(college => (
                                                 <option key={college.id} value={college.id}>
-                                                    {college.college_name} — {college.distance}km ({college.internal_capacity || 0} Seats)
+                                                    {college.college_name} — {college.distance}km ({college.availableSeats} Seats Available)
                                                 </option>
                                             ))}
                                         </select>
 
-                                        {targetCollegeId && nearbyColleges.find(c => String(c.id) === String(targetCollegeId))?.internal_capacity === 0 && (
+                                        {targetCollegeId && nearbyColleges.find(c => String(c.id) === String(targetCollegeId))?.isFilled ? (
+                                            <div className="flex items-center gap-3 p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 animate-in fade-in slide-in-from-top-1">
+                                                <XCircle size={20} className="shrink-0" />
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-black uppercase tracking-wider">Capacity Error</span>
+                                                    <span className="text-[10px] font-bold leading-tight mt-0.5">Seats are already filled select another college</span>
+                                                </div>
+                                            </div>
+                                        ) : targetCollegeId && nearbyColleges.find(c => String(c.id) === String(targetCollegeId))?.internal_capacity === 0 && (
                                             <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-700 animate-in fade-in slide-in-from-top-1">
                                                 <AlertTriangle size={20} className="shrink-0" />
                                                 <div className="flex flex-col">
@@ -506,7 +508,7 @@ const HallApprovals = () => {
                             </button>
                             <button 
                                 onClick={handleAllocate}
-                                disabled={allocating || !targetCollegeId}
+                                disabled={allocating || !targetCollegeId || nearbyColleges.find(c => String(c.id) === String(targetCollegeId))?.isFilled}
                                 className="flex-[2] py-3 bg-purple-600 hover:bg-purple-700 text-white text-sm font-black rounded-xl shadow-lg shadow-purple-500/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-widest"
                             >
                                 {allocating ? (

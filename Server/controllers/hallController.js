@@ -88,20 +88,17 @@ exports.updateHall = async (req, res) => {
         }
 
         const currentStatus = checkResult.rows[0].status;
-        if (currentStatus !== 'Draft' && currentStatus !== 'Rejected' && currentStatus !== 'Approved') {
-            return res.status(400).json({ error: `Cannot edit hall in ${currentStatus} status` });
+        if (currentStatus !== 'Draft' && currentStatus !== 'Rejected') {
+            return res.status(400).json({ error: `Cannot edit hall in ${currentStatus} status. Approved halls are locked.` });
         }
-
-        // If editing an approved hall, revert to draft so it requires re-approval
-        const newStatus = currentStatus === 'Approved' ? 'Draft' : currentStatus;
 
         const query = `
             UPDATE examination_halls 
-            SET hall_code = $1, rows = $2, seats_per_row = $3, status = $4, updated_at = CURRENT_TIMESTAMP
-            WHERE id = $5 AND college_id = $6
+            SET hall_code = $1, rows = $2, seats_per_row = $3, status = 'Draft', updated_at = CURRENT_TIMESTAMP
+            WHERE id = $4 AND college_id = $5
             RETURNING *;
         `;
-        const result = await db.query(query, [hall_code, rows, seats_per_row, newStatus, id, college_id]);
+        const result = await db.query(query, [hall_code, rows, seats_per_row, id, college_id]);
         res.status(200).json({ message: "Hall updated successfully", data: result.rows[0] });
     } catch (error) {
         console.error("Update hall error:", error);
@@ -170,10 +167,10 @@ exports.getAllHallsForApproval = async (req, res) => {
                 h.*, 
                 c.name as college_name,
                 (
-                    SELECT COUNT(*) 
-                    FROM students s 
-                    JOIN colleges sc ON s."collageName" ILIKE sc.name 
-                    WHERE sc.id = c.id AND s."deleteStatus" = true
+                    SELECT 
+                        (SELECT COUNT(*) FROM students s JOIN colleges sc ON s."collageName" ILIKE sc.name WHERE sc.id = c.id AND s."deleteStatus" = true) +
+                        (SELECT COALESCE(SUM(sr.shortage), 0) FROM shortage_requests sr WHERE sr.allocated_college_id = c.id AND sr.status = 'Allocated') -
+                        (SELECT COALESCE(SUM(sr.shortage), 0) FROM shortage_requests sr WHERE sr.college_id = c.id AND sr.status = 'Allocated')
                 ) as total_required,
                 -- Total capacity already approved for this college
                 (
@@ -185,23 +182,6 @@ exports.getAllHallsForApproval = async (req, res) => {
                 (
                     SELECT COALESCE(json_agg(json_build_object('name', src.name, 'count', src.count)), '[]'::json)
                     FROM (
-                        -- Institutional students
-                        SELECT 
-                            c.name,
-                            (SELECT COUNT(*) FROM students s2 
-                             JOIN colleges sc2 ON s2."collageName" ILIKE sc2.name
-                             WHERE sc2.id = c.id AND s2."deleteStatus" = true) as count
-                        UNION ALL
-                        -- Guest students mapped here via sitting_center_id
-                        SELECT 
-                            sc.name,
-                            (SELECT COUNT(*) FROM students s2 
-                             JOIN colleges sc2 ON s2."collageName" ILIKE sc2.name
-                             WHERE sc2.id = sc.id AND s2."deleteStatus" = true) as count
-                        FROM colleges sc
-                        WHERE sc.sitting_center_id = c.id AND sc.id != c.id
-                        UNION ALL
-                        -- Guest students via shortage requests
                         SELECT c2.name, sr_guest.shortage as count
                         FROM shortage_requests sr_guest
                         JOIN colleges c2 ON sr_guest.college_id = c2.id
@@ -412,21 +392,44 @@ exports.getSeatingRequirement = async (req, res) => {
         const query = `
             WITH seating_metrics AS (
                 SELECT 
+                    -- Internal students
                     (
                         SELECT COUNT(*) 
                         FROM students s 
                         JOIN colleges sc ON s."collageName" ILIKE sc.name 
                         WHERE sc.id = $1 AND s."deleteStatus" = true
-                    ) as internal_load
+                    ) as internal_load,
+                    -- Guest students via shortage allocations
+                    (
+                        SELECT COALESCE(SUM(shortage), 0)
+                        FROM shortage_requests
+                        WHERE allocated_college_id = $1 AND status = 'Allocated'
+                    ) as guest_load,
+                    -- My students allocated away
+                    (
+                        SELECT COALESCE(SUM(shortage), 0)
+                        FROM shortage_requests
+                        WHERE college_id = $1 AND status = 'Allocated'
+                    ) as away_load
             )
             SELECT 
                 internal_load as total_required,
                 (
-                    SELECT COALESCE(json_agg(json_build_object('name', src.name, 'count', src.count)), '[]'::json)
+                    SELECT COALESCE(json_agg(json_build_object(
+                        'name', src.name, 
+                        'count', src.count, 
+                        'is_internal', src.is_internal
+                    )), '[]'::json)
                     FROM (
-                        -- Show ONLY Institutional students in the breakdown
-                        SELECT c1.name, (SELECT COUNT(*) FROM students s1 WHERE s1."collageName" ILIKE c1.name AND s1."deleteStatus" = true) as count
+                        -- Show Institutional students staying here (Internal - Away)
+                        SELECT c1.name, (internal_load - away_load) as count, true as is_internal
                         FROM colleges c1 WHERE c1.id = $1
+                        UNION ALL
+                        -- Show Guest students specifically allocated here
+                        SELECT c2.name, sr.shortage as count, false as is_internal
+                        FROM shortage_requests sr
+                        JOIN colleges c2 ON sr.college_id = c2.id
+                        WHERE sr.allocated_college_id = $1 AND sr.status = 'Allocated'
                     ) src
                     WHERE src.count > 0
                 ) as hosting_sources
