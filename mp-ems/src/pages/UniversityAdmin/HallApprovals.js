@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Building2, CheckCircle2, XCircle, Clock, MapPin, Search, AlertTriangle, ArrowRight, X, Users, Info } from "lucide-react";
+import { Building2, CheckCircle2, XCircle, Clock, MapPin, Search, AlertTriangle, ArrowRight, X, Users, Info, Zap, ShieldCheck } from "lucide-react";
 
 const HallApprovals = () => {
     const [halls, setHalls] = useState([]);
@@ -170,88 +170,97 @@ const HallApprovals = () => {
         .sort((a, b) => a.distance - b.distance)
         : [];
 
+    const getCapacityPct = (approved, required) => {
+        if (!required || required === 0) return 0;
+        return Math.min(100, Math.round((approved / required) * 100));
+    };
+
+    const parseHostingSources = (sources) => {
+        if (!sources) return [];
+        return typeof sources === 'string' ? JSON.parse(sources) : sources;
+    };
+
     return (
-        <div className="p-8 space-y-8 animate-fade-in pb-20">
+        <div className="p-8 space-y-10 animate-fade-in pb-20">
             {/* Main content... */}
+            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-600 shadow-sm border border-purple-100">
-                        <MapPin size={28} />
+                    <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-purple-500/30">
+                        <ShieldCheck size={26} />
                     </div>
                     <div>
                         <h1 className="text-3xl font-black text-slate-900 tracking-tight">Infrastructure Validation</h1>
-                        <p className="text-sm text-slate-500 font-medium tracking-wide mt-1 uppercase">Review physical campus capacities</p>
+                        <p className="text-xs text-slate-400 font-black tracking-[0.2em] mt-1 uppercase">Review &amp; validate physical campus capacities</p>
                     </div>
                 </div>
-
                 <div className="relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search college or hall..." 
-                        className="w-full md:w-80 pl-11 pr-4 py-3 bg-white border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 outline-none transition-all shadow-sm"
+                        placeholder="Search college or hall..."
+                        className="w-full md:w-80 pl-11 pr-4 py-3.5 bg-white border border-slate-200 text-sm font-bold text-slate-700 rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-400 outline-none transition-all shadow-sm"
                     />
                 </div>
             </div>
 
+            {/* Shortage Requests */}
             {shortageRequests.length > 0 && (
-                <div className="bg-rose-50 border border-rose-200 rounded-[2rem] p-6 shadow-sm">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center">
-                            <AlertTriangle size={20} />
+                <div className="relative bg-gradient-to-br from-rose-900 to-rose-800 rounded-[2rem] p-7 shadow-2xl shadow-rose-900/30 overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/20 rounded-full blur-[80px] -mr-20 -mt-20" />
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-7">
+                            <div className="w-10 h-10 bg-white/10 text-rose-300 rounded-xl flex items-center justify-center border border-white/10">
+                                <AlertTriangle size={20} />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-black text-white">Infrastructure Shortages</h2>
+                                <p className="text-[10px] font-black text-rose-300 uppercase tracking-[0.2em]">Colleges requiring external center allocation</p>
+                            </div>
+                            <div className="ml-auto px-3 py-1.5 bg-white/10 border border-white/10 rounded-full text-rose-200 text-xs font-black">
+                                {shortageRequests.length} Pending
+                            </div>
                         </div>
-                        <div>
-                            <h2 className="text-lg font-black text-slate-900">Infrastructure Shortages</h2>
-                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Colleges requiring external center allocation</p>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {shortageRequests.map(req => (
-                            <div key={req.id} className="bg-white p-5 rounded-2xl border border-rose-100 shadow-sm flex flex-col gap-4">
-                                <div className="flex justify-between items-start">
-                                    <span className="text-sm font-black text-slate-900">{req.college_name}</span>
-                                    <span className="px-2 py-1 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded border border-amber-200">Pending</span>
-                                </div>
-                                <div className="space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {shortageRequests.map(req => (
+                                <div key={req.id} className="bg-white/10 backdrop-blur-sm p-5 rounded-2xl border border-white/10 flex flex-col gap-4 hover:bg-white/15 transition-all">
+                                    <div className="flex justify-between items-start gap-2">
+                                        <span className="text-sm font-black text-white leading-tight">{req.college_name}</span>
+                                        <span className="flex-shrink-0 px-2 py-1 bg-amber-400/20 text-amber-300 text-[9px] font-black uppercase tracking-widest rounded-lg border border-amber-400/30">Pending</span>
+                                    </div>
                                     <div className="grid grid-cols-2 gap-2 text-center">
-                                        <div className="bg-slate-50 rounded-xl p-2 border border-slate-100">
-                                            <div className="text-xs font-bold text-slate-900">{req.student_count}</div>
-                                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Total Load</div>
+                                        <div className="bg-white/10 rounded-xl p-3 border border-white/10">
+                                            <div className="text-xl font-black text-white">{req.student_count}</div>
+                                            <div className="text-[9px] font-black text-rose-300 uppercase tracking-widest mt-0.5">Total Load</div>
                                         </div>
-                                        <div className="bg-rose-50 rounded-xl p-2 border border-rose-100">
-                                            <div className="text-xs font-black text-rose-600">{req.shortage}</div>
+                                        <div className="bg-rose-500/30 rounded-xl p-3 border border-rose-400/30">
+                                            <div className="text-xl font-black text-rose-200">{req.shortage}</div>
                                             <div className="text-[9px] font-black text-rose-400 uppercase tracking-widest mt-0.5">Shortage</div>
                                         </div>
                                     </div>
-                                    
-                                    {/* Source Institutions */}
-                                    <div className="px-3 py-2 bg-slate-50/50 rounded-xl border border-slate-100/50">
-                                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                                            <Users size={10} />
-                                            <span>Guest Sources</span>
+                                    <div className="px-3 py-2 bg-white/5 rounded-xl border border-white/10">
+                                        <div className="text-[9px] font-black text-rose-300 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                            <Users size={10} /><span>Guest Sources</span>
                                         </div>
                                         <div className="flex flex-wrap gap-1">
-                                            {req.hosting_sources && (typeof req.hosting_sources === 'string' ? JSON.parse(req.hosting_sources) : req.hosting_sources).map((src, i) => (
-                                                <span key={i} className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 text-[9px] font-bold rounded border border-indigo-100">
+                                            {parseHostingSources(req.hosting_sources).map((src, i) => (
+                                                <span key={i} className="px-2 py-0.5 bg-indigo-500/30 text-indigo-200 text-[9px] font-bold rounded-lg border border-indigo-400/20">
                                                     {src.name} ({src.count})
                                                 </span>
                                             ))}
                                         </div>
                                     </div>
+                                    <button
+                                        onClick={() => { setSelectedRequest(req); setShowAllocateModal(true); }}
+                                        className="w-full py-3 bg-white hover:bg-rose-50 text-rose-700 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg"
+                                    >
+                                        Allocate Center <ArrowRight size={14} />
+                                    </button>
                                 </div>
-                                <button 
-                                    onClick={() => {
-                                        setSelectedRequest(req);
-                                        setShowAllocateModal(true);
-                                    }}
-                                    className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-colors flex items-center justify-center gap-2"
-                                >
-                                    Allocate Center <ArrowRight size={14} />
-                                </button>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}
@@ -270,118 +279,147 @@ const HallApprovals = () => {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredHalls.map((hall) => (
-                        <div key={hall.id} className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-200 flex flex-col transition-all hover:shadow-lg hover:border-purple-200 group">
-                            <div className="flex justify-between items-start mb-6">
-                                <div className="space-y-1">
-                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusStyle(hall.status)}`}>
-                                        {hall.status?.toLowerCase() === 'pending' && <Clock size={12} />}
-                                        {hall.status?.toLowerCase() === 'approved' && <CheckCircle2 size={12} />}
-                                        {hall.status?.toLowerCase() === 'rejected' && <XCircle size={12} />}
+                    {filteredHalls.map((hall) => {
+                        const pct = getCapacityPct(hall.college_approved_capacity, hall.total_required);
+                        const isFull = pct >= 100;
+                        const sources = parseHostingSources(hall.hosting_sources);
+                        return (
+                        <div key={hall.id} className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/60 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-purple-200/40 hover:-translate-y-1 group">
+
+                            {/* Card Top Accent */}
+                            <div className={`h-1.5 w-full ${
+                                hall.status?.toLowerCase() === 'approved' ? 'bg-gradient-to-r from-emerald-400 to-teal-500' :
+                                hall.status?.toLowerCase() === 'rejected' ? 'bg-gradient-to-r from-rose-400 to-red-500' :
+                                'bg-gradient-to-r from-amber-400 to-orange-400'
+                            }`} />
+
+                            <div className="p-6 flex flex-col flex-1">
+                                {/* Status + Icon Row */}
+                                <div className="flex justify-between items-center mb-5">
+                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                                        hall.status?.toLowerCase() === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                        hall.status?.toLowerCase() === 'rejected' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                                        'bg-amber-50 text-amber-700 border-amber-200'
+                                    }`}>
+                                        {hall.status?.toLowerCase() === 'pending' && <Clock size={11} />}
+                                        {hall.status?.toLowerCase() === 'approved' && <CheckCircle2 size={11} />}
+                                        {hall.status?.toLowerCase() === 'rejected' && <XCircle size={11} />}
                                         {hall.status}
                                     </span>
+                                    <div className="w-10 h-10 rounded-2xl bg-slate-50 text-slate-300 flex items-center justify-center group-hover:bg-purple-50 group-hover:text-purple-500 transition-all border border-slate-100">
+                                        <Building2 size={20} />
+                                    </div>
                                 </div>
-                                <div className="p-3 bg-slate-50 text-slate-400 rounded-xl group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
-                                    <Building2 size={24} />
-                                </div>
-                            </div>
 
-                            <h3 className="text-2xl font-black text-slate-900 mb-1">{hall.hall_code}</h3>
-                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-6">{hall.college_name}</p>
+                                {/* Hall Code + College */}
+                                <div className="mb-5">
+                                    <div className="inline-flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-xl mb-2">
+                                        <Zap size={13} className="text-amber-400" />
+                                        <span className="text-sm font-black tracking-widest uppercase">{hall.hall_code}</span>
+                                    </div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] leading-tight mt-1">{hall.college_name}</p>
+                                </div>
 
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col items-center justify-center">
-                                    <span className="text-sm font-bold text-slate-900">{hall.rows} × {hall.seats_per_row}</span>
-                                    <span className="text-[10px] uppercase font-black tracking-widest text-slate-400 mt-1">Grid Pattern</span>
+                                {/* Capacity Stats */}
+                                <div className="grid grid-cols-2 gap-3 mb-5">
+                                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 text-center">
+                                        <p className="text-base font-black text-slate-800">{hall.rows} × {hall.seats_per_row}</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Grid Pattern</p>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-3 text-center shadow-lg shadow-indigo-500/25">
+                                        <p className="text-2xl font-black text-white leading-none">{hall.total_capacity}</p>
+                                        <p className="text-[9px] font-black text-indigo-200 uppercase tracking-widest mt-0.5">Net Capacity</p>
+                                    </div>
                                 </div>
-                                <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col items-center justify-center">
-                                    <span className="text-lg font-black text-indigo-700">{hall.total_capacity}</span>
-                                    <span className="text-[10px] uppercase font-black tracking-widest text-indigo-400 mt-1">Net Capacity</span>
-                                </div>
-                            </div>
 
-                            <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100 space-y-3 mb-6">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Requirement</span>
-                                    <span className="text-xs font-black text-slate-900">{hall.total_required} Students</span>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="flex items-center justify-between text-[10px] font-bold">
-                                        <span className="text-slate-500 italic">Approved Coverage</span>
-                                        <span className={hall.college_approved_capacity < hall.total_required ? 'text-amber-600' : 'text-emerald-600'}>
-                                            {hall.college_approved_capacity} / {hall.total_required}
+                                {/* Coverage Progress */}
+                                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 mb-5 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Approved Seats</span>
+                                        <span className="text-xs font-black text-indigo-600 tabular-nums">{hall.college_approved_capacity} seats</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Students Required</span>
+                                        <span className={`text-xs font-black tabular-nums ${isFull ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                            {hall.total_required} students&nbsp;
+                                            <span className="text-[9px] opacity-70">({pct}% covered)</span>
                                         </span>
                                     </div>
-                                    <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                                        <div 
-                                            className={`h-full transition-all duration-700 ${hall.college_approved_capacity < hall.total_required ? 'bg-amber-400' : 'bg-emerald-500'}`}
-                                            style={{ width: `${Math.min(100, (hall.college_approved_capacity / hall.total_required) * 100)}%` }}
+                                    <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-700 shadow-sm ${
+                                                isFull
+                                                ? 'bg-gradient-to-r from-emerald-400 to-teal-500 shadow-emerald-300'
+                                                : pct >= 60
+                                                ? 'bg-gradient-to-r from-amber-400 to-orange-400 shadow-amber-300'
+                                                : 'bg-gradient-to-r from-rose-400 to-red-500 shadow-rose-300'
+                                            }`}
+                                            style={{ width: `${pct}%` }}
                                         />
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Institutional Breakdown */}
-                            <div className="border-t border-slate-100 pt-4 mt-2 space-y-4">
-                                {hall.total_required > 0 ? (
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                            <Users size={12} />
-                                            <span>Hosting Institutions</span>
-                                        </div>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {hall.hosting_sources && typeof hall.hosting_sources === 'string' 
-                                                ? JSON.parse(hall.hosting_sources).map((src, i) => (
-                                                    <span key={i} className="px-2 py-0.5 bg-indigo-50/50 text-indigo-600 text-[10px] font-bold rounded-md border border-indigo-100/50">
-                                                        {src.name} ({src.count})
+                                {/* Hosting Sources */}
+                                <div className="mb-5">
+                                    {sources.length > 0 ? (
+                                        <>
+                                            <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                                                <Users size={11} /><span>Hosting Institutions</span>
+                                            </div>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {sources.map((src, i) => (
+                                                    <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[10px] font-black rounded-xl border border-indigo-100">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+                                                        <span>{src.name}</span>
+                                                        <span className="ml-0.5 px-2 py-0.5 bg-indigo-500 text-white rounded-full text-[8px] font-black whitespace-nowrap">{src.count} students</span>
                                                     </span>
-                                                ))
-                                                : Array.isArray(hall.hosting_sources) && hall.hosting_sources.map((src, i) => (
-                                                    <span key={i} className="px-2 py-0.5 bg-indigo-50/50 text-indigo-600 text-[10px] font-bold rounded-md border border-indigo-100/50">
-                                                        {src.name} ({src.count})
-                                                    </span>
-                                                ))
-                                            }
+                                                ))}
+                                            </div>
+                                        </>
+                                    ) : hall.assigned_to_center ? (
+                                        <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                                            <Info size={14} className="text-amber-500 flex-shrink-0" />
+                                            <p className="text-[10px] font-bold text-amber-700 leading-tight">
+                                                Students at <span className="font-black italic">{hall.assigned_to_center}</span>
+                                            </p>
                                         </div>
-                                    </div>
-                                ) : hall.assigned_to_center ? (
-                                    <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
-                                        <Info size={14} className="text-amber-500 flex-shrink-0" />
-                                        <p className="text-[10px] font-bold text-amber-700 leading-tight">
-                                            Students assigned to <span className="font-black italic">{hall.assigned_to_center}</span> for mandatory external allocation.
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="text-[10px] font-bold text-slate-400 italic text-center py-2">
-                                        No students mapped to this center yet.
-                                    </div>
-                                )}
-                            </div>
+                                    ) : (
+                                        <p className="text-[10px] font-bold text-slate-300 italic text-center py-2">No students mapped yet</p>
+                                    )}
+                                </div>
 
-                            <div className="mt-6 grid grid-cols-2 gap-3 pt-6 border-t border-slate-100">
-                                {hall.status?.toLowerCase() === 'pending' ? (
-                                    <>
-                                        <button 
-                                            onClick={() => handleAction(hall.id, 'Rejected')}
-                                            className="py-3 bg-white border-2 border-slate-200 hover:border-red-200 hover:bg-red-50 text-slate-600 hover:text-red-600 text-sm font-bold rounded-xl transition-all"
-                                        >
-                                            Reject
-                                        </button>
-                                        <button 
-                                            onClick={() => handleAction(hall.id, 'Approved')}
-                                            className="py-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 text-sm font-black rounded-xl transition-all"
-                                        >
-                                            Validate Space
-                                        </button>
-                                    </>
-                                ) : (
-                                    <div className="col-span-2 py-3 bg-slate-50 border border-slate-200 text-slate-400 text-sm font-bold rounded-xl text-center">
-                                        Action Completed
-                                    </div>
-                                )}
+                                {/* Action Buttons */}
+                                <div className="mt-auto pt-5 border-t border-slate-100">
+                                    {hall.status?.toLowerCase() === 'pending' ? (
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button
+                                                onClick={() => handleAction(hall.id, 'Rejected')}
+                                                className="py-3 rounded-2xl text-xs font-black uppercase tracking-widest border-2 border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 transition-all"
+                                            >
+                                                Reject
+                                            </button>
+                                            <button
+                                                onClick={() => handleAction(hall.id, 'Approved')}
+                                                className="py-3 rounded-2xl text-xs font-black uppercase tracking-widest bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-[1.02] active:scale-95 transition-all"
+                                            >
+                                                Validate ✓
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className={`flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-black uppercase tracking-widest ${
+                                            hall.status?.toLowerCase() === 'approved'
+                                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                                : 'bg-rose-50 text-rose-500 border border-rose-100'
+                                        }`}>
+                                            {hall.status?.toLowerCase() === 'approved' ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                                            {hall.status?.toLowerCase() === 'approved' ? 'Validated' : 'Rejected'}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 

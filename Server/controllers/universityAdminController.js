@@ -366,30 +366,82 @@ exports.updateSittingCenter = async (req, res) => {
         const { collegeId } = req.params;
         const { sitting_center_id } = req.body;
 
-        // Validation: Ensure the center has infrastructure (halls) before assigning it
         if (sitting_center_id) {
-            const capacityCheck = await db.query(
-                `SELECT COALESCE(SUM(rows * seats_per_row), 0) as capacity 
-                 FROM examination_halls 
+            // --- Step 1: Check center has approved halls ---
+            const capacityRes = await db.query(
+                `SELECT COALESCE(SUM(rows * seats_per_row), 0) AS total_capacity
+                 FROM examination_halls
                  WHERE college_id = $1 AND status = 'Approved'`,
                 [sitting_center_id]
             );
-            const capacity = parseInt(capacityCheck.rows[0].capacity);
-            
-            if (capacity === 0) {
-                return res.status(400).json({ 
-                    error: "Target center has 0 approved seats. Please create halls for this college first." 
+            const totalCapacity = parseInt(capacityRes.rows[0].total_capacity);
+
+            if (totalCapacity === 0) {
+                return res.status(400).json({
+                    error: `Target center has 0 approved seats. Please create and get halls approved for this college first.`
+                });
+            }
+
+            // --- Step 2: Calculate already-committed seats at this center ---
+            // Students from other colleges globally mapped here (sitting_center_id = this center)
+            // EXCLUDING the college being re-mapped (collegeId) to avoid double-counting
+            const committedRes = await db.query(
+                `SELECT 
+                    -- Students from colleges permanently mapped to this center
+                    COALESCE((
+                        SELECT COUNT(*) 
+                        FROM students s
+                        JOIN colleges gc ON gc.name ILIKE s."collageName"
+                        WHERE gc.sitting_center_id = $1
+                          AND gc.id != $2
+                          AND s."deleteStatus" = true
+                    ), 0)
+                    +
+                    -- Students assigned here via shortage allocation
+                    COALESCE((
+                        SELECT SUM(sr.shortage) 
+                        FROM shortage_requests sr
+                        WHERE sr.allocated_college_id = $1 AND sr.status = 'Allocated'
+                    ), 0)
+                 AS committed_seats`,
+                [sitting_center_id, collegeId]
+            );
+            const committedSeats = parseInt(committedRes.rows[0].committed_seats);
+            const availableSeats = totalCapacity - committedSeats;
+
+            // --- Step 3: Get source college's student count ---
+            const studentRes = await db.query(
+                `SELECT COUNT(*) AS student_count
+                 FROM students s
+                 JOIN colleges c ON c.name ILIKE s."collageName"
+                 WHERE c.id = $1 AND s."deleteStatus" = true`,
+                [collegeId]
+            );
+            const studentCount = parseInt(studentRes.rows[0].student_count);
+
+            // --- Step 4: Hard Block if students don't fit ---
+            if (availableSeats <= 0 || studentCount > availableSeats) {
+                const centerRes = await db.query(`SELECT name FROM colleges WHERE id = $1`, [sitting_center_id]);
+                const centerName = centerRes.rows[0]?.name || 'Target Center';
+
+                const reason = availableSeats <= 0
+                    ? `${centerName} is already overcommitted (Total: ${totalCapacity} seats, Already committed: ${committedSeats} students — over capacity by ${Math.abs(availableSeats)}).`
+                    : `${centerName} only has ${availableSeats} available seat(s), but ${studentCount} students need to be seated.`;
+
+                return res.status(400).json({
+                    error: `Cannot map: ${reason} Please choose a center with more capacity or add more approved halls.`
                 });
             }
         }
 
-        const query = `
-            UPDATE colleges 
-            SET sitting_center_id = $1, updated_at = CURRENT_TIMESTAMP
-            WHERE id = $2
-            RETURNING *;
-        `;
-        const result = await db.query(query, [sitting_center_id || null, collegeId]);
+        // --- All checks passed: do the update ---
+        const result = await db.query(
+            `UPDATE colleges 
+             SET sitting_center_id = $1, updated_at = CURRENT_TIMESTAMP
+             WHERE id = $2
+             RETURNING *`,
+            [sitting_center_id || null, collegeId]
+        );
 
         if (result.rowCount === 0) {
             return res.status(404).json({ error: "College not found" });

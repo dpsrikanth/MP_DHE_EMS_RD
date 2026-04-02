@@ -193,15 +193,34 @@ exports.getAllHallsForApproval = async (req, res) => {
                 (
                     SELECT COALESCE(json_agg(json_build_object('name', src.name, 'count', src.count)), '[]'::json)
                     FROM (
-                        SELECT sc.name, (SELECT COUNT(*) FROM students s2 WHERE s2."collageName" ILIKE sc.name AND s2."deleteStatus" = true) as count
+                        -- Students mapped here via sitting_center_id, minus any overflow sent elsewhere
+                        SELECT 
+                            sc.name,
+                            GREATEST(0,
+                                (SELECT COUNT(*) FROM students s2 
+                                 JOIN colleges sc2 ON s2."collageName" ILIKE sc2.name
+                                 WHERE sc2.id = sc.id AND s2."deleteStatus" = true)
+                                -
+                                COALESCE((
+                                    SELECT SUM(sr_out.shortage)
+                                    FROM shortage_requests sr_out
+                                    WHERE sr_out.college_id = sc.id
+                                      AND sr_out.allocated_college_id != c.id
+                                      AND sr_out.status = 'Allocated'
+                                ), 0)
+                            ) as count
                         FROM colleges sc
                         WHERE sc.sitting_center_id = c.id
                         UNION ALL
+                        -- Overflow students landing here via shortage allocation
                         SELECT cx.name, sr3.shortage as count
                         FROM shortage_requests sr3
                         JOIN colleges cx ON sr3.college_id = cx.id
-                        WHERE sr3.allocated_college_id = c.id AND sr3.status = 'Allocated'
+                        WHERE sr3.allocated_college_id = c.id 
+                          AND cx.sitting_center_id != c.id
+                          AND sr3.status = 'Allocated'
                     ) src
+                    WHERE src.count > 0
                 ) as hosting_sources,
                 -- Where these college students are assigned (if not here)
                 c2.name as assigned_to_center
