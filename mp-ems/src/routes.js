@@ -28,6 +28,11 @@ import FacultyAssignment from "./pages/CollegeAdmin/FacultyAssignment";
 import FacultyAssignmentEdit from "./pages/CollegeAdmin/FacultyAssignmentEdit";
 import MarksApproval from "./pages/CollegeAdmin/MarksApproval";
 import ExaminationHalls from "./pages/CollegeAdmin/ExaminationHalls";
+import InfrastructureAnalytics from "./pages/UniversityAdmin/InfrastructureAnalytics";
+import ExamAnalytics from "./pages/UniversityAdmin/ExamAnalytics";
+import InstitutionalRanking from "./pages/UniversityAdmin/InstitutionalRanking";
+import FacultyStatus from "./pages/CollegeAdmin/FacultyStatus";
+import CollegePerformance from "./pages/CollegeAdmin/CollegePerformance";
 import SeatingArrangement from "./pages/CollegeAdmin/SeatingArrangement";
 import FacultyDashboard from "./pages/Faculty/Dashboard";
 import MarksEntry from "./pages/Faculty/MarksEntry";
@@ -153,6 +158,8 @@ const AppRoutes = () => {
       <Route path="/college-admin/faculty-assign/edit/:id" element={<Layout><ProtectedRoute element={<FacultyAssignmentEdit />} /></Layout>} />
       <Route path="/college-admin/marks-approval" element={<Layout><ProtectedRoute element={<MarksApproval />} /></Layout>} />
       <Route path="/college-admin/examination-halls" element={<Layout><ProtectedRoute element={<ExaminationHalls />} /></Layout>} />
+      <Route path="/college-admin/faculty-status" element={<Layout><ProtectedRoute element={<FacultyStatus />} /></Layout>} />
+      <Route path="/college-admin/performance" element={<Layout><ProtectedRoute element={<CollegePerformance />} /></Layout>} />
       <Route path="/college-admin/seating-arrangement" element={<Layout><ProtectedRoute element={<SeatingArrangement />} /></Layout>} />
       <Route path="/college-admin/generate-roll-numbers" element={<Layout><ProtectedRoute element={<RollNumberGenerator />} /></Layout>} />
 
@@ -197,6 +204,9 @@ const AppRoutes = () => {
       <Route path="/university/grading-policy" element={<Layout><ProtectedRoute element={<GradingPolicy />} /></Layout>} />
       <Route path="/university/manage-credits" element={<Layout><ProtectedRoute element={<ManageCredits />} /></Layout>} />
       <Route path="/university/hall-approvals" element={<Layout><ProtectedRoute element={<HallApprovals />} /></Layout>} />
+      <Route path="/university/infrastructure-analytics" element={<Layout><ProtectedRoute element={<InfrastructureAnalytics />} /></Layout>} />
+      <Route path="/university/exam-analytics" element={<Layout><ProtectedRoute element={<ExamAnalytics />} /></Layout>} />
+      <Route path="/university/institutional-ranking" element={<Layout><ProtectedRoute element={<InstitutionalRanking />} /></Layout>} />
       <Route path="/university/student-allocations" element={<Layout><ProtectedRoute element={<StudentCenterAllocations />} /></Layout>} />
       <Route path="/smtp-settings" element={<Layout><ProtectedRoute element={<SmtpSettings />} /></Layout>} />
     </Routes>

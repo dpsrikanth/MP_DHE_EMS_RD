@@ -22,7 +22,8 @@ import {
   TrendingUp,
   Mail,
   CreditCard,
-  CheckCircle2
+  CheckCircle2,
+  Trophy
 } from "lucide-react";
 
 /**
@@ -86,6 +87,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       { id: 19, name: 'Manage Credits', path: '/university/manage-credits', icon: <BookOpen size={20} /> },
       { id: 23, name: 'Hall Approvals', path: '/university/hall-approvals', icon: <Building2 size={20} /> },
       { id: 24, name: 'Student Allocations', path: '/university/student-allocations', icon: <UserPlus size={20} /> },
+      { id: 28, name: 'Infrastructure Analytics', path: '/university/infrastructure-analytics', icon: <TrendingUp size={20} /> },
+      { id: 29, name: 'Exam Analytics', path: '/university/exam-analytics', icon: <TrendingUp size={20} /> },
+      { id: 30, name: 'Institutional Ranking', path: '/university/institutional-ranking', icon: <Trophy size={20} /> },
       // { id: 22, name: 'Paper Setter', path: '/paper-setter/dashboard', icon: <FileText size={20} /> },
     ];
 
@@ -109,6 +113,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 7, name: 'Students', path: '/students', icon: <UserCircle size={20} /> },
         { id: 11, name: 'Seat Allocation', path: '/college-admin/seating-arrangement', icon: <LayoutDashboard size={20} /> },
         { id: 10, name: 'Roll Generator', path: '/college-admin/generate-roll-numbers', icon: <UserCircle size={20} /> },
+        { id: 15, name: 'Faculty Status', path: '/college-admin/faculty-status', icon: <CheckCircle2 size={20} /> },
+        { id: 16, name: 'College Performance', path: '/college-admin/performance', icon: <TrendingUp size={20} /> },
       ];
     } else if (roleName === 'Faculty' || roleName === 'Teacher') {
       menuItems = [
