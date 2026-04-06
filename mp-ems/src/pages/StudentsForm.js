@@ -147,8 +147,8 @@ const StudentsForm = () => {
     if (!f.admission_year) errs.admission_year = 'Admission year is required';
     if (!f.semister || !f.semister.trim()) errs.semister = 'Semester is required';
 
-    if (f.email && !/^[^s@]+@[^s@]+.[^s@]+$/.test(f.email)) errs.email = 'Invalid email';
-    if (f.contactNumber && !/^d{10}$/.test(f.contactNumber)) errs.contactNumber = 'Contact must be 10 digits';
+    if (f.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) errs.email = 'Invalid email';
+    if (f.contactNumber && !/^\d{10}$/.test(f.contactNumber)) errs.contactNumber = 'Contact must be 10 digits';
     return errs;
   };
 
@@ -1026,7 +1026,27 @@ const StudentsForm = () => {
             </div>
 
             {/* Footer */}
-            
+            <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 mt-auto">
+              <button 
+                type="button"
+                onClick={() => navigate('/students')}
+                className="px-8 py-3.5 text-sm font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit"
+                disabled={loading}
+                className="px-10 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/20 transition-all active:scale-[0.98] uppercase tracking-widest text-xs flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <Check size={16} />
+                )}
+                {loading ? 'Processing...' : (isEditing ? 'Update Student' : 'Enroll Student')}
+              </button>
+            </div>
         </form>
       </div>
     </div>
