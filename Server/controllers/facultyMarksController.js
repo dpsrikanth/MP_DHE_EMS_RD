@@ -236,3 +236,96 @@ exports.submitMarks = async (req, res) => {
     }
 };
 
+// --- Faculty Attendance APIs ---
+
+exports.getAttendance = async (req, res) => {
+    try {
+        const { subject_id, section, college_id, semester_id, academic_year_id, attendance_date, period_number } = req.query;
+
+        const query = `
+            SELECT * FROM student_attendance 
+            WHERE subject_id = $1 AND section = $2 AND college_id = $3 AND semester_id = $4 AND academic_year_id = $5
+            AND attendance_date = $6 AND period_number = $7
+        `;
+        const result = await db.query(query, [subject_id, section, college_id, semester_id, academic_year_id, attendance_date, period_number || 1]);
+        
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("Get attendance error:", error);
+        res.status(500).json({ error: "Failed to fetch attendance" });
+    }
+};
+
+exports.saveAttendance = async (req, res) => {
+    try {
+        const { attendanceData, subject_id, section, college_id, semester_id, academic_year_id, teacher_id, attendance_date, period_number } = req.body;
+        // attendanceData = [{ student_id, status }] (status: 'Present' | 'Absent')
+
+        const client = await db.connect();
+        try {
+            await client.query('BEGIN');
+            for (let data of attendanceData) {
+                const query = `
+                    INSERT INTO student_attendance 
+                    (student_id, subject_id, college_id, semester_id, academic_year_id, teacher_id, attendance_date, period_number, status, section)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                    ON CONFLICT (student_id, subject_id, college_id, semester_id, attendance_date, period_number, section) 
+                    DO UPDATE SET 
+                        updated_at = CURRENT_TIMESTAMP,
+                        status = EXCLUDED.status,
+                        teacher_id = EXCLUDED.teacher_id
+                `;
+                await client.query(query, [
+                    data.student_id, subject_id, college_id, semester_id, academic_year_id, teacher_id, 
+                    attendance_date, period_number || 1, data.status, section
+                ]);
+            }
+            await client.query('COMMIT');
+
+            if (req.user && req.user.id) {
+                await db.query(`INSERT INTO audit_logs (user_id, action, entity_type) VALUES ($1, 'ATTENDANCE_ENTERED', 'ATTENDANCE')`, [req.user.id]);
+            }
+
+            res.status(200).json({ message: "Attendance saved successfully" });
+        } catch (innerError) {
+            await client.query('ROLLBACK');
+            throw innerError;
+        } finally {
+            client.release();
+        }
+    } catch (error) {
+        console.error("Save attendance error:", error);
+        res.status(500).json({ error: "Failed to save attendance" });
+    }
+};
+
+exports.getAttendanceSummary = async (req, res) => {
+    try {
+        const { subject_id, section, college_id, semester_id, academic_year_id } = req.query;
+
+        // Count total sessions taken so far for this subject+section
+        const totalSessionsQuery = `
+            SELECT COUNT(DISTINCT (attendance_date, period_number)) as total_sessions 
+            FROM student_attendance 
+            WHERE subject_id = $1 AND section = $2 AND college_id = $3 AND semester_id = $4 AND academic_year_id = $5
+        `;
+        const totalRes = await db.query(totalSessionsQuery, [subject_id, section, college_id, semester_id, academic_year_id]);
+        const totalSessions = parseInt(totalRes.rows[0].total_sessions) || 0;
+
+        // Count 'Present' occurrences per student
+        const presentQuery = `
+            SELECT student_id, COUNT(*) as present_count 
+            FROM student_attendance 
+            WHERE subject_id = $1 AND section = $2 AND college_id = $3 AND semester_id = $4 AND academic_year_id = $5
+            AND status = 'Present'
+            GROUP BY student_id
+        `;
+        const presentRes = await db.query(presentQuery, [subject_id, section, college_id, semester_id, academic_year_id]);
+        
+        res.status(200).json({ totalSessions, summary: presentRes.rows });
+    } catch (error) {
+        console.error("Get attendance summary error:", error);
+        res.status(500).json({ error: "Failed to fetch attendance summary" });
+    }
+};
+

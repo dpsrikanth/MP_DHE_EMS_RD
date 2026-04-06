@@ -287,7 +287,9 @@ const updateUser = async (req, res) => {
     if (requesterRole === 'university_admin') {
       const existingUser = await client.query("SELECT university_id FROM public.users WHERE id = $1", [id]);
       if (existingUser.rows.length === 0) return res.status(404).json({ message: "User not found" });
-      if (existingUser.rows[0].university_id != requesterUnivId) {
+      
+      const targetUnivId = existingUser.rows[0].university_id;
+      if (targetUnivId !== null && targetUnivId != requesterUnivId) {
         return res.status(403).json({ message: "Unauthorized to update this user" });
       }
 

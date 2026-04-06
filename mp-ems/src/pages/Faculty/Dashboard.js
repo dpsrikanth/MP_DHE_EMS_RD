@@ -82,6 +82,10 @@ const FacultyDashboard = () => {
         navigate('/faculty/marks-entry', { state: { assignmentId: assignment.id } });
     };
 
+    const handleTakeAttendance = (assignment) => {
+        navigate('/faculty/attendance', { state: { assignmentId: assignment.id } });
+    };
+
     const userStr = localStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : { name: 'Faculty' };
 
@@ -188,13 +192,20 @@ const FacultyDashboard = () => {
                                         </div>
                                     </div>
 
-                                    <button 
-                                        onClick={() => handleEnterMarks(item)}
-                                        className="w-full flex items-center justify-between px-6 py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-indigo-600 transition-all group/btn"
-                                    >
-                                        <span>Enter Marks</span>
-                                        <ChevronRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={() => handleTakeAttendance(item)}
+                                            className="w-full flex items-center justify-center px-4 py-3 bg-emerald-50 text-emerald-600 font-bold rounded-xl hover:bg-emerald-100 transition-all text-sm"
+                                        >
+                                            Attendance
+                                        </button>
+                                        <button 
+                                            onClick={() => handleEnterMarks(item)}
+                                            className="w-full flex items-center justify-center px-4 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-indigo-600 transition-all text-sm"
+                                        >
+                                            Enter Marks
+                                        </button>
+                                    </div>
                                 </div>
                             );
                         })}

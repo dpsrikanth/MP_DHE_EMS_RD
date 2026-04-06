@@ -31,6 +31,7 @@ import ExaminationHalls from "./pages/CollegeAdmin/ExaminationHalls";
 import SeatingArrangement from "./pages/CollegeAdmin/SeatingArrangement";
 import FacultyDashboard from "./pages/Faculty/Dashboard";
 import MarksEntry from "./pages/Faculty/MarksEntry";
+import Attendance from "./pages/Faculty/Attendance";
 import MarksVerification from "./pages/CollegeAdmin/MarksVerification";
 import MarksReview from "./pages/CollegeAdmin/MarksReview";
 import RollNumberGenerator from './pages/CollegeAdmin/RollNumberGenerator';
@@ -158,6 +159,7 @@ const AppRoutes = () => {
       {/* Faculty Routes */}
       <Route path="/faculty/dashboard" element={<Layout><ProtectedRoute element={<FacultyDashboard />} /></Layout>} />
       <Route path="/faculty/marks-entry" element={<Layout><ProtectedRoute element={<MarksEntry />} /></Layout>} />
+      <Route path="/faculty/attendance" element={<Layout><ProtectedRoute element={<Attendance />} /></Layout>} />
 
       {/* HOD Routes */}
       <Route path="/hod/dashboard" element={<Layout><ProtectedRoute element={<HODDashboard />} /></Layout>} />

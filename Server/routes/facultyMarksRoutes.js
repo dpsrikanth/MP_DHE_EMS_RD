@@ -114,4 +114,32 @@ router.post('/enter-marks', facultyMarksController.enterStudentMarks);
  */
 router.post('/submit-marks', facultyMarksController.submitMarks);
 
+/**
+ * @swagger
+ * /api/faculty-marks/attendance:
+ *   get:
+ *     summary: Get attendance for a subject, section, and date
+ *     tags: [Faculty Operations]
+ *     security:
+ *       - bearerAuth: []
+ *   post:
+ *     summary: Save attendance records
+ *     tags: [Faculty Operations]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/attendance', facultyMarksController.getAttendance);
+router.post('/attendance', facultyMarksController.saveAttendance);
+
+/**
+ * @swagger
+ * /api/faculty-marks/attendance-summary:
+ *   get:
+ *     summary: Get an aggregate overview of student attendance
+ *     tags: [Faculty Operations]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/attendance-summary', facultyMarksController.getAttendanceSummary);
+
 module.exports = router;
