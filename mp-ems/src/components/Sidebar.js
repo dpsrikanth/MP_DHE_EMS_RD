@@ -85,6 +85,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       { id: 18, name: 'Grading Policy', path: '/university/grading-policy', icon: <ShieldCheck size={20} /> },
       { id: 19, name: 'Manage Credits', path: '/university/manage-credits', icon: <BookOpen size={20} /> },
       { id: 23, name: 'Hall Approvals', path: '/university/hall-approvals', icon: <Building2 size={20} /> },
+      { id: 24, name: 'Student Allocations', path: '/university/student-allocations', icon: <UserPlus size={20} /> },
       // { id: 22, name: 'Paper Setter', path: '/paper-setter/dashboard', icon: <FileText size={20} /> },
     ];
 
@@ -106,6 +107,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 8, name: 'Exam Halls', path: '/college-admin/examination-halls', icon: <Building2 size={20} /> },
         { id: 6, name: 'Teachers', path: '/teachers', icon: <Users size={20} /> },
         { id: 7, name: 'Students', path: '/students', icon: <UserCircle size={20} /> },
+        { id: 11, name: 'Seat Allocation', path: '/college-admin/seating-arrangement', icon: <LayoutDashboard size={20} /> },
+        { id: 10, name: 'Roll Generator', path: '/college-admin/generate-roll-numbers', icon: <UserCircle size={20} /> },
       ];
     } else if (roleName === 'Faculty' || roleName === 'Teacher') {
       menuItems = [

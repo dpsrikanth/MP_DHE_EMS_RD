@@ -1,31 +1,15 @@
-const { Client } = require('pg');
-
-const dbConfig = {
-  user: 'postgres',
-  host: '172.16.0.225',
-  database: 'emsdb',
-  password: '!ntense@225',
-  port: 5432,
-};
-
-async function check() {
-  const client = new Client(dbConfig);
-  try {
-    await client.connect();
-    console.log('--- Checking Master Tables Schema ---');
-    
-    const tables = ['master_programs', 'master_departments'];
-    for (const table of tables) {
-      const res = await client.query(`SELECT column_name FROM information_schema.columns WHERE table_name = '${table}'`);
-      console.log(`Columns for ${table}:`, res.rows.map(r => r.column_name));
-    }
-
-  } catch (err) {
-    console.error('Check failed:', err.message);
-  } finally {
-    await client.end();
+const db = require('./db.js');
+async function run() {
+    try {
+        const res = await db.query(`
+            SELECT table_name, column_name 
+            FROM information_schema.columns 
+            WHERE column_name ILIKE '%rollnumber%'
+            AND table_schema = 'public'
+        `);
+        console.log('Tables with rollnumber column:');
+        res.rows.forEach(r => console.log(`- ${r.table_name}.${r.column_name}`));
+    } catch(e) { console.error(e); }
     process.exit(0);
-  }
 }
-
-check();
+run();

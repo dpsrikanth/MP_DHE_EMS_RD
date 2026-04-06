@@ -9,7 +9,9 @@ const {
     getFinalizedExternalMarks,
     getResultHubData,
     getCollegesMapping,
-    updateSittingCenter
+    updateSittingCenter,
+    getStudentsForAllocation,
+    allocateStudentsToCenter
 } = require('../controllers/universityAdminController');
 
 /**
@@ -139,5 +141,8 @@ router.get('/center-mapping', verifyToken, getCollegesMapping);
  *         schema: { type: integer }
  */
 router.put('/center-mapping/:collegeId', verifyToken, updateSittingCenter);
+
+router.get('/students-for-allocation/:collegeId', verifyToken, getStudentsForAllocation);
+router.post('/allocate-students-center', verifyToken, allocateStudentsToCenter);
 
 module.exports = router;

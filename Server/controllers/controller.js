@@ -3506,29 +3506,43 @@ const getHallTicketData = async (req, res) => {
     const { examName, semesterId } = req.params;
     const userId = req.user.id;
 
-    // 1. Get complete student details including college info and sitting center
-    const studentRes = await client.query(
-      `SELECT 
-          s.id, s.name, s.rollnumber, s."programName", s.semister, s."collageName", 
-          s."fatherName", s.email, s."contactNumber", s.address, s.adharnumber,
-          s.admission_no, s.batch, s.section, s.gender,
-          -- Home college details
-          home_col.id AS home_college_id,
-          home_col.address AS home_college_address,
-          -- Sitting center details (null if student sits at own college)
-          center_col.id AS center_id,
-          center_col.name AS center_name,
-          center_col.address AS center_address
-       FROM students s
-       LEFT JOIN colleges home_col ON home_col.name ILIKE s."collageName"
-       LEFT JOIN colleges center_col ON home_col.sitting_center_id = center_col.id
-       WHERE s.user_id = $1 AND s."deleteStatus" = true`,
-      [userId]
-    );
-
-    if (studentRes.rows.length === 0) {
-      return res.status(404).json({ message: "Student record not found." });
-    }
+     // 1. Get complete student details AND verify paid exam registration
+     const studentRes = await client.query(
+       `SELECT 
+           s.id, s.name, s.rollnumber, s."programName", s.semister, s."collageName", 
+           s."fatherName", s.email, s."contactNumber", s.address, s.adharnumber,
+           s.admission_no, s.batch, s.section, s.gender,
+           -- Home college details
+           home_col.id AS home_college_id,
+           home_col.address AS home_college_address,
+           -- Sitting center details
+           center_col.id AS college_center_id,
+           center_col.name AS college_center_name,
+           center_col.address AS college_center_address,
+           -- Student-specific sitting center details
+           s.sitting_center_id AS student_sitting_center_id,
+           student_center_col.id AS student_center_id,
+           student_center_col.name AS student_center_name,
+           student_center_col.address AS student_center_address
+        FROM students s
+        JOIN exam_registrations er ON s.id = er.student_id
+        JOIN exams e ON er.exam_id = e.id
+        LEFT JOIN colleges home_col ON home_col.name ILIKE s."collageName"
+        LEFT JOIN colleges center_col ON home_col.sitting_center_id = center_col.id
+        LEFT JOIN colleges student_center_col ON s.sitting_center_id = student_center_col.id
+        WHERE s.user_id = $1 
+          AND s."deleteStatus" = true 
+          AND e.name = $2 
+          AND er.semester_id = $3
+          AND er.payment_status = 'Paid'`,
+       [userId, examName, semesterId]
+     );
+ 
+     if (studentRes.rows.length === 0) {
+       return res.status(403).json({ 
+         message: "Hall Ticket restricted. You must have a confirmed (Paid) registration for this exam session to generate an admit card." 
+       });
+     }
 
     const studentRow = studentRes.rows[0];
 
@@ -3550,18 +3564,30 @@ const getHallTicketData = async (req, res) => {
       gender: studentRow.gender,
     };
 
-    // Determine examination center: external if sitting_center_id set, else own college
-    const center = studentRow.center_id
-      ? {
-          name: studentRow.center_name,
-          address: studentRow.center_address,
-          is_external: true,
-        }
-      : {
-          name: studentRow.collageName,
-          address: studentRow.home_college_address,
-          is_external: false,
+    // Determine examination center: 
+    // 1. External if student.sitting_center_id set (granular override)
+    // 2. External if home_col.sitting_center_id set (bulk override)
+    // 3. Else own college
+    let center;
+    if (studentRow.student_center_id) {
+        center = {
+            name: studentRow.student_center_name,
+            address: studentRow.student_center_address,
+            is_external: true,
         };
+    } else if (studentRow.college_center_id) {
+        center = {
+            name: studentRow.college_center_name,
+            address: studentRow.college_center_address,
+            is_external: true,
+        };
+    } else {
+        center = {
+            name: studentRow.collageName,
+            address: studentRow.home_college_address,
+            is_external: false,
+        };
+    }
 
     // 2. Fetch registered exams for this specific series
     const query = `

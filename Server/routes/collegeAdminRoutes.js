@@ -473,4 +473,8 @@ router.get('/marks-report', collegeAdminController.getMarksReport);
 router.get('/total-rooms', collegeAdminController.getCollegeTotalRooms);
 router.put('/total-rooms', collegeAdminController.updateCollegeTotalRooms);
 
+// Roll Number Generator routes
+router.get('/students-for-roll-generation', collegeAdminController.getStudentsForRollGeneration);
+router.post('/generate-roll-numbers', collegeAdminController.allocateRollNumbers);
+
 module.exports = router;

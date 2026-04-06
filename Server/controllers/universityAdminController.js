@@ -453,3 +453,53 @@ exports.updateSittingCenter = async (req, res) => {
         res.status(500).json({ error: "Failed to update sitting center" });
     }
 };
+
+// University Admin: Get students of a specific college for center allocation
+exports.getStudentsForAllocation = async (req, res) => {
+    try {
+        const { collegeId } = req.params;
+        const query = `
+            SELECT s.id, s.name, s.rollnumber, s."programName", s.semister, 
+                   s.sitting_center_id, c.name as sitting_center_name,
+                   hc_center.name as college_center_name
+            FROM students s
+            JOIN colleges hc ON hc.name ILIKE s."collageName"
+            LEFT JOIN colleges c ON s.sitting_center_id = c.id
+            LEFT JOIN colleges hc_center ON hc.sitting_center_id = hc_center.id
+            WHERE hc.id = $1 AND s."deleteStatus" = true
+            ORDER BY s.rollnumber ASC
+        `;
+        const result = await db.query(query, [collegeId]);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("Get students for allocation error:", error);
+        res.status(500).json({ error: "Failed to fetch students" });
+    }
+};
+
+// University Admin: Allocate specific students to an external sitting center
+exports.allocateStudentsToCenter = async (req, res) => {
+    try {
+        const { studentIds, targetCenterId } = req.body;
+
+        if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+            return res.status(400).json({ error: "No students selected for allocation" });
+        }
+
+        const query = `
+            UPDATE students
+            SET sitting_center_id = $1, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ANY($2::int[])
+            RETURNING id
+        `;
+        const result = await db.query(query, [targetCenterId || null, studentIds]);
+
+        res.status(200).json({ 
+            message: "Student centers allocated successfully", 
+            allocated_count: result.rowCount 
+        });
+    } catch (error) {
+        console.error("Allocate students center error:", error);
+        res.status(500).json({ error: "Failed to allocate student centers" });
+    }
+};

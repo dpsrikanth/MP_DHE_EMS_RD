@@ -28,10 +28,12 @@ import FacultyAssignment from "./pages/CollegeAdmin/FacultyAssignment";
 import FacultyAssignmentEdit from "./pages/CollegeAdmin/FacultyAssignmentEdit";
 import MarksApproval from "./pages/CollegeAdmin/MarksApproval";
 import ExaminationHalls from "./pages/CollegeAdmin/ExaminationHalls";
+import SeatingArrangement from "./pages/CollegeAdmin/SeatingArrangement";
 import FacultyDashboard from "./pages/Faculty/Dashboard";
 import MarksEntry from "./pages/Faculty/MarksEntry";
 import MarksVerification from "./pages/CollegeAdmin/MarksVerification";
 import MarksReview from "./pages/CollegeAdmin/MarksReview";
+import RollNumberGenerator from './pages/CollegeAdmin/RollNumberGenerator';
 import MarksReports from "./pages/CollegeAdmin/MarksReports";
 import StudentDashboard from "./pages/Student/Dashboard";
 import StudentExams from "./pages/Student/StudentExams";
@@ -46,6 +48,7 @@ import HallTicket from "./pages/Student/HallTicket";
 import ResultSheet from "./pages/Student/ResultSheet";
 import ManageCredits from "./pages/UniversityAdmin/ManageCredits";
 import HallApprovals from "./pages/UniversityAdmin/HallApprovals";
+import StudentCenterAllocations from "./pages/UniversityAdmin/StudentCenterAllocations";
 import PaperSetterDashboard from "./pages/PaperSetter/Dashboard";
 import PaperSetterSubmittedPapers from "./pages/PaperSetter/SubmittedPapers";
 import PaperSetterGuidelines from "./pages/PaperSetter/Guidelines";
@@ -149,6 +152,8 @@ const AppRoutes = () => {
       <Route path="/college-admin/faculty-assign/edit/:id" element={<Layout><ProtectedRoute element={<FacultyAssignmentEdit />} /></Layout>} />
       <Route path="/college-admin/marks-approval" element={<Layout><ProtectedRoute element={<MarksApproval />} /></Layout>} />
       <Route path="/college-admin/examination-halls" element={<Layout><ProtectedRoute element={<ExaminationHalls />} /></Layout>} />
+      <Route path="/college-admin/seating-arrangement" element={<Layout><ProtectedRoute element={<SeatingArrangement />} /></Layout>} />
+      <Route path="/college-admin/generate-roll-numbers" element={<Layout><ProtectedRoute element={<RollNumberGenerator />} /></Layout>} />
 
       {/* Faculty Routes */}
       <Route path="/faculty/dashboard" element={<Layout><ProtectedRoute element={<FacultyDashboard />} /></Layout>} />
@@ -190,6 +195,7 @@ const AppRoutes = () => {
       <Route path="/university/grading-policy" element={<Layout><ProtectedRoute element={<GradingPolicy />} /></Layout>} />
       <Route path="/university/manage-credits" element={<Layout><ProtectedRoute element={<ManageCredits />} /></Layout>} />
       <Route path="/university/hall-approvals" element={<Layout><ProtectedRoute element={<HallApprovals />} /></Layout>} />
+      <Route path="/university/student-allocations" element={<Layout><ProtectedRoute element={<StudentCenterAllocations />} /></Layout>} />
       <Route path="/smtp-settings" element={<Layout><ProtectedRoute element={<SmtpSettings />} /></Layout>} />
     </Routes>
   );

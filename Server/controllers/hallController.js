@@ -168,7 +168,7 @@ exports.getAllHallsForApproval = async (req, res) => {
                 c.name as college_name,
                 (
                     SELECT 
-                        (SELECT COUNT(*) FROM students s JOIN colleges sc ON s."collageName" ILIKE sc.name WHERE sc.id = c.id AND s."deleteStatus" = true) +
+                        (SELECT COUNT(DISTINCT er.student_id) FROM exam_registrations er JOIN students s ON s.id = er.student_id JOIN colleges sc ON s."collageName" ILIKE sc.name WHERE sc.id = c.id AND s."deleteStatus" = true AND er.payment_status = 'Paid') +
                         (SELECT COALESCE(SUM(sr.shortage), 0) FROM shortage_requests sr WHERE sr.allocated_college_id = c.id AND sr.status = 'Allocated') -
                         (SELECT COALESCE(SUM(sr.shortage), 0) FROM shortage_requests sr WHERE sr.college_id = c.id AND sr.status = 'Allocated')
                 ) as total_required,
@@ -286,10 +286,11 @@ exports.getAllShortageRequests = async (req, res) => {
                     s.created_at,
                     -- Total students from ALL colleges that are assigned to THIS college as their sitting center
                     (
-                        SELECT COUNT(*) 
-                        FROM students st 
+                        SELECT COUNT(DISTINCT er.student_id) 
+                        FROM exam_registrations er
+                        JOIN students st ON er.student_id = st.id
                         JOIN colleges sc ON st."collageName" ILIKE sc.name 
-                        WHERE sc.id = s.college_id AND st."deleteStatus" = true
+                        WHERE sc.id = s.college_id AND st."deleteStatus" = true AND er.payment_status = 'Paid'
                     ) as student_count,
                     (SELECT COALESCE(SUM(h.rows * h.seats_per_row), 0) FROM examination_halls h WHERE h.college_id = s.college_id AND h.status = 'Approved') as available_capacity,
                     (
@@ -298,12 +299,12 @@ exports.getAllShortageRequests = async (req, res) => {
                             -- Institutional students
                             SELECT 
                                 sc2.name, 
-                                (SELECT COUNT(*) FROM students s2 WHERE s2."collageName" ILIKE sc2.name AND s2."deleteStatus" = true) as count
+                                (SELECT COUNT(DISTINCT er.student_id) FROM exam_registrations er JOIN students s2 ON s2.id = er.student_id WHERE s2."collageName" ILIKE sc2.name AND s2."deleteStatus" = true AND er.payment_status = 'Paid') as count
                             FROM colleges sc2
                             WHERE sc2.id = s.college_id
                             UNION ALL
                             -- Other students assigned as sitting center
-                            SELECT c3.name, (SELECT COUNT(*) FROM students s3 WHERE s3."collageName" ILIKE c3.name AND s3."deleteStatus" = true) as count
+                            SELECT c3.name, (SELECT COUNT(DISTINCT er.student_id) FROM exam_registrations er JOIN students s3 ON s3.id = er.student_id WHERE s3."collageName" ILIKE c3.name AND s3."deleteStatus" = true AND er.payment_status = 'Paid') as count
                             FROM colleges c3
                             WHERE c3.sitting_center_id = s.college_id AND c3.id != s.college_id
                             UNION ALL
@@ -318,10 +319,11 @@ exports.getAllShortageRequests = async (req, res) => {
                     ) as hosting_sources,
                     (
                         (
-                            SELECT COUNT(*) 
-                            FROM students st 
+                            SELECT COUNT(DISTINCT er.student_id) 
+                            FROM exam_registrations er
+                            JOIN students st ON er.student_id = st.id
                             JOIN colleges sc ON st."collageName" ILIKE sc.name 
-                            WHERE sc.id = s.college_id AND st."deleteStatus" = true
+                            WHERE sc.id = s.college_id AND st."deleteStatus" = true AND er.payment_status = 'Paid'
                         ) - 
                         (SELECT COALESCE(SUM(h.rows * h.seats_per_row), 0) FROM examination_halls h WHERE h.college_id = s.college_id AND h.status = 'Approved')
                     ) as shortage
@@ -394,10 +396,11 @@ exports.getSeatingRequirement = async (req, res) => {
                 SELECT 
                     -- Internal students
                     (
-                        SELECT COUNT(*) 
-                        FROM students s 
+                        SELECT COUNT(DISTINCT er.student_id) 
+                        FROM exam_registrations er
+                        JOIN students s ON er.student_id = s.id
                         JOIN colleges sc ON s."collageName" ILIKE sc.name 
-                        WHERE sc.id = $1 AND s."deleteStatus" = true
+                        WHERE sc.id = $1 AND s."deleteStatus" = true AND er.payment_status = 'Paid'
                     ) as internal_load,
                     -- Guest students via shortage allocations
                     (

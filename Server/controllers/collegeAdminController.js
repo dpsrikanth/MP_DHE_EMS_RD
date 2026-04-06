@@ -911,3 +911,91 @@ exports.updateCollegeTotalRooms = async (req, res) => {
         res.status(500).json({ error: "Failed to update total rooms" });
     }
 };
+
+exports.getStudentsForRollGeneration = async (req, res) => {
+    try {
+        const { college_id, role } = req.user || {};
+        const { programName, semister, admission_year } = req.query;
+
+        const isSuperUser = role === 'system_admin' || role === 'university_admin' || role === 'university';
+        if (!college_id && !isSuperUser) return res.status(403).json({ error: "Unauthorized" });
+
+        let query = `
+            SELECT s.id, s.name, s.rollnumber as current_rollnumber, s."programName", s.semister, s.admission_year
+            FROM students s
+            JOIN colleges c ON c.name ILIKE s."collageName"
+            WHERE s."deleteStatus" = true
+        `;
+        let params = [];
+        let pCount = 0;
+
+        if (!isSuperUser) {
+            pCount++;
+            query += ` AND c.id = $${pCount}`;
+            params.push(college_id);
+        }
+
+        if (programName) {
+            pCount++;
+            query += ` AND s."programName" = $${pCount}`;
+            params.push(programName);
+        }
+
+        if (semister) {
+            pCount++;
+            query += ` AND s.semister = $${pCount}`;
+            params.push(semister);
+        }
+
+        if (admission_year) {
+            pCount++;
+            query += ` AND s.admission_year = $${pCount}`;
+            params.push(admission_year);
+        }
+
+        query += ` ORDER BY s.name ASC`;
+
+        const result = await db.query(query, params);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("Get students for roll generation error:", error);
+        res.status(500).json({ error: "Failed to fetch students" });
+    }
+};
+
+exports.allocateRollNumbers = async (req, res) => {
+    try {
+        const { college_id, role } = req.user || {};
+        const { generatedMappings } = req.body; 
+
+        const isSuperUser = role === 'system_admin' || role === 'university_admin' || role === 'university';
+        if (!college_id && !isSuperUser) return res.status(403).json({ error: "Unauthorized" });
+        if (!generatedMappings || !Array.isArray(generatedMappings) || generatedMappings.length === 0) {
+            return res.status(400).json({ error: "No roll numbers generated" });
+        }
+
+        const client = await db.connect();
+        try {
+            await client.query('BEGIN');
+            
+            for (const map of generatedMappings) {
+                // Update student table
+                await client.query(
+                    `UPDATE students SET rollnumber = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+                    [map.rollnumber, map.id]
+                );
+            }
+
+            await client.query('COMMIT');
+            res.status(200).json({ message: "Roll numbers successfully assigned to students." });
+        } catch (innerError) {
+            await client.query('ROLLBACK');
+            throw innerError;
+        } finally {
+            client.release();
+        }
+    } catch (error) {
+        console.error("Allocate roll numbers error:", error);
+        res.status(500).json({ error: "Failed to assign roll numbers", details: error.message });
+    }
+};
