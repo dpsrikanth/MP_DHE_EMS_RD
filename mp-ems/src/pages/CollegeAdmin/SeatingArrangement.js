@@ -12,6 +12,8 @@ const SeatingArrangement = () => {
     const [stats, setStats] = useState({ totalStudents: 0, approvedCapacity: 0 });
     const [seatingPattern, setSeatingPattern] = useState('sequential');
     const [approvedHalls, setApprovedHalls] = useState([]);
+    const [isLocked, setIsLocked] = useState(false);
+
 
     const apiBase = 'http://localhost:8080/api/college-admin';
 
@@ -22,11 +24,15 @@ const SeatingArrangement = () => {
 
     useEffect(() => {
         if (selectedExam) {
+            const exam = exams.find(e => e.id === parseInt(selectedExam));
+            setIsLocked(exam?.seating_locked || false);
             fetchArrangements();
         } else {
             setArrangements([]);
+            setIsLocked(false);
         }
-    }, [selectedExam]);
+    }, [selectedExam, exams]);
+
 
     const fetchExams = async () => {
         try {
@@ -83,7 +89,12 @@ const SeatingArrangement = () => {
             if (res.ok) {
                 const data = await res.json();
                 setArrangements(data);
+                // Also check lock status from the first item if available
+                if (data.length > 0 && data[0].seating_locked !== undefined) {
+                    setIsLocked(data[0].seating_locked);
+                }
             }
+
         } catch (err) {
             toast.error("Failed to fetch seating arrangements");
         } finally {
@@ -120,6 +131,44 @@ const SeatingArrangement = () => {
         }
     };
 
+    const handleLockSeating = async () => {
+        if (!selectedExam) return toast.warning("Please select an exam first");
+        if (arrangements.length === 0 && !isLocked) return toast.error("Cannot lock empty seating. Run allocation first.");
+
+        const confirmMsg = isLocked 
+            ? "Are you sure you want to UNLOCK the seating for this exam?" 
+            : "Finalize and Approve Seating? This will reserve these seats for this exam session.";
+        
+        if (!window.confirm(confirmMsg)) return;
+
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${apiBase}/lock-seating`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ exam_id: selectedExam, locked: !isLocked })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                toast.success(data.message);
+                setIsLocked(data.seating_locked);
+                // Update exams list to keep it in sync
+                setExams(prev => prev.map(e => e.id === parseInt(selectedExam) ? { ...e, seating_locked: data.seating_locked } : e));
+            } else {
+                toast.error(data.error || "Action failed");
+            }
+        } catch (err) {
+            toast.error("An error occurred");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleClearAssignments = async () => {
         if (!selectedExam) return toast.warning("Please select an exam first");
         if (!window.confirm("Are you sure you want to clear ALL seat assignments for this exam?")) return;
@@ -149,6 +198,7 @@ const SeatingArrangement = () => {
         }
     };
 
+
     const filteredArrangements = useMemo(() => {
         if (!searchQuery.trim()) return arrangements;
         const query = searchQuery.toLowerCase();
@@ -167,62 +217,93 @@ const SeatingArrangement = () => {
                         <Layout size={28} />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Seat Allocation</h1>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Seat Allocation</h1>
+                            {isLocked && (
+                                <span className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-lg text-xs font-black uppercase tracking-widest animate-pulse">
+                                    <Info size={12} />
+                                    Finalized & Locked
+                                </span>
+                            )}
+                        </div>
                         <p className="text-sm text-slate-500 font-medium tracking-wide mt-1 uppercase">Manage student-to-seat mapping for examinations.</p>
                     </div>
                 </div>
             </div>
 
+
             {/* Quick Stats & Controls */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <div className="flex-1 space-y-4">
-                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Select Full Exam Context</label>
-                            <select
-                                value={selectedExam}
-                                onChange={(e) => setSelectedExam(e.target.value)}
-                                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer"
-                            >
-                                <option value="">Choose an exam context...</option>
-                                {exams.map(exam => {
-                                    const examDate = exam.exam_date ? new Date(exam.exam_date).toLocaleDateString() : '';
-                                    const displayLabel = `${exam.program_name || 'Generic'} • ${exam.semester_name || 'N/A'} • ${exam.subject_name || 'Unknown Subject'} - ${exam.exam_name} (${examDate})`;
-                                    return <option key={exam.id} value={exam.id}>{displayLabel}</option>;
-                                })}
-                            </select>
-                        </div>
-                        <div className="flex-1 space-y-4 pt-6 md:pt-0">
-                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Seating Pattern</label>
-                            <select
-                                value={seatingPattern}
-                                onChange={(e) => setSeatingPattern(e.target.value)}
-                                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer uppercase"
-                            >
-                                <option value="sequential">Sequential Fill</option>
-                                <option value="alternate">Alternate (Checkerboard)</option>
-                                <option value="random">Randomized</option>
-                            </select>
-                        </div>
-                        <div className="flex items-center gap-3 pt-6 md:pt-0 md:pt-6">
-                            <button
-                                onClick={handleAutoAllocate}
-                                disabled={loading || !selectedExam}
-                                className="flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 uppercase tracking-widest text-xs disabled:opacity-50 disabled:grayscale whitespace-nowrap"
-                            >
-                                <Play size={16} fill="currentColor" />
-                                Run Allocation
-                            </button>
-                            <button
-                                onClick={handleClearAssignments}
-                                disabled={loading || !selectedExam || arrangements.length === 0}
-                                className="p-4 bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 rounded-xl transition-all active:scale-95 disabled:opacity-50"
-                                title="Clear All"
-                            >
-                                <Trash2 size={20} />
-                            </button>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div className="lg:col-span-3 space-y-6">
+                    <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-10">
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-end">
+                            <div className="md:col-span-12 lg:col-span-5 space-y-3">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Selected Examination Context</label>
+                                <select
+                                    value={selectedExam}
+                                    onChange={(e) => setSelectedExam(e.target.value)}
+                                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer h-[56px]"
+                                >
+                                    <option value="">Choose an exam context...</option>
+                                    {exams.map(exam => {
+                                        const examDate = exam.exam_date ? new Date(exam.exam_date).toLocaleDateString() : '';
+                                        const displayLabel = `${exam.program_name || 'Generic'} • ${exam.semester_name || 'N/A'} • ${exam.subject_name || 'Unknown Subject'} - ${exam.exam_name} (${examDate})`;
+                                        return <option key={exam.id} value={exam.id}>{displayLabel}</option>;
+                                    })}
+                                </select>
+                            </div>
+                            <div className="md:col-span-6 lg:col-span-3 space-y-3">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Seating Pattern</label>
+                                <select
+                                    value={seatingPattern}
+                                    onChange={(e) => setSeatingPattern(e.target.value)}
+                                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer uppercase h-[56px]"
+                                >
+                                    <option value="sequential">Sequential Fill</option>
+                                    <option value="alternate">Checkerboard</option>
+                                    <option value="random">Randomized</option>
+                                </select>
+                            </div>
+                            <div className="md:col-span-6 lg:col-span-4 flex items-center gap-3">
+                                <button
+                                    onClick={handleAutoAllocate}
+                                    disabled={loading || !selectedExam || isLocked}
+                                    className="flex-1 flex items-center justify-center gap-2 h-[56px] bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 uppercase tracking-widest text-[10px] disabled:opacity-50 disabled:grayscale whitespace-nowrap px-4"
+                                >
+                                    <Play size={14} fill="currentColor" />
+                                    Run Allocation
+                                </button>
+                                {!isLocked ? (
+                                    <button
+                                        onClick={handleLockSeating}
+                                        disabled={loading || !selectedExam || arrangements.length === 0}
+                                        className="flex-1 flex items-center justify-center gap-2 h-[56px] bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95 uppercase tracking-widest text-[10px] disabled:opacity-50 whitespace-nowrap px-4"
+                                    >
+                                        <CheckCircle2 size={14} />
+                                        Approve
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleLockSeating}
+                                        disabled={loading}
+                                        className="flex-1 flex items-center justify-center gap-2 h-[56px] bg-white border-2 border-slate-200 text-slate-600 hover:bg-slate-50 font-black rounded-2xl transition-all active:scale-95 uppercase tracking-widest text-[10px] px-4"
+                                    >
+                                        <Trash2 size={14} className="text-slate-400" />
+                                        Unlock
+                                    </button>
+                                )}
+                                <button
+                                    onClick={handleClearAssignments}
+                                    disabled={loading || !selectedExam || arrangements.length === 0 || isLocked}
+                                    className="p-4 bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 rounded-2xl transition-all active:scale-95 disabled:opacity-50 h-[56px] w-[56px] flex items-center justify-center"
+                                    title="Clear All"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+                            </div>
                         </div>
                     </div>
+v>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Capacity Info Card */}

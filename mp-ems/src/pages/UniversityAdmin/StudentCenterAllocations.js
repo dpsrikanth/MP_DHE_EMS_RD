@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Users, Building2, Search, CheckCircle2, X, AlertTriangle, ArrowRight, ShieldCheck, UserCheck } from "lucide-react";
+import { Users, Building2, Search, CheckCircle2, X, AlertTriangle, ArrowRight, ShieldCheck, UserCheck, Info } from "lucide-react";
+import authUtils from "../../utils/authUtils";
 
 const StudentCenterAllocations = () => {
     const [colleges, setColleges] = useState([]);
@@ -14,6 +15,8 @@ const StudentCenterAllocations = () => {
     // Selection state
     const [selectedStudentIds, setSelectedStudentIds] = useState(new Set());
     const [allocating, setAllocating] = useState(false);
+    // Auth State
+    const isUniversityAdmin = authUtils.isUniversityAdmin();
 
     useEffect(() => {
         fetchColleges();
@@ -81,6 +84,7 @@ const StudentCenterAllocations = () => {
     };
 
     const handleSelectStudent = (id) => {
+        if (isUniversityAdmin) return;
         const newSet = new Set(selectedStudentIds);
         if (newSet.has(id)) {
             newSet.delete(id);
@@ -176,36 +180,48 @@ const StudentCenterAllocations = () => {
 
                     <div className="h-px bg-slate-100"></div>
 
-                    <div className="bg-indigo-50/50 rounded-2xl p-5 border border-indigo-100/50 space-y-3">
-                        <div className="flex items-center gap-2 text-indigo-600 mb-1">
-                            <ShieldCheck size={18} />
-                            <span className="text-xs font-black uppercase tracking-widest">Allocation Panel</span>
-                        </div>
-                        <p className="text-[10px] font-bold text-slate-500 leading-relaxed mb-4">
-                            Select students from the list on the right, then choose a target center below and click allocate.
-                        </p>
-                        
-                        <select
-                            value={targetCenterId}
-                            onChange={(e) => setTargetCenterId(e.target.value)}
-                            disabled={selectedStudentIds.size === 0}
-                            className="w-full p-3.5 bg-white border border-indigo-200 rounded-2xl text-sm font-bold text-indigo-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 mb-3 disabled:opacity-50"
-                        >
-                            <option value="">Select Target Center...</option>
-                            <option value="HOME_COLLEGE" className="font-bold text-emerald-600">-- HOME COLLEGE (Reset) --</option>
-                            {getTargetCenters().map(c => (
-                                <option key={c.id} value={c.id}>{c.name || c.college_name || `College ${c.id}`}</option>
-                            ))}
-                        </select>
+                    {!isUniversityAdmin ? (
+                        <div className="bg-indigo-50/50 rounded-2xl p-5 border border-indigo-100/50 space-y-3">
+                            <div className="flex items-center gap-2 text-indigo-600 mb-1">
+                                <ShieldCheck size={18} />
+                                <span className="text-xs font-black uppercase tracking-widest">Allocation Panel</span>
+                            </div>
+                            <p className="text-[10px] font-bold text-slate-500 leading-relaxed mb-4">
+                                Select students from the list on the right, then choose a target center below and click allocate.
+                            </p>
+                            
+                            <select
+                                value={targetCenterId}
+                                onChange={(e) => setTargetCenterId(e.target.value)}
+                                disabled={selectedStudentIds.size === 0}
+                                className="w-full p-3.5 bg-white border border-indigo-200 rounded-2xl text-sm font-bold text-indigo-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 mb-3 disabled:opacity-50"
+                            >
+                                <option value="">Select Target Center...</option>
+                                <option value="HOME_COLLEGE" className="font-bold text-emerald-600">-- HOME COLLEGE (Reset) --</option>
+                                {getTargetCenters().map(c => (
+                                    <option key={c.id} value={c.id}>{c.name || c.college_name || `College ${c.id}`}</option>
+                                ))}
+                            </select>
 
-                        <button 
-                            onClick={handleAllocate}
-                            disabled={allocating || selectedStudentIds.size === 0 || !targetCenterId}
-                            className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-widest inline-flex items-center justify-center gap-2 rounded-xl shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-                        >
-                            {allocating ? 'Processing...' : `Assign ${selectedStudentIds.size} Students`} <ArrowRight size={14} />
-                        </button>
-                    </div>
+                            <button 
+                                onClick={handleAllocate}
+                                disabled={allocating || selectedStudentIds.size === 0 || !targetCenterId}
+                                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-widest inline-flex items-center justify-center gap-2 rounded-xl shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                            >
+                                {allocating ? 'Processing...' : `Assign ${selectedStudentIds.size} Students`} <ArrowRight size={14} />
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-3">
+                            <div className="flex items-center gap-2 text-slate-600 mb-1">
+                                <Info size={18} />
+                                <span className="text-xs font-black uppercase tracking-widest text-slate-500">Read-Only View</span>
+                            </div>
+                            <p className="text-[10px] font-bold text-slate-400 leading-relaxed">
+                                You are viewing center allocations for this college. To modify bulk mappings, visit the Center Mapping screen.
+                            </p>
+                        </div>
+                    )}
 
                     <div className="bg-amber-50 rounded-xl p-4 border border-amber-100 flex gap-3 text-amber-700">
                         <AlertTriangle size={16} className="shrink-0 mt-0.5" />
@@ -246,8 +262,8 @@ const StudentCenterAllocations = () => {
                                     <h3 className="text-sm font-black text-slate-900 tracking-tight">{selectedCollegeName}</h3>
                                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">{students.length} Total Registered Students</p>
                                 </div>
-                                <div className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg">
-                                    {selectedStudentIds.size} Selected
+                                <div className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-white/50 text-slate-400 rounded-lg border border-slate-100">
+                                    Finalized Assignments
                                 </div>
                             </div>
                             
@@ -255,14 +271,16 @@ const StudentCenterAllocations = () => {
                                 <table className="w-full text-left">
                                     <thead>
                                         <tr className="bg-slate-50/80 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                            <th className="px-6 py-4 w-12">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={selectedStudentIds.size === students.length && students.length > 0}
-                                                    onChange={handleSelectAll}
-                                                    className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
-                                                />
-                                            </th>
+                                            {!isUniversityAdmin && (
+                                                <th className="px-6 py-4 w-12">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={selectedStudentIds.size === students.length && students.length > 0}
+                                                        onChange={handleSelectAll}
+                                                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
+                                                    />
+                                                </th>
+                                            )}
                                             <th className="px-4 py-4">Roll Number</th>
                                             <th className="px-4 py-4">Student Name</th>
                                             <th className="px-4 py-4">Program & Sem</th>
@@ -276,17 +294,18 @@ const StudentCenterAllocations = () => {
                                             
                                             // Provide visual distinction if it's external vs default home
                                             const hasBulkCenter = !!student.college_center_name;
-                                            let centerName = student.college_center_name || (selectedCollegeName + ' (Home)');
-                                            let centerStyle = 'bg-slate-50 text-slate-600 border-slate-200';
+                                            let centerName = student.college_center_name || (selectedCollegeName);
+                                            let centerStyle = 'bg-slate-100 text-slate-500 border-slate-200';
                                             
                                             if (hasCustomCenter) {
                                                 centerName = student.sitting_center_name;
                                                 centerStyle = 'bg-indigo-50 text-indigo-700 border-indigo-200';
                                             } else if (hasBulkCenter) {
-                                                centerName += ' (Bulk)';
-                                                centerStyle = 'bg-amber-50 text-amber-700 border-amber-200';
-                                            } else {
+                                                centerName = student.college_center_name;
                                                 centerStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                                            } else {
+                                                centerName += ' (HOME)';
+                                                centerStyle = 'bg-slate-50 text-slate-400 border-slate-100';
                                             }
 
                                             return (
@@ -295,14 +314,16 @@ const StudentCenterAllocations = () => {
                                                     className={`hover:bg-slate-50/80 transition-colors cursor-pointer ${isSelected ? 'bg-indigo-50/30' : ''}`}
                                                     onClick={() => handleSelectStudent(student.id)}
                                                 >
-                                                    <td className="px-6 py-4">
-                                                        <input 
-                                                            type="checkbox" 
-                                                            checked={isSelected}
-                                                            onChange={() => {}} // Handled by tr click
-                                                            className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 pointer-events-none"
-                                                        />
-                                                    </td>
+                                                    {!isUniversityAdmin && (
+                                                        <td className="px-6 py-4">
+                                                            <input 
+                                                                type="checkbox" 
+                                                                checked={isSelected}
+                                                                onChange={() => {}} // Handled by tr click
+                                                                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 pointer-events-none"
+                                                            />
+                                                        </td>
+                                                    )}
                                                     <td className="px-4 py-4 text-xs font-black text-slate-800 tabular-nums tracking-tight">
                                                         {student.rollnumber}
                                                     </td>
