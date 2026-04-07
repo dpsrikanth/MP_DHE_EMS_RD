@@ -458,18 +458,29 @@ exports.updateSittingCenter = async (req, res) => {
 exports.getStudentsForAllocation = async (req, res) => {
     try {
         const { collegeId } = req.params;
-        const query = `
-            SELECT s.id, s.name, s.rollnumber, s."programName", s.semister, 
+        const { exam_id } = req.query;
+        
+        let query = `
+            SELECT DISTINCT s.id, s.name, s.rollnumber, s."programName", s.semister, 
                    s.sitting_center_id, c.name as sitting_center_name,
                    hc_center.name as college_center_name
             FROM students s
             JOIN colleges hc ON hc.name ILIKE s."collageName"
+            JOIN exam_registrations er ON er.student_id = s.id
             LEFT JOIN colleges c ON s.sitting_center_id = c.id
             LEFT JOIN colleges hc_center ON hc.sitting_center_id = hc_center.id
-            WHERE hc.id = $1 AND s."deleteStatus" = true
-            ORDER BY s.rollnumber ASC
+            WHERE hc.id = $1 AND s."deleteStatus" = true AND er.payment_status = 'Paid'
         `;
-        const result = await db.query(query, [collegeId]);
+        const params = [collegeId];
+
+        if (exam_id) {
+            query += ` AND er.exam_id = $2`;
+            params.push(exam_id);
+        }
+
+        query += ` ORDER BY s.rollnumber ASC`;
+        
+        const result = await db.query(query, params);
         res.status(200).json(result.rows);
     } catch (error) {
         console.error("Get students for allocation error:", error);

@@ -432,6 +432,7 @@ exports.getSeatingRequirement = async (req, res) => {
                 JOIN colleges sc ON s."collageName" ILIKE sc.name 
                 JOIN exams ex ON er.exam_id = ex.id
                 WHERE sc.id = $1 AND s."deleteStatus" = true AND er.payment_status = 'Paid'
+                ${examFilter}
                 GROUP BY ex.name, s."programName", s."semister"
             )
             SELECT 

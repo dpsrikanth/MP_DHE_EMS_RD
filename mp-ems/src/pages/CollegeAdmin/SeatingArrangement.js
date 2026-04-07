@@ -27,9 +27,11 @@ const SeatingArrangement = () => {
             const exam = exams.find(e => e.id === parseInt(selectedExam));
             setIsLocked(exam?.seating_locked || false);
             fetchArrangements();
+            fetchStats(selectedExam); // Fetch stats for the specific exam
         } else {
             setArrangements([]);
             setIsLocked(false);
+            fetchStats(); // Reset to global stats if no exam selected
         }
     }, [selectedExam, exams]);
 
@@ -49,15 +51,15 @@ const SeatingArrangement = () => {
         }
     };
 
-    const fetchStats = async () => {
+    const fetchStats = async (examId = '') => {
         try {
             const token = localStorage.getItem('token');
             // Fetch total capacity
-            const hallRes = await fetch('http://localhost:8080/api/examination-halls', {
+            const hallRes = await fetch(`http://localhost:8080/api/examination-halls${examId ? `?exam_id=${examId}` : ''}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Fetch student requirement
-            const reqRes = await fetch('http://localhost:8080/api/examination-halls/seating-requirement', {
+            const reqRes = await fetch(`http://localhost:8080/api/examination-halls/seating-requirement${examId ? `?exam_id=${examId}` : ''}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -66,6 +68,8 @@ const SeatingArrangement = () => {
                 const req = await reqRes.json();
                 
                 const approved = halls.filter(h => h.status === 'Approved');
+                // Calculate capacity: If filtered by exam, use capacity of halls linked to that exam.
+                // Otherwise use total capacity of all approved halls.
                 const approvedCap = approved.reduce((sum, h) => sum + (parseInt(h.total_capacity) || ((parseInt(h.rows)||0) * (parseInt(h.seats_per_row)||0))), 0);
                 
                 setApprovedHalls(approved);
@@ -303,7 +307,6 @@ const SeatingArrangement = () => {
                             </div>
                         </div>
                     </div>
-v>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Capacity Info Card */}

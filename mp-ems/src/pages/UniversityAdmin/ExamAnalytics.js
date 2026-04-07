@@ -3,15 +3,39 @@ import { FileCheck, Users, CheckCircle, XCircle, BarChart2 } from 'lucide-react'
 
 const ExamAnalytics = () => {
   const [stats, setStats] = useState(null);
+  const [exams, setExams] = useState([]);
+  const [selectedExam, setSelectedExam] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStats();
+    fetchExams();
   }, []);
 
-  const fetchStats = async () => {
+  useEffect(() => {
+    fetchStats(selectedExam);
+  }, [selectedExam]);
+
+  const fetchExams = async () => {
     try {
-      const response = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/reports/global-exam-stats`, {
+      const response = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/exams`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const result = await response.json();
+      setExams(Array.isArray(result) ? result : []);
+    } catch (error) {
+      console.error('Error fetching exams:', error);
+    }
+  };
+
+  const fetchStats = async (examId = '') => {
+    setLoading(true);
+    try {
+      const url = new URL(`${window.config?.api_base_url || 'http://localhost:8080/api'}/reports/global-exam-stats`);
+      if (examId) url.searchParams.append('exam_id', examId);
+      
+      const response = await fetch(url.toString(), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -32,11 +56,28 @@ const ExamAnalytics = () => {
 
   return (
     <div className="p-6 bg-slate-50 min-h-screen">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-          <FileCheck className="text-indigo-600" /> Global Exam Analytics
-        </h1>
-        <p className="text-slate-500">University-wide Examination Performance Metrics</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+          <h1 className="text-2xl font-black text-slate-800 flex items-center gap-3">
+            <FileCheck className="text-indigo-600" size={32} /> Global Exam Analytics
+          </h1>
+          <p className="text-slate-500 font-medium mt-1">University-wide Examination Performance Metrics</p>
+        </div>
+
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <select
+            value={selectedExam}
+            onChange={(e) => setSelectedExam(e.target.value)}
+            className="w-full md:w-80 px-4 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/20 cursor-pointer appearance-none transition-all"
+          >
+            <option value="">All Exams (Aggregate)</option>
+            {exams.map(exam => (
+              <option key={exam.id} value={exam.id}>
+                {exam.name} ({new Date(exam.exam_date).toLocaleDateString()})
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

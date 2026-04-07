@@ -14,24 +14,55 @@ const getPassThreshold = async (university_id) => {
 // 1. University Admin: Infrastructure Capacity vs Student Distribution
 exports.getInfrastructureAnalytics = async (req, res) => {
     try {
-        const query = `
-            SELECT 
-                c.id,
-                c.name as college_name,
-                (
-                    SELECT COALESCE(SUM(rows * seats_per_row), 0) 
-                    FROM examination_halls 
-                    WHERE college_id = c.id AND status = 'Approved'
-                ) as approved_capacity,
-                (
-                    SELECT COUNT(*) 
-                    FROM students 
-                    WHERE "collageName" ILIKE c.name AND "deleteStatus" = true
-                ) as total_students
-            FROM colleges c
-            ORDER BY c.name ASC
-        `;
-        const result = await db.query(query);
+        const { exam_id } = req.query;
+        let query;
+        let params = [];
+
+        if (exam_id) {
+            query = `
+                SELECT 
+                    c.id,
+                    c.name as college_name,
+                    (
+                        SELECT COALESCE(SUM(rows * seats_per_row), 0) 
+                        FROM examination_halls 
+                        WHERE college_id = c.id AND status = 'Approved'
+                          AND (exam_id = $1 OR exam_id IS NULL)
+                    ) as approved_capacity,
+                    (
+                        SELECT COUNT(DISTINCT er.student_id) 
+                        FROM exam_registrations er
+                        JOIN students s ON er.student_id = s.id
+                        JOIN colleges sc ON s."collageName" ILIKE sc.name 
+                        WHERE sc.id = c.id AND s."deleteStatus" = true 
+                          AND er.payment_status = 'Paid'
+                          AND er.exam_id = $1
+                    ) as total_students
+                FROM colleges c
+                ORDER BY c.name ASC
+            `;
+            params = [exam_id];
+        } else {
+            query = `
+                SELECT 
+                    c.id,
+                    c.name as college_name,
+                    (
+                        SELECT COALESCE(SUM(rows * seats_per_row), 0) 
+                        FROM examination_halls 
+                        WHERE college_id = c.id AND status = 'Approved'
+                    ) as approved_capacity,
+                    (
+                        SELECT COUNT(*) 
+                        FROM students 
+                        WHERE "collageName" ILIKE c.name AND "deleteStatus" = true
+                    ) as total_students
+                FROM colleges c
+                ORDER BY c.name ASC
+            `;
+        }
+        
+        const result = await db.query(query, params);
         res.json(result.rows);
     } catch (err) {
         console.error("Infrastructure Analytics Error:", err);
@@ -42,15 +73,31 @@ exports.getInfrastructureAnalytics = async (req, res) => {
 // 2. University Admin: Global Exam Stats
 exports.getGlobalExamStats = async (req, res) => {
     try {
+        const { exam_id } = req.query;
         const threshold = await getPassThreshold();
-        const query = `
-            SELECT 
-                (SELECT COUNT(*) FROM exams) as total_exams,
-                (SELECT COUNT(*) FROM students WHERE "deleteStatus" = true) as total_students,
-                (SELECT COUNT(*) FROM marks WHERE total_marks >= $1) as total_passed,
-                (SELECT COUNT(*) FROM marks WHERE total_marks < $1) as total_failed
-        `;
-        const result = await db.query(query, [threshold]);
+        let query;
+        let params = [threshold];
+
+        if (exam_id) {
+            query = `
+                SELECT 
+                    1 as total_exams,
+                    (SELECT COUNT(*) FROM exam_registrations WHERE exam_id = $2 AND payment_status = 'Paid') as total_students,
+                    (SELECT COUNT(*) FROM marks WHERE exam_id = $2 AND total_marks >= $1) as total_passed,
+                    (SELECT COUNT(*) FROM marks WHERE exam_id = $2 AND total_marks < $1) as total_failed
+            `;
+            params.push(exam_id);
+        } else {
+            query = `
+                SELECT 
+                    (SELECT COUNT(*) FROM exams) as total_exams,
+                    (SELECT COUNT(*) FROM students WHERE "deleteStatus" = true) as total_students,
+                    (SELECT COUNT(*) FROM marks WHERE total_marks >= $1) as total_passed,
+                    (SELECT COUNT(*) FROM marks WHERE total_marks < $1) as total_failed
+            `;
+        }
+        
+        const result = await db.query(query, params);
         res.json(result.rows[0]);
     } catch (err) {
         console.error("Global Exam Stats Error:", err);

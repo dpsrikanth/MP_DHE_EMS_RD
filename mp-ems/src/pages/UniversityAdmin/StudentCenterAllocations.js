@@ -10,6 +10,8 @@ const StudentCenterAllocations = () => {
     const [loadingStudents, setLoadingStudents] = useState(false);
     
     const [selectedCollegeId, setSelectedCollegeId] = useState('');
+    const [exams, setExams] = useState([]);
+    const [selectedExamId, setSelectedExamId] = useState('');
     const [targetCenterId, setTargetCenterId] = useState('');
     
     // Selection state
@@ -20,7 +22,23 @@ const StudentCenterAllocations = () => {
 
     useEffect(() => {
         fetchColleges();
+        fetchExams();
     }, []);
+
+    const fetchExams = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/exams`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setExams(data);
+            }
+        } catch (error) {
+            console.error("Error fetching exams:", error);
+        }
+    };
 
     const fetchColleges = async () => {
         try {
@@ -42,11 +60,14 @@ const StudentCenterAllocations = () => {
         }
     };
 
-    const fetchStudents = async (collegeId) => {
+    const fetchStudents = async (collegeId, examId = '') => {
         try {
             setLoadingStudents(true);
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/university-admin/students-for-allocation/${collegeId}`, {
+            const url = new URL(`http://localhost:8080/api/university-admin/students-for-allocation/${collegeId}`);
+            if (examId) url.searchParams.append('exam_id', examId);
+
+            const res = await fetch(url.toString(), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -67,8 +88,19 @@ const StudentCenterAllocations = () => {
     const handleCollegeChange = (e) => {
         const cId = e.target.value;
         setSelectedCollegeId(cId);
-        if (cId) {
-            fetchStudents(cId);
+        if (cId && selectedExamId) {
+            fetchStudents(cId, selectedExamId);
+        } else {
+            setStudents([]);
+            setSelectedStudentIds(new Set());
+        }
+    };
+
+    const handleExamChange = (e) => {
+        const examId = e.target.value;
+        setSelectedExamId(examId);
+        if (selectedCollegeId && examId) {
+            fetchStudents(selectedCollegeId, examId);
         } else {
             setStudents([]);
             setSelectedStudentIds(new Set());
@@ -178,6 +210,22 @@ const StudentCenterAllocations = () => {
                         </select>
                     </div>
 
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Examination Context</label>
+                        <select 
+                            value={selectedExamId}
+                            onChange={handleExamChange}
+                            className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all cursor-pointer"
+                        >
+                            <option value="">Choose Exam...</option>
+                            {exams.map(e => (
+                                <option key={e.id} value={e.id}>
+                                    {`${e.program_name?.toUpperCase() || ''} • ${e.semester_name?.toUpperCase() || ''} — ${e.name?.toUpperCase() || ''} [${new Date(e.exam_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()} | ${e.start_time?.toUpperCase() || ''} — ${e.end_time?.toUpperCase() || ''}]`}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
                     <div className="h-px bg-slate-100"></div>
 
                     {!isUniversityAdmin ? (
@@ -233,14 +281,14 @@ const StudentCenterAllocations = () => {
 
                 {/* Right Area - Students Table */}
                 <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden flex flex-col min-h-[500px]">
-                    {!selectedCollegeId ? (
+                    {!selectedCollegeId || !selectedExamId ? (
                         <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
                             <div className="w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-full flex items-center justify-center text-slate-300 mb-4">
                                 <Building2 size={32} />
                             </div>
-                            <h3 className="text-xl font-black text-slate-800">Select a Source College</h3>
+                            <h3 className="text-xl font-black text-slate-800">Select College & Exam</h3>
                             <p className="text-sm font-medium text-slate-500 mt-2 max-w-md">
-                                Choose a college from the sidebar to view its students and override their examination center allocations.
+                                Choose a source college and an examination context from the sidebar to manage student center allocations.
                             </p>
                         </div>
                     ) : loadingStudents ? (

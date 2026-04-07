@@ -3,22 +3,56 @@ import { Building2, Users, TrendingUp, AlertTriangle, Search } from 'lucide-reac
 
 const InfrastructureAnalytics = () => {
   const [data, setData] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [selectedExam, setSelectedExam] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [stats, setStats] = useState({ totalSeats: 0, totalStudents: 0, shortages: 0 });
 
   useEffect(() => {
-    fetchInfrastructureData();
+    fetchExams();
   }, []);
 
-  const fetchInfrastructureData = async () => {
+  useEffect(() => {
+    fetchInfrastructureData(selectedExam);
+  }, [selectedExam]);
+
+  const fetchExams = async () => {
     try {
-      const response = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/reports/infrastructure-analytics`, {
+      const response = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/exams`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const result = await response.json();
+      setExams(Array.isArray(result) ? result : []);
+    } catch (error) {
+      console.error('Error fetching exams:', error);
+    }
+  };
+
+  const fetchInfrastructureData = async (examId = '') => {
+    setLoading(true);
+    try {
+      const url = new URL(`${window.config?.api_base_url || 'http://localhost:8080/api'}/reports/infrastructure-analytics`);
+      if (examId) url.searchParams.append('exam_id', examId);
+
+      const response = await fetch(url.toString(), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       const result = await response.json();
       setData(Array.isArray(result) ? result : []);
+      
+      // Calculate global summary stats
+      if (Array.isArray(result)) {
+        const totalSeats = result.reduce((acc, curr) => acc + (parseInt(curr.approved_capacity) || 0), 0);
+        const totalStudents = result.reduce((acc, curr) => acc + (parseInt(curr.total_students) || 0), 0);
+        const shortages = result.reduce((acc, curr) => acc + Math.max(0, (parseInt(curr.total_students) || 0) - (parseInt(curr.approved_capacity) || 0)), 0);
+        setStats({ totalSeats, totalStudents, shortages });
+      }
+
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -32,24 +66,62 @@ const InfrastructureAnalytics = () => {
 
   return (
     <div className="p-6 bg-slate-50 min-h-screen">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <Building2 className="text-blue-600" /> Infrastructure Analytics
+          <h1 className="text-2xl font-black text-slate-800 flex items-center gap-3">
+            <Building2 className="text-blue-600" size={32} /> Infrastructure Analytics
           </h1>
-          <p className="text-slate-500">College-wise Capacity vs Student Distribution</p>
+          <p className="text-slate-500 font-medium mt-1">College-wise Capacity vs Student Distribution</p>
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 size-4" />
-          <input 
-            type="text" 
-            placeholder="Search colleges..."
-            className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-64"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        
+        <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 size-5" />
+            <input 
+              type="text" 
+              placeholder="Search colleges..."
+              className="pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none w-full font-medium transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <select
+            value={selectedExam}
+            onChange={(e) => setSelectedExam(e.target.value)}
+            className="w-full md:w-64 px-4 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm outline-none focus:ring-4 focus:ring-blue-500/20 cursor-pointer appearance-none transition-all"
+          >
+            <option value="">All Exams (Aggregate)</option>
+            {exams.map(exam => (
+              <option key={exam.id} value={exam.id}>
+                {exam.name} ({new Date(exam.exam_date).toLocaleDateString()})
+              </option>
+            ))}
+          </select>
         </div>
       </div>
+
+      {/* Global Stats Bar */}
+      {!loading && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Capacity</p>
+            <p className="text-xl font-black text-slate-800">{stats.totalSeats.toLocaleString()}</p>
+          </div>
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Students</p>
+            <p className="text-xl font-black text-slate-800">{stats.totalStudents.toLocaleString()}</p>
+          </div>
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Overall Shortage</p>
+            <p className="text-xl font-black text-rose-600">{stats.shortages.toLocaleString()}</p>
+          </div>
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
+            <p className="text-xl font-black text-emerald-600">{stats.shortages === 0 ? 'Optimal' : 'Shortage'}</p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
