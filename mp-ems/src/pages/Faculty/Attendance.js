@@ -1,12 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
-import { Users, Save, Search, Calendar, Hash, CheckCircle, XCircle, FileText } from "lucide-react";
+import { 
+    Users, Save, Search, Calendar, Hash, 
+    CheckCircle, XCircle, FileText, BarChart3, 
+    Filter, Info, Download, ArrowLeft, ArrowRight
+} from "lucide-react";
 import { useLocation } from 'react-router-dom';
 import { TableSearch } from '../../components/TableControls';
 
 const Attendance = () => {
     const location = useLocation();
+    const [activeTab, setActiveTab] = useState('mark'); // 'mark' | 'analytics'
     const [assignedSubjects, setAssignedSubjects] = useState([]);
     const [students, setStudents] = useState([]);
     const [attendanceDraft, setAttendanceDraft] = useState({});
@@ -16,6 +21,9 @@ const Attendance = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
     const [periodNumber, setPeriodNumber] = useState(1);
+    
+    // Analytics specific state
+    const [analyticsFilter, setAnalyticsFilter] = useState('all'); // 'all', 'week', 'month', 'year'
     const [summaryStats, setSummaryStats] = useState({ totalSessions: 0, studentMap: {} });
 
     useEffect(() => {
@@ -31,18 +39,22 @@ const Attendance = () => {
                     label: `${assignment.subject_code} - ${assignment.subject_name} (Sec: ${assignment.section})`
                 };
                 setSelectedAssignment(option);
-                fetchSubjectDetails(assignment, attendanceDate, periodNumber);
             }
         }
     }, [assignedSubjects, location.state, selectedAssignment]);
 
-    // Refetch when date or period changes
     useEffect(() => {
         if (selectedAssignment) {
             const assignment = assignedSubjects.find(a => a.id === selectedAssignment.value);
-            if (assignment) fetchSubjectDetails(assignment, attendanceDate, periodNumber);
+            if (assignment) {
+                if (activeTab === 'mark') {
+                    fetchSubjectDetails(assignment, attendanceDate, periodNumber);
+                } else {
+                    fetchAnalytics(assignment, analyticsFilter);
+                }
+            }
         }
-    }, [attendanceDate, periodNumber]);
+    }, [selectedAssignment, attendanceDate, periodNumber, analyticsFilter, activeTab]);
 
     const fetchAssignedSubjects = async () => {
         try {
@@ -66,23 +78,19 @@ const Attendance = () => {
     };
 
     const fetchSubjectDetails = async (assignment, dateStr, periodNum) => {
-        if (!assignment) return;
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
 
-            // 1. Fetch Students
             const studentsRes = await fetch(`http://localhost:8080/api/faculty-marks/students?college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&program_id=${assignment.program_id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             let studentsData = [];
             if (studentsRes.ok) {
                 studentsData = await studentsRes.json();
-                // Filter by section if we had section grouping in students, but for now we assume they apply.
             }
             setStudents(studentsData);
 
-            // 2. Fetch specific attendance for date + period
             const attRes = await fetch(`http://localhost:8080/api/faculty-marks/attendance?subject_id=${assignment.subject_id}&section=${assignment.section}&college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&academic_year_id=${assignment.academic_year_id}&attendance_date=${dateStr}&period_number=${periodNum}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -91,7 +99,7 @@ const Attendance = () => {
                 existingAtt = await attRes.json();
             }
 
-            // 3. Fetch summary stats
+            // Fetch overall summary for comparison in entry view
             const summaryRes = await fetch(`http://localhost:8080/api/faculty-marks/attendance-summary?subject_id=${assignment.subject_id}&section=${assignment.section}&college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&academic_year_id=${assignment.academic_year_id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -102,98 +110,122 @@ const Attendance = () => {
                 setSummaryStats({ totalSessions: sData.totalSessions, studentMap: map });
             }
 
-            // 4. Merge into draft state (Default 'Present' if no record for the day, but we only create records on Save)
             const draft = {};
             studentsData.forEach(st => {
                 const rec = existingAtt.find(e => e.student_id === st.id);
-                // If the record exists, use it, else default to 'Present' for unsaved days to make it easy
                 draft[st.id] = rec ? rec.status : 'Present';
             });
             setAttendanceDraft(draft);
 
         } catch (err) {
-            toast.error('Error fetching details for attendance');
+            toast.error('Error fetching details');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleAssignmentSelect = (selectedOption) => {
-        setSelectedAssignment(selectedOption);
-        const assignment = assignedSubjects.find(a => a.id === selectedOption.value);
-        if (assignment) {
-            fetchSubjectDetails(assignment, attendanceDate, periodNumber);
+    const fetchAnalytics = async (assignment, filter) => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('token');
+            const now = new Date();
+            let startDate = null;
+            let endDate = now.toISOString().split('T')[0];
+
+            if (filter === 'week') {
+                const d = new Date();
+                d.setDate(d.getDate() - 7);
+                startDate = d.toISOString().split('T')[0];
+            } else if (filter === 'month') {
+                const d = new Date(now.getFullYear(), now.getMonth(), 1);
+                startDate = d.toISOString().split('T')[0];
+            } else if (filter === 'year') {
+                const d = new Date(now.getFullYear(), 0, 1);
+                startDate = d.toISOString().split('T')[0];
+            }
+
+            const query = new URLSearchParams({
+                subject_id: assignment.subject_id,
+                section: assignment.section,
+                college_id: assignment.college_id,
+                semester_id: assignment.semester_id,
+                academic_year_id: assignment.academic_year_id,
+            });
+            if (startDate) {
+                query.append('startDate', startDate);
+                query.append('endDate', endDate);
+            }
+
+            const summaryRes = await fetch(`http://localhost:8080/api/faculty-marks/attendance-summary?${query.toString()}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (summaryRes.ok) {
+                const sData = await summaryRes.json();
+                const map = {};
+                sData.summary.forEach(s => map[s.student_id] = parseInt(s.present_count));
+                setSummaryStats({ totalSessions: sData.totalSessions, studentMap: map });
+            }
+
+            // Also fetch student list if not loaded
+            if (students.length === 0) {
+                const studentsRes = await fetch(`http://localhost:8080/api/faculty-marks/students?college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&program_id=${assignment.program_id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (studentsRes.ok) {
+                    setStudents(await studentsRes.json());
+                }
+            }
+        } catch (err) {
+            toast.error('Error fetching analytics');
+        } finally {
+            setLoading(false);
         }
     };
 
-    const toggleAttendance = (studentId) => {
-        setAttendanceDraft(prev => ({
-            ...prev,
-            [studentId]: prev[studentId] === 'Present' ? 'Absent' : 'Present'
-        }));
-    };
-
-    const markAll = (status) => {
-        const draft = { ...attendanceDraft };
-        students.forEach(st => draft[st.id] = status);
-        setAttendanceDraft(draft);
-    };
-
     const handleSaveAttendance = async () => {
-        const assignmentStr = assignedSubjects.find(a => a.id === selectedAssignment.value);
-        if (!assignmentStr) return;
-
+        const assignment = assignedSubjects.find(a => a.id === selectedAssignment.value);
+        if (!assignment) return;
         setIsSaving(true);
         try {
             const token = localStorage.getItem('token');
             const userStr = localStorage.getItem('user');
             const teacherId = userStr ? JSON.parse(userStr).teacher_id : 1;
-
             const payload = Object.entries(attendanceDraft).map(([studentId, status]) => ({
                 student_id: parseInt(studentId),
                 status
             }));
-
             const res = await fetch('http://localhost:8080/api/faculty-marks/attendance', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
                     attendanceData: payload,
-                    subject_id: assignmentStr.subject_id,
-                    college_id: assignmentStr.college_id,
-                    semester_id: assignmentStr.semester_id,
-                    academic_year_id: assignmentStr.academic_year_id,
-                    section: assignmentStr.section,
+                    subject_id: assignment.subject_id,
+                    college_id: assignment.college_id,
+                    semester_id: assignment.semester_id,
+                    academic_year_id: assignment.academic_year_id,
+                    section: assignment.section,
                     teacher_id: teacherId,
                     attendance_date: attendanceDate,
                     period_number: periodNumber
                 })
             });
-
-            const responseData = await res.json();
-
             if (res.ok) {
-                toast.success("Attendance saved successfully!");
-                fetchSubjectDetails(assignmentStr, attendanceDate, periodNumber);
+                toast.success("Attendance saved!");
+                fetchSubjectDetails(assignment, attendanceDate, periodNumber);
             } else {
-                toast.error(responseData.error || "Failed to save attendance");
+                toast.error("Failed to save.");
             }
         } catch (err) {
-            toast.error("Error saving attendance");
+            toast.error("Error saving.");
         } finally {
             setIsSaving(false);
         }
     };
 
-    const filteredStudents = React.useMemo(() => {
+    const filteredStudents = useMemo(() => {
         if (!searchQuery.trim()) return students;
-        
-        const query = searchQuery.toLowerCase().trim();
-        return students.filter(student => {
-            const sName = (student.name || "").toLowerCase();
-            const sRoll = (student.rollnumber || "").toLowerCase();
-            return sName.includes(query) || sRoll.includes(query);
-        });
+        const q = searchQuery.toLowerCase();
+        return students.filter(s => s.name.toLowerCase().includes(q) || s.rollnumber?.toLowerCase().includes(q));
     }, [students, searchQuery]);
 
     const options = assignedSubjects.map(a => ({
@@ -202,167 +234,225 @@ const Attendance = () => {
     }));
 
     return (
-        <div className="p-6 md:p-8 space-y-6">
-            <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600">
-                    <Calendar size={28} />
+        <div className="p-8 space-y-8 animate-fade-in pb-20">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-emerald-500/30">
+                        <Calendar size={28} />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight italic">Faculty <span className="text-emerald-500 not-italic">Attendance</span></h1>
+                        <p className="text-xs text-slate-400 font-black tracking-[0.2em] mt-1 uppercase">Track & Analyze engagement in real-time</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 leading-none">Class Attendance</h1>
-                    <p className="text-sm text-slate-500 font-medium mt-1.5">Track and manage daily student attendance.</p>
+                
+                <div className="flex bg-slate-100 p-1.5 rounded-2xl shadow-inner border border-slate-200">
+                    <button 
+                        onClick={() => setActiveTab('mark')}
+                        className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'mark' ? 'bg-white text-emerald-600 shadow-lg' : 'text-slate-500'}`}
+                    >
+                        Mark Attendance
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('analytics')}
+                        className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'analytics' ? 'bg-white text-emerald-600 shadow-lg' : 'text-slate-500'}`}
+                    >
+                        Attendance Analytics
+                    </button>
                 </div>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 md:p-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
-                <div className="md:col-span-6 space-y-2">
-                    <label className="text-sm font-bold text-slate-700 ml-1">Assigned Subject</label>
+            {/* Selector Card */}
+            <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50 grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
+                <div className="md:col-span-12 lg:col-span-5 space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Assigned Subject & Section</label>
                     <Select
                         options={options}
                         value={selectedAssignment}
-                        onChange={handleAssignmentSelect}
-                        placeholder="Select Subject & Section..."
-                        styles={{ control: (base) => ({ ...base, borderRadius: '1rem', borderColor: '#e2e8f0' }) }}
+                        onChange={setSelectedAssignment}
+                        placeholder="Choose a class..."
+                        styles={{ 
+                            control: (base) => ({ 
+                                ...base, 
+                                borderRadius: '1.25rem', 
+                                padding: '0.2rem',
+                                border: '1px solid #f1f5f9',
+                                boxShadow: 'none'
+                            }) 
+                        }}
                     />
                 </div>
                 
-                <div className="md:col-span-4 space-y-2">
-                    <label className="text-sm font-bold text-slate-700 flex items-center gap-2 ml-1">
-                        <Calendar size={14} className="text-slate-400" /> Date
-                    </label>
-                    <input 
-                        type="date"
-                        value={attendanceDate}
-                        onChange={(e) => setAttendanceDate(e.target.value)}
-                        className="w-full px-4 py-2 bg-white border border-slate-300 rounded-xl outline-none focus:border-emerald-500 transition-colors"
-                    />
-                </div>
-
-                <div className="md:col-span-2 space-y-2">
-                    <label className="text-sm font-bold text-slate-700 flex items-center gap-2 ml-1">
-                        <Hash size={14} className="text-slate-400" /> Period
-                    </label>
-                    <input 
-                        type="number"
-                        min="1"
-                        max="10"
-                        value={periodNumber}
-                        onChange={(e) => setPeriodNumber(parseInt(e.target.value) || 1)}
-                        className="w-full px-4 py-2 bg-white border border-slate-300 rounded-xl outline-none focus:border-emerald-500 transition-colors"
-                    />
-                </div>
+                {activeTab === 'mark' ? (
+                    <>
+                        <div className="md:col-span-6 lg:col-span-4 space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Attendance Date</label>
+                            <input 
+                                type="date"
+                                value={attendanceDate}
+                                onChange={(e) => setAttendanceDate(e.target.value)}
+                                className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all font-bold text-sm"
+                            />
+                        </div>
+                        <div className="md:col-span-6 lg:col-span-3 space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Period Number</label>
+                            <input 
+                                type="number"
+                                min="1"
+                                value={periodNumber}
+                                onChange={(e) => setPeriodNumber(parseInt(e.target.value) || 1)}
+                                className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all font-bold text-sm"
+                            />
+                        </div>
+                    </>
+                ) : (
+                    <div className="md:col-span-12 lg:col-span-7 space-y-2">
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Time Range Analytics</label>
+                         <div className="flex gap-2">
+                            {[
+                                { id: 'all', label: 'All-Time' },
+                                { id: 'week', label: 'Past 7 Days' },
+                                { id: 'month', label: 'This Month' },
+                                { id: 'year', label: 'This Academic Year' }
+                            ].map(filter => (
+                                <button
+                                    key={filter.id}
+                                    onClick={() => setAnalyticsFilter(filter.id)}
+                                    className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${analyticsFilter === filter.id ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                                >
+                                    {filter.label}
+                                </button>
+                            ))}
+                         </div>
+                    </div>
+                )}
             </div>
 
-            {loading && (
-                <div className="flex justify-center items-center h-32">
-                    <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+            {loading ? (
+                <div className="flex justify-center items-center py-20">
+                    <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
-            )}
-
-            {!loading && selectedAssignment && students.length > 0 && (
-                <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 flex-wrap gap-4">
-                        <div className="flex items-center gap-2">
-                            <Users size={20} className="text-emerald-500" />
-                            <h3 className="text-lg font-bold text-slate-900">Student Enrollment</h3>
-                        </div>
-                        <div className="flex items-center gap-6">
-                            <div className="w-full md:w-64">
-                                <TableSearch 
-                                    value={searchQuery}
-                                    onChange={setSearchQuery}
-                                    placeholder="Search by name or roll no..."
-                                />
+            ) : selectedAssignment ? (
+                <div className="space-y-6">
+                    {/* Top Analytics Bar (Unified) */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Total Students</h4>
+                            <p className="text-2xl font-black text-slate-900 tracking-tighter">{students.length}</p>
+                         </div>
+                         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Sessions Held</h4>
+                            <p className="text-2xl font-black text-emerald-600 tracking-tighter">{summaryStats.totalSessions}</p>
+                         </div>
+                         <div className="bg-slate-900 p-6 rounded-3xl shadow-xl shadow-slate-900/10 text-white md:col-span-2 flex items-center justify-between">
+                            <div>
+                                <h4 className="text-[10px] font-black opacity-50 uppercase tracking-[0.2em] mb-2 italic">Engagement Alert</h4>
+                                <p className="text-xs font-bold leading-relaxed">System identifies students with <span className="text-red-400 font-black underline decoration-red-400/50 underline-offset-4">below 75% attendance</span> in the selected period.</p>
                             </div>
-                            <div className="flex gap-2">
-                                <button onClick={() => markAll('Present')} className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-bold border border-emerald-200 hover:bg-emerald-100">
-                                    Mark All Present
-                                </button>
-                                <button onClick={() => markAll('Absent')} className="px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-sm font-bold border border-red-200 hover:bg-red-100">
-                                    Mark All Absent
-                                </button>
-                            </div>
-                        </div>
+                            <Info className="text-slate-700" size={32} />
+                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse whitespace-nowrap">
-                            <thead>
-                                <tr className="bg-slate-50 border-y border-slate-200">
-                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest w-1/2">Student Details</th>
-                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Status</th>
-                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Cummulative Attendance</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {filteredStudents.length > 0 ? (
-                                    filteredStudents.map((student) => {
-                                        const status = attendanceDraft[student.id];
-                                        const pastPresentBytes = summaryStats.studentMap[student.id] || 0;
-                                        // Include current day's saved status realistically might require recalculating, but this is a close hint
-                                        const aggPct = summaryStats.totalSessions > 0 ? Math.round((pastPresentBytes / summaryStats.totalSessions) * 100) : 0;
+                    <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/40 overflow-hidden">
+                        <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+                            <div className="flex items-center gap-3">
+                                <Users size={20} className="text-emerald-500" />
+                                <h2 className="text-lg font-black text-slate-900 tracking-tight uppercase tracking-tighter italic">
+                                    {activeTab === 'mark' ? 'Daily Attendance Registry' : 'Period Analytics Report'}
+                                </h2>
+                            </div>
+                            <div className="w-64">
+                                <TableSearch value={searchQuery} onChange={setSearchQuery} placeholder="Filter students..." />
+                            </div>
+                        </div>
 
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-50">
+                                    <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        <th className="px-8 py-5">Student Identity</th>
+                                        <th className="px-6 py-5 text-center">{activeTab === 'mark' ? 'Status' : 'Sessions Attended'}</th>
+                                        <th className="px-8 py-5 text-right">{activeTab === 'mark' ? 'Cumulative' : 'Period %'}</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {filteredStudents.map((st) => {
+                                        const presentCount = summaryStats.studentMap[st.id] || 0;
+                                        const percentage = summaryStats.totalSessions > 0 ? Math.round((presentCount / summaryStats.totalSessions) * 100) : 0;
+                                        
                                         return (
-                                            <tr key={student.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer" onClick={() => toggleAttendance(student.id)}>
-                                                <td className="px-6 py-4">
-                                                    <p className="text-sm font-bold text-slate-800">{student.name}</p>
-                                                    <p className="text-xs text-slate-500">Reg: {student.rollnumber || student.id}</p>
+                                            <tr key={st.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer" onClick={() => activeTab === 'mark' && setAttendanceDraft(p => ({ ...p, [st.id]: p[st.id] === 'Present' ? 'Absent' : 'Present' }))}>
+                                                <td className="px-8 py-5">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-slate-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300 italic">
+                                                            {(st.name || st.rollnumber || "?").charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-black text-slate-900">{st.name}</p>
+                                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{st.rollnumber || 'ID:' + st.id}</p>
+                                                        </div>
+                                                    </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <button className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-sm font-bold border transition-colors ${
-                                                        status === 'Present' 
-                                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                                                        : 'bg-red-50 text-red-700 border-red-200'
-                                                    }`}>
-                                                        {status === 'Present' ? <CheckCircle size={16} /> : <XCircle size={16} />}
-                                                        {status}
-                                                    </button>
-                                                </td>
-                                                <td className="px-6 py-4 text-center text-sm font-medium">
-                                                    {summaryStats.totalSessions > 0 ? (
-                                                        <div className="flex flex-col items-center">
-                                                            <span className={aggPct >= 75 ? 'text-emerald-600' : 'text-amber-600'}>{aggPct}%</span>
-                                                            <span className="text-[10px] text-slate-400">({pastPresentBytes}/{summaryStats.totalSessions})</span>
+                                                <td className="px-6 py-5 text-center">
+                                                    {activeTab === 'mark' ? (
+                                                        <div className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl font-black uppercase text-[10px] shadow-sm transition-all ${
+                                                            attendanceDraft[st.id] === 'Present' ? 'bg-emerald-500 text-white shadow-emerald-500/20' : 'bg-red-500 text-white shadow-red-500/20'
+                                                        }`}>
+                                                            {attendanceDraft[st.id] === 'Present' ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                                                            {attendanceDraft[st.id]}
                                                         </div>
                                                     ) : (
-                                                        <span className="text-slate-400 text-xs">No records</span>
+                                                        <div className="flex flex-col items-center">
+                                                            <span className="text-sm font-black text-slate-900 tracking-tighter italic">{presentCount}</span>
+                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] -mt-1">Presence Log</span>
+                                                        </div>
                                                     )}
+                                                </td>
+                                                <td className="px-8 py-5 text-right">
+                                                    <div className="flex flex-col items-end">
+                                                        <div className={`text-lg font-black italic tracking-tighter ${percentage >= 75 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                                            {percentage}%
+                                                        </div>
+                                                        <div className="w-24 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                                                            <div className={`h-full rounded-full transition-all duration-1000 ${percentage >= 75 ? 'bg-emerald-500' : (percentage >= 60 ? 'bg-amber-500' : 'bg-red-500')}`} style={{ width: `${percentage}%` }} />
+                                                        </div>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
-                                    })
-                                ) : (
-                                    <tr>
-                                        <td colSpan="3" className="px-6 py-12 text-center text-slate-400 text-sm">
-                                            No students found for this subject.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center sticky bottom-0 z-20">
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-600 text-left">
-                            <FileText size={16} className="text-emerald-500"/>
-                            Total Students Present: <span className="font-black text-slate-800 ml-1">{Object.values(attendanceDraft).filter(s => s === 'Present').length}</span>
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
-                        <button
-                            disabled={isSaving}
-                            onClick={handleSaveAttendance}
-                            className={`inline-flex items-center gap-2 px-10 py-3.5 text-white font-black rounded-xl shadow-xl transition-all uppercase tracking-widest text-sm
-                                ${isSaving ? 'bg-slate-400 cursor-not-allowed shadow-none' : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-[1.02] shadow-emerald-600/20 active:scale-[0.98]'}`}
-                        >
-                            <Save size={20} />
-                            <span>{isSaving ? 'Saving...' : 'Save Attendance'}</span>
-                        </button>
+
+                        {activeTab === 'mark' && (
+                            <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                                <div className="flex items-center gap-6">
+                                    <div className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                                        Present: <span className="text-emerald-600 text-sm ml-1">{Object.values(attendanceDraft).filter(v => v === 'Present').length}</span>
+                                    </div>
+                                    <div className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                                        Absent: <span className="text-red-500 text-sm ml-1">{Object.values(attendanceDraft).filter(v => v === 'Absent').length}</span>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={handleSaveAttendance}
+                                    disabled={isSaving}
+                                    className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-slate-900/20 transition-all active:scale-[0.98] disabled:bg-slate-400 flex items-center gap-3"
+                                >
+                                    {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Save size={18} />}
+                                    {isSaving ? 'Processing...' : 'Commit Session Log'}
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
-            )}
-            
-            {!loading && selectedAssignment && students.length === 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 text-center text-yellow-800">
-                    <p className="font-bold">No students found.</p>
-                    <p className="text-sm mt-1">There are no students enrolled in the college/semester for this subject.</p>
+            ) : (
+                <div className="py-20 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-100">
+                    <BarChart3 className="mx-auto text-slate-200 mb-4" size={48} />
+                    <h3 className="text-lg font-black text-slate-900 uppercase italic tracking-tighter">Class Identification Required</h3>
+                    <p className="text-sm text-slate-400 mt-2">Please select a subject and section from the menu above to begin.</p>
                 </div>
             )}
         </div>

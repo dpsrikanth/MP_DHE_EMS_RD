@@ -1825,6 +1825,131 @@ const getStudentResults = async (req, res) => {
   }
 };
 
+const getStudentAttendance = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Find student record for this user
+    const studentRes = await client.query('SELECT id, "collageName", "programName", semister FROM students WHERE user_id = $1', [userId]);
+    if (studentRes.rows.length === 0) return res.status(404).json({ message: "Student record not found" });
+    const student = studentRes.rows[0];
+
+    // Find College, Program, and Semester IDs
+    const colRes = await client.query('SELECT id FROM colleges WHERE name ILIKE $1', [student.collageName]);
+    const progRes = await client.query('SELECT id FROM master_programs WHERE name ILIKE $1', [student.programName]);
+    const semRes = await client.query('SELECT id FROM master_semesters WHERE semester_name ILIKE $1', [student.semister]);
+
+    if (colRes.rows.length === 0 || progRes.rows.length === 0 || semRes.rows.length === 0) {
+      return res.status(400).json({ message: "Invalid student academic profile" });
+    }
+
+    const collegeId = colRes.rows[0].id;
+    const programId = progRes.rows[0].id;
+    const semesterId = semRes.rows[0].semester_id || semRes.rows[0].id; // Fallback for schema variance
+
+    const query = `
+      WITH total_sessions AS (
+        SELECT 
+          subject_id, 
+          COUNT(DISTINCT (attendance_date, period_number, section)) as total_sessions
+        FROM student_attendance
+        WHERE college_id = $1 AND semester_id = $2
+        GROUP BY subject_id
+      ),
+      student_present AS (
+        SELECT 
+          subject_id, 
+          COUNT(*) as present_count
+        FROM student_attendance
+        WHERE student_id = $3 AND status = 'Present'
+        GROUP BY subject_id
+      )
+      SELECT 
+        sub.id as subject_id,
+        sub.name as subject_name,
+        sub.subject_code,
+        COALESCE(ts.total_sessions, 0) as total_sessions,
+        COALESCE(sp.present_count, 0) as attended_sessions,
+        CASE 
+          WHEN COALESCE(ts.total_sessions, 0) > 0 
+          THEN ROUND((COALESCE(sp.present_count, 0)::numeric / ts.total_sessions::numeric) * 100, 2)
+          ELSE 0 
+        END as attendance_percentage
+      FROM master_subjects sub
+      INNER JOIN policy_program_subjects pps ON sub.id = pps.subject_id AND pps.college_id = $1 AND pps.semester_id = $2
+      LEFT JOIN total_sessions ts ON sub.id = ts.subject_id
+      LEFT JOIN student_present sp ON sub.id = sp.subject_id
+      ORDER BY sub.name
+    `;
+
+    const result = await client.query(query, [collegeId, semesterId, student.id]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get student attendance error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getStudentAttendanceDetail = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { subjectId } = req.params;
+
+    // Find student record for this user
+    const studentRes = await client.query('SELECT id FROM students WHERE user_id = $1', [userId]);
+    if (studentRes.rows.length === 0) return res.status(404).json({ message: "Student record not found" });
+    const studentId = studentRes.rows[0].id;
+
+    const query = `
+      SELECT 
+        attendance_date, 
+        period_number, 
+        status, 
+        section
+      FROM student_attendance
+      WHERE student_id = $1 AND subject_id = $2
+      ORDER BY attendance_date DESC, period_number DESC
+    `;
+
+    const result = await client.query(query, [studentId, subjectId]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get student attendance detail error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getStudentAttendanceHistory = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Find student record for this user
+    const studentRes = await client.query('SELECT id FROM students WHERE user_id = $1', [userId]);
+    if (studentRes.rows.length === 0) return res.status(404).json({ message: "Student record not found" });
+    const studentId = studentRes.rows[0].id;
+
+    const query = `
+      SELECT 
+        sa.attendance_date, 
+        sa.period_number, 
+        sa.status, 
+        sa.section,
+        sub.name as subject_name,
+        sub.subject_code
+      FROM student_attendance sa
+      JOIN master_subjects sub ON sa.subject_id = sub.id
+      WHERE sa.student_id = $1
+      ORDER BY sa.attendance_date DESC, sa.period_number DESC
+    `;
+
+    const result = await client.query(query, [studentId]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get student attendance history error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 const getMarks = async (req, res) => {
   try {
     const result = await client.query(`SELECT m.id, m.student_id, TRIM(s.name) as student_name, m.subject_id, sub.name as subject_name, m.exam_id, m.total_marks as marks_obtained, 100 as max_marks FROM marks m LEFT JOIN students s ON m.student_id = s.id LEFT JOIN master_subjects sub ON m.subject_id = sub.id`);
@@ -4009,6 +4134,9 @@ module.exports = {
   registerForExam,
   publishResults,
   getStudentResults,
+  getStudentAttendance,
+  getStudentAttendanceDetail,
+  getStudentAttendanceHistory,
   getHallTicketData,
   getResultSheetData,
   forgotPassword,

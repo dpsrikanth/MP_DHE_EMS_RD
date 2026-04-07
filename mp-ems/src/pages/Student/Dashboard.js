@@ -91,6 +91,16 @@ const StudentDashboard = () => {
              </a>
           </div>
 
+          <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50 relative overflow-hidden group">
+             <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500 rounded-full blur-[60px] opacity-5 group-hover:opacity-10 transition-opacity" />
+             <Calendar className="text-sky-500 mb-4" size={32} />
+             <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Attendance Record</h3>
+             <p className="text-slate-500 text-sm font-medium mb-6 leading-relaxed">Track your subject-wise attendance and verify eligibility for examinations.</p>
+             <a href="/student/attendance" className="inline-flex items-center gap-2 text-sky-600 font-black text-xs uppercase tracking-widest hover:text-sky-500 transition-colors">
+               Track Attendance <div className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+             </a>
+          </div>
+
           <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50">
             <h3 className="text-lg font-black text-slate-900 mb-4 tracking-tight">Important Notice</h3>
             <div className="flex gap-4 p-4 bg-amber-50 rounded-2xl border border-amber-100 italic">

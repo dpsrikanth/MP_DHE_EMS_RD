@@ -119,7 +119,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     } else if (roleName === 'Faculty' || roleName === 'Teacher') {
       menuItems = [
         { id: 1, name: 'Dashboard', path: '/faculty/dashboard', icon: <LayoutDashboard size={20} /> },
-        { id: 2, name: 'Marks Entry', path: '/faculty/marks-entry', icon: <BarChart3 size={20} /> }
+        { id: 2, name: 'Marks Entry', path: '/faculty/marks-entry', icon: <BarChart3 size={20} /> },
+        { id: 4, name: 'Attendance', path: '/faculty/attendance', icon: <Calendar size={20} /> }
       ];
       if (isAssignedPaperSetter) {
         menuItems.push({ id: 3, name: 'Paper Setter', path: '/paper-setter/dashboard', icon: <FileText size={20} /> });
@@ -138,6 +139,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 1, name: 'Dashboard', path: '/student/dashboard', icon: <LayoutDashboard size={20} /> },
         { id: 2, name: 'Exam Schedule', path: '/student/exams', icon: <FileText size={20} /> },
         { id: 3, name: 'Results', path: '/student/results', icon: <BarChart3 size={20} /> },
+        { id: 4, name: 'Attendance', path: '/student/attendance', icon: <Calendar size={20} /> },
       ]
     } else if (roleName === 'External Faculty') {
       menuItems = [

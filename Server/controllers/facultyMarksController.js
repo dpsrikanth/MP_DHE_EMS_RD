@@ -301,26 +301,36 @@ exports.saveAttendance = async (req, res) => {
 
 exports.getAttendanceSummary = async (req, res) => {
     try {
-        const { subject_id, section, college_id, semester_id, academic_year_id } = req.query;
+        const { subject_id, section, college_id, semester_id, academic_year_id, startDate, endDate } = req.query;
 
-        // Count total sessions taken so far for this subject+section
+        let dateFilter = "";
+        const queryParams = [subject_id, section, college_id, semester_id, academic_year_id];
+
+        if (startDate && endDate) {
+            dateFilter = ` AND attendance_date BETWEEN $6 AND $7`;
+            queryParams.push(startDate, endDate);
+        }
+
+        // Count total sessions taken in this period
         const totalSessionsQuery = `
             SELECT COUNT(DISTINCT (attendance_date, period_number)) as total_sessions 
             FROM student_attendance 
             WHERE subject_id = $1 AND section = $2 AND college_id = $3 AND semester_id = $4 AND academic_year_id = $5
+            ${dateFilter}
         `;
-        const totalRes = await db.query(totalSessionsQuery, [subject_id, section, college_id, semester_id, academic_year_id]);
+        const totalRes = await db.query(totalSessionsQuery, queryParams);
         const totalSessions = parseInt(totalRes.rows[0].total_sessions) || 0;
 
-        // Count 'Present' occurrences per student
+        // Count 'Present' occurrences per student in this period
         const presentQuery = `
             SELECT student_id, COUNT(*) as present_count 
             FROM student_attendance 
             WHERE subject_id = $1 AND section = $2 AND college_id = $3 AND semester_id = $4 AND academic_year_id = $5
             AND status = 'Present'
+            ${dateFilter}
             GROUP BY student_id
         `;
-        const presentRes = await db.query(presentQuery, [subject_id, section, college_id, semester_id, academic_year_id]);
+        const presentRes = await db.query(presentQuery, queryParams);
         
         res.status(200).json({ totalSessions, summary: presentRes.rows });
     } catch (error) {
