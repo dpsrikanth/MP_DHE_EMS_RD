@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { Building2, Save, Pencil, Trash2, X, Search, Layers, Users, SendHorizontal, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Doughnut } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js';
 import { TableSearch } from '../../components/TableControls';
+
+ChartJS.register(ArcElement, Tooltip);
 
 const ExaminationHalls = () => {
     const [halls, setHalls] = useState([]);
@@ -10,6 +14,7 @@ const ExaminationHalls = () => {
     const [totalRooms, setTotalRooms] = useState(0);
     const [totalStudents, setTotalStudents] = useState(0);
     const [hostingSources, setHostingSources] = useState([]);
+    const [examBreakdown, setExamBreakdown] = useState([]);
     const [shortageRequests, setShortageRequests] = useState([]);
     const [isEditingRooms, setIsEditingRooms] = useState(false);
 
@@ -17,8 +22,10 @@ const ExaminationHalls = () => {
     const [newHall, setNewHall] = useState({
         hall_code: '',
         rows: '',
-        seats_per_row: ''
+        seats_per_row: '',
+        exam_id: ''
     });
+    const [exams, setExams] = useState([]);
 
     const [editingHall, setEditingHall] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -66,18 +73,57 @@ const ExaminationHalls = () => {
         fetchTotalRooms();
         fetchStudentCount();
         fetchShortageRequests();
+        fetchExams();
     }, []);
 
-    const fetchStudentCount = async () => {
+    // Re-fetch student count when exam changes
+    useEffect(() => {
+        fetchStudentCount(newHall.exam_id || null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [newHall.exam_id]);
+
+    const fetchExams = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`${apiBase}/seating-requirement`, {
+            const res = await fetch('http://localhost:8080/api/exams', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const published = data.filter(e => e.status === true || e.is_published === true);
+                // Deduplicate by program + semester + exam name to avoid repeated entries
+                const seen = new Set();
+                const unique = published.filter(e => {
+                    const key = `${e.program_name}|${e.semester_name}|${e.exam_name}`;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+                setExams(unique);
+                // Auto-select the first exam on page load so stats are always contextual
+                if (unique.length > 0) {
+                    setNewHall(prev => prev.exam_id ? prev : { ...prev, exam_id: String(unique[0].id) });
+                }
+            }
+        } catch (err) {
+            console.error("Failed to fetch exams", err);
+        }
+    };
+
+    const fetchStudentCount = async (examId = null) => {
+        try {
+            const token = localStorage.getItem('token');
+            const url = examId
+                ? `${apiBase}/seating-requirement?exam_id=${examId}`
+                : `${apiBase}/seating-requirement`;
+            const res = await fetch(url, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
                 const data = await res.json();
                 setTotalStudents(parseInt(data.total_required) || 0);
                 setHostingSources(data.hosting_sources || []);
+                setExamBreakdown(data.exam_breakdown || []);
             }
         } catch (err) {
             console.error("Failed to fetch seating requirement", err);
@@ -178,7 +224,7 @@ const ExaminationHalls = () => {
             const data = await res.json();
             if (res.ok) {
                 toast.success("Examination hall added as Draft");
-                setNewHall({ hall_code: '', rows: '', seats_per_row: '' });
+                setNewHall({ hall_code: '', rows: '', seats_per_row: '', exam_id: '' });
                 fetchHalls();
             } else {
                 toast.error(data.error || "Failed to add hall");
@@ -318,6 +364,7 @@ const ExaminationHalls = () => {
 
     return (
         <div className="p-6 md:p-8 space-y-8 animate-fade-in pb-20">
+            {/* Header with Exam Selector on right */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
                     <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
@@ -328,17 +375,50 @@ const ExaminationHalls = () => {
                         <p className="text-sm text-slate-500 font-medium tracking-wide mt-1 uppercase">Configure physical hall infrastructure and manage approvals.</p>
                     </div>
                 </div>
+                {/* Global Exam Context Selector */}
+                <div className="flex flex-col gap-1 min-w-[280px]">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Active Exam Context</label>
+                    <select
+                        value={newHall.exam_id}
+                        onChange={(e) => setNewHall({ ...newHall, exam_id: e.target.value })}
+                        className="w-full p-3 bg-white border-2 border-indigo-200 rounded-xl text-[11px] font-black text-indigo-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer shadow-sm"
+                    >
+                        <option value="">— Select Exam to Filter Stats —</option>
+                        {exams.map(exam => {
+                            const date = exam.exam_date ? new Date(exam.exam_date).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '';
+                            const time = (exam.start_time && exam.end_time) ? ` | ${exam.start_time} – ${exam.end_time}` : '';
+                            const label = `${exam.program_name || ''} • ${exam.semester_name || ''} — ${exam.exam_name}${date ? ` [${date}${time}]` : ''}`;
+                            return <option key={exam.id} value={exam.id}>{label.toUpperCase()}</option>;
+                        })}
+                    </select>
+                </div>
             </div>
 
             {/* Total Structural Rooms Configuration */}
-            <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all hover:shadow-md">
+            <div className={`bg-white rounded-[2rem] shadow-sm border p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all hover:shadow-md ${
+                newHall.exam_id && totalRooms < 1 ? 'border-rose-200 bg-rose-50/30' : 'border-slate-200'
+            }`}>
                 <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500 shadow-inner">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${
+                        newHall.exam_id && totalRooms < 1 ? 'bg-rose-100 text-rose-500' : 'bg-indigo-50 text-indigo-500'
+                    }`}>
                         <Layers size={28} />
                     </div>
                     <div>
                         <h2 className="text-lg font-black text-slate-900">Total Campus Rooms Configuration</h2>
                         <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">Define the absolute limit of physical rooms available in your institution</p>
+                        {/* Context badge — only shows when an exam is chosen */}
+                        {newHall.exam_id && (
+                            totalRooms > 0 ? (
+                                <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black rounded-full uppercase tracking-widest">
+                                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"/> {totalRooms} Rooms Configured for this Exam
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 bg-rose-50 border border-rose-200 text-rose-600 text-[10px] font-black rounded-full uppercase tracking-widest animate-pulse">
+                                    <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"/> Set Room Limit Before Adding Halls
+                                </span>
+                            )
+                        )}
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -361,27 +441,40 @@ const ExaminationHalls = () => {
                         </>
                     ) : (
                         <>
-                            <div className="w-28 p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center text-xl font-black text-slate-700">
-                                {totalRooms}
+                            <div className={`w-28 p-4 rounded-2xl text-center text-xl font-black border ${
+                                totalRooms < 1 ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-slate-50 border-slate-200 text-slate-700'
+                            }`}>
+                                {totalRooms < 1 ? '—' : totalRooms}
                             </div>
                             <button
                                 onClick={() => setIsEditingRooms(true)}
-                                className="px-8 py-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-black rounded-2xl shadow-sm transition-all active:scale-95 uppercase tracking-widest text-xs"
+                                className={`px-8 py-4 font-black rounded-2xl shadow-sm transition-all active:scale-95 uppercase tracking-widest text-xs border ${
+                                    newHall.exam_id && totalRooms < 1
+                                        ? 'bg-rose-500 hover:bg-rose-600 text-white border-rose-500 shadow-rose-200 animate-pulse'
+                                        : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-600'
+                                }`}
                             >
-                                Edit Limit
+                                {totalRooms < 1 ? 'Set Limit' : 'Edit Limit'}
                             </button>
                         </>
                     )}
                 </div>
             </div>
 
+
             {/* Capacity Statistics Dashboard */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between transition-all hover:border-indigo-200 group">
+            <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between transition-all hover:border-indigo-200 group">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex flex-col">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-indigo-400">Total Students</span>
-                            <span className="text-[9px] font-bold text-slate-400 lowercase group-hover:text-indigo-300 italic">(Internal)</span>
+                            {newHall.exam_id ? (
+                                <span className="text-[9px] font-bold text-indigo-500 lowercase italic mt-0.5">
+                                    {exams.find(e => String(e.id) === String(newHall.exam_id))?.program_name || ''} - {exams.find(e => String(e.id) === String(newHall.exam_id))?.semester_name || ''}
+                                </span>
+                            ) : (
+                                <span className="text-[9px] font-bold text-slate-400 lowercase italic">All Exams (Global)</span>
+                            )}
                         </div>
                         <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-500 transition-colors">
                             <Users size={18} />
@@ -389,8 +482,10 @@ const ExaminationHalls = () => {
                     </div>
                     <div>
                         <span className="text-4xl font-black text-slate-900">{totalStudents}</span>
+                        {newHall.exam_id && <span className="text-xs font-bold text-indigo-400 ml-2">for selected exam</span>}
                     </div>
                 </div>
+
 
                 <div className="bg-white p-6 rounded-[2rem] border border-emerald-100 shadow-sm flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full translate-x-16 -translate-y-16 pointer-events-none" />
@@ -480,7 +575,24 @@ const ExaminationHalls = () => {
                         </div>
                     </div>
                 )}
-                <form onSubmit={handleCreateHall} className={`grid grid-cols-1 md:grid-cols-6 gap-6 items-end ${totalRooms < 1 ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
+                <form onSubmit={handleCreateHall} className={`space-y-6 ${totalRooms < 1 ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
+                    {/* Selected Exam Display (read-only, driven by top-level selector) */}
+                    {newHall.exam_id && exams.find(e => String(e.id) === String(newHall.exam_id)) && (() => {
+                        const ctx = exams.find(e => String(e.id) === String(newHall.exam_id));
+                        return (
+                            <div className="flex items-center gap-3 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl">
+                                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Linked Exam:</span>
+                                <span className="text-xs font-black text-indigo-700">{ctx.program_name} • {ctx.semester_name} – {ctx.exam_name}</span>
+                            </div>
+                        );
+                    })()}
+                    {!newHall.exam_id && (
+                        <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-100 rounded-xl">
+                            <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">⚠ Select an Active Exam Context from the top-right dropdown first.</span>
+                        </div>
+                    )}
+                    {/* Inline fields row */}
+                    <div className="grid grid-cols-1 md:grid-cols-6 gap-6 items-end">
                     <div className="space-y-3 col-span-1 md:col-span-2">
                         <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-4">Hall Code</label>
                         <input
@@ -530,6 +642,7 @@ const ExaminationHalls = () => {
                         <Save size={16} />
                         <span className="leading-tight">Add Draft</span>
                     </button>
+                    </div>
                 </form>
             </div>
 
@@ -707,58 +820,101 @@ const ExaminationHalls = () => {
                             </div>
                         )}
                     </div>
+                    
+                    {examBreakdown.length > 0 && (
+                        <div className="mt-8 pt-6 border-t border-slate-100">
+                            <h4 className="text-[10px] font-black text-slate-400 mb-4 uppercase tracking-widest">Active Exam Details</h4>
+                            <div className="flex flex-col gap-3">
+                                {examBreakdown.map((exam, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-xl bg-white border border-indigo-100 text-indigo-500 flex items-center justify-center font-black text-xs shadow-sm">
+                                                E{idx + 1}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-black text-slate-800 uppercase tracking-tight">
+                                                    {exam.program_name || 'Unknown Program'} - {exam.semester || 'N/A'}
+                                                </span>
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate max-w-[200px]">
+                                                    {exam.exam_name}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="px-3 py-1.5 bg-white border border-indigo-100 rounded-lg shadow-sm">
+                                            <span className="text-sm font-black text-indigo-600">{exam.student_count}</span>
+                                            <span className="text-[10px] text-slate-400 font-bold ml-1 uppercase">Students</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[100px] -translate-y-1/2 translate-x-1/2" />
                     <div className="relative z-10 flex flex-col h-full justify-between">
-                        <div className="flex justify-between items-start mb-8">
+                        <div className="flex justify-between items-start mb-4">
                             <div>
                                 <h3 className="text-xl font-black text-white">Seating Governance</h3>
                                 <p className="text-emerald-400 text-[10px] font-black uppercase tracking-widest mt-1">Real-time capacity distribution</p>
                             </div>
-                            <div className="text-right">
-                                <span className="text-4xl font-black text-white">
-                                    {totalStudents > 0 ? (((capacityStats.approved + capacityStats.allocated) / totalStudents) * 100).toFixed(1) : 0}%
-                                </span>
-                                <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mt-1 text-right">Total Coverage</p>
+                        </div>
+
+                        {/* Doughnut Chart */}
+                        <div className="flex justify-center items-center my-2" style={{ height: 160 }}>
+                            <div style={{ position: 'relative', width: 160, height: 160 }}>
+                                <Doughnut
+                                    data={{
+                                        labels: ['Occupied', 'Vacant', 'External'],
+                                        datasets: [{
+                                            data: [
+                                                capacityStats.approved,
+                                                Math.max(0, capacityStats.approved - totalStudents),
+                                                capacityStats.allocated
+                                            ],
+                                            backgroundColor: ['#10b981', '#334155', '#3b82f6'],
+                                            borderWidth: 0,
+                                            hoverOffset: 4
+                                        }]
+                                    }}
+                                    options={{
+                                        cutout: '72%',
+                                        plugins: { legend: { display: false }, tooltip: { enabled: true } },
+                                        maintainAspectRatio: false
+                                    }}
+                                />
+                                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                                    <span style={{ fontSize: 22, fontWeight: 900, color: 'white', lineHeight: 1 }}>
+                                        {totalStudents > 0 ? (((capacityStats.approved + capacityStats.allocated) / totalStudents) * 100).toFixed(0) : 0}%
+                                    </span>
+                                    <span style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 2, marginTop: 4 }}>Coverage</span>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="space-y-6">
-                            <div className="h-4 bg-white/10 rounded-full overflow-hidden p-1 border border-white/5 flex">
-                                <div
-                                    className="h-full bg-emerald-500 rounded-l-full transition-all duration-1000 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
-                                    style={{ width: `${totalStudents > 0 ? Math.min(100, (capacityStats.approved / totalStudents) * 100) : 0}%` }}
-                                />
-                                <div
-                                    className="h-full bg-blue-500 transition-all duration-1000 border-l border-white/30"
-                                    style={{ width: `${totalStudents > 0 ? Math.min(100 - (capacityStats.approved / totalStudents) * 100, (capacityStats.allocated / totalStudents) * 100) : 0}%` }}
-                                />
+                        {/* Legend */}
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                            <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-emerald-500 rounded-full ring-4 ring-emerald-500/20" />
+                                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Internal</span>
+                                </div>
+                                <p className="text-sm font-black text-white">{capacityStats.approved}</p>
                             </div>
-
-                            <div className="grid grid-cols-3 gap-2">
-                                <div className="flex flex-col gap-1">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-emerald-500 rounded-full ring-4 ring-emerald-500/20" />
-                                        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Internal</span>
-                                    </div>
-                                    <p className="text-sm font-black text-white">{capacityStats.approved}</p>
+                            <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full ring-4 ring-blue-500/20" />
+                                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">External</span>
                                 </div>
-                                <div className="flex flex-col gap-1">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-blue-500 rounded-full ring-4 ring-blue-500/20" />
-                                        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">External</span>
-                                    </div>
-                                    <p className="text-sm font-black text-white">{capacityStats.allocated}</p>
+                                <p className="text-sm font-black text-white">{capacityStats.allocated}</p>
+                            </div>
+                            <div className="flex flex-col gap-1 border-l border-white/10 pl-2">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-amber-500 rounded-full ring-4 ring-amber-500/20" />
+                                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Target</span>
                                 </div>
-                                <div className="flex flex-col gap-1 border-l border-white/10 pl-2">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-amber-500 rounded-full ring-4 ring-amber-500/20" />
-                                        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Target</span>
-                                    </div>
-                                    <p className="text-sm font-black text-white">{totalStudents}</p>
-                                </div>
+                                <p className="text-sm font-black text-white">{totalStudents}</p>
                             </div>
                         </div>
                     </div>

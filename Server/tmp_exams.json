@@ -1,0 +1,37 @@
+[
+  {
+    "id": 55,
+    "name": "BTech Sem-3 BARKATULLAH UNIVERSITY External Exam 2025-2026",
+    "status": true,
+    "is_published": true,
+    "student_application_open": true
+  },
+  {
+    "id": 3,
+    "name": "Final Theory",
+    "status": false,
+    "is_published": false,
+    "student_application_open": false
+  },
+  {
+    "id": 54,
+    "name": "BTech Sem-2 University External Exam 2024-2025",
+    "status": true,
+    "is_published": true,
+    "student_application_open": true
+  },
+  {
+    "id": 47,
+    "name": "B.Tech Sem-1 University External Exam 2024-25",
+    "status": true,
+    "is_published": true,
+    "student_application_open": true
+  },
+  {
+    "id": 46,
+    "name": "B.Tech Sem-1 University External Exam 2024-25",
+    "status": true,
+    "is_published": true,
+    "student_application_open": true
+  }
+]

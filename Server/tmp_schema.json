@@ -1,0 +1,100 @@
+{
+  "subject_tables": [
+    {
+      "tablename": "college_master_subjects"
+    },
+    {
+      "tablename": "master_subject_departments"
+    },
+    {
+      "tablename": "subjects"
+    },
+    {
+      "tablename": "university_master_subjects"
+    },
+    {
+      "tablename": "faculty_subjects"
+    },
+    {
+      "tablename": "policy_program_subjects"
+    },
+    {
+      "tablename": "master_subject_mappings"
+    },
+    {
+      "tablename": "master_subjects"
+    },
+    {
+      "tablename": "paper_setter_subjects"
+    }
+  ],
+  "exam_tables": [
+    {
+      "tablename": "exams"
+    },
+    {
+      "tablename": "exam_types"
+    },
+    {
+      "tablename": "external_exams"
+    },
+    {
+      "tablename": "external_exam_marks"
+    },
+    {
+      "tablename": "examination_halls"
+    },
+    {
+      "tablename": "exam_registrations"
+    }
+  ],
+  "reg_sample": {
+    "id": 1,
+    "student_id": 2,
+    "exam_id": 48,
+    "payment_status": "Paid",
+    "registration_date": "2026-03-16T13:28:26.211Z",
+    "transaction_id": null,
+    "amount": null,
+    "hall_id": null,
+    "seat_number": null
+  },
+  "reg_columns": [
+    {
+      "column_name": "id",
+      "data_type": "integer"
+    },
+    {
+      "column_name": "student_id",
+      "data_type": "integer"
+    },
+    {
+      "column_name": "exam_id",
+      "data_type": "integer"
+    },
+    {
+      "column_name": "registration_date",
+      "data_type": "timestamp without time zone"
+    },
+    {
+      "column_name": "amount",
+      "data_type": "numeric"
+    },
+    {
+      "column_name": "hall_id",
+      "data_type": "integer"
+    },
+    {
+      "column_name": "payment_status",
+      "data_type": "character varying"
+    },
+    {
+      "column_name": "seat_number",
+      "data_type": "character varying"
+    },
+    {
+      "column_name": "transaction_id",
+      "data_type": "character varying"
+    }
+  ]
+}

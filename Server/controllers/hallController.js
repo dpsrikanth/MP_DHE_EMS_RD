@@ -3,7 +3,7 @@ const db = require('../db');
 // Add a new examination hall (Starts as Draft)
 exports.createHall = async (req, res) => {
     try {
-        const { hall_code, rows, seats_per_row } = req.body;
+        const { hall_code, rows, seats_per_row, exam_id } = req.body;
         const college_id = req.user?.college_id;
 
         if (!college_id) {
@@ -31,10 +31,10 @@ exports.createHall = async (req, res) => {
         }
 
         const query = `
-            INSERT INTO examination_halls (hall_code, college_id, rows, seats_per_row, status) 
-            VALUES ($1, $2, $3, $4, 'Draft') RETURNING *;
+            INSERT INTO examination_halls (hall_code, college_id, rows, seats_per_row, exam_id, status) 
+            VALUES ($1, $2, $3, $4, $5, 'Draft') RETURNING *;
         `;
-        const result = await db.query(query, [hall_code, college_id, rows, seats_per_row]);
+        const result = await db.query(query, [hall_code, college_id, rows, seats_per_row, exam_id || null]);
         res.status(201).json({ message: "Hall added as Draft", data: result.rows[0] });
     } catch (error) {
         console.error("Create hall error:", error);
@@ -70,7 +70,7 @@ exports.getHalls = async (req, res) => {
 exports.updateHall = async (req, res) => {
     try {
         const { id } = req.params;
-        const { hall_code, rows, seats_per_row } = req.body;
+        const { hall_code, rows, seats_per_row, exam_id } = req.body;
         const college_id = req.user?.college_id;
 
         if (!college_id) return res.status(403).json({ error: "Unauthorized" });
@@ -94,11 +94,11 @@ exports.updateHall = async (req, res) => {
 
         const query = `
             UPDATE examination_halls 
-            SET hall_code = $1, rows = $2, seats_per_row = $3, status = 'Draft', updated_at = CURRENT_TIMESTAMP
-            WHERE id = $4 AND college_id = $5
+            SET hall_code = $1, rows = $2, seats_per_row = $3, exam_id = $4, status = 'Draft', updated_at = CURRENT_TIMESTAMP
+            WHERE id = $5 AND college_id = $6
             RETURNING *;
         `;
-        const result = await db.query(query, [hall_code, rows, seats_per_row, id, college_id]);
+        const result = await db.query(query, [hall_code, rows, seats_per_row, exam_id || null, id, college_id]);
         res.status(200).json({ message: "Hall updated successfully", data: result.rows[0] });
     } catch (error) {
         console.error("Update hall error:", error);
@@ -391,16 +391,22 @@ exports.getSeatingRequirement = async (req, res) => {
         const college_id = req.user?.college_id;
         if (!college_id) return res.status(403).json({ error: "Unauthorized" });
 
+        const { exam_id } = req.query;
+
+        // Build exam filter clause if a specific exam is selected
+        const examFilter = exam_id ? `AND er.exam_id = ${parseInt(exam_id)}` : '';
+
         const query = `
             WITH seating_metrics AS (
                 SELECT 
-                    -- Internal students
+                    -- Internal students (optionally filtered by exam)
                     (
                         SELECT COUNT(DISTINCT er.student_id) 
                         FROM exam_registrations er
                         JOIN students s ON er.student_id = s.id
                         JOIN colleges sc ON s."collageName" ILIKE sc.name 
                         WHERE sc.id = $1 AND s."deleteStatus" = true AND er.payment_status = 'Paid'
+                        ${examFilter}
                     ) as internal_load,
                     -- Guest students via shortage allocations
                     (
@@ -414,6 +420,19 @@ exports.getSeatingRequirement = async (req, res) => {
                         FROM shortage_requests
                         WHERE college_id = $1 AND status = 'Allocated'
                     ) as away_load
+            ),
+            exam_breakdown AS (
+                SELECT 
+                    ex.name as exam_name,
+                    s."programName" as program_name,
+                    s."semister" as semester,
+                    COUNT(DISTINCT er.student_id) as student_count
+                FROM exam_registrations er
+                JOIN students s ON er.student_id = s.id
+                JOIN colleges sc ON s."collageName" ILIKE sc.name 
+                JOIN exams ex ON er.exam_id = ex.id
+                WHERE sc.id = $1 AND s."deleteStatus" = true AND er.payment_status = 'Paid'
+                GROUP BY ex.name, s."programName", s."semister"
             )
             SELECT 
                 internal_load as total_required,
@@ -435,7 +454,16 @@ exports.getSeatingRequirement = async (req, res) => {
                         WHERE sr.allocated_college_id = $1 AND sr.status = 'Allocated'
                     ) src
                     WHERE src.count > 0
-                ) as hosting_sources
+                ) as hosting_sources,
+                (
+                    SELECT COALESCE(json_agg(json_build_object(
+                        'exam_name', exam_name,
+                        'program_name', program_name,
+                        'semester', semester,
+                        'student_count', student_count
+                    )), '[]'::json)
+                    FROM exam_breakdown
+                ) as exam_breakdown
             FROM seating_metrics;
         `;
         const result = await db.query(query, [college_id]);

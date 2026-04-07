@@ -10,6 +10,8 @@ const SeatingArrangement = () => {
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [stats, setStats] = useState({ totalStudents: 0, approvedCapacity: 0 });
+    const [seatingPattern, setSeatingPattern] = useState('sequential');
+    const [approvedHalls, setApprovedHalls] = useState([]);
 
     const apiBase = 'http://localhost:8080/api/college-admin';
 
@@ -34,7 +36,7 @@ const SeatingArrangement = () => {
             });
             if (res.ok) {
                 const data = await res.json();
-                setExams(data.filter(e => e.status === 'Published'));
+                setExams(data.filter(e => e.status === true || e.is_published === true));
             }
         } catch (err) {
             console.error("Failed to fetch exams", err);
@@ -57,10 +59,10 @@ const SeatingArrangement = () => {
                 const halls = await hallRes.json();
                 const req = await reqRes.json();
                 
-                const approvedCap = halls
-                    .filter(h => h.status === 'Approved')
-                    .reduce((sum, h) => sum + (parseInt(h.total_capacity) || 0), 0);
+                const approved = halls.filter(h => h.status === 'Approved');
+                const approvedCap = approved.reduce((sum, h) => sum + (parseInt(h.total_capacity) || ((parseInt(h.rows)||0) * (parseInt(h.seats_per_row)||0))), 0);
                 
+                setApprovedHalls(approved);
                 setStats({
                     totalStudents: parseInt(req.total_required) || 0,
                     approvedCapacity: approvedCap
@@ -101,7 +103,7 @@ const SeatingArrangement = () => {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`
                 },
-                body: JSON.stringify({ exam_id: selectedExam })
+                body: JSON.stringify({ exam_id: selectedExam, pattern: seatingPattern })
             });
 
             const data = await res.json();
@@ -176,23 +178,37 @@ const SeatingArrangement = () => {
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div className="flex-1 space-y-4">
-                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Select Exam Session</label>
+                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Select Full Exam Context</label>
                             <select
                                 value={selectedExam}
                                 onChange={(e) => setSelectedExam(e.target.value)}
-                                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all appearance-none cursor-pointer"
+                                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer"
                             >
-                                <option value="">Choose an exam...</option>
-                                {exams.map(exam => (
-                                    <option key={exam.id} value={exam.id}>{exam.name}</option>
-                                ))}
+                                <option value="">Choose an exam context...</option>
+                                {exams.map(exam => {
+                                    const examDate = exam.exam_date ? new Date(exam.exam_date).toLocaleDateString() : '';
+                                    const displayLabel = `${exam.program_name || 'Generic'} • ${exam.semester_name || 'N/A'} • ${exam.subject_name || 'Unknown Subject'} - ${exam.exam_name} (${examDate})`;
+                                    return <option key={exam.id} value={exam.id}>{displayLabel}</option>;
+                                })}
                             </select>
                         </div>
-                        <div className="flex items-center gap-3 pt-6 md:pt-0">
+                        <div className="flex-1 space-y-4 pt-6 md:pt-0">
+                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Seating Pattern</label>
+                            <select
+                                value={seatingPattern}
+                                onChange={(e) => setSeatingPattern(e.target.value)}
+                                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer uppercase"
+                            >
+                                <option value="sequential">Sequential Fill</option>
+                                <option value="alternate">Alternate (Checkerboard)</option>
+                                <option value="random">Randomized</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-3 pt-6 md:pt-0 md:pt-6">
                             <button
                                 onClick={handleAutoAllocate}
                                 disabled={loading || !selectedExam}
-                                className="flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 uppercase tracking-widest text-xs disabled:opacity-50 disabled:grayscale"
+                                className="flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 uppercase tracking-widest text-xs disabled:opacity-50 disabled:grayscale whitespace-nowrap"
                             >
                                 <Play size={16} fill="currentColor" />
                                 Run Allocation
@@ -200,7 +216,7 @@ const SeatingArrangement = () => {
                             <button
                                 onClick={handleClearAssignments}
                                 disabled={loading || !selectedExam || arrangements.length === 0}
-                                className="p-4 bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 rounded-2xl transition-all active:scale-95 disabled:opacity-50"
+                                className="p-4 bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 rounded-xl transition-all active:scale-95 disabled:opacity-50"
                                 title="Clear All"
                             >
                                 <Trash2 size={20} />
@@ -208,26 +224,45 @@ const SeatingArrangement = () => {
                         </div>
                     </div>
 
-                    {/* Capacity Info Card */}
-                    <div className="bg-emerald-50 rounded-[2rem] border border-emerald-100 p-8 flex items-center justify-between shadow-sm shadow-emerald-500/5">
-                        <div className="flex items-center gap-5">
-                            <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600 border border-emerald-100 shadow-sm">
-                                <Info size={28} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Capacity Info Card */}
+                        <div className="bg-emerald-50 rounded-[2rem] border border-emerald-100 p-8 flex items-center justify-between shadow-sm shadow-emerald-500/5">
+                            <div className="flex items-center gap-5">
+                                <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600 border border-emerald-100 shadow-sm">
+                                    <Info size={28} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-900 leading-tight tracking-tight">System Ready</h3>
+                                    <p className="text-[10px] font-bold text-emerald-700/70 mt-1 uppercase tracking-wider">Only Paid students eligible</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="text-lg font-black text-slate-900 leading-tight tracking-tight">System Ready</h3>
-                                <p className="text-xs font-bold text-emerald-700/70 mt-1 uppercase tracking-wider">Only 'Paid' students are eligible for seat allocation</p>
+                            <div className="flex items-center gap-6">
+                                <div className="text-center">
+                                    <p className="text-[10px] font-black text-emerald-600/50 uppercase tracking-widest mb-1">Eligible</p>
+                                    <p className="text-2xl font-black text-emerald-700">{stats.totalStudents}</p>
+                                </div>
+                                <div className="w-px h-8 bg-emerald-200"></div>
+                                <div className="text-center">
+                                    <p className="text-[10px] font-black text-emerald-600/50 uppercase tracking-widest mb-1">Capacity</p>
+                                    <p className="text-2xl font-black text-emerald-700">{stats.approvedCapacity}</p>
+                                </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-8 pr-4">
-                            <div className="text-center">
-                                <p className="text-[10px] font-black text-emerald-600/50 uppercase tracking-widest mb-1">Eligible Students</p>
-                                <p className="text-2xl font-black text-emerald-700">{stats.totalStudents}</p>
-                            </div>
-                            <div className="w-px h-10 bg-emerald-200"></div>
-                            <div className="text-center">
-                                <p className="text-[10px] font-black text-emerald-600/50 uppercase tracking-widest mb-1">Total Capacity</p>
-                                <p className="text-2xl font-black text-emerald-700">{stats.approvedCapacity}</p>
+
+                        {/* Selected Halls Card */}
+                        <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm relative overflow-hidden flex flex-col justify-center">
+                            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Target Approved Halls ({approvedHalls.length})</h3>
+                            <div className="flex flex-wrap gap-2 max-h-[80px] overflow-y-auto custom-scrollbar">
+                                {approvedHalls.map(hall => (
+                                    <div key={hall.id} className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg text-xs font-black text-slate-700">
+                                        <Building2 size={12} className="text-indigo-500" />
+                                        {hall.hall_code}
+                                        <span className="text-[9px] text-slate-400 font-bold ml-1">{hall.rows * hall.seats_per_row} Seats</span>
+                                    </div>
+                                ))}
+                                {approvedHalls.length === 0 && (
+                                    <p className="text-xs font-bold text-slate-400 italic">No approved halls available</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -315,16 +350,15 @@ const SeatingArrangement = () => {
                                                 {a.hall_code}
                                             </div>
                                         </td>
-                                        <td className="py-5 px-8 text-center">
-                                            <div className="flex items-center justify-center gap-4 text-slate-600">
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-xs font-black text-slate-900">R-{a.row_no}</span>
-                                                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Row</span>
+                                        <td className="py-5 px-8">
+                                            <div className="flex items-center justify-center px-4 py-2 bg-indigo-50/50 rounded-xl border border-indigo-100 w-max mx-auto shadow-sm">
+                                                <div className="flex flex-col items-center justify-center min-w-[40px] border-r border-indigo-200/50 pr-4 mr-4">
+                                                    <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Row</span>
+                                                    <span className="text-sm font-black text-indigo-700">R-{a.row_no}</span>
                                                 </div>
-                                                <div className="w-px h-5 bg-slate-200"></div>
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-xs font-black text-slate-900">S-{a.seat_no}</span>
-                                                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Seat</span>
+                                                <div className="flex flex-col items-center justify-center min-w-[40px]">
+                                                    <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Seat</span>
+                                                    <span className="text-sm font-black text-indigo-700">S-{a.seat_no}</span>
                                                 </div>
                                             </div>
                                         </td>

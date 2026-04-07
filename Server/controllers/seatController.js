@@ -78,6 +78,17 @@ exports.autoAllocateSeats = async (req, res) => {
         // 4. Allocation algorithm
         let studentIdx = 0;
         let totalAssigned = 0;
+        
+        // Options pattern
+        const pattern = req.body?.pattern || 'sequential';
+
+        // Add shuffle capability if random
+        if (pattern === 'random') {
+            for (let i = students.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [students[i], students[j]] = [students[j], students[i]];
+            }
+        }
 
         for (const hall of halls) {
             if (studentIdx >= students.length) break;
@@ -89,6 +100,11 @@ exports.autoAllocateSeats = async (req, res) => {
                 
                 for (let s = 1; s <= seats_per_row; s++) {
                     if (studentIdx >= students.length) break;
+                    
+                    // If alternate pattern skipping logic
+                    if (pattern === 'alternate' && (r + s) % 2 !== 0) {
+                        continue;
+                    }
 
                     const student = students[studentIdx];
                     
