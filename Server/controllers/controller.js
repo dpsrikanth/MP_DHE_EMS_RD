@@ -3674,7 +3674,7 @@ const getHallTicketData = async (req, res) => {
         WHERE s.user_id = $1 
           AND s."deleteStatus" = true 
           AND e.name = $2 
-          AND er.semester_id = $3
+          AND e.semester_id = $3
           AND er.payment_status = 'Paid'`,
        [userId, examName, semesterId]
      );
