@@ -149,7 +149,7 @@ exports.getResultHubData = async (req, res) => {
             params.push(exam_name);
         }
         if (college_id) {
-            conditions.push(`e.college_id = $${paramIdx++}`);
+            conditions.push(`c.id = $${paramIdx++}`);
             params.push(college_id);
         }
         if (program_id) {
@@ -166,9 +166,9 @@ exports.getResultHubData = async (req, res) => {
                     er.student_id,
                     er.exam_id,
                     COALESCE(m.status, 'Not Entered') as marks_status,
-                    COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) as internal_marks, 
+                    COALESCE(cim.total_internal, m.internal_marks, 0) as internal_marks, 
                     COALESCE(m.external_marks, 0) as external_marks,
-                    (COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) + COALESCE(m.external_marks, 0)) as total_marks,
+                    (COALESCE(cim.total_internal, m.internal_marks, 0) + COALESCE(m.external_marks, 0)) as total_marks,
                     s.rollnumber, CONCAT(s.first_name, ' ', s.last_name) as student_name,
                     s."collageName" as college_name, s."programName" as program_name,
                     e.name as exam_name,
@@ -179,14 +179,17 @@ exports.getResultHubData = async (req, res) => {
                 JOIN exams e ON er.exam_id = e.id
                 JOIN master_subjects sub ON e.subject_id = sub.id
                 JOIN students s ON er.student_id = s.id
+                -- Join Colleges to get ID and link with Workflow Status
+                JOIN colleges c ON s."collageName" ILIKE c.name
+                -- CRITICAL: Only show marks that have been officially 'Locked' by the College Admin or Finalized by External
+                JOIN marks_workflow_status mws ON mws.college_id = c.id 
+                    AND mws.subject_id = sub.id 
+                    -- If a student has no section, they match with the finalized workflow of that college/subject
+                    AND (mws.section = s.section OR s.section IS NULL OR s.section = '')
+                    AND mws.status IN ('Locked', 'Approved', 'Finalized', 'Submitted')
                 LEFT JOIN marks m ON m.student_id = er.student_id AND m.exam_id = er.exam_id AND m.subject_id = e.subject_id
                 LEFT JOIN calculated_internal_marks cim ON er.student_id = cim.student_id 
-                    AND (cim.subject_id = e.subject_id OR cim.subject_id IN (SELECT id FROM master_subjects WHERE name = sub.name))
-                LEFT JOIN (
-                    SELECT student_id, subject_id, SUM(marks_obtained::float) as total_raw
-                    FROM student_internal_marks
-                    GROUP BY student_id, subject_id
-                ) raw_internal ON er.student_id = raw_internal.student_id AND e.subject_id = raw_internal.subject_id
+                    AND cim.subject_id = e.subject_id
                 ${whereClause}
             )
             SELECT * FROM marks_base

@@ -477,4 +477,7 @@ router.put('/total-rooms', collegeAdminController.updateCollegeTotalRooms);
 router.get('/students-for-roll-generation', collegeAdminController.getStudentsForRollGeneration);
 router.post('/generate-roll-numbers', collegeAdminController.allocateRollNumbers);
 
+router.get('/dashboard-stats', collegeAdminController.getCollegeDashboardStats);
+
 module.exports = router;
+

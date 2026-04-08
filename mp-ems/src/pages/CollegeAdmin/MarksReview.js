@@ -138,8 +138,11 @@ const MarksReview = () => {
             });
 
             if (res.ok) {
-                toast.success("Marks locked and results calculated successfully!");
-                navigate('/admin/marks-verification');
+                const result = await res.json();
+                toast.success(result.message || "Marks locked and synced successfully!");
+                setTimeout(() => {
+                    navigate('/college-admin/marks-approval');
+                }, 2000);
             } else {
                 const errorData = await res.json();
                 toast.error(errorData.error || "Failed to lock marks");
@@ -387,7 +390,7 @@ const MarksReview = () => {
                                     "Once you lock these marks, they cannot be modified by the faculty. The system will permanently write the Best of 3 calculations to the database."
                                 }
                             </div>
-                            {isHOD && subjectMeta?.status === 'Submitted' && (
+                            {isHOD && !['Approved', 'Locked'].includes(subjectMeta?.status) && (
                                 <button
                                     disabled={isRejecting}
                                     onClick={handleRejectWorkflow}
@@ -398,7 +401,7 @@ const MarksReview = () => {
                                 </button>
                             )}
                         </div>
-                        {isHOD && subjectMeta?.status === 'Submitted' && (
+                        {isHOD && !['Approved', 'Locked'].includes(subjectMeta?.status) && (
                             <button
                                 disabled={isLocking}
                                 onClick={handleApproveSection}
@@ -413,7 +416,7 @@ const MarksReview = () => {
                                 <span>{isLocking ? 'Approving...' : 'Verify & Approve Section'}</span>
                             </button>
                         )}
-                        {isCollegeAdmin && ['Submitted', 'Approved'].includes(subjectMeta?.status) && (
+                        {isCollegeAdmin && subjectMeta?.status !== 'Locked' && (
                             <button
                                 disabled={isLocking}
                                 onClick={handleLockMarks}
@@ -428,6 +431,7 @@ const MarksReview = () => {
                                 <span>{isLocking ? 'Locking...' : 'Lock Marks & Process'}</span>
                             </button>
                         )}
+
                     </div>
                 </div>
             )}

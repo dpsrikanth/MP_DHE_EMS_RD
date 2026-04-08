@@ -390,6 +390,12 @@ exports.updateWorkflowStatus = async (req, res) => {
         const { college_id, subject_id, semester_id, academic_year_id, section, status } = req.body;
         const { id: approved_by, role } = req.user;
 
+        // Ensure IDs are integers
+        const cId = parseInt(college_id);
+        const sId = parseInt(subject_id);
+        const semId = parseInt(semester_id);
+        const ayId = parseInt(academic_year_id);
+
         // Security: Only allow specific roles for specific status changes
         if (status === 'Locked' && role !== 'college_admin') {
             return res.status(403).json({ error: "Only College Admins can lock marks" });
@@ -407,7 +413,7 @@ exports.updateWorkflowStatus = async (req, res) => {
                 `SELECT 1 FROM student_marks_review 
                  WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 
                  AND academic_year_id = $4 AND section = $5 AND status = 'Rejected' LIMIT 1`,
-                [college_id, subject_id, semester_id, academic_year_id, section]
+                [cId, sId, semId, ayId, section]
             );
 
             if (rejectionCheck.rowCount > 0) {
@@ -424,7 +430,7 @@ exports.updateWorkflowStatus = async (req, res) => {
             DO UPDATE SET status = EXCLUDED.status, approved_by = EXCLUDED.approved_by, updated_at = CURRENT_TIMESTAMP
             RETURNING *;
         `;
-        const result = await db.query(query, [college_id, subject_id, semester_id, academic_year_id, section, finalStatus, approved_by]);
+        const result = await db.query(query, [cId, sId, semId, ayId, section, finalStatus, approved_by]);
 
         // Audit log 
         if (approved_by) {
@@ -607,6 +613,12 @@ exports.lockMarks = async (req, res) => {
             return res.status(403).json({ error: "Only College Admins can lock marks" });
         }
 
+        // Ensure IDs are integers
+        const sId = parseInt(subject_id);
+        const cId = parseInt(college_id);
+        const semId = parseInt(semester_id);
+        const ayId = parseInt(academic_year_id);
+
         const client = await db.connect();
         try {
             await client.query('BEGIN');
@@ -617,7 +629,7 @@ exports.lockMarks = async (req, res) => {
                 WHERE subject_id = $1 AND section = $2 AND college_id = $3 
                 AND semester_id = $4 AND academic_year_id = $5
             `;
-            const reviewStatusRes = await client.query(reviewStatusQuery, [subject_id, section, college_id, semester_id, academic_year_id]);
+            const reviewStatusRes = await client.query(reviewStatusQuery, [sId, section, cId, semId, ayId]);
 
             const rejections = reviewStatusRes.rows.filter(r => r.status === 'Rejected');
 
@@ -629,7 +641,7 @@ exports.lockMarks = async (req, res) => {
                     VALUES ($1, $2, $3, $4, $5, 'Rejected', $6) 
                     ON CONFLICT (college_id, subject_id, semester_id, academic_year_id, section) 
                     DO UPDATE SET status = 'Rejected', approved_by = EXCLUDED.approved_by, updated_at = CURRENT_TIMESTAMP
-                `, [college_id, subject_id, semester_id, academic_year_id, section, approved_by]);
+                `, [cId, sId, semId, ayId, section, approved_by]);
 
                 await client.query('COMMIT');
                 return res.status(200).json({
@@ -638,8 +650,6 @@ exports.lockMarks = async (req, res) => {
                 });
             }
 
-
-
             // If we reach here, all students are Approved. Proceed with Locking and Calculation.
 
             // Fetch all marks and structure config for THIS college
@@ -647,10 +657,19 @@ exports.lockMarks = async (req, res) => {
                 SELECT sim.* 
                 FROM student_internal_marks sim
                 JOIN students s ON sim.student_id = s.id
-                WHERE sim.subject_id = $1 AND s.college_id = $2
+                JOIN colleges c ON s."collageName" ILIKE c.name
+                WHERE sim.subject_id = $1 AND c.id = $2
             `;
-            const marksData = await client.query(marksDataQuery, [subject_id, college_id]);
-            const components = await client.query('SELECT id, component_name, passing_marks FROM internal_marks_structure WHERE subject_id = $1', [subject_id]);
+            const marksData = await client.query(marksDataQuery, [sId, cId]);
+            
+            // Filter by BOTH subject and college to ensure data isolation
+            const components = await client.query('SELECT id, component_name, passing_marks FROM internal_marks_structure WHERE subject_id = $1 AND college_id = $2', [sId, cId]);
+            
+            if (components.rowCount === 0) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: "No marks structure found for this subject at your college." });
+            }
+
             const compMap = {};
             const compPassMap = {};
             components.rows.forEach(c => {
@@ -686,6 +705,7 @@ exports.lockMarks = async (req, res) => {
             // Calculate Best of 2 out of 3 IAs and determine Pass/Fail
             for (let sid in studentsScores) {
                 let s = studentsScores[sid];
+                const studentId = parseInt(sid); // CRITICAL FIX: keys are strings, db needs integers
 
                 // Cumulative Pass Calculation setup
                 let cumulativePassMarks = 0;
@@ -724,22 +744,24 @@ exports.lockMarks = async (req, res) => {
                     ON CONFLICT (student_id, subject_id, college_id, semester_id, academic_year_id) 
                     DO UPDATE SET best_of_3_score = EXCLUDED.best_of_3_score, practical_score = EXCLUDED.practical_score, 
                     total_internal = EXCLUDED.total_internal, passing_status = EXCLUDED.passing_status, updated_at = CURRENT_TIMESTAMP
-                `, [sid, subject_id, college_id, semester_id, academic_year_id, bestOf2Score, s.practical, total, passStatus]);
+                `, [studentId, sId, cId, semId, ayId, bestOf2Score, s.practical, total, passStatus]);
             }
 
             // 3. Update Workflow Status to Locked
-            await client.query(`
+            const statusUpdateRes = await client.query(`
                 INSERT INTO marks_workflow_status 
                 (college_id, subject_id, semester_id, academic_year_id, section, status, approved_by) 
                 VALUES ($1, $2, $3, $4, $5, 'Locked', $6) 
                 ON CONFLICT (college_id, subject_id, semester_id, academic_year_id, section) 
                 DO UPDATE SET status = 'Locked', approved_by = EXCLUDED.approved_by, updated_at = CURRENT_TIMESTAMP
-            `, [college_id, subject_id, semester_id, academic_year_id, section, approved_by]);
+                RETURNING id
+            `, [cId, sId, semId, ayId, section, approved_by]);
 
             // 4. Audit Log
             if (approved_by) {
+                const workflowId = statusUpdateRes.rows[0]?.id;
                 await client.query(`INSERT INTO audit_logs (user_id, action, entity_type, entity_id) VALUES ($1, 'MARKS_LOCKED', 'MARKS_WORKFLOW', $2)`,
-                    [approved_by, subject_id]);
+                    [approved_by, workflowId || sId]);
             }
 
             await client.query('COMMIT');
@@ -752,9 +774,11 @@ exports.lockMarks = async (req, res) => {
         }
     } catch (error) {
         console.error("Lock Marks Error:", error);
-        res.status(500).json({ error: "Failed to lock marks and calculate Best of 3", details: error.message });
+        // CRITICAL DEBUG: Passing raw error message to toast
+        res.status(500).json({ error: `DB Error: ${error.message}` });
     }
 };
+
 
 exports.getMarksReport = async (req, res) => {
     try {
@@ -994,3 +1018,61 @@ exports.allocateRollNumbers = async (req, res) => {
         res.status(500).json({ error: "Failed to assign roll numbers", details: error.message });
     }
 };
+
+exports.getCollegeDashboardStats = async (req, res) => {
+    try {
+        const college_id = req.user?.college_id;
+        if (!college_id) return res.status(403).json({ error: "No college assigned" });
+
+        // Get Total Students
+        const studentCountRes = await db.query(
+            `SELECT COUNT(*) FROM public.students 
+             WHERE "collageName" ILIKE (SELECT name FROM colleges WHERE id = $1) 
+             AND "deleteStatus" = true`,
+            [college_id]
+        );
+
+        // Get Total Faculty
+        const facultyCountRes = await db.query(
+            `SELECT COUNT(*) FROM public.users 
+             WHERE college_id = $1 
+             AND role_id IN (SELECT id FROM public.roles WHERE role_name IN ('Faculty', 'Teacher', 'HOD'))`,
+            [college_id]
+        );
+
+        // Get Total Halls and Capacity
+        const hallStatsRes = await db.query(
+            `SELECT COUNT(*) as hall_count, COALESCE(SUM(rows * seats_per_row), 0) as total_capacity 
+             FROM public.examination_halls 
+             WHERE college_id = $1 AND status = 'Approved'`,
+            [college_id]
+        );
+
+        // Get Pending Approvals
+        const pendingApprovalsRes = await db.query(
+            `SELECT COUNT(*) FROM public.marks_workflow_status 
+             WHERE college_id = $1 AND status = 'Submitted'`,
+            [college_id]
+        );
+
+        // Get Active Exams (Assigned to this college or university wide)
+        const activeExamsRes = await db.query(
+            `SELECT COUNT(*) FROM public.exams 
+             WHERE (college_id = $1 OR college_id IS NULL) AND (status = true OR status IS NULL)`,
+            [college_id]
+        );
+
+        res.status(200).json({
+            totalStudents: parseInt(studentCountRes.rows[0].count),
+            totalFaculty: parseInt(facultyCountRes.rows[0].count),
+            totalHalls: parseInt(hallStatsRes.rows[0].hall_count),
+            totalCapacity: parseInt(hallStatsRes.rows[0].total_capacity),
+            pendingApprovals: parseInt(pendingApprovalsRes.rows[0].count),
+            activeExams: parseInt(activeExamsRes.rows[0].count)
+        });
+    } catch (error) {
+        console.error("Dashboard stats error:", error);
+        res.status(500).json({ error: "Failed to fetch dashboard statistics" });
+    }
+};
+

@@ -226,7 +226,7 @@ const UniversityMarksView = () => {
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Result <span className="text-indigo-600">Hub</span></h1>
             <p className="text-slate-500 font-bold text-sm tracking-widest uppercase flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              Super Admin • Comprehensive Results
+              Official Results • Locked Records Only
             </p>
           </div>
         </div>
@@ -359,7 +359,10 @@ const UniversityMarksView = () => {
           </div>
           <div className="space-y-3">
             <h3 className="text-3xl font-black text-slate-900 tracking-tight">Select an Exam to Begin</h3>
-            <p className="text-slate-400 font-medium max-w-sm mx-auto">Choose an exam series from the filter above to load comprehensive results, analytics, and publication controls.</p>
+            <p className="text-slate-400 font-medium max-w-sm mx-auto">
+              Choose an exam series from the filter above to load results.
+              <span className="block mt-2 font-bold text-indigo-500 bg-indigo-50 px-3 py-1 rounded-lg inline-block">Note: Only marks officially "Locked" by colleges are visible here.</span>
+            </p>
           </div>
         </div>
       )}
