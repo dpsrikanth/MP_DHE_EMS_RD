@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { CheckCircle, ArrowLeft, ShieldCheck, AlertCircle, MessageSquare, X, Send } from 'lucide-react';
+import { CheckCircle, ArrowLeft, ShieldCheck, AlertCircle, MessageSquare, X, Send, Lock } from 'lucide-react';
 
 const MarksReview = () => {
     const { subjectId, section } = useParams();
@@ -28,8 +28,9 @@ const MarksReview = () => {
     const [subjectMeta, setSubjectMeta] = useState(null);
 
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const isHOD = user.role === 'HOD';
-    const isCollegeAdmin = user.role === 'college_admin';
+    const roleName = localStorage.getItem('roleName');
+    const isHOD = roleName === 'HOD';
+    const isCollegeAdmin = roleName === 'college_admin';
 
     useEffect(() => {
         fetchReviewData();
@@ -260,7 +261,7 @@ const MarksReview = () => {
     return (
         <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
             <div className="flex items-center gap-4">
-                <button onClick={() => navigate('/admin/marks-verification')} className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-colors shadow-sm">
+                <button onClick={() => navigate('/admin/marks-approval')} className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-colors shadow-sm">
                     <ArrowLeft size={18} />
                 </button>
                 <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-600">
@@ -303,7 +304,7 @@ const MarksReview = () => {
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Practical</th>
                                     <th className="px-6 py-4 text-xs font-black text-slate-800 uppercase tracking-widest text-center border-l border-slate-200">Total</th>
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Result Status</th>
-                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Review</th>
+                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Action / Status</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -352,17 +353,23 @@ const MarksReview = () => {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-center">
-                                                <button
-                                                    onClick={() => handleOpenReview(student)}
-                                                    disabled={isCollegeAdmin}
-                                                    className={`p-2 rounded-lg transition-colors flex flex-col items-center gap-1 ${isCollegeAdmin ? 'cursor-default' : 'hover:scale-[1.05]'} ${student.review_status === 'Rejected' ? 'bg-red-50 text-red-600' :
-                                                        student.review_status === 'Approved' ? 'bg-emerald-50 text-emerald-600' :
-                                                            'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                                                        }`}
-                                                >
-                                                    <MessageSquare size={16} />
-                                                    <span className="text-[8px] font-black">{student.review_status || 'REVIEW'}</span>
-                                                </button>
+                                                {isCollegeAdmin ? (
+                                                    <div className={`p-2 rounded-lg flex flex-col items-center gap-1 cursor-default ${subjectMeta?.status === 'Locked' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                                        {subjectMeta?.status === 'Locked' ? <Lock size={16} /> : <ShieldCheck size={16} />}
+                                                        <span className="text-[8px] font-black">{subjectMeta?.status === 'Locked' ? 'LOCKED' : 'READY TO LOCK'}</span>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleOpenReview(student)}
+                                                        className={`p-2 rounded-lg transition-colors flex flex-col items-center gap-1 hover:scale-[1.05] ${student.review_status === 'Rejected' ? 'bg-red-50 text-red-600' :
+                                                                student.review_status === 'Approved' ? 'bg-emerald-50 text-emerald-600' :
+                                                                    'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                                            }`}
+                                                    >
+                                                        <MessageSquare size={16} />
+                                                        <span className="text-[8px] font-black">{student.review_status || 'REVIEW'}</span>
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     );
@@ -406,7 +413,7 @@ const MarksReview = () => {
                                 <span>{isLocking ? 'Approving...' : 'Verify & Approve Section'}</span>
                             </button>
                         )}
-                        {isCollegeAdmin && subjectMeta?.status === 'Approved' && (
+                        {isCollegeAdmin && ['Submitted', 'Approved'].includes(subjectMeta?.status) && (
                             <button
                                 disabled={isLocking}
                                 onClick={handleLockMarks}

@@ -620,14 +620,6 @@ exports.lockMarks = async (req, res) => {
             const reviewStatusRes = await client.query(reviewStatusQuery, [subject_id, section, college_id, semester_id, academic_year_id]);
 
             const rejections = reviewStatusRes.rows.filter(r => r.status === 'Rejected');
-            const totalReviewed = reviewStatusRes.rows.length;
-
-            // Fetch total student count to ensure everyone is reviewed
-            const studentCountRes = await client.query(`
-                SELECT COUNT(DISTINCT student_id) FROM student_internal_marks 
-                WHERE subject_id = $1
-            `, [subject_id]);
-            const totalStudents = parseInt(studentCountRes.rows[0].count);
 
             if (rejections.length > 0) {
                 // If any rejection exists, set global status to Rejected and DON'T calculate
@@ -646,15 +638,18 @@ exports.lockMarks = async (req, res) => {
                 });
             }
 
-            if (totalReviewed < totalStudents) {
-                await client.query('ROLLBACK');
-                return res.status(400).json({ error: "Please review all student records before locking." });
-            }
+
 
             // If we reach here, all students are Approved. Proceed with Locking and Calculation.
 
-            // Fetch all marks and structure config
-            const marksData = await client.query('SELECT * FROM student_internal_marks WHERE subject_id = $1', [subject_id]);
+            // Fetch all marks and structure config for THIS college
+            const marksDataQuery = `
+                SELECT sim.* 
+                FROM student_internal_marks sim
+                JOIN students s ON sim.student_id = s.id
+                WHERE sim.subject_id = $1 AND s.college_id = $2
+            `;
+            const marksData = await client.query(marksDataQuery, [subject_id, college_id]);
             const components = await client.query('SELECT id, component_name, passing_marks FROM internal_marks_structure WHERE subject_id = $1', [subject_id]);
             const compMap = {};
             const compPassMap = {};

@@ -111,10 +111,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 8, name: 'Exam Halls', path: '/college-admin/examination-halls', icon: <Building2 size={20} /> },
         { id: 6, name: 'Teachers', path: '/teachers', icon: <Users size={20} /> },
         { id: 7, name: 'Students', path: '/students', icon: <UserCircle size={20} /> },
-        { id: 11, name: 'Seat Allocation', path: '/college-admin/seating-arrangement', icon: <LayoutDashboard size={20} /> },
         { id: 10, name: 'Roll Generator', path: '/college-admin/generate-roll-numbers', icon: <UserCircle size={20} /> },
+        { id: 11, name: 'Seat Allocation', path: '/college-admin/seating-arrangement', icon: <LayoutDashboard size={20} /> },
         { id: 15, name: 'Faculty Status', path: '/college-admin/faculty-status', icon: <CheckCircle2 size={20} /> },
         { id: 16, name: 'College Performance', path: '/college-admin/performance', icon: <TrendingUp size={20} /> },
+        { id: 17, name: 'Marks Verification', path: '/admin/marks-verification', icon: <ShieldCheck size={20} /> },
       ];
     } else if (roleName === 'Faculty' || roleName === 'Teacher') {
       menuItems = [

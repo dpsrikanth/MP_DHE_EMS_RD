@@ -172,6 +172,7 @@ const AppRoutes = () => {
       {/* HOD Routes */}
       <Route path="/hod/dashboard" element={<Layout><ProtectedRoute element={<HODDashboard />} /></Layout>} />
       <Route path="/hod/marks-approval" element={<Layout><ProtectedRoute element={<MarksApproval />} /></Layout>} />
+      <Route path="/admin/marks-approval" element={<Layout><ProtectedRoute element={<MarksApproval />} /></Layout>} />
 
       {/* New Marks Verification Routes */}
       <Route path="/admin/marks-verification" element={<Layout><ProtectedRoute element={<MarksVerification />} /></Layout>} />
