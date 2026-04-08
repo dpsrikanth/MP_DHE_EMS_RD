@@ -36,6 +36,12 @@ const Login = () => {
     setLoading(true);
 
     try {
+      if (!window["config"] || !window["config"].login_url) {
+        setError("Configuration error: Application config not found. Please refresh the page.");
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(window["config"].login_url, {
         method: "POST",
         headers: {
