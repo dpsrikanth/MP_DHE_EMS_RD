@@ -197,12 +197,12 @@ const Exams = () => {
 
   // Auto-generate exam name from selected field values
   const generateExamName = () => {
-    const program = programs.find(p => p.id === parseInt(formData.program_id));
-    const semester = semesters.find(s => s.id === parseInt(formData.semester_id));
-    const examType = examTypes.find(t => t.id === parseInt(formData.exam_type));
-    const academicYear = academicYears.find(ay => ay.id === parseInt(formData.academic_year_id));
-    const college = colleges.find(c => c.id === parseInt(formData.college_id));
-    const university = universities.find(u => u.id === parseInt(formData.university_id));
+    const program = programs.find(p => p.id == formData.program_id);
+    const semester = semesters.find(s => s.id == formData.semester_id);
+    const examType = examTypes.find(t => t.id == formData.exam_type);
+    const academicYear = academicYears.find(ay => ay.id == formData.academic_year_id);
+    const college = colleges.find(c => c.id == formData.college_id);
+    const university = universities.find(u => u.id == formData.university_id);
 
     const parts = [];
     if (program) parts.push(program.name);
@@ -215,13 +215,13 @@ const Exams = () => {
     if (formData.exam_type == 2 && !formData.college_id) {
       parts.push(university ? (university.name || 'University') : 'University');
     } else {
-      parts.push(college ? college.name || college.college_name : 'University');
+      parts.push(college ? (college.name || college.college_name) : 'University');
     }
     if (examType) parts.push(examType.type_name);
     parts.push('Exam');
     if (academicYear) parts.push(academicYear.year_name);
 
-    return parts.join(' ');
+    return parts.filter(Boolean).join(' ');
   };
 
   useEffect(() => {
@@ -238,14 +238,26 @@ const Exams = () => {
       const response = await fetch('http://localhost:8080/api/exams', {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
       if (!response.ok) {
         const text = await response.text();
-        throw new Error(`HTTP ${response.status}: ${text}`);
+        throw new Error(`HTTP ${response.status}: ${text || 'Unknown Error'}`);
       }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error("Non-JSON response from /api/exams:", text);
+        throw new Error("Server returned an invalid response format (Expected JSON)");
+      }
+
       const jsonData = await response.json();
-      setData(jsonData || []);
+      setData(Array.isArray(jsonData) ? jsonData : []);
     } catch (err) {
-      setError(err.message);
+      console.error("Fetch exams error:", err);
+      setError(err.message === "Unexpected end of JSON input" 
+        ? "Server returned an empty response. This might be a server-side error." 
+        : err.message);
     } finally {
       setLoading(false);
     }
@@ -433,7 +445,15 @@ const Exams = () => {
         body: JSON.stringify(normalizedFormData)
       });
 
-      const resData = await res.json();
+      const contentType = res.headers.get('content-type');
+      let resData = {};
+      
+      if (contentType && contentType.includes('application/json')) {
+        resData = await res.json();
+      } else {
+        const text = await res.text();
+        if (!res.ok) throw new Error(text || `Error ${res.status}`);
+      }
 
       if (!res.ok) {
         if (resData.capacityError) {
@@ -852,8 +872,7 @@ const Exams = () => {
                         onChange={(e) => setFormData({ 
                           ...formData, 
                           semester_id: e.target.value,
-                          subject_id: '',
-                          name: ''
+                          subject_id: ''
                         })}
                         className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer"
                       >
@@ -879,8 +898,7 @@ const Exams = () => {
                           ...formData, 
                           department_id: e.target.value,
                           program_id: '',
-                          subject_id: '',
-                          name: ''
+                          subject_id: ''
                         })}
                         className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                       >
@@ -903,8 +921,7 @@ const Exams = () => {
                         onChange={(e) => setFormData({ 
                           ...formData, 
                           program_id: e.target.value,
-                          subject_id: '',
-                          name: ''
+                          subject_id: ''
                         })}
                         className="w-full h-14 bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 px-5 transition-all outline-none appearance-none cursor-pointer disabled:opacity-70"
                       >

@@ -137,11 +137,11 @@ exports.getResultHubData = async (req, res) => {
         const params = [];
         let paramIdx = 1;
 
-        // Always require paid registrations
-        conditions.push(`er.payment_status = 'Paid'`);
+        // For External Exams (Type 2), require paid registrations. For Internal (Type 1), be more inclusive.
+        conditions.push(`(e.exam_type = 1 OR er.payment_status = 'Paid')`);
 
         if (exam_id) {
-            conditions.push(`er.exam_id = $${paramIdx++}`);
+            conditions.push(`e.id = $${paramIdx++}`);
             params.push(exam_id);
         }
         if (exam_name) {
@@ -163,8 +163,8 @@ exports.getResultHubData = async (req, res) => {
             WITH marks_base AS (
                 SELECT 
                     m.id as mark_id, 
-                    er.student_id,
-                    er.exam_id,
+                    s.id as student_id,
+                    e.id as exam_id,
                     COALESCE(m.status, 'Not Entered') as marks_status,
                     COALESCE(cim.total_internal, m.internal_marks, 0) as internal_marks, 
                     COALESCE(m.external_marks, 0) as external_marks,
@@ -172,13 +172,16 @@ exports.getResultHubData = async (req, res) => {
                     s.rollnumber, CONCAT(s.first_name, ' ', s.last_name) as student_name,
                     s."collageName" as college_name, s."programName" as program_name,
                     e.name as exam_name,
+                    e.exam_type,
                     e.results_published,
                     sub.name as subject_name, sub.id as subject_id,
                     sub.credit as credits
-                FROM exam_registrations er
-                JOIN exams e ON er.exam_id = e.id
+                FROM exams e
+                JOIN master_programs mp ON e.program_id = mp.id
+                JOIN master_semesters ms ON e.semester_id = ms.id
+                JOIN students s ON s."programName" = mp.name AND s.semister = ms.semester_name
                 JOIN master_subjects sub ON e.subject_id = sub.id
-                JOIN students s ON er.student_id = s.id
+                LEFT JOIN exam_registrations er ON er.student_id = s.id AND er.exam_id = e.id
                 -- Join Colleges to get ID and link with Workflow Status
                 JOIN colleges c ON s."collageName" ILIKE c.name
                 -- CRITICAL: Only show marks that have been officially 'Locked' by the College Admin or Finalized by External
@@ -187,8 +190,8 @@ exports.getResultHubData = async (req, res) => {
                     -- If a student has no section, they match with the finalized workflow of that college/subject
                     AND (mws.section = s.section OR s.section IS NULL OR s.section = '')
                     AND mws.status IN ('Locked', 'Approved', 'Finalized', 'Submitted')
-                LEFT JOIN marks m ON m.student_id = er.student_id AND m.exam_id = er.exam_id AND m.subject_id = e.subject_id
-                LEFT JOIN calculated_internal_marks cim ON er.student_id = cim.student_id 
+                LEFT JOIN marks m ON m.student_id = s.id AND m.exam_id = e.id AND m.subject_id = e.subject_id
+                LEFT JOIN calculated_internal_marks cim ON cim.student_id = s.id 
                     AND cim.subject_id = e.subject_id
                 ${whereClause}
             )
@@ -209,6 +212,13 @@ exports.getResultHubData = async (req, res) => {
             ? (totalWithMarks.reduce((s, r) => s + Number(r.total_marks), 0) / totalWithMarks.length).toFixed(1)
             : '0.0';
         const resultsPublished = rows.length > 0 ? rows[0].results_published : false;
+        let examType = rows.length > 0 ? rows[0].exam_type : null;
+        
+        // Fallback: If no marks records but an exam_name was searched, get the type of that exam series
+        if (!examType && exam_name) {
+            const typeRes = await db.query("SELECT exam_type FROM exams WHERE name = $1 LIMIT 1", [exam_name]);
+            if (typeRes.rows.length > 0) examType = typeRes.rows[0].exam_type;
+        }
 
         res.status(200).json({
             marks: rows,
@@ -219,7 +229,8 @@ exports.getResultHubData = async (req, res) => {
                 failCount,
                 avgMarks,
                 totalRecords: totalWithMarks.length,
-                resultsPublished
+                resultsPublished,
+                examType
             }
         });
     } catch (error) {

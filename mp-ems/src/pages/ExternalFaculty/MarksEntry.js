@@ -3,7 +3,7 @@ import {
   Save, Send, AlertCircle, Info, 
   Search, FileEdit, CheckCircle2,
   GraduationCap, BookOpen, Loader2, Filter,
-  UserCircle, ClipboardCheck
+  UserCircle, ClipboardCheck, Unlock
 } from "lucide-react";
 import { toast } from 'react-toastify';
 
@@ -18,8 +18,8 @@ const ExternalMarksEntry = () => {
     fetchAssignments();
   }, []);
 
-  const fetchAssignments = async () => {
-    setLoading(true);
+  const fetchAssignments = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const token = localStorage.getItem('token');
       const res = await fetch('http://localhost:8080/api/external-faculty/assignments', {
@@ -39,9 +39,9 @@ const ExternalMarksEntry = () => {
       }
     } catch (error) {
       console.error("Failed to fetch assignments:", error);
-      toast.error("Failed to load assignments");
+      if (!silent) toast.error("Failed to load assignments");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -79,7 +79,7 @@ const ExternalMarksEntry = () => {
 
       if (res.ok) {
         toast.success(`Draft saved for ${subjectGroup.subject_name}`);
-        fetchAssignments();
+        fetchAssignments(true); // Silent refresh
       } else {
         const data = await res.json();
         toast.error(data.error || "Failed to save marks");
@@ -124,6 +124,8 @@ const ExternalMarksEntry = () => {
         throw new Error(saveData.error || "Failed to save marks before finalization");
       }
 
+      const uniqueExamIds = [...new Set(subjectGroup.students.map(s => s.exam_id))];
+
       // 2. Then Finalize
       const res = await fetch('http://localhost:8080/api/external-faculty/finalize-marks', {
         method: 'POST',
@@ -132,14 +134,14 @@ const ExternalMarksEntry = () => {
           Authorization: `Bearer ${token}` 
         },
         body: JSON.stringify({ 
-          exam_id: subjectGroup.students[0].exam_id,
+          exam_ids: uniqueExamIds,
           subject_ids: [subjectGroup.subject_id] 
         })
       });
 
       if (res.ok) {
         toast.success(`Marks for ${subjectGroup.subject_name} submitted successfully`);
-        fetchAssignments();
+        fetchAssignments(true); // Silent refresh
       } else {
         const data = await res.json();
         toast.error(data.error || "Failed to finalize marks");
@@ -151,8 +153,42 @@ const ExternalMarksEntry = () => {
     }
   };
 
+  const handleUnlockSubject = async (subjectGroup, examName) => {
+    if (!window.confirm(`Are you sure you want to unlock ${subjectGroup.subject_name} for corrections?`)) return;
+
+    setSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const uniqueExamIds = [...new Set(subjectGroup.students.map(s => s.exam_id))];
+
+      const res = await fetch('http://localhost:8080/api/external-faculty/unlock-subject', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ 
+          exam_ids: uniqueExamIds,
+          subject_ids: [subjectGroup.subject_id] 
+        })
+      });
+
+      if (res.ok) {
+        toast.success(`Subject ${subjectGroup.subject_name} is now enabled for editing`);
+        fetchAssignments(true); // Silent refresh
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to unlock subject");
+      }
+    } catch (error) {
+      toast.error("An error occurred during unlock");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Nested Grouping by Exam -> Subject
-  const groupedData = assignments.reduce((acc, curr) => {
+  const rawGrouped = assignments.reduce((acc, curr) => {
     const eKey = curr.exam_name;
     const sKey = curr.subject_name;
 
@@ -167,12 +203,43 @@ const ExternalMarksEntry = () => {
       acc[eKey].subjects[sKey] = {
         subject_id: curr.subject_id,
         subject_name: curr.subject_name,
-        assignment_status: curr.assignment_status, // This is at least one assignment status
+        // Mark statuses of all students in this subject to derive subject-level status
+        student_marks_statuses: [], 
         students: []
       };
     }
 
     acc[eKey].subjects[sKey].students.push(curr);
+    acc[eKey].subjects[sKey].student_marks_statuses.push(curr.marks_status);
+    return acc;
+  }, {});
+
+  // Derive consolidated status for each subject group from STUDENT MARKS
+  // This ensures subject isolation even if assignment ID is shared (Series level)
+  const groupedData = Object.keys(rawGrouped).reduce((acc, eKey) => {
+    const exam = rawGrouped[eKey];
+    const processedSubjects = Object.keys(exam.subjects).reduce((sAcc, sKey) => {
+      const subject = exam.subjects[sKey];
+      const marksStatuses = [...new Set(subject.student_marks_statuses)];
+      
+      // If ALL students' marks are 'Pending Approval' (submitted to university), 
+      // then the subject group is considered 'Submitted'
+      let consolidatedStatus = 'Assigned';
+      if (marksStatuses.length > 0 && marksStatuses.every(st => st === 'Pending Approval')) {
+        consolidatedStatus = 'Submitted';
+      } else if (marksStatuses.includes('Draft') || marksStatuses.includes('Pending Approval')) {
+        // If some are draft and some are pending, it's 'Evaluated' (Draft Saved)
+        consolidatedStatus = 'Evaluated'; 
+      }
+
+      sAcc[sKey] = { 
+        ...subject, 
+        assignment_status: consolidatedStatus 
+      };
+      return sAcc;
+    }, {});
+
+    acc[eKey] = { ...exam, subjects: processedSubjects };
     return acc;
   }, {});
 
@@ -252,20 +319,32 @@ const ExternalMarksEntry = () => {
                       </div>
                       
                       <div className="flex items-center gap-4">
-                         <button 
-                          onClick={() => handleSaveSubjectDraft(subject, exam.exam_name)}
-                          disabled={submitting || subject.assignment_status === 'Submitted'}
-                          className="h-14 px-8 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl border border-white/10 flex items-center gap-3 transition-all disabled:opacity-30"
-                        >
-                          <Save size={16} /> Save Draft
-                        </button>
-                        <button 
-                          onClick={() => handleFinalizeSubject(subject, exam.exam_name)}
-                          disabled={submitting || subject.assignment_status === 'Submitted'}
-                          className="h-14 px-8 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-indigo-900/40 flex items-center gap-3 transition-all disabled:opacity-30"
-                        >
-                          <Send size={16} /> Finalize Subject
-                        </button>
+                        {subject.assignment_status === 'Submitted' ? (
+                          <button 
+                            onClick={() => handleUnlockSubject(subject, exam.exam_name)}
+                            disabled={submitting}
+                            className="h-14 px-8 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-amber-900/20 flex items-center gap-3 transition-all disabled:opacity-30"
+                          >
+                            <Unlock size={16} /> Enable / Unlock
+                          </button>
+                        ) : (
+                          <>
+                            <button 
+                              onClick={() => handleSaveSubjectDraft(subject, exam.exam_name)}
+                              disabled={submitting || subject.assignment_status === 'Submitted'}
+                              className="h-14 px-8 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl border border-white/10 flex items-center gap-3 transition-all disabled:opacity-30"
+                            >
+                              <Save size={16} /> Save Draft
+                            </button>
+                            <button 
+                              onClick={() => handleFinalizeSubject(subject, exam.exam_name)}
+                              disabled={submitting || subject.assignment_status === 'Submitted'}
+                              className="h-14 px-8 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-indigo-900/40 flex items-center gap-3 transition-all disabled:opacity-30"
+                            >
+                              <Send size={16} /> Finalize Subject
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
 

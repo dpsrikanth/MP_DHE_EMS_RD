@@ -130,22 +130,34 @@ const UniversityMarksView = () => {
   // CSV Export
   const exportCSV = () => {
     if (marks.length === 0) return;
-    const headers = ["Roll No", "Student Name", "College", "Program", "Subject", "Internal", "External", "Total", "Grade", "GP", "Credits", "Credit Pts", "Result"];
+    const isInternalOnly = summary?.examType === 1;
+    const headers = ["Roll No", "Student Name", "College", "Program", "Subject", "Internal"];
+    if (!isInternalOnly) headers.push("External");
+    headers.push("Total", "Grade", "GP", "Credits", "Credit Pts", "Result");
+    
     const csvRows = [headers.join(",")];
     marks.forEach(row => {
       if (!gradingConfig) return;
-      const total = Number(row.internal_marks || 0) + Number(row.external_marks || 0);
+      
+      const internal = Number(row.internal_marks || 0);
+      const external = Number(row.external_marks || 0);
+      const total = isInternalOnly ? internal : (internal + external);
+      
       const { grade, gradePoint } = getGradeAndPoints(total, gradingConfig.grade_scale);
       const pass = isPass(total, gradingConfig.pass_threshold) ? 'Pass' : 'Fail';
       const subjectId = row.subject_id || row.id;
       const overrideCredits = gradingConfig.subject_credits?.[subjectId];
       const credits = overrideCredits !== undefined ? Number(overrideCredits) : Number(row.credits || 0);
       const creditPoints = gradePoint * credits;
-      csvRows.push([
+      
+      const rowData = [
         row.rollnumber, `"${row.student_name}"`, `"${row.college_name || ''}"`, `"${row.program_name || ''}"`,
-        `"${row.subject_name}"`, row.internal_marks, row.external_marks, total,
-        grade, gradePoint, credits, creditPoints, pass
-      ].join(","));
+        `"${row.subject_name}"`, internal
+      ];
+      if (!isInternalOnly) rowData.push(external);
+      rowData.push(total, grade, gradePoint, credits, creditPoints, pass);
+      
+      csvRows.push(rowData.join(","));
     });
     const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -160,9 +172,13 @@ const UniversityMarksView = () => {
   // Build graded data grouped by subject
   const subjectWiseData = useMemo(() => {
     if (!gradingConfig) return {};
+    const isInternalOnly = summary?.examType === 1;
     return marks.reduce((acc, curr) => {
       if (!acc[curr.subject_name]) acc[curr.subject_name] = [];
-      const totalMarks = Number(curr.internal_marks || 0) + Number(curr.external_marks || 0);
+      const internal = Number(curr.internal_marks || 0);
+      const external = Number(curr.external_marks || 0);
+      const totalMarks = isInternalOnly ? internal : (internal + external);
+      
       const { grade, gradePoint } = getGradeAndPoints(totalMarks, gradingConfig.grade_scale);
       const subjectIsPass = isPass(totalMarks, gradingConfig.pass_threshold);
       const subjectId = curr.subject_id || curr.id;
@@ -175,11 +191,12 @@ const UniversityMarksView = () => {
       });
       return acc;
     }, {});
-  }, [marks, gradingConfig]);
+  }, [marks, gradingConfig, summary]);
 
   // Build student-wise data with SGPA
   const studentList = useMemo(() => {
     if (!gradingConfig) return [];
+    const isInternalOnly = summary?.examType === 1;
     const grouped = marks.reduce((acc, curr) => {
       if (!acc[curr.student_id]) {
         acc[curr.student_id] = {
@@ -189,7 +206,10 @@ const UniversityMarksView = () => {
           subjects: []
         };
       }
-      const totalMarks = Number(curr.internal_marks || 0) + Number(curr.external_marks || 0);
+      const internal = Number(curr.internal_marks || 0);
+      const external = Number(curr.external_marks || 0);
+      const totalMarks = isInternalOnly ? internal : (internal + external);
+      
       const { grade, gradePoint } = getGradeAndPoints(totalMarks, gradingConfig.grade_scale);
       const subjectId = curr.subject_id || curr.id;
       const overrideCredits = gradingConfig.subject_credits?.[subjectId];
@@ -206,7 +226,7 @@ const UniversityMarksView = () => {
       const totalCredits = student.subjects.reduce((sum, s) => sum + s.credits, 0);
       return { ...student, sgpa, totalCredits };
     });
-  }, [marks, gradingConfig]);
+  }, [marks, gradingConfig, summary]);
 
   const subjectNames = Object.keys(subjectWiseData);
 
@@ -459,7 +479,9 @@ const UniversityMarksView = () => {
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest w-36">Roll No</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Int</th>
-                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Ext</th>
+                        {summary?.examType !== 1 && (
+                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Ext</th>
+                        )}
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Total</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Grade</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">GP</th>
@@ -486,7 +508,9 @@ const UniversityMarksView = () => {
                               <p className="text-[9px] font-bold text-slate-400 uppercase">{item.college_name}</p>
                             </td>
                             <td className="px-8 py-5 text-center font-bold text-slate-400">{item.internal_marks || 0}</td>
-                            <td className="px-8 py-5 text-center font-black text-indigo-600">{item.external_marks || 0}</td>
+                            {summary?.examType !== 1 && (
+                              <td className="px-8 py-5 text-center font-black text-indigo-600">{item.external_marks || 0}</td>
+                            )}
                             <td className="px-8 py-5 text-center">
                               <span className="text-lg font-black text-slate-900">{item.total_marks || 0}</span>
                             </td>

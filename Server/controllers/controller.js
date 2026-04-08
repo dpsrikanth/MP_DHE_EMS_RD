@@ -1459,12 +1459,17 @@ const createExam = async (req, res) => {
 
         // Skip marks structure validation for global external exams
         if (!isGlobalExternal) {
+          // Relaxed structure check: Just ensure A structure exists for this subject and program
+          // This allows college admins to use university-wide or cross-department structures
           const structureCheck = await client.query(
             `SELECT 1 FROM internal_marks_structure 
-             WHERE college_id = $1 AND department_id = $2 AND program_id = $3 AND subject_id = $4 LIMIT 1`,
-            [college_id, department_id, program_id, subject_id]
+             WHERE subject_id = $1 AND program_id = $2 LIMIT 1`,
+            [subject_id, program_id]
           );
-          if (structureCheck.rows.length === 0) continue; // Skip subjects without structure in batch mode
+          if (structureCheck.rows.length === 0) {
+            console.log(`Skipping subject ${subject_id}: No marks structure found for this program context.`);
+            continue; 
+          }
         }
 
         const result = await client.query(
@@ -1476,7 +1481,13 @@ const createExam = async (req, res) => {
         );
         createdExams.push(result.rows[0]);
       }
-      return res.status(201).json(createdExams[0]); // Return the first one or a summary
+      if (createdExams.length === 0) {
+        return res.status(400).json({ 
+          message: "No exams were scheduled. This usually happens when the selected subjects do not have a Marks Structure defined in the system. Please configure the Marks Structure first.",
+          errorType: 'MISSING_STRUCTURE'
+        });
+      }
+      return res.status(201).json(createdExams);
     }
 
     // Single Creation Logic (Fallback)

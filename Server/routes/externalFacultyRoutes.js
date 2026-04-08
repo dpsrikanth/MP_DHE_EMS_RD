@@ -4,7 +4,8 @@ const { verifyToken } = require('../middleware/auth.middleware');
 const { 
     getAssignedStudents, 
     saveExternalMarks, 
-    finalizeExternalMarks 
+    finalizeExternalMarks,
+    unlockExternalMarks 
 } = require('../controllers/externalFacultyController');
 
 /**
@@ -71,5 +72,28 @@ router.post('/save-marks', verifyToken, saveExternalMarks);
  *         description: External marks finalized
  */
 router.post('/finalize-marks', verifyToken, finalizeExternalMarks);
+
+/**
+ * @swagger
+ * /api/external-faculty/unlock-subject:
+ *   post:
+ *     summary: Unlock a submitted subject for corrections
+ *     tags: [External Examiner Operations]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               exam_ids: { type: array, items: { type: integer } }
+ *               subject_ids: { type: array, items: { type: integer } }
+ *     responses:
+ *       200:
+ *         description: Subject unlocked
+ */
+router.post('/unlock-subject', verifyToken, unlockExternalMarks);
 
 module.exports = router;
