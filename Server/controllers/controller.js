@@ -3675,13 +3675,20 @@ const getHallTicketData = async (req, res) => {
            s.sitting_center_id AS student_sitting_center_id,
            student_center_col.id AS student_center_id,
            student_center_col.name AS student_center_name,
-           student_center_col.address AS student_center_address
+           student_center_col.address AS student_center_address,
+           -- Seating details
+           eh.hall_code,
+           sa.row_no,
+           sa.seat_no
         FROM students s
         JOIN exam_registrations er ON s.id = er.student_id
         JOIN exams e ON er.exam_id = e.id
         LEFT JOIN colleges home_col ON home_col.name ILIKE s."collageName"
         LEFT JOIN colleges center_col ON home_col.sitting_center_id = center_col.id
         LEFT JOIN colleges student_center_col ON s.sitting_center_id = student_center_col.id
+        -- New Joins for Seating
+        LEFT JOIN seating_arrangements sa ON sa.student_id = s.id AND sa.exam_id = e.id
+        LEFT JOIN examination_halls eh ON sa.hall_id = eh.id
         WHERE s.user_id = $1 
           AND s."deleteStatus" = true 
           AND e.name = $2 
@@ -3697,6 +3704,13 @@ const getHallTicketData = async (req, res) => {
      }
 
     const studentRow = studentRes.rows[0];
+
+    // Hall Ticket Generation Guard: Block access if seat is not yet allocated
+    if (!studentRow.seat_no) {
+      return res.status(403).json({ 
+        message: "Hallticket not generated, please check after sometime" 
+      });
+    }
 
     const student = {
       id: studentRow.id,
@@ -3714,6 +3728,9 @@ const getHallTicketData = async (req, res) => {
       batch: studentRow.batch,
       section: studentRow.section,
       gender: studentRow.gender,
+      hall_code: studentRow.hall_code,
+      row_no: studentRow.row_no,
+      seat_no: studentRow.seat_no
     };
 
     // Determine examination center: 
@@ -3753,13 +3770,18 @@ const getHallTicketData = async (req, res) => {
         sub.subject_code,
         e.exam_date, 
         e.start_time,
-        e.end_time
+        e.end_time,
+        eh.hall_code,
+        sa.seat_no,
+        sa.row_no
       FROM exams e
       JOIN master_semesters ms ON e.semester_id = ms.id
       LEFT JOIN colleges c ON e.college_id = c.id
       JOIN exam_types et ON e.exam_type = et.id
       JOIN master_subjects sub ON e.subject_id = sub.id
       JOIN exam_registrations er ON er.exam_id = e.id AND er.student_id = $1
+      LEFT JOIN seating_arrangements sa ON sa.student_id = $1 AND sa.exam_id = e.id
+      LEFT JOIN examination_halls eh ON sa.hall_id = eh.id
       WHERE e.name = $2 
         AND e.semester_id = $3
         AND er.payment_status = 'Paid'

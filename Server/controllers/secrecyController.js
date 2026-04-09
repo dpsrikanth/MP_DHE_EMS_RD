@@ -332,3 +332,122 @@ exports.processPayment = async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
+// ----- POST-EXAM SECRECY ENDPOINTS -----
+
+exports.getExamSubjectsForCoding = async (req, res) => {
+  try {
+    // Show exams that are locked/conducted, allowing the Secrecy admin to generate dummy codes.
+    const query = `
+      SELECT DISTINCT 
+        e.id as exam_id, e.name as exam_name, e.exam_date, e.start_time, e.end_time,
+        ms.id as subject_id, ms.name as subject_name
+      FROM exams e
+      JOIN master_subjects ms ON e.subject_id = ms.id
+      ORDER BY e.exam_date DESC
+    `;
+    const { rows } = await pool.query(query);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error in getExamSubjectsForCoding:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+exports.encodeAnswerSheets = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { exam_id, subject_id } = req.body;
+    if (!exam_id || !subject_id) {
+      return res.status(400).json({ message: 'exam_id and subject_id are required' });
+    }
+
+    await client.query('BEGIN');
+
+    // Fetch all students who are registered (Paid) for this exam
+    const studentQuery = `
+      SELECT DISTINCT student_id 
+      FROM exam_registrations
+      WHERE exam_id = $1 AND payment_status = 'Paid'
+    `;
+    const { rows: students } = await client.query(studentQuery, [exam_id]);
+
+    if (students.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: 'No registered students found for this exam' });
+    }
+
+    // Helper to generate a random code
+    const generateCode = () => {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let code = '';
+      for (let i = 0; i < 8; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    };
+
+    let generatedCount = 0;
+
+    for (const st of students) {
+      let codeAssigned = false;
+      let attempt = 0;
+
+      while (!codeAssigned && attempt < 10) {
+        let code = generateCode();
+        try {
+          // Attempt to insert code for the student
+          await client.query(`
+            INSERT INTO secrecy_codes (exam_id, subject_id, student_id, fictitious_code)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (exam_id, subject_id, student_id) DO NOTHING
+          `, [exam_id, subject_id, st.student_id, code]);
+
+          // Will succeed if no unique conflict. 
+          // Note: using DO NOTHING means if they already have a code, we skip.
+          codeAssigned = true; 
+          generatedCount++;
+        } catch (err) {
+          if (err.code === '23505') {
+            // Unique violation on fictitious_code, retry
+            attempt++;
+          } else {
+            throw err;
+          }
+        }
+      }
+    }
+
+    await client.query('COMMIT');
+    res.json({ message: 'Answer sheets coded securely', newly_coded: generatedCount });
+  } catch (error) {
+    if (client) await client.query('ROLLBACK');
+    console.error('Error in encodeAnswerSheets:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  } finally {
+    if (client) client.release();
+  }
+};
+
+exports.getSecrecyCodes = async (req, res) => {
+  try {
+    const { exam_id, subject_id } = req.query;
+    if (!exam_id || !subject_id) {
+      return res.status(400).json({ message: 'exam_id and subject_id are required' });
+    }
+
+    const query = `
+      SELECT sc.fictitious_code, s.rollnumber, s.first_name, s.last_name, m.external_marks
+      FROM secrecy_codes sc
+      JOIN students s ON sc.student_id = s.id
+      LEFT JOIN marks m ON m.exam_id = sc.exam_id AND m.subject_id = sc.subject_id AND m.student_id = sc.student_id
+      WHERE sc.exam_id = $1 AND sc.subject_id = $2
+      ORDER BY sc.fictitious_code ASC
+    `;
+    const { rows } = await pool.query(query, [exam_id, subject_id]);
+    res.json(rows);
+  } catch(err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};

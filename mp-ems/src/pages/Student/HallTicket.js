@@ -163,6 +163,23 @@ const HallTicket = () => {
                       {center.address}
                     </p>
                   )}
+                  {/* Allocated Seating Info */}
+                  {(student.hall_code || student.seat_no) && (
+                    <div className="flex gap-4 mt-4">
+                      {student.hall_code && (
+                        <div className="bg-white/60 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-white/50 shadow-sm">
+                          <p className="text-[9px] font-black text-slate-400 mb-0.5 uppercase">Hall</p>
+                          <p className="text-sm font-black text-slate-900">{student.hall_code}</p>
+                        </div>
+                      )}
+                      {student.seat_no && (
+                        <div className="bg-white/60 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-white/50 shadow-sm">
+                          <p className="text-[9px] font-black text-slate-400 mb-0.5 uppercase">Seat Number</p>
+                          <p className="text-sm font-black text-slate-900">{student.seat_no}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className={`flex-shrink-0 self-start sm:self-center px-5 py-2 rounded-2xl font-black text-xs uppercase tracking-widest ${center?.is_external ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'}`}>
@@ -188,6 +205,7 @@ const HallTicket = () => {
                   <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
                   <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject Code</th>
                   <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject Name</th>
+                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Hall / Seat</th>
                   <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Time</th>
                 </tr>
               </thead>
@@ -209,6 +227,16 @@ const HallTicket = () => {
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm font-black text-slate-900 leading-tight line-clamp-2 max-w-xs">{exam.subject_name}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      {exam.hall_code || exam.seat_no ? (
+                        <div className="flex flex-col">
+                           <span className="text-[10px] font-black text-slate-900 uppercase">{exam.hall_code || '---'}</span>
+                           <span className="text-[9px] font-bold text-sky-600 uppercase">Seat: {exam.seat_no || 'NA'}</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-300 italic font-medium">Pending...</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-slate-600">

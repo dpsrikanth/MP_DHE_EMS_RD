@@ -218,4 +218,38 @@ router.get('/payments', secrecyOnly, secrecyController.getPayments);
  */
 router.post('/payments/process', secrecyOnly, secrecyController.processPayment);
 
+// -- POST-EXAM SECRECY ROUTES --
+/**
+ * @swagger
+ * /api/secrecy/exam-subjects:
+ *   get:
+ *     summary: Get exams for secrecy coding
+ *     tags: [Secrecy Department]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/exam-subjects', secrecyOnly, secrecyController.getExamSubjectsForCoding);
+
+/**
+ * @swagger
+ * /api/secrecy/encode-sheets:
+ *   post:
+ *     summary: Encode answer sheets
+ *     tags: [Secrecy Department]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/encode-sheets', secrecyOnly, secrecyController.encodeAnswerSheets);
+
+/**
+ * @swagger
+ * /api/secrecy/secrecy-codes:
+ *   get:
+ *     summary: Get secrecy codes mapping
+ *     tags: [Secrecy Department]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/secrecy-codes', secrecyOnly, secrecyController.getSecrecyCodes);
+
 module.exports = router;

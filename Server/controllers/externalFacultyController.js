@@ -13,7 +13,9 @@ exports.getAssignedStudents = async (req, res) => {
             SELECT DISTINCT ON (s.rollnumber, sub.id)
                 efa.id as assignment_id, efa.status as assignment_status,
                 er.id as registration_id, er.student_id, 
-                CONCAT(s.first_name, ' ', s.last_name) as student_name, s.rollnumber,
+                CASE WHEN sc.fictitious_code IS NOT NULL THEN '--- HIDDEN ---' ELSE CONCAT(s.first_name, ' ', s.last_name) END as student_name, 
+                CASE WHEN sc.fictitious_code IS NOT NULL THEN sc.fictitious_code ELSE s.rollnumber END as rollnumber,
+                sc.fictitious_code,
                 e_all.id as exam_id, e_all.name as exam_name, 
                 sub.id as subject_id, sub.name as subject_name,
                 m.id as mark_id, m.external_marks, m.status as marks_status,
@@ -26,7 +28,8 @@ exports.getAssignedStudents = async (req, res) => {
             JOIN master_subjects sub ON e_all.subject_id = sub.id
             JOIN exam_registrations er ON er.exam_id = e_all.id AND er.payment_status = 'Paid'
             JOIN students s ON er.student_id = s.id
-            LEFT JOIN marks m ON m.student_id = s.id AND m.exam_id = e_all.id
+            LEFT JOIN secrecy_codes sc ON sc.exam_id = e_all.id AND sc.subject_id = sub.id AND sc.student_id = s.id
+            LEFT JOIN marks m ON m.student_id = s.id AND m.exam_id = e_all.id AND m.subject_id = sub.id
             WHERE efa.faculty_user_id = $1
               AND (efa.subject_id IS NULL OR efa.subject_id = sub.id)
             ORDER BY s.rollnumber ASC, sub.id ASC, exam_name ASC

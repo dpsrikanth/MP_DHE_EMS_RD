@@ -479,7 +479,7 @@ exports.finalizePaper = async (req, res) => {
     
     // 1. Role Check
     const userRole = req.user?.roleName || req.user?.role;
-    if(!['admin', 'SUPER_ADMIN', 'college_admin', 'HOD'].includes(userRole)) {
+    if(!['admin', 'SUPER_ADMIN', 'college_admin', 'HOD', 'Secrecy'].includes(userRole)) {
       return res.status(403).json({ message: 'Forbidden: Insufficient Privileges' });
     }
 
