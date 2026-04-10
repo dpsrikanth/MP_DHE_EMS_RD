@@ -315,7 +315,7 @@ const Colleges = () => {
                     )}
                     {visibleColumns.university_name && (
                       <td className="px-4 py-5">
-                        <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-tighter shadow-sm border border-slate-200">
+                        <span className="text-[13px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full uppercase tracking-tighter shadow-sm border border-slate-200">
                           {item.university_name || universities.find(u => u.id === item.university_id)?.name || 'Standalone'}
                         </span>
                       </td>

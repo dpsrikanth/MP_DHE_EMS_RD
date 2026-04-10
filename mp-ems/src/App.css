@@ -1,6 +1,6 @@
 body {
   margin: 0;
-  font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+  font-family: inherit;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* Premium Theme Variables */
@@ -167,15 +167,8 @@ th, td {
   box-sizing: border-box;
 }
 
-/* body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #ffffff 0%, #ffff 100%);
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-} */
 
+/* Auth Container and Card Styles */
 .auth-container {
   display: flex;
   justify-content: center;

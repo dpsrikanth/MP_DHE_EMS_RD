@@ -232,32 +232,32 @@ const Users = () => {
                   <td className="px-8 py-5 text-sm font-bold text-slate-400">#{user.id}</td>
                   <td className="px-4 py-5">
                     <div className="flex flex-col">
-                      <span className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{user.name}</span>
-                      <span className="text-[10px] font-bold text-slate-400">{user.email}</span>
+                      <span className="text-[15px] font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{user.name}</span>
+                      <span className="text-[13px] font-bold text-indigo-500/80">{user.email}</span>
                     </div>
                   </td>
                   <td className="px-4 py-5">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-wider border border-indigo-100">
-                      <Shield size={10} />
+                    <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-[11px] font-black uppercase tracking-wider border border-indigo-100">
+                      <Shield size={12} />
                       {user.role_name}
                     </span>
                   </td>
                   <td className="px-4 py-5">
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1.5">
                       {user.university_name && (
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600">
-                          <School size={10} className="text-slate-400" />
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
+                          <School size={12} className="text-slate-400" />
                           {user.university_name}
                         </div>
                       )}
                       {user.college_name && (
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 italic">
-                          <Building size={10} className="text-slate-400" />
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 italic">
+                          <Building size={12} className="text-slate-400" />
                           {user.college_name}
                         </div>
                       )}
                       {!user.university_name && !user.college_name && (
-                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Global Admin</span>
+                        <span className="text-[11px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-50/50 px-2 py-0.5 rounded w-fit">Global Admin</span>
                       )}
                     </div>
                   </td>

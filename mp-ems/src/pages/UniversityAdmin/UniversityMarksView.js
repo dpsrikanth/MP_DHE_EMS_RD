@@ -279,14 +279,14 @@ const UniversityMarksView = () => {
       </div>
 
       {/* ─── Filter Bar ─── */}
-      <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+      <div className="stitch-card p-6 rounded-[2rem]">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Exam Series *</label>
             <select
               value={selectedExam}
               onChange={(e) => { setSelectedExam(e.target.value); setMarks([]); setSummary(null); setActiveSubject(null); }}
-              className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
+              className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-all outline-none"
             >
               <option value="">Select Exam...</option>
               {Array.from(uniqueExams.keys()).map(name => <option key={name} value={name}>{name}</option>)}
@@ -297,7 +297,7 @@ const UniversityMarksView = () => {
             <select
               value={selectedCollege}
               onChange={(e) => setSelectedCollege(e.target.value)}
-              className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
+              className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-all outline-none"
             >
               <option value="">All Colleges</option>
               {colleges.map(c => <option key={c.id} value={c.id}>{c.college_name || c.name}</option>)}
@@ -308,7 +308,7 @@ const UniversityMarksView = () => {
             <select
               value={selectedProgram}
               onChange={(e) => setSelectedProgram(e.target.value)}
-              className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
+              className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-all outline-none"
             >
               <option value="">All Programs</option>
               {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -317,7 +317,7 @@ const UniversityMarksView = () => {
           <button
             onClick={fetchData}
             disabled={loading || !selectedExam}
-            className="h-[50px] bg-indigo-600 text-white px-8 rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-[50px] bg-indigo-600 text-white px-8 rounded-xl font-bold text-sm uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
             <span>Load Results</span>
@@ -328,43 +328,43 @@ const UniversityMarksView = () => {
       {/* ─── Summary Cards ─── */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+          <div className="stitch-card p-6">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center text-sky-500"><Users size={20} /></div>
+              <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center text-sky-500 transition-transform group-hover:scale-110"><Users size={20} /></div>
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Students</p>
             </div>
-            <p className="text-3xl font-black text-slate-900">{summary.totalStudents}</p>
+            <p className="text-3xl font-black text-slate-900 tracking-tight">{summary.totalStudents}</p>
           </div>
-          <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+          <div className="stitch-card p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-violet-50 rounded-xl flex items-center justify-center text-violet-500"><BookOpen size={20} /></div>
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Subjects</p>
             </div>
-            <p className="text-3xl font-black text-slate-900">{summary.totalSubjects}</p>
+            <p className="text-3xl font-black text-slate-900 tracking-tight">{summary.totalSubjects}</p>
           </div>
-          <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+          <div className="stitch-card p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500"><CheckCircle2 size={20} /></div>
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pass Rate</p>
             </div>
-            <p className="text-3xl font-black text-emerald-600">{passRate}%</p>
-            <p className="text-[9px] font-bold text-slate-400 mt-1">{summary.passCount} pass / {summary.failCount} fail</p>
+            <p className="text-3xl font-black text-emerald-600 tracking-tight">{passRate}%</p>
+            <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">{summary.passCount} pass / {summary.failCount} fail</p>
           </div>
-          <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+          <div className="stitch-card p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-500"><TrendingUp size={20} /></div>
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Avg Marks</p>
             </div>
-            <p className="text-3xl font-black text-slate-900">{summary.avgMarks}</p>
+            <p className="text-3xl font-black text-slate-900 tracking-tight">{summary.avgMarks}</p>
            </div>
-          <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+          <div className="stitch-card p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${summary.resultsPublished ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-100 text-slate-400'}`}>
                 {summary.resultsPublished ? <Eye size={20} /> : <EyeOff size={20} />}
               </div>
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Status</p>
             </div>
-            <p className={`text-lg font-black ${summary.resultsPublished ? 'text-emerald-600' : 'text-slate-500'}`}>
+            <p className={`text-lg font-black tracking-tight ${summary.resultsPublished ? 'text-emerald-600' : 'text-slate-500'}`}>
               {summary.resultsPublished ? 'Published' : 'Unpublished'}
             </p>
           </div>
@@ -399,7 +399,7 @@ const UniversityMarksView = () => {
       {!loading && marks.length > 0 && (
         <div className="space-y-6">
           {/* View Toggle + Search */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-sm">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 stitch-card p-5">
             <div className="flex bg-slate-100 p-1.5 rounded-xl w-full md:w-auto">
               <button
                 onClick={() => setViewMode("subject")}
@@ -419,10 +419,10 @@ const UniversityMarksView = () => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
               <input
                 type="text"
-                placeholder="Search by roll or name..."
+                placeholder="Search results..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-11 bg-slate-50 border-2 border-slate-100 rounded-xl pl-10 pr-4 text-sm font-bold focus:outline-none focus:border-indigo-500 transition-all placeholder:text-slate-300"
+                className="w-full h-11 bg-slate-50 border-2 border-slate-100 rounded-xl pl-10 pr-4 text-sm font-bold focus:outline-none focus:border-indigo-500 transition-all outline-none"
               />
             </div>
           </div>
@@ -447,7 +447,7 @@ const UniversityMarksView = () => {
               </div>
 
               {/* Subject Table */}
-              <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/30 border border-slate-100 overflow-hidden">
+              <div className="stitch-card rounded-[2rem] shadow-xl shadow-slate-200/30 overflow-hidden">
                 <div className="bg-slate-900 p-8 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div className="flex items-center gap-4">
                     <div className="p-2.5 bg-indigo-500/20 rounded-xl border border-indigo-500/30">
@@ -539,7 +539,7 @@ const UniversityMarksView = () => {
 
           {/* ─── Student View ─── */}
           {viewMode === "student" && (
-            <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/30 border border-slate-100 overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
+            <div className="stitch-card rounded-[2rem] shadow-xl shadow-slate-200/30 overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
               <div className="bg-indigo-600 p-8 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
                   <div className="p-2.5 bg-white/10 rounded-xl border border-white/20">

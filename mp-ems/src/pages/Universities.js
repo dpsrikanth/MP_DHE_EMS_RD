@@ -255,16 +255,16 @@ const Universities = () => {
                       </td>
                     )}
                     {visibleColumns.colleges && (
-                      <td className="px-4 py-5">
+                      <td className="px-4 py-5 font-medium">
                         {item.colleges_count > 0 ? (
                           <button 
                             onClick={() => showDetails(item, 'colleges')}
-                            className="inline-flex items-center px-3 py-1 bg-sky-50 text-sky-600 rounded-full text-xs font-bold hover:bg-sky-100 transition-colors"
+                            className="inline-flex items-center px-4 py-1.5 bg-sky-50 text-sky-600 rounded-full text-[13px] font-bold hover:bg-sky-100 transition-colors"
                           >
                             {item.colleges_count} Colleges
                           </button>
                         ) : (
-                          <span className="text-xs text-slate-400">No colleges</span>
+                          <span className="text-[13px] text-slate-400">No colleges</span>
                         )}
                       </td>
                     )}

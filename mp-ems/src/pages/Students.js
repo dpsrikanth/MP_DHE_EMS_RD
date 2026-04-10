@@ -871,32 +871,32 @@ const Students = () => {
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-bold text-slate-900 truncate leading-none mb-1">{item.name?.trim() || '—'}</p>
-                            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest leading-none flex items-center gap-1"><FileText size={10} /> {item.policies || '—'}</p>
+                            <p className="text-[11px] font-black text-emerald-500 uppercase tracking-widest leading-none flex items-center gap-1"><FileText size={10} /> {item.policies || '—'}</p>
                           </div>
                         </div>
                       </td>
                     )}
                     {visibleColumns.programName && (
-                      <td className="px-4 py-5">
+                      <td className="px-4 py-5 font-medium">
                         <div className="flex items-center gap-1.5">
                           <BookOpen size={14} className="text-slate-400" />
-                          <span className="text-xs font-bold text-slate-700">{item.programName || '—'}</span>
+                          <span className="text-[13px] text-slate-700">{item.programName || '—'}</span>
                         </div>
                       </td>
                     )}
                     {visibleColumns.admission_year && (
-                      <td className="px-4 py-5">
-                        <div className="}flex items-center gap-1.5">
+                      <td className="px-4 py-5 font-medium">
+                        <div className="flex items-center gap-1.5">
                           <Calendar size={14} className="text-slate-400" />
-                          <span className="text-xs font-bold text-slate-700">{item.admission_year || '—'}</span>
+                          <span className="text-[13px] text-slate-700">{item.admission_year || '—'}</span>
                         </div>
                       </td>
                     )}
                     {visibleColumns.semister && (
-                      <td className="px-4 py-5">
+                      <td className="px-4 py-5 font-medium">
                         <div className="flex items-center gap-1.5">
                           <Layers size={14} className="text-slate-400" />
-                          <span className="text-xs font-bold text-slate-700">{item.semister || '—'}</span>
+                          <span className="text-[13px] text-slate-700">{item.semister || '—'}</span>
                         </div>
                       </td>
                     )}

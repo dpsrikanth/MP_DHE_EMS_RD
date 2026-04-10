@@ -315,8 +315,8 @@ const Programs = () => {
                       </td>
                     )}
                     {visibleColumns.duration_years && (
-                      <td className="px-4 py-5 text-sm font-bold text-emerald-600 uppercase tracking-tighter">
-                        <span className="bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+                      <td className="px-4 py-5 text-[13px] font-bold text-emerald-600 uppercase tracking-tighter">
+                        <span className="bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
                           {item.duration_years} Years
                         </span>
                       </td>

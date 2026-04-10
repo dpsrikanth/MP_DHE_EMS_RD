@@ -175,11 +175,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       {/* Brand Logo Section */}
       <div className="p-6 mb-2 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="bg-sky-500 p-2 rounded-xl shadow-lg shadow-sky-500/30">
+          <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-600/30">
             <School className="text-white" size={24} />
           </div>
           <h1 className="text-2xl font-black tracking-tight text-white italic">
-            EMS<span className="text-sky-500 not-italic ml-1">Admin</span>
+            EMS<span className="text-indigo-500 not-italic ml-1">Admin</span>
           </h1>
         </div>
         <button
@@ -205,17 +205,17 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               key={item.id}
               onClick={() => handleLinkClick(item.path)}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
-                ? 'bg-sky-500/10 text-sky-400 font-semibold'
+                ? 'bg-indigo-500/10 text-indigo-400 font-semibold'
                 : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
                 }`}
             >
               <div className="flex items-center gap-3">
-                <span className={`${isActive ? 'text-sky-400' : 'text-slate-500 group-hover:text-slate-300'} transition-colors`}>
+                <span className={`${isActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'} transition-colors`}>
                   {item.icon}
                 </span>
-                <span className="text-sm font-medium">{item.name}</span>
+                <span className="text-sm font-bold">{item.name}</span>
               </div>
-              {isActive && <ChevronRight size={14} className="text-sky-500" />}
+              {isActive && <ChevronRight size={14} className="text-indigo-500" />}
             </button>
           );
         })}

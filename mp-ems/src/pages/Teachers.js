@@ -424,22 +424,22 @@ const Teachers = () => {
                     )}
                     {visibleColumns.email && (
                       <td className="px-4 py-5">
-                        <p className="text-[11px] text-slate-700">{item.email}</p>
+                        <p className="text-[13px] text-slate-700 font-medium">{item.email}</p>
                       </td>
                     )}
                     {visibleColumns.college_name && (
                       <td className="px-4 py-5">
-                        <p className="text-[11px] text-slate-700">{item.college_name || 'Global'}</p>
+                        <p className="text-[13px] text-slate-700 font-medium">{item.college_name || 'Global'}</p>
                       </td>
                     )}
                     {visibleColumns.department && (
                       <td className="px-4 py-5">
-                        <p className="text-[11px] text-slate-700">{safeDisplay(item.department)}</p>
+                        <p className="text-[13px] text-slate-700 font-medium">{safeDisplay(item.department)}</p>
                       </td>
                     )}
                     {visibleColumns.designation && (
                       <td className="px-4 py-5">
-                        <p className="text-[11px] text-slate-700">{safeDisplay(item.designation)}</p>
+                        <p className="text-[13px] text-slate-700 font-bold text-blue-600/80">{safeDisplay(item.designation)}</p>
                       </td>
                     )}
                     {/* {visibleColumns.qualification && (

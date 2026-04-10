@@ -142,10 +142,10 @@ const Dashboard = () => {
         {dashboardStats.map((stat, idx) => (
           <div 
             key={idx} 
-            className="group relative bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+            className="stitch-card p-6"
           >
             <div className="relative z-10 flex items-center justify-between mb-4">
-              <div className={`p-3 rounded-2xl text-white ${stat.color} ${stat.shadow} group-hover:scale-110 transition-transform duration-500`}>
+              <div className={`p-3 rounded-2xl text-white ${stat.color} ${stat.shadow} transition-transform duration-500`}>
                 {stat.icon}
               </div>
               <div className="text-right">
@@ -156,7 +156,7 @@ const Dashboard = () => {
             
             <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-50">
               <TrendingUp size={14} className="text-emerald-500" />
-              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">+ 12% growth</span>
+              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Growing Performance</span>
             </div>
           </div>
         ))}
@@ -165,7 +165,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Grade Distribution */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden h-full">
+          <div className="stitch-card p-8 h-full">
             <div className="flex items-center justify-between mb-8">
               <h4 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
                 <Activity size={20} className="text-rose-500" /> Grade Metrics
@@ -198,7 +198,7 @@ const Dashboard = () => {
 
         {/* Right Column: Teacher Overview */}
         <div className="lg:col-span-2">
-          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm h-full flex flex-col">
+          <div className="stitch-card p-8 h-full flex flex-col">
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h4 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
