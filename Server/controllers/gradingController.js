@@ -22,8 +22,8 @@ exports.getGradingConfig = async (req, res) => {
     try {
         let universityId = req.user.university_id || req.user.college_id;
 
-        // SuperAdmin can override universityId via query param
-        const isHighLevel = req.user.role === 'superAdmin' || req.user.role === 'admin';
+        // SuperAdmin/admin/university_admin can override universityId via query param
+        const isHighLevel = req.user.role === 'superadmin' || req.user.role === 'superAdmin' || req.user.role === 'admin' || req.user.role === 'university_admin';
         if (isHighLevel && req.query.targetUniversityId) {
             universityId = req.query.targetUniversityId;
         }
@@ -63,8 +63,8 @@ exports.updateGradingConfig = async (req, res) => {
         let universityId = req.user.university_id || req.user.college_id;
         const { grade_scale, pass_threshold, calculate_sgpa_on_earned_only, subject_credits, targetUniversityId } = req.body;
 
-        // SuperAdmin can override universityId via body
-        const isHighLevel = req.user.role === 'superAdmin' || req.user.role === 'admin';
+        // SuperAdmin/admin/university_admin can override universityId via body
+        const isHighLevel = req.user.role === 'superadmin' || req.user.role === 'superAdmin' || req.user.role === 'admin' || req.user.role === 'university_admin';
         if (isHighLevel && targetUniversityId) {
             universityId = targetUniversityId;
         }

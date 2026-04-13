@@ -16,11 +16,17 @@ const GradingPolicy = () => {
     const [universities, setUniversities] = useState([]);
     const [selectedUni, setSelectedUni] = useState("");
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const isHighLevelAdmin = user.role === 'superAdmin' || user.role === 'admin';
+    const roleName = localStorage.getItem('roleName') || '';
+    const isSuperOrAdmin = user.role === 'superadmin' || user.role === 'superAdmin' || user.role === 'admin' || roleName === 'superadmin' || roleName === 'superAdmin' || roleName === 'admin';
+    const isUniversityAdmin = user.role === 'university_admin' || roleName === 'university_admin';
+    const isHighLevelAdmin = isSuperOrAdmin; // Only super/system admins get the full university dropdown
 
     useEffect(() => {
-        if (isHighLevelAdmin) {
+        if (isSuperOrAdmin) {
             fetchUniversities();
+        } else if (isUniversityAdmin) {
+            // University admins: fetch their own university info then load config
+            fetchOwnUniversity();
         } else {
             fetchConfig();
         }
@@ -44,8 +50,32 @@ const GradingPolicy = () => {
         }
     };
 
+    const fetchOwnUniversity = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const uniId = localStorage.getItem('universityId') || user.university_id;
+            // Fetch all universities and filter to this admin's university
+            const res = await fetch('http://localhost:8080/api/universities', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const myUni = uniId ? data.filter(u => String(u.id) === String(uniId)) : data.slice(0, 1);
+                setUniversities(myUni);
+                const resolvedId = uniId || (myUni.length > 0 ? String(myUni[0].id) : '');
+                setSelectedUni(resolvedId);
+            } else {
+                if (uniId) setSelectedUni(uniId);
+                fetchConfig();
+            }
+        } catch (error) {
+            console.error("Fetch own university error:", error);
+            fetchConfig();
+        }
+    };
+
     useEffect(() => {
-        if (selectedUni || !isHighLevelAdmin) {
+        if (selectedUni) {
             fetchConfig();
         }
     }, [selectedUni]);
@@ -55,7 +85,8 @@ const GradingPolicy = () => {
         try {
             const token = localStorage.getItem('token');
             let url = 'http://localhost:8080/api/grading/config';
-            if (isHighLevelAdmin && selectedUni) {
+            // Both super admins and university admins pass their selected university ID
+            if ((isSuperOrAdmin || isUniversityAdmin) && selectedUni) {
                 url += `?targetUniversityId=${selectedUni}`;
             }
             const res = await fetch(url, {
@@ -121,7 +152,7 @@ const GradingPolicy = () => {
                 },
                 body: JSON.stringify({
                     ...config,
-                    targetUniversityId: isHighLevelAdmin ? selectedUni : undefined
+                    targetUniversityId: (isSuperOrAdmin || isUniversityAdmin) ? selectedUni : undefined
                 })
             });
 
@@ -164,14 +195,17 @@ const GradingPolicy = () => {
                 </div>
                 
                 <div className="flex items-center gap-4">
-                    {isHighLevelAdmin && (
+                    {(isSuperOrAdmin || isUniversityAdmin) && universities.length > 0 && (
                         <div className="flex flex-col">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Select University</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                                {isSuperOrAdmin ? 'Select University' : 'University'}
+                            </label>
                             <select 
                                 value={selectedUni}
-                                onChange={(e) => setSelectedUni(e.target.value)}
-                                className="h-14 pl-5 pr-10 bg-white border-2 border-slate-100 rounded-2xl text-sm font-black text-slate-700 outline-none focus:border-sky-500 transition-all appearance-none cursor-pointer shadow-sm shadow-slate-200/50"
-                                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1rem' }}
+                                onChange={(e) => isSuperOrAdmin && setSelectedUni(e.target.value)}
+                                disabled={!isSuperOrAdmin}
+                                className={`h-14 pl-5 pr-10 bg-white border-2 border-slate-100 rounded-2xl text-sm font-black text-slate-700 outline-none transition-all appearance-none shadow-sm shadow-slate-200/50 ${isSuperOrAdmin ? 'cursor-pointer focus:border-sky-500' : 'cursor-default opacity-80'}`}
+                                style={{ backgroundImage: isSuperOrAdmin ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'%3E%3C/path%3E%3C/svg%3E")` : 'none', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1rem' }}
                             >
                                 {universities.map(uni => (
                                     <option key={uni.id} value={uni.id}>{uni.name}</option>
