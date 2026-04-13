@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { 
   ShieldCheck, 
@@ -14,14 +15,11 @@ import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader } from '../components/TableControls';
 
 const Roles = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [selected, setSelected] = useState(null);
   
-  const [form, setForm] = useState({ role_name: '' });
-
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
@@ -69,43 +67,7 @@ const Roles = () => {
     }
   };
 
-  useEffect(() => {
-    if (selected) {
-      setForm({ role_name: selected.role_name || '' });
-    } else {
-      setForm({ role_name: '' });
-    }
-  }, [selected]);
-
-  const handleSave = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!form.role_name) return toast.warning('Role name is required');
-
-      const method = selected ? 'PUT' : 'POST';
-      const url = selected 
-        ? `http://localhost:8080/api/roles/${selected.id}` 
-        : 'http://localhost:8080/api/roles';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
-      });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.message || 'Operation failed');
-      }
-
-      toast.success(selected ? 'Role updated' : 'Role created');
-      setShowModal(false);
-      setSelected(null);
-      fetchData();
-    } catch (err) {
-      toast.error(err.message);
-    }
-  };
+  // handleSave removed as it's now in RolesForm.js
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
@@ -144,7 +106,7 @@ const Roles = () => {
           <div className="flex flex-col md:flex-row md:items-center gap-4">
             <TableSearch value={searchQuery} onChange={setSearchQuery} placeholder="Filter roles..." />
             <button 
-              onClick={() => { setSelected(null); setShowModal(true); }}
+              onClick={() => navigate('/roles/add')}
               className="inline-flex items-center gap-2 px-8 py-4 bg-amber-600 hover:bg-amber-700 text-white font-black rounded-2xl shadow-xl shadow-amber-600/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap text-sm uppercase tracking-widest"
             >
               <ShieldPlus size={20} />
@@ -168,7 +130,7 @@ const Roles = () => {
                             </div>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => { setSelected(role); setShowModal(true); }} className="p-2 text-slate-400 hover:text-amber-600 transition-colors"><Pencil size={18} /></button>
+                            <button onClick={() => navigate(`/roles/edit/${role.id}`)} className="p-2 text-slate-400 hover:text-amber-600 transition-colors"><Pencil size={18} /></button>
                             <button onClick={() => { setDeleteTarget(role); setShowDeleteModal(true); }} className="p-2 text-slate-400 hover:text-rose-600 transition-colors"><MdDelete size={20} /></button>
                         </div>
                     </div>
@@ -184,35 +146,7 @@ const Roles = () => {
         <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={totalItems} pageSize={pageSize} onPageSizeChange={setPageSize} />
       </div>
 
-      {/* Role Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95">
-            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">{selected ? 'Modify Role' : 'Create Identity Group'}</h2>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Permission Definition</p>
-              </div>
-              <button onClick={() => setShowModal(false)} className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 rounded-2xl transition-all"><X size={20} /></button>
-            </div>
-            
-            <div className="p-10 space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Role Name</label>
-                  <input type="text" value={form.role_name} onChange={e => setForm({...form, role_name: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-amber-500 transition-all font-bold text-slate-800" placeholder="e.g. Dean, Registrar, HOD" />
-                </div>
-            </div>
-
-            <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-              <button onClick={() => setShowModal(false)} className="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">Cancel</button>
-              <button onClick={handleSave} className="px-10 py-3.5 bg-amber-600 border-b-4 border-amber-800 hover:bg-amber-700 text-white font-black rounded-2xl shadow-xl transition-all active:translate-y-1 active:border-b-0 uppercase text-xs tracking-widest">
-                {selected ? 'Apply Changes' : 'Initialize Role'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Role Modal removed - integrated into RolesForm.js */}
 
       {/* Delete Modal */}
       {showDeleteModal && (

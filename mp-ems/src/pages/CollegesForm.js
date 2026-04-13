@@ -3,24 +3,17 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Select, { components } from 'react-select';
 import { GraduationCap, ArrowLeft, Check, Search, ChevronDown, MapPin, Map, X } from "lucide-react";
+import '../styles/FormPage.css';
 
-const CheckboxOption = (props) => {
-  return (
-    <div>
-      <components.Option {...props}>
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={props.isSelected}
-            onChange={() => null}
-            className="w-4 h-4 text-indigo-500 border-slate-300 rounded focus:ring-indigo-500 pointer-events-none"
-          />
-          <span className="text-sm font-medium">{props.label}</span>
-        </div>
-      </components.Option>
+const CheckboxOption = (props) => (
+  <components.Option {...props}>
+    <div className="flex items-center gap-2">
+      <input type="checkbox" checked={props.isSelected} onChange={() => null}
+        className="w-4 h-4 rounded border-indigo-400 text-indigo-600 focus:ring-indigo-500 pointer-events-none" />
+      <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>{props.label}</span>
     </div>
-  );
-};
+  </components.Option>
+);
 
 const CollegesForm = () => {
   const navigate = useNavigate();
@@ -29,19 +22,8 @@ const CollegesForm = () => {
   const isEditing = Boolean(id);
 
   const [loading, setLoading] = useState(isEditing);
-  const [dataLoading, setDataLoading] = useState(false);
-  
   const [universities, setUniversities] = useState([]);
-  const [form, setForm] = useState({ 
-    name: '', 
-    college_code: '', 
-    address: '', 
-    university_id: '',
-    latitude: '',
-    longitude: ''
-  });
-
-  // Config Mapping State
+  const [form, setForm] = useState({ name: '', college_code: '', address: '', university_id: '', latitude: '', longitude: '' });
   const [masterData, setMasterData] = useState({ policies: [], programs: [], academicYears: [], semesters: [] });
   const [universityConfig, setUniversityConfig] = useState({ policies: [], programs: [], academicYears: [], semesters: [] });
   const [selectedConfig, setSelectedConfig] = useState({ policies: [], programs: [], academicYears: [], semesters: [] });
@@ -52,13 +34,9 @@ const CollegesForm = () => {
   const [showMapModal, setShowMapModal] = useState(false);
 
   useEffect(() => {
-    fetchUniversities();
-    fetchMasters();
-    if (isEditing) {
-      loadCollege(id);
-    } else if (location.state && location.state.universityId) {
-      setForm(prev => ({ ...prev, university_id: location.state.universityId }));
-    }
+    fetchUniversities(); fetchMasters();
+    if (isEditing) loadCollege(id);
+    else if (location.state?.universityId) setForm(prev => ({ ...prev, university_id: location.state.universityId }));
   }, [id]);
 
   const fetchMasters = async () => {
@@ -66,9 +44,7 @@ const CollegesForm = () => {
       const token = localStorage.getItem('token');
       const res = await fetch('http://localhost:8080/api/masters', { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) setMasterData(await res.json());
-    } catch (err) {
-      console.error('Error fetching masters:', err);
-    }
+    } catch (err) { console.error('Error fetching masters:', err); }
   };
 
   const fetchUniversities = async () => {
@@ -79,9 +55,7 @@ const CollegesForm = () => {
         const data = await response.json();
         setUniversities((data || []).filter(u => u.status === true || u.status === 1 || u.status === '1' || u.status === 'true'));
       }
-    } catch (err) {
-      console.error('Error fetching universities:', err);
-    }
+    } catch (err) { console.error('Error fetching universities:', err); }
   };
 
   const loadCollege = async (collegeId) => {
@@ -91,43 +65,21 @@ const CollegesForm = () => {
       if (!response.ok) throw new Error('Failed to fetch colleges');
       const data = await response.json();
       const college = data.find(c => c.id.toString() === collegeId);
-      
       if (college) {
-        setForm({
-          name: college.college_name || college.name || '',
-          college_code: college.college_code || '',
-          address: college.address || '',
-          university_id: college.university_id || '',
-          latitude: college.latitude || '',
-          longitude: college.longitude || ''
-        });
+        setForm({ name: college.college_name || college.name || '', college_code: college.college_code || '', address: college.address || '', university_id: college.university_id || '', latitude: college.latitude || '', longitude: college.longitude || '' });
         fetchCollegeConfig(collegeId);
-      } else {
-        toast.error('College not found');
-        navigate('/colleges');
-      }
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setLoading(false);
-    }
+      } else { toast.error('College not found'); navigate('/colleges'); }
+    } catch (err) { toast.error(err.message); } finally { setLoading(false); }
   };
 
   const fetchUniversityConfig = async (uId) => {
-    if (!uId) {
-      setUniversityConfig({ policies: [], programs: [], academicYears: [], semesters: [] });
-      return;
-    }
+    if (!uId) { setUniversityConfig({ policies: [], programs: [], academicYears: [], semesters: [] }); return; }
     try {
       setIsConfigLoading(true);
       const token = localStorage.getItem('token');
       const res = await fetch(`http://localhost:8080/api/universities/${uId}/config`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) setUniversityConfig(await res.json());
-    } catch (err) {
-      console.error('Error fetching university config:', err);
-    } finally {
-      setIsConfigLoading(false);
-    }
+    } catch (err) { console.error('Error fetching university config:', err); } finally { setIsConfigLoading(false); }
   };
 
   const fetchCollegeConfig = async (cId) => {
@@ -136,340 +88,251 @@ const CollegesForm = () => {
       const res = await fetch(`http://localhost:8080/api/colleges/${cId}/config`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
-        setSelectedConfig({
-          policies: data.policies || [],
-          programs: data.programs || [],
-          academicYears: data.academicYears || [],
-          semesters: data.semesters || []
-        });
+        setSelectedConfig({ policies: data.policies || [], programs: data.programs || [], academicYears: data.academicYears || [], semesters: data.semesters || [] });
       }
-    } catch (err) {
-      console.error('Error fetching college config:', err);
-    }
+    } catch (err) { console.error('Error fetching college config:', err); }
   };
 
   const handleDetectLocation = () => {
-    if (!navigator.geolocation) {
-      return toast.error("Geolocation is not supported by your browser");
-    }
-    
+    if (!navigator.geolocation) return toast.error("Geolocation is not supported by your browser");
     setDetectingLocation(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setForm(prev => ({
-          ...prev,
-          latitude: position.coords.latitude.toFixed(8),
-          longitude: position.coords.longitude.toFixed(8)
-        }));
-        setDetectingLocation(false);
-        toast.success("Current location captured!");
+        setForm(prev => ({ ...prev, latitude: position.coords.latitude.toFixed(8), longitude: position.coords.longitude.toFixed(8) }));
+        setDetectingLocation(false); toast.success("Current location captured!");
       },
-      (error) => {
-        setDetectingLocation(false);
-        toast.error("Failed to retrieve location: " + error.message);
-      },
+      (error) => { setDetectingLocation(false); toast.error("Failed to retrieve location: " + error.message); },
       { enableHighAccuracy: true }
     );
   };
 
   const handleGeocode = async () => {
     if (!form.address) return toast.warning("Please enter an address first");
-    
     setGeocoding(true);
     try {
-      // Using OpenStreetMap Nominatim API (Free)
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(form.address)}&limit=1`);
       if (!res.ok) throw new Error("Geocoding service unavailable");
-      
       const data = await res.json();
       if (data && data.length > 0) {
-        setForm(prev => ({
-          ...prev,
-          latitude: parseFloat(data[0].lat).toFixed(8),
-          longitude: parseFloat(data[0].lon).toFixed(8)
-        }));
+        setForm(prev => ({ ...prev, latitude: parseFloat(data[0].lat).toFixed(8), longitude: parseFloat(data[0].lon).toFixed(8) }));
         toast.success("Coordinates found from address!");
-      } else {
-        toast.error("Could not find coordinates for this address. Please try refining it or detect current location.");
-      }
-    } catch (err) {
-      toast.error("An error occurred during geocoding: " + err.message);
-    } finally {
-      setGeocoding(false);
-    }
+      } else { toast.error("Could not find coordinates for this address."); }
+    } catch (err) { toast.error("Geocoding error: " + err.message); } finally { setGeocoding(false); }
   };
 
-  useEffect(() => {
-    if (form.university_id) {
-      fetchUniversityConfig(form.university_id);
-    }
-  }, [form.university_id]);
+  useEffect(() => { if (form.university_id) fetchUniversityConfig(form.university_id); }, [form.university_id]);
 
   const handleSave = async () => {
     try {
       setSavingConfig(true);
       const token = localStorage.getItem('token');
-      if (!form.name || !form.university_id) {
-        setSavingConfig(false);
-        return toast.warning('College name and university are required');
-      }
-
+      if (!form.name || !form.university_id) { setSavingConfig(false); return toast.warning('College name and university are required'); }
       const url = isEditing ? `http://localhost:8080/api/colleges/${id}` : 'http://localhost:8080/api/colleges';
       const method = isEditing ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
-      });
-
+      const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(form) });
       if (!response.ok) throw new Error('Failed to save');
       const savedCollege = await response.json();
       const collegeId = isEditing ? id : savedCollege.id;
-
       await fetch(`http://localhost:8080/api/colleges/${collegeId}/config`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(selectedConfig)
+        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(selectedConfig)
       });
-      
       toast.success(savedCollege.message || (isEditing ? 'College updated successfully!' : 'College added successfully!'));
       navigate('/colleges');
-    } catch (err) {
-      toast.error('Error: ' + err.message);
-    } finally {
-      setSavingConfig(false);
-    }
+    } catch (err) { toast.error('Error: ' + err.message); } finally { setSavingConfig(false); }
   };
 
-  if (loading) return <div className="p-8 text-center font-bold text-slate-400 animate-pulse">Loading Identity Configuration...</div>;
+  if (loading) return (
+    <div className="form-loading"><div className="form-loading__spinner"></div><p className="form-loading__text">Loading College Profile...</p></div>
+  );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
+    <div className="form-page form-page--wide">
       {showMapModal && (
         <MapPickerModal 
           onClose={() => setShowMapModal(false)}
-          onConfirm={(lat, lon) => {
-            setForm(prev => ({ ...prev, latitude: lat, longitude: lon }));
-            setShowMapModal(false);
-            toast.success("Location updated via Map!");
-          }}
-          initialLat={form.latitude}
-          initialLon={form.longitude}
+          onConfirm={(lat, lon) => { setForm(prev => ({ ...prev, latitude: lat, longitude: lon })); setShowMapModal(false); toast.success("Location updated via Map!"); }}
+          initialLat={form.latitude} initialLon={form.longitude}
         />
       )}
-      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+      <div className="form-card">
         {/* Header */}
-        <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-          <div className="flex items-center gap-5">
-            <button 
-              onClick={() => navigate('/colleges')}
-              className="w-12 h-12 bg-slate-50 hover:bg-slate-100 rounded-2xl flex items-center justify-center text-slate-500 transition-all"
-            >
-              <ArrowLeft size={24} />
-            </button>
-            <div className="w-14 h-14 bg-indigo-500/10 rounded-[1.5rem] flex items-center justify-center text-indigo-600 shadow-inner">
-              <GraduationCap size={32} />
-            </div>
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                {isEditing ? 'Edit College' : 'Register New College'}
-              </h2>
-              <p className="text-sm text-slate-500 font-medium tracking-tight">Departmental settings and affiliation details</p>
+        <div className="form-header">
+          <div className="form-header__left">
+            <button onClick={() => navigate('/colleges')} className="form-header__back"><ArrowLeft size={20} /></button>
+            <div className="form-header__icon"><GraduationCap size={22} /></div>
+            <div className="form-header__text">
+              <h2>{isEditing ? 'Collegiate Institutional Profile' : 'Institutional Registration'}</h2>
+              <p>Academic & Geographical Configuration</p>
             </div>
           </div>
+          <div className="form-header__right">
+              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 shadow-sm">
+                Infrastructure Module v3.1
+              </span>
+          </div>
         </div>
-            
+
         {/* Body */}
-        <div className="flex-1 px-10 py-10 space-y-10 bg-slate-50/30">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <div className="space-y-6">
-              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <span className="w-4 h-px bg-slate-200"></span> Identity
-              </h3>
-              
-              <div className="grid grid-cols-3 gap-4">
-                <div className="col-span-1 space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1">Code</label>
-                  <input 
-                    type="number" 
-                    placeholder="000" 
-                    value={form.college_code} 
-                    onChange={(e) => setForm({ ...form, college_code: e.target.value })}
-                    className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold"
-                  />
-                </div>
-                <div className="col-span-2 space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1">College Name</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Science College" 
-                    value={form.name} 
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-medium"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700 ml-1">Affiliated University</label>
-                <div className="relative">
-                  <select 
-                    value={form.university_id} 
-                    onChange={(e) => setForm({ ...form, university_id: e.target.value })}
-                    className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-slate-800 focus:bg-white focus:border-indigo-500 outline-none appearance-none transition-all font-semibold"
-                  >
-                    <option value="">Choose Parent Institution</option>
-                    {universities.map(u => (
-                      <option key={u.id} value={u.id}>{u.name}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                    <ChevronDown size={18} />
+        <div className="form-body">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+            {/* Left Column: Essential Details (5 cols) */}
+            <div className="xl:col-span-5 space-y-10">
+              <div className="form-section">
+                <div className="form-section__title"><span>Administrative Identity</span></div>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-3 gap-6">
+                    <div className="form-field col-span-1">
+                      <label className="form-label">Code</label>
+                      <input type="number" placeholder="000" value={form.college_code} onChange={(e) => setForm({ ...form, college_code: e.target.value })} className="form-input font-bold" />
+                    </div>
+                    <div className="form-field col-span-2">
+                      <label className="form-label form-label--required">Official Designation</label>
+                      <input type="text" placeholder="e.g. Science & Technology Institute" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="form-input" />
+                    </div>
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label form-label--required">Governing University</label>
+                    <select value={form.university_id} onChange={(e) => setForm({ ...form, university_id: e.target.value })} className="form-select">
+                      <option value="">Select Higher Institution</option>
+                      {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                    </select>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between ml-1">
-                  <label className="text-sm font-bold text-slate-700">Address</label>
-                  <button 
-                    onClick={handleGeocode}
-                    disabled={geocoding || !form.address}
-                    className="text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-700 flex items-center gap-1.5 bg-emerald-50 px-2 py-1 rounded-lg transition-all disabled:opacity-50"
-                  >
-                    <Search size={12} />
-                    {geocoding ? "Resolving..." : "Fetch Coordinates"}
-                  </button>
-                </div>
-                <textarea 
-                  placeholder="Street, City, Pin Code" 
-                  rows={3}
-                  value={form.address} 
-                  onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-medium resize-none"
-                />
-              </div>
+              <div className="form-section">
+                <div className="form-section__title"><span>Physical Placement</span></div>
+                <div className="space-y-6">
+                   <div className="form-field">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="form-label m-0">Institutional Address</label>
+                        <button type="button" onClick={handleGeocode} disabled={geocoding || !form.address} 
+                          className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-emerald-100 transition-colors">
+                          <Search size={10} className="inline mr-1" /> {geocoding ? "Resolving..." : "Geocode Address"}
+                        </button>
+                      </div>
+                      <textarea placeholder="Physical location details..." rows={3} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="form-textarea resize-none" />
+                   </div>
 
-              {/* Dynamic Location Section */}
-              <div className="pt-4 space-y-4">
-                <div className="flex items-center justify-between px-1">
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <span className="w-4 h-px bg-slate-200"></span> Proximity Engine
-                  </h3>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={handleDetectLocation}
-                      disabled={detectingLocation}
-                      className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-700 flex items-center gap-1.5 bg-indigo-50 px-3 py-1.5 rounded-full transition-all active:scale-95"
-                    >
-                      <MapPin size={12} />
-                      {detectingLocation ? "Locating..." : "Auto-Detect"}
-                    </button>
-                    <button 
-                      onClick={() => setShowMapModal(true)}
-                      className="text-[10px] font-black uppercase tracking-widest text-purple-600 hover:text-purple-700 flex items-center gap-1.5 bg-purple-50 px-3 py-1.5 rounded-full transition-all active:scale-95"
-                    >
-                      <Map size={12} />
-                      Pick on Map
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wide">Latitude</label>
-                    <input 
-                      type="text" 
-                      placeholder="0.00000000" 
-                      value={form.latitude} 
-                      onChange={(e) => setForm({ ...form, latitude: e.target.value })}
-                      className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-3 text-slate-800 focus:border-indigo-500 outline-none transition-all font-mono text-sm"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wide">Longitude</label>
-                    <input 
-                      type="text" 
-                      placeholder="0.00000000" 
-                      value={form.longitude} 
-                      onChange={(e) => setForm({ ...form, longitude: e.target.value })}
-                      className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-3 text-slate-800 focus:border-indigo-500 outline-none transition-all font-mono text-sm"
-                    />
-                  </div>
+                   <div className="bg-slate-50/50 p-6 rounded-[2rem] border-2 border-slate-100 space-y-6">
+                      <div className="flex items-center justify-between">
+                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Geolocation Engine</h4>
+                         <div className="flex gap-2">
+                            <button type="button" onClick={handleDetectLocation} disabled={detectingLocation} className="p-2 bg-white border border-slate-200 text-indigo-500 rounded-lg hover:bg-indigo-50 transition-all shadow-sm">
+                               <MapPin size={14} />
+                            </button>
+                            <button type="button" onClick={() => setShowMapModal(true)} className="p-2 bg-white border border-slate-200 text-purple-500 rounded-lg hover:bg-purple-50 transition-all shadow-sm">
+                               <Map size={14} />
+                            </button>
+                         </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="form-field">
+                          <label className="form-label text-[10px]">Latitude</label>
+                          <input type="text" placeholder="0.000000" value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })} className="form-input bg-white font-mono text-xs" />
+                        </div>
+                        <div className="form-field">
+                          <label className="form-label text-[10px]">Longitude</label>
+                          <input type="text" placeholder="0.000000" value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })} className="form-input bg-white font-mono text-xs" />
+                        </div>
+                      </div>
+                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-6 bg-white rounded-[2.5rem] p-8 border-2 border-slate-100 shadow-sm">
-              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <span className="w-4 h-px bg-slate-200"></span> Capability Mapping
-              </h3>
-              
-              {!form.university_id ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-400">
-                    <Search size={24} />
-                  </div>
-                  <p className="text-sm font-bold text-slate-400 max-w-[200px]">Select a university to see available configurations</p>
+            {/* Right Column: Configuration & Mapping (7 cols) */}
+            <div className="xl:col-span-7 space-y-10">
+              <div className="form-section h-full">
+                <div className="form-section__title"><span>Capabilities & Mapping</span></div>
+                
+                <div className="form-section-card bg-white border-2 border-slate-50 shadow-xl shadow-slate-200/20 rounded-[2.5rem] p-10 h-full">
+                  {!form.university_id ? (
+                    <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center space-y-4">
+                      <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-200">
+                        <GraduationCap size={40} />
+                      </div>
+                      <p className="text-sm font-black text-slate-300 uppercase tracking-widest leading-relaxed">
+                        Designate a University to<br/>Synchronize Available Configs
+                      </p>
+                    </div>
+                  ) : isConfigLoading ? (
+                    <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
+                      <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                      <p className="mt-4 text-[10px] font-black text-indigo-400 uppercase tracking-widest">Bridging Models...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-10 py-4">
+                      <div className="form-field">
+                        <label className="form-label flex items-center gap-2">
+                           <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
+                           Policy Framework
+                        </label>
+                        <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }}
+                          options={masterData.policies.filter(p => universityConfig.policies.includes(p.id)).map(p => ({ value: p.id, label: p.name }))} 
+                          value={selectedConfig.policies.map(id => ({ value: id, label: masterData.policies.find(p => p.id === id)?.name || id }))}
+                          onChange={(vals) => setSelectedConfig({ ...selectedConfig, policies: vals.map(v => v.value) })}
+                          className="form-react-select" classNamePrefix="react-select" />
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label flex items-center gap-2">
+                           <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                           Academic Programs
+                        </label>
+                        <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }}
+                          options={masterData.programs.filter(p => universityConfig.programs.includes(p.id)).map(p => ({ value: p.id, label: p.name }))}
+                          value={selectedConfig.programs.map(id => ({ value: id, label: masterData.programs.find(p => p.id === id)?.name || id }))}
+                          onChange={(vals) => setSelectedConfig({ ...selectedConfig, programs: vals.map(v => v.value) })}
+                          className="form-react-select" classNamePrefix="react-select" />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div className="form-field">
+                          <label className="form-label flex items-center gap-2">
+                             <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                             Academic Years
+                          </label>
+                          <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }}
+                            options={masterData.academicYears.filter(ay => universityConfig.academicYears.includes(ay.id)).map(ay => ({ value: ay.id, label: ay.year_name }))}
+                            value={selectedConfig.academicYears.map(id => ({ value: id, label: masterData.academicYears.find(ay => ay.id === id)?.year_name || id }))}
+                            onChange={(vals) => setSelectedConfig({ ...selectedConfig, academicYears: vals.map(v => v.value) })}
+                            className="form-react-select" classNamePrefix="react-select" />
+                        </div>
+                        <div className="form-field">
+                          <label className="form-label flex items-center gap-2">
+                             <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
+                             Semester Control
+                          </label>
+                          <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }}
+                            options={masterData.semesters.filter(s => universityConfig.semesters.includes(s.id)).map(s => ({ value: s.id, label: s.semester_name }))}
+                            value={selectedConfig.semesters.map(id => ({ value: id, label: masterData.semesters.find(s => s.id === id)?.semester_name || id }))}
+                            onChange={(vals) => setSelectedConfig({ ...selectedConfig, semesters: vals.map(v => v.value) })}
+                            className="form-react-select" classNamePrefix="react-select" />
+                        </div>
+                      </div>
+
+                      <div className="p-8 bg-indigo-900 rounded-[2rem] text-white relative overflow-hidden group">
+                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-all duration-700"></div>
+                         <p className="relative z-10 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300 mb-2">Notice</p>
+                         <p className="relative z-10 text-xs font-medium leading-relaxed opacity-80">
+                           Selected configurations must align with the governing University's master framework to maintain institutional synchronization.
+                         </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              ) : isConfigLoading ? (
-                <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                  <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Bridging Models...</p>
-                </div>
-              ) : (
-                <div className="space-y-5">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Active Policies</label>
-                    <Select 
-                      isMulti 
-                      hideSelectedOptions={false}
-                      closeMenuOnSelect={false}
-                      components={{ Option: CheckboxOption }}
-                      options={masterData.policies.filter(p => universityConfig.policies.includes(p.id)).map(p => ({ value: p.id, label: p.name }))} 
-                      value={selectedConfig.policies.map(id => ({ value: id, label: masterData.policies.find(p => p.id === id)?.name || id }))}
-                      onChange={(vals) => setSelectedConfig({ ...selectedConfig, policies: vals.map(v => v.value) })}
-                      styles={{ control: (base) => ({ ...base, borderRadius: '1.25rem', padding: '0.2rem', border: '2px solid #f1f5f9', boxShadow: 'none' }) }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Programs List</label>
-                    <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }} options={masterData.programs.filter(p => universityConfig.programs.includes(p.id)).map(p => ({ value: p.id, label: p.name }))} value={selectedConfig.programs.map(id => ({ value: id, label: masterData.programs.find(p => p.id === id)?.name || id }))} onChange={(vals) => setSelectedConfig({ ...selectedConfig, programs: vals.map(v => v.value) })} styles={{ control: (base) => ({ ...base, borderRadius: '1.25rem', border: '2px solid #f1f5f9' }) }} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Academic Years</label>
-                    <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }} options={masterData.academicYears.filter(ay => universityConfig.academicYears.includes(ay.id)).map(ay => ({ value: ay.id, label: ay.year_name }))} value={selectedConfig.academicYears.map(id => ({ value: id, label: masterData.academicYears.find(ay => ay.id === id)?.year_name || id }))} onChange={(vals) => setSelectedConfig({ ...selectedConfig, academicYears: vals.map(v => v.value) })} styles={{ control: (base) => ({ ...base, borderRadius: '1.25rem', border: '2px solid #f1f5f9' }) }} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Semesters Mapping</label>
-                    <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }} options={masterData.semesters.filter(s => universityConfig.semesters.includes(s.id)).map(s => ({ value: s.id, label: s.semester_name }))} value={selectedConfig.semesters.map(id => ({ value: id, label: masterData.semesters.find(s => s.id === id)?.semester_name || id }))} onChange={(vals) => setSelectedConfig({ ...selectedConfig, semesters: vals.map(v => v.value) })} styles={{ control: (base) => ({ ...base, borderRadius: '1.25rem', border: '2px solid #f1f5f9' }) }} />
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-10 py-6 bg-white border-t border-slate-100 flex items-center justify-end gap-5 sticky bottom-0 z-10">
-          <button className="text-sm font-bold text-slate-500 hover:text-slate-800" onClick={() => navigate('/colleges')}>Discard changes</button>
-          <button 
-            onClick={handleSave}
-            disabled={savingConfig}
-            className="px-12 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 text-sm uppercase tracking-widest flex items-center gap-2"
-          >
-            {savingConfig ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                <span>Processing...</span>
-              </>
-            ) : (
-              <>
-                <Check size={20} />
-                <span>{isEditing ? 'Update Record' : 'Create College'}</span>
-              </>
-            )}
+        <div className="form-footer">
+          <button type="button" className="form-btn-cancel" onClick={() => navigate('/colleges')}>Discard Changes</button>
+          <button type="button" onClick={handleSave} disabled={savingConfig} className="form-btn-submit">
+            {savingConfig ? <div className="form-spinner"></div> : <Check size={20} />}
+            <span>{savingConfig ? 'Processing Record...' : (isEditing ? 'Commit Profile Changes' : 'Initialize Collegiate Profile')}</span>
           </button>
         </div>
       </div>
@@ -478,112 +341,60 @@ const CollegesForm = () => {
 };
 
 // --- Map Picker Modal Component ---
-// This component dynamically loads Leaflet from CDN to avoid adding local dependencies 
-// while providing a full interactive map experience.
 const MapPickerModal = ({ onClose, onConfirm, initialLat, initialLon }) => {
   const [loading, setLoading] = useState(true);
   const mapRef = React.useRef(null);
-  const [markerCoords, setMarkerCoords] = useState({ 
-    lat: parseFloat(initialLat) || 22.9734, // Default to MP/India center
-    lon: parseFloat(initialLon) || 78.6569 
-  });
+  const [markerCoords, setMarkerCoords] = useState({ lat: parseFloat(initialLat) || 22.9734, lon: parseFloat(initialLon) || 78.6569 });
 
   useEffect(() => {
-    // Load Leaflet CSS
     if (!document.getElementById('leaflet-css')) {
-      const link = document.createElement('link');
-      link.id = 'leaflet-css';
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
+      const link = document.createElement('link'); link.id = 'leaflet-css'; link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(link);
     }
-
-    // Load Leaflet JS
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    script.async = true;
-    script.onload = () => {
-      setLoading(false);
-      setTimeout(initMap, 100);
-    };
+    const script = document.createElement('script'); script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.async = true; script.onload = () => { setLoading(false); setTimeout(initMap, 100); };
     document.body.appendChild(script);
-
-    return () => {
-      if (document.body.contains(script)) document.body.removeChild(script);
-    };
+    return () => { if (document.body.contains(script)) document.body.removeChild(script); };
   }, []);
 
   const initMap = () => {
-    if (!window.L) return;
-    const L = window.L;
-
+    if (!window.L) return; const L = window.L;
     const map = L.map('map-container').setView([markerCoords.lat, markerCoords.lon], 13);
     mapRef.current = map;
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
     const marker = L.marker([markerCoords.lat, markerCoords.lon], { draggable: true }).addTo(map);
-
-    map.on('click', (e) => {
-      const { lat, lng } = e.latlng;
-      marker.setLatLng([lat, lng]);
-      setMarkerCoords({ lat, lon: lng });
-    });
-
-    marker.on('dragend', (e) => {
-      const { lat, lng } = e.target.getLatLng();
-      setMarkerCoords({ lat, lon: lng });
-    });
+    map.on('click', (e) => { const { lat, lng } = e.latlng; marker.setLatLng([lat, lng]); setMarkerCoords({ lat, lon: lng }); });
+    marker.on('dragend', (e) => { const { lat, lng } = e.target.getLatLng(); setMarkerCoords({ lat, lon: lng }); });
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white w-full max-w-4xl h-[85vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden border border-white/20 animate-in zoom-in-95 duration-300">
-        {/* Modal Header */}
-        <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600">
-              <Map size={24} />
-            </div>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)' }}>
+      <div style={{ background: '#fff', width: '100%', maxWidth: '56rem', height: '85vh', borderRadius: '20px', boxShadow: '0 25px 50px rgba(0,0,0,.15)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #e8eaee', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+            <div className="form-header__icon" style={{ width: '2.5rem', height: '2.5rem' }}><Map size={18} /></div>
             <div>
-              <h3 className="text-xl font-black text-slate-900 leading-tight">Interactive Map Picker</h3>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Select college location precisely</p>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>Interactive Map Picker</h3>
+              <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0.15rem 0 0' }}>Select college location precisely</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-10 h-10 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 transition-all active:scale-95">
-            <X size={20} />
-          </button>
+          <button onClick={onClose} className="form-header__back" style={{ width: '2.25rem', height: '2.25rem' }}><X size={16} /></button>
         </div>
-
-        {/* Map Body */}
-        <div className="flex-1 relative bg-slate-50">
+        <div style={{ flex: 1, position: 'relative', background: '#f1f5f9' }}>
           {loading && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
-              <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-              <p className="mt-4 text-xs font-black text-slate-400 uppercase tracking-widest">Initialising Cartography Engine...</p>
+            <div className="form-loading" style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(4px)' }}>
+              <div className="form-loading__spinner"></div>
+              <p className="form-loading__text">Initialising Map...</p>
             </div>
           )}
-          <div id="map-container" className="w-full h-full"></div>
-          
-          {/* Coordinates Overlay */}
-          <div className="absolute bottom-6 left-6 right-6 z-[1000] flex flex-col sm:flex-row items-center gap-4">
-            <div className="bg-white/90 backdrop-blur-md px-6 py-4 rounded-3xl shadow-xl border border-white flex gap-6">
-              <div className="space-y-1">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Latitude</p>
-                <p className="text-sm font-mono font-bold text-slate-900">{markerCoords.lat.toFixed(8)}</p>
-              </div>
-              <div className="w-px h-8 bg-slate-200 mt-2"></div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Longitude</p>
-                <p className="text-sm font-mono font-bold text-slate-900">{markerCoords.lon.toFixed(8)}</p>
-              </div>
+          <div id="map-container" style={{ width: '100%', height: '100%' }}></div>
+          <div style={{ position: 'absolute', bottom: '1.5rem', left: '1.5rem', right: '1.5rem', zIndex: 1000, display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)', padding: '0.85rem 1.25rem', borderRadius: '14px', boxShadow: '0 4px 16px rgba(0,0,0,.08)', display: 'flex', gap: '1.5rem' }}>
+              <div><p style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Latitude</p><p style={{ fontSize: '0.82rem', fontFamily: 'monospace', fontWeight: 700, color: '#0f172a', margin: '2px 0 0' }}>{markerCoords.lat.toFixed(8)}</p></div>
+              <div style={{ width: '1px', height: '2rem', background: '#e2e8f0', alignSelf: 'center' }}></div>
+              <div><p style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Longitude</p><p style={{ fontSize: '0.82rem', fontFamily: 'monospace', fontWeight: 700, color: '#0f172a', margin: '2px 0 0' }}>{markerCoords.lon.toFixed(8)}</p></div>
             </div>
-            <button 
-              onClick={() => onConfirm(markerCoords.lat.toFixed(8), markerCoords.lon.toFixed(8))}
-              className="w-full sm:w-auto px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-3xl shadow-xl shadow-indigo-600/20 transition-all hover:translate-y-[-2px] active:translate-y-[1px]"
-            >
+            <button onClick={() => onConfirm(markerCoords.lat.toFixed(8), markerCoords.lon.toFixed(8))} className="form-btn-submit" style={{ padding: '0.85rem 2rem' }}>
               Confirm Location
             </button>
           </div>

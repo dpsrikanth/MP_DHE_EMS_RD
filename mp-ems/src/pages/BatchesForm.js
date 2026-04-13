@@ -2,14 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
 import Select from "react-select";
-import { 
-  Calendar, 
-  ArrowLeft, 
-  Check,
-  Hash,
-  Layers,
-  Settings
-} from "lucide-react";
+import { Calendar, ArrowLeft, Check, Hash, Layers, Settings } from "lucide-react";
+import '../styles/FormPage.css';
 
 const batchNameOptions = [
   { value: 'July-November', label: 'July-November' },
@@ -27,35 +21,25 @@ const BatchesForm = () => {
 
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
-  
   const [programs, setPrograms] = useState([]);
   const [academicYears, setAcademicYears] = useState([]);
   
   const [form, setForm] = useState({ 
-    batch_name: null, 
-    start_date: '', 
-    end_date: '',
-    academic_year: null,
-    import_fees_flag: 'N',
-    program_id: null
+    batch_name: null, start_date: '', end_date: '',
+    academic_year: null, import_fees_flag: 'N', program_id: null
   });
 
-  useEffect(() => {
-    fetchFormData();
-  }, [id]);
+  useEffect(() => { fetchFormData(); }, [id]);
 
   const fetchFormData = async () => {
     try {
       const token = localStorage.getItem('token');
-      
       const [progRes, yearRes] = await Promise.all([
         fetch('http://localhost:8080/api/master-programs', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('http://localhost:8080/api/academic-years', { headers: { Authorization: `Bearer ${token}` } })
       ]);
       
-      let progsData = [];
-      let yearsData = [];
-
+      let progsData = [], yearsData = [];
       if (progRes.ok) {
         const result = await progRes.json();
         progsData = result.map(p => ({ value: p.id, label: p.name }));
@@ -66,10 +50,7 @@ const BatchesForm = () => {
         yearsData = result.map(y => ({ value: y.year_name, label: y.year_name }));
         setAcademicYears(yearsData);
       }
-
-      if (isEditing) {
-        await loadBatch(id, progsData, yearsData);
-      }
+      if (isEditing) await loadBatch(id, progsData, yearsData);
     } catch (err) {
       console.error(err);
       if (isEditing) setLoading(false);
@@ -117,7 +98,6 @@ const BatchesForm = () => {
     try {
       setSaving(true);
       const token = localStorage.getItem('token');
-      
       const url = isEditing 
         ? `http://localhost:8080/api/master-batches/${id}` 
         : 'http://localhost:8080/api/master-batches';
@@ -149,169 +129,115 @@ const BatchesForm = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center font-bold text-slate-400 animate-pulse">Loading Batch Details...</div>;
+  if (loading) return (
+    <div className="form-loading">
+      <div className="form-loading__spinner"></div>
+      <p className="form-loading__text">Loading Batch Details...</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-3xl mx-auto">
-      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+    <div className="form-page">
+      <div className="form-card">
         {/* Header */}
-        <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-          <div className="flex items-center gap-5">
-            <button 
-              type="button"
-              onClick={() => navigate('/batches')}
-              className="w-12 h-12 bg-slate-50 hover:bg-slate-100 rounded-2xl flex items-center justify-center text-slate-500 transition-all"
-            >
-              <ArrowLeft size={24} />
+        <div className="form-header">
+          <div className="form-header__left">
+            <button type="button" onClick={() => navigate('/batches')} className="form-header__back">
+              <ArrowLeft size={20} />
             </button>
-            <div className="w-14 h-14 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-600 shadow-inner">
-              <Layers size={28} />
+            <div className="form-header__icon">
+              <Layers size={22} />
             </div>
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1">
-                {isEditing ? 'Update Batch' : 'New Batch'}
-              </h2>
-              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest opacity-70">
-                Configuration
-              </p>
+            <div className="form-header__text">
+              <h2>{isEditing ? 'Edit Batch' : 'New Batch'}</h2>
+              <p>Batch Configuration</p>
             </div>
           </div>
         </div>
         
         {/* Body */}
-        <form onSubmit={handleSave} className="flex flex-col">
-          <div className="p-10 space-y-8 bg-slate-50/30">
+        <form onSubmit={handleSave}>
+          <div className="form-body">
             {isEditing && (
-              <div className="flex items-center gap-4 p-5 bg-white rounded-2xl border-2 border-slate-100 transition-colors group hover:border-sky-100 shadow-sm max-w-sm">
-                <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 border border-slate-100 group-hover:text-sky-400 transition-all">
-                  <Hash size={24} />
-                </div>
+              <div className="form-badge" style={{ marginBottom: '1.5rem' }}>
+                <div className="form-badge__icon"><Hash size={18} /></div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Internal ID</p>
-                  <p className="text-lg font-black text-slate-800 leading-none tracking-tighter">BATCH-{id.padStart(4, '0')}</p>
+                  <div className="form-badge__label">Internal ID</div>
+                  <div className="form-badge__value">BATCH-{id.padStart(4, '0')}</div>
                 </div>
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Batch Name (Required)</label>
-                <Select 
-                  options={batchNameOptions} 
-                  value={form.batch_name} 
-                  onChange={(opt) => setForm({ ...form, batch_name: opt })} 
-                  className="react-select-container text-base font-semibold shadow-sm" 
-                  classNamePrefix="react-select" 
-                  placeholder="Select Batch..." 
-                  styles={{ control: (base, state) => ({ ...base, padding: '0.6rem', paddingLeft: '0.8rem', borderRadius: '1rem', borderColor: state.isFocused ? '#0ea5e9' : '#f1f5f9', borderWidth: '2px', backgroundColor: '#ffffff', boxShadow: 'none', '&:hover': { borderColor: state.isFocused ? '#0ea5e9' : '#f1f5f9' } }) }} 
-                />
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Course/Program (Required)</label>
-                <Select 
-                  options={programs} 
-                  value={form.program_id} 
-                  onChange={(opt) => setForm({ ...form, program_id: opt })} 
-                  className="react-select-container text-base font-semibold shadow-sm" 
-                  classNamePrefix="react-select" 
-                  placeholder="Select Program..." 
-                  styles={{ control: (base, state) => ({ ...base, padding: '0.6rem', paddingLeft: '0.8rem', borderRadius: '1rem', borderColor: state.isFocused ? '#0ea5e9' : '#f1f5f9', borderWidth: '2px', backgroundColor: '#ffffff', boxShadow: 'none', '&:hover': { borderColor: state.isFocused ? '#0ea5e9' : '#f1f5f9' } }) }} 
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Start Date</label>
-                <div className="relative">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-sky-500 transition-colors">
-                    <Calendar size={20} />
-                  </div>
-                  <input 
-                    type="date" 
-                    value={form.start_date} 
-                    onChange={(e) => setForm({ ...form, start_date: e.target.value })} 
-                    className="w-full bg-white border-2 border-slate-100 rounded-2xl pl-14 pr-6 py-4 text-slate-800 focus:border-sky-500 outline-none transition-all font-bold shadow-sm" 
-                  />
+            <div className="form-section">
+              <div className="form-section__title"><span>Batch Identity</span></div>
+              <div className="form-grid form-grid--2">
+                <div className="form-field">
+                  <label className="form-label form-label--required">Batch Name</label>
+                  <Select options={batchNameOptions} value={form.batch_name} 
+                    onChange={(opt) => setForm({ ...form, batch_name: opt })} 
+                    className="form-react-select" classNamePrefix="react-select" placeholder="Select Batch..." />
                 </div>
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">End Date</label>
-                <div className="relative">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-sky-500 transition-colors">
-                    <Calendar size={20} />
-                  </div>
-                  <input 
-                    type="date" 
-                    value={form.end_date} 
-                    onChange={(e) => setForm({ ...form, end_date: e.target.value })} 
-                    className="w-full bg-white border-2 border-slate-100 rounded-2xl pl-14 pr-6 py-4 text-slate-800 focus:border-sky-500 outline-none transition-all font-bold shadow-sm" 
-                  />
+                <div className="form-field">
+                  <label className="form-label form-label--required">Course / Program</label>
+                  <Select options={programs} value={form.program_id} 
+                    onChange={(opt) => setForm({ ...form, program_id: opt })} 
+                    className="form-react-select" classNamePrefix="react-select" placeholder="Select Program..." />
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Academic Year</label>
-                <Select 
-                  options={academicYears} 
-                  value={form.academic_year} 
-                  onChange={(opt) => setForm({ ...form, academic_year: opt })} 
-                  className="react-select-container text-base font-semibold shadow-sm" 
-                  classNamePrefix="react-select" 
-                  placeholder="Select Year..." 
-                  styles={{ control: (base, state) => ({ ...base, padding: '0.6rem', paddingLeft: '0.8rem', borderRadius: '1rem', borderColor: state.isFocused ? '#0ea5e9' : '#f1f5f9', borderWidth: '2px', backgroundColor: '#ffffff', boxShadow: 'none', '&:hover': { borderColor: state.isFocused ? '#0ea5e9' : '#f1f5f9' } }) }} 
-                />
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Import Fees?</label>
-                <div className="relative">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-sky-500 transition-colors">
-                    <Settings size={20} />
+            <div className="form-section">
+              <div className="form-section__title"><span>Schedule</span></div>
+              <div className="form-grid form-grid--2">
+                <div className="form-field">
+                  <label className="form-label">Start Date</label>
+                  <div className="form-input-wrap">
+                    <Calendar size={18} className="form-input-wrap__icon" />
+                    <input type="date" value={form.start_date} 
+                      onChange={(e) => setForm({ ...form, start_date: e.target.value })} 
+                      className="form-input form-input--with-icon" />
                   </div>
-                  <select 
-                    value={form.import_fees_flag} 
-                    onChange={(e) => setForm({ ...form, import_fees_flag: e.target.value })} 
-                    className="w-full bg-white border-2 border-slate-100 rounded-2xl pl-14 pr-6 py-4 text-slate-800 focus:border-sky-500 outline-none transition-all font-bold appearance-none cursor-pointer shadow-sm"
-                  >
-                    <option value="Y">Yes (Y)</option>
-                    <option value="N">No (N)</option>
-                    <option value="NA">NA</option>
-                  </select>
+                </div>
+                <div className="form-field">
+                  <label className="form-label">End Date</label>
+                  <div className="form-input-wrap">
+                    <Calendar size={18} className="form-input-wrap__icon" />
+                    <input type="date" value={form.end_date} 
+                      onChange={(e) => setForm({ ...form, end_date: e.target.value })} 
+                      className="form-input form-input--with-icon" />
+                  </div>
+                </div>
+                <div className="form-field">
+                  <label className="form-label">Academic Year</label>
+                  <Select options={academicYears} value={form.academic_year} 
+                    onChange={(opt) => setForm({ ...form, academic_year: opt })} 
+                    className="form-react-select" classNamePrefix="react-select" placeholder="Select Year..." />
+                </div>
+                <div className="form-field">
+                  <label className="form-label">Import Fees?</label>
+                  <div className="form-input-wrap">
+                    <Settings size={18} className="form-input-wrap__icon" />
+                    <select value={form.import_fees_flag} 
+                      onChange={(e) => setForm({ ...form, import_fees_flag: e.target.value })} 
+                      className="form-select form-select--with-icon">
+                      <option value="Y">Yes (Y)</option>
+                      <option value="N">No (N)</option>
+                      <option value="NA">NA</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="px-10 py-6 bg-white border-t border-slate-100 flex items-center justify-end gap-5 sticky bottom-0 z-10">
-            <button 
-              type="button"
-              className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
-              onClick={() => navigate('/batches')}
-            >
-              Discard changes
+          <div className="form-footer">
+            <button type="button" className="form-btn-cancel" onClick={() => navigate('/batches')}>
+              Discard
             </button>
-            <button 
-              type="submit"
-              disabled={saving}
-              className="px-10 py-4 bg-sky-600 hover:bg-sky-700 text-white font-black rounded-2xl shadow-xl shadow-sky-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 text-sm uppercase tracking-widest flex items-center gap-2"
-            >
-              {saving ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>Processing...</span>
-                </>
-              ) : (
-                <>
-                  <Check size={20} />
-                  <span>{isEditing ? 'Update Batch' : 'Create Batch'}</span>
-                </>
-              )}
+            <button type="submit" disabled={saving} className="form-btn-submit">
+              {saving ? <div className="form-spinner"></div> : <Check size={16} />}
+              {saving ? 'Saving...' : (isEditing ? 'Update Batch' : 'Create Batch')}
             </button>
           </div>
         </form>

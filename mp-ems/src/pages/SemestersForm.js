@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
-import { 
-  Layers, 
-  ArrowLeft, 
-  Check,
-  Hash,
-  Activity
-} from "lucide-react";
+import { Layers, ArrowLeft, Check, Hash, Activity } from "lucide-react";
+import '../styles/FormPage.css';
 
 const SemestersForm = () => {
   const navigate = useNavigate();
@@ -16,15 +11,10 @@ const SemestersForm = () => {
 
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
-  
-  const [form, setForm] = useState({ 
-    semester_name: '' 
-  });
+  const [form, setForm] = useState({ semester_name: '' });
 
   useEffect(() => {
-    if (isEditing) {
-      loadSemester(id);
-    }
+    if (isEditing) loadSemester(id);
   }, [id]);
 
   const loadSemester = async (semesterId) => {
@@ -38,9 +28,7 @@ const SemestersForm = () => {
       const item = data.find(p => p.id.toString() === semesterId);
       
       if (item) {
-        setForm({ 
-          semester_name: item.semester_name || ''
-        });
+        setForm({ semester_name: item.semester_name || '' });
       } else {
         toast.error('Semester not found');
         navigate('/semesters');
@@ -59,7 +47,6 @@ const SemestersForm = () => {
     try {
       setSaving(true);
       const token = localStorage.getItem('token');
-      
       const url = isEditing 
         ? `http://localhost:8080/api/master-semesters/${id}` 
         : 'http://localhost:8080/api/master-semesters';
@@ -86,93 +73,114 @@ const SemestersForm = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center font-bold text-slate-400 animate-pulse">Loading Semester Details...</div>;
+  if (loading) return (
+    <div className="form-loading">
+      <div className="form-loading__spinner"></div>
+      <p className="form-loading__text">Loading Semester Details...</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-2xl mx-auto">
-      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+    <div className="form-page form-page--wide">
+      <div className="form-card">
         {/* Header */}
-        <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-          <div className="flex items-center gap-5">
-            <button 
-              type="button"
-              onClick={() => navigate('/semesters')}
-              className="w-12 h-12 bg-slate-50 hover:bg-slate-100 rounded-2xl flex items-center justify-center text-slate-500 transition-all"
-            >
-              <ArrowLeft size={24} />
+        <div className="form-header">
+          <div className="form-header__left">
+            <button type="button" onClick={() => navigate('/semesters')} className="form-header__back">
+              <ArrowLeft size={20} />
             </button>
-            <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">
-              <Layers size={28} />
+            <div className="form-header__icon">
+              <Layers size={22} />
             </div>
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1">
-                {isEditing ? 'Update Tier' : 'New Semester'}
-              </h2>
-              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest opacity-70">
-                Curriculum Configuration
-              </p>
+            <div className="form-header__text">
+              <h2>{isEditing ? 'Academic Tier Specification' : 'Initialize Curriculum Semester'}</h2>
+              <p>Curriculum Architecture & Periodic Mapping</p>
             </div>
+          </div>
+          <div className="form-header__right">
+              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 shadow-sm">
+                Framework Module v2.0
+              </span>
           </div>
         </div>
         
         {/* Body */}
-        <form onSubmit={handleSave} className="flex flex-col">
-          <div className="p-10 space-y-8 bg-slate-50/30">
-            {isEditing && (
-              <div className="flex items-center gap-4 p-5 bg-white rounded-2xl border-2 border-slate-100 transition-colors group hover:border-indigo-100 shadow-sm max-w-sm">
-                <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 border border-slate-100 group-hover:text-indigo-400 transition-all">
-                  <Hash size={24} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Entity ID</p>
-                  <p className="text-lg font-black text-slate-800 leading-none tracking-tighter">SEM-{id.padStart(3, '0')}</p>
+        <form onSubmit={handleSave}>
+          <div className="form-body">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+              
+              {/* Left Column: Core Identity (5 cols) */}
+              <div className="xl:col-span-5 space-y-10">
+                <div className="form-section">
+                  <div className="form-section__title"><span>Tier Identity</span></div>
+                  <div className="space-y-8">
+                    {isEditing && (
+                      <div className="p-8 bg-slate-50 border-2 border-slate-100 rounded-[2.5rem] flex items-center justify-between shadow-inner">
+                         <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Structural Entry</p>
+                            <p className="text-sm font-black text-slate-900 font-mono tracking-tighter">SEM-SPEC-{id.padStart(3, '0')}</p>
+                         </div>
+                         <div className="w-12 h-12 bg-white rounded-2xl border border-slate-200 flex items-center justify-center text-slate-300 shadow-sm"><Hash size={20} /></div>
+                      </div>
+                    )}
+                    
+                    <div className="form-field">
+                      <label className="form-label form-label--required">Official Semester Designation</label>
+                      <div className="form-input-wrap h-16">
+                        <Activity size={22} className="form-input-wrap__icon text-indigo-500" />
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Semester 01 or Odd Semester" 
+                          value={form.semester_name} 
+                          onChange={(e) => setForm({ ...form, semester_name: e.target.value })}
+                          className="form-input form-input--with-icon text-xl font-bold tracking-tight"
+                          required
+                        />
+                      </div>
+                      <div className="mt-4 p-5 bg-indigo-50 border border-indigo-100 rounded-[2rem] flex items-start gap-4">
+                         <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm mt-0.5"><Layers size={14} /></div>
+                         <p className="text-[11px] font-medium text-indigo-700 leading-relaxed">
+                            <span className="font-extrabold uppercase block mb-1">Architectural Hint:</span> 
+                            Define a title that clearly identifies the semester rank or periodic nature within the academic program framework.
+                         </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            )}
 
-            <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Semester Designation (Required)</label>
-              <div className="relative">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-indigo-500 transition-colors">
-                  <Activity size={20} />
-                </div>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Semester 01 or Odd Semester" 
-                  value={form.semester_name} 
-                  onChange={(e) => setForm({ ...form, semester_name: e.target.value })}
-                  className="w-full bg-white border-2 border-slate-100 rounded-2xl pl-14 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 outline-none transition-all font-bold tracking-tight shadow-sm"
-                  required
-                />
+              {/* Right Column: Visual Summary (7 cols) */}
+              <div className="xl:col-span-7 space-y-10">
+                 <div className="h-full bg-indigo-950 rounded-[3rem] p-12 text-white relative overflow-hidden flex flex-col justify-between group">
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full -mr-40 -mt-40 blur-3xl group-hover:bg-white/10 transition-all duration-1000" />
+                    
+                    <div className="relative z-10 space-y-6">
+                       <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-indigo-300 shadow-2xl shadow-black/50"><Layers size={32} /></div>
+                       <h3 className="text-3xl font-black tracking-tight leading-loose">Curriculum Tier<br/>Master Profile</h3>
+                       <p className="text-indigo-200 font-medium leading-relaxed max-w-sm opacity-60">
+                          Semester definitions are synchronized across all department programs to maintain institutional academic structural integrity. 
+                       </p>
+                    </div>
+
+                    <div className="relative z-10 pt-10 border-t border-white/5 mt-10 flex items-center justify-between">
+                       <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">
+                          <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
+                          Global Tier Logic Active
+                       </div>
+                       <div className="text-[10px] font-black text-white/20 uppercase tracking-widest">v2.01 // Tier-C</div>
+                    </div>
+                 </div>
               </div>
+
             </div>
           </div>
 
           {/* Footer */}
-          <div className="px-10 py-6 bg-white border-t border-slate-100 flex items-center justify-end gap-5 sticky bottom-0 z-10">
-            <button 
-              type="button"
-              className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
-              onClick={() => navigate('/semesters')}
-            >
-              Discard changes
-            </button>
-            <button 
-              type="submit"
-              disabled={saving}
-              className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 text-sm uppercase tracking-widest flex items-center gap-2"
-            >
-              {saving ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>Processing...</span>
-                </>
-              ) : (
-                <>
-                  <Check size={20} />
-                  <span>{isEditing ? 'Update Rank' : 'Register Tier'}</span>
-                </>
-              )}
+          <div className="form-footer">
+            <button type="button" className="form-btn-cancel" onClick={() => navigate('/semesters')}>Discard Profile Changes</button>
+            <button type="submit" disabled={saving} className="form-btn-submit">
+              {saving ? <div className="form-spinner"></div> : <Check size={20} />}
+              <span>{saving ? 'Processing Entry...' : (isEditing ? 'Commit Structural Updates' : 'Authorize Tier Entry')}</span>
             </button>
           </div>
         </form>

@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
-import { 
-  Building, 
-  ArrowLeft, 
-  Check,
-  Hash,
-  Activity
-} from "lucide-react";
+import { Building, ArrowLeft, Check, Hash, Activity, ShieldCheck, ShieldAlert } from "lucide-react";
+import '../styles/FormPage.css';
 
 const DepartmentsForm = () => {
   const navigate = useNavigate();
@@ -27,9 +22,7 @@ const DepartmentsForm = () => {
 
   useEffect(() => {
     fetchColleges();
-    if (isEditing) {
-      loadDepartment(id);
-    }
+    if (isEditing) loadDepartment(id);
   }, [id]);
 
   const fetchColleges = async () => {
@@ -38,9 +31,7 @@ const DepartmentsForm = () => {
       const res = await fetch('http://localhost:8080/api/colleges', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (res.ok) {
-        setColleges(await res.json());
-      }
+      if (res.ok) setColleges(await res.json());
     } catch (err) {
       console.error('Error fetching colleges:', err);
     }
@@ -82,7 +73,6 @@ const DepartmentsForm = () => {
     try {
       setSaving(true);
       const token = localStorage.getItem('token');
-      
       const url = isEditing 
         ? `http://localhost:8080/api/master-departments/${id}` 
         : 'http://localhost:8080/api/master-departments';
@@ -109,131 +99,139 @@ const DepartmentsForm = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center font-bold text-slate-400 animate-pulse">Loading Department Details...</div>;
+  if (loading) return (
+    <div className="form-loading">
+      <div className="form-loading__spinner"></div>
+      <p className="form-loading__text">Loading Department Details...</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-2xl mx-auto">
-      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+    <div className="form-page form-page--wide">
+      <div className="form-card">
         {/* Header */}
-        <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-          <div className="flex items-center gap-5">
-            <button 
-              type="button"
-              onClick={() => navigate('/departments')}
-              className="w-10 h-10 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 transition-all"
-            >
+        <div className="form-header">
+          <div className="form-header__left">
+            <button type="button" onClick={() => navigate('/departments')} className="form-header__back">
               <ArrowLeft size={20} />
             </button>
-            <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-600 shadow-inner">
-              <Building size={24} />
+            <div className="form-header__icon">
+              <Building size={22} />
             </div>
-            <div>
-              <h2 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1">
-                {isEditing ? 'Update Department' : 'New Department'}
-              </h2>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70">
-                College Configuration
-              </p>
+            <div className="form-header__text">
+              <h2>{isEditing ? 'Structural Departmental Profile' : 'Initialize New Academic Department'}</h2>
+              <p>Organizational Mapping within Campus Framework</p>
             </div>
+          </div>
+          <div className="form-header__right">
+              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100 shadow-sm">
+                Structural Module v1.2
+              </span>
           </div>
         </div>
         
         {/* Body */}
-        <form onSubmit={handleSave} className="flex flex-col">
-          <div className="p-8 space-y-6 bg-slate-50/30">
-            {isEditing && (
-              <div className="flex items-center gap-4 p-5 bg-white rounded-2xl border-2 border-slate-100 transition-colors group hover:border-indigo-100 shadow-sm">
-                <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 border border-slate-100 group-hover:text-indigo-400 transition-all">
-                  <Hash size={24} />
+        <form onSubmit={handleSave}>
+          <div className="form-body">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+              
+              {/* Left Column: Department Identity (5 cols) */}
+              <div className="xl:col-span-5 space-y-10">
+                <div className="form-section">
+                  <div className="form-section__title"><span>Administrative Identity</span></div>
+                  <div className="space-y-6">
+                    {isEditing && (
+                      <div className="p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] flex items-center justify-between">
+                         <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Entity Reference</p>
+                            <p className="text-sm font-black text-slate-900 font-mono tracking-tighter">DEPT-REF-{id.padStart(3, '0')}</p>
+                         </div>
+                         <div className="w-10 h-10 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-300 shadow-sm"><Hash size={18} /></div>
+                      </div>
+                    )}
+                    
+                    <div className="form-field">
+                      <label className="form-label form-label--required">Official Department Name</label>
+                      <div className="form-input-wrap">
+                        <Activity size={18} className="form-input-wrap__icon" />
+                        <input type="text" placeholder="e.g. Computer Science & Engineering" value={form.department_name} 
+                          onChange={(e) => setForm({ ...form, department_name: e.target.value })}
+                          className="form-input form-input--with-icon" required />
+                      </div>
+                    </div>
+
+                    <div className="form-field">
+                      <label className="form-label">Departmental Alpha Code</label>
+                      <input type="text" placeholder="e.g. CSE" value={form.department_code} 
+                        onChange={(e) => setForm({ ...form, department_code: e.target.value })}
+                        className="form-input font-bold tracking-widest uppercase" />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Entity ID</p>
-                  <p className="text-lg font-black text-slate-800 leading-none tracking-tighter">DEPT-{id.padStart(3, '0')}</p>
+
+                <div className="p-10 bg-emerald-950 rounded-[3rem] text-white relative overflow-hidden group shadow-xl shadow-emerald-900/10">
+                   <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-400/10 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-emerald-400/20 transition-all duration-700" />
+                   <h4 className="relative z-10 text-xl font-black tracking-tight uppercase mb-4">Institutional Logic</h4>
+                   <p className="relative z-10 text-sm font-medium leading-relaxed text-emerald-200/80">
+                     Establishing dedicated departments allows for granular curriculum management and precise student categorization within the broader institutional framework.
+                   </p>
                 </div>
               </div>
-            )}
 
-            <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Department Name (Required)</label>
-              <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-indigo-500 transition-colors">
-                  <Activity size={18} />
+              {/* Right Column: Hierarchy & Lifecycle (7 cols) */}
+              <div className="xl:col-span-7 space-y-10">
+                <div className="form-section">
+                  <div className="form-section__title"><span>Placement Hierarchy</span></div>
+                  <div className="bg-white border-2 border-slate-50 shadow-xl shadow-slate-200/20 rounded-[3rem] p-10">
+                    <div className="form-field">
+                      <label className="form-label form-label--required">Governing Institution (College)</label>
+                      <select value={form.college_id} onChange={(e) => setForm({ ...form, college_id: e.target.value })}
+                        className="form-select border-2 border-slate-100 bg-slate-50 focus:bg-white" required >
+                        <option value="">Select Parent College</option>
+                        {colleges.map(c => <option key={c.id} value={c.id}>{c.college_name || c.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
                 </div>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Computer Science" 
-                  value={form.department_name} 
-                  onChange={(e) => setForm({ ...form, department_name: e.target.value })}
-                  className="w-full bg-white border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 outline-none transition-all font-bold tracking-tight shadow-sm"
-                  required
-                />
+
+                <div className="form-section">
+                  <div className="form-section__title"><span>Operational Lifecycle</span></div>
+                  <div className="bg-slate-50/50 p-10 rounded-[3rem] border-2 border-slate-100">
+                    <div className="form-toggle">
+                      <div className="form-toggle__info">
+                        <div className={`form-toggle__status ${form.status === 'Active' ? 'form-toggle__status--active' : 'form-toggle__status--inactive'}`}>
+                          {form.status === 'Active' ? <ShieldCheck size={20} /> : <ShieldAlert size={20} />}
+                        </div>
+                        <div>
+                           <span className="form-toggle__label text-sm uppercase tracking-widest">{form.status === 'Active' ? 'Operational' : 'Restricted'}</span>
+                           <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Control visibility for program mapping and enrollments</p>
+                        </div>
+                      </div>
+                      <button type="button" onClick={() => setForm({...form, status: form.status === 'Active' ? 'Inactive' : 'Active'})} 
+                        className={`form-toggle__track ${form.status === 'Active' ? 'form-toggle__track--on' : 'form-toggle__track--off'}`} >
+                        <div className="form-toggle__thumb" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="py-12 px-10 border-4 border-dashed border-slate-50 rounded-[3rem] flex items-center justify-center text-center">
+                   <div>
+                      <Building size={32} className="mx-auto text-slate-100 mb-4" />
+                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Structural Integrity Framework</p>
+                   </div>
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Department Code</label>
-              <input 
-                type="text" 
-                placeholder="Auto-generated if left blank" 
-                value={form.department_code} 
-                onChange={(e) => setForm({ ...form, department_code: e.target.value })}
-                className="w-full bg-white border-2 border-slate-100 rounded-2xl px-6 py-4 text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 outline-none transition-all font-bold tracking-tight shadow-sm"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Assigned College (Required)</label>
-              <select
-                value={form.college_id}
-                onChange={(e) => setForm({ ...form, college_id: e.target.value })}
-                className="w-full bg-white border-2 border-slate-100 rounded-2xl px-6 py-4 text-slate-800 focus:border-indigo-500 outline-none transition-all font-bold tracking-tight appearance-none cursor-pointer shadow-sm"
-                required
-              >
-                <option value="">-- Select College --</option>
-                {colleges.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.college_name || c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
-              <div className="flex items-center justify-between gap-4 bg-white px-6 py-4 rounded-2xl border-2 border-slate-100 shadow-sm">
-                <span className="text-sm font-bold text-slate-600 flex-1">{form.status === 'Active' ? 'Active' : 'Inactive'}</span>
-                <button type="button" onClick={() => setForm({...form, status: form.status === 'Active' ? 'Inactive' : 'Active'})} className={`relative w-12 h-6 rounded-full transition-all ${form.status === 'Active' ? 'bg-indigo-500' : 'bg-slate-300'}`}>
-                  <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-all ${form.status === 'Active' ? 'translate-x-6' : ''}`} />
-                </button>
-              </div>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4 sticky bottom-0 z-10">
-            <button 
-              type="button"
-              className="text-sm font-bold text-slate-400 hover:text-slate-800 transition-colors"
-              onClick={() => navigate('/departments')}
-            >
-              Discard
-            </button>
-            <button 
-              type="submit"
-              disabled={saving}
-              className="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 text-sm uppercase tracking-widest flex items-center gap-2"
-            >
-              {saving ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>Processing...</span>
-                </>
-              ) : (
-                <>
-                  <Check size={18} />
-                  <span>{isEditing ? 'Update Department' : 'Create Department'}</span>
-                </>
-              )}
+          <div className="form-footer">
+            <button type="button" className="form-btn-cancel" onClick={() => navigate('/departments')}>Discard Structural Changes</button>
+            <button type="submit" disabled={saving} className="form-btn-submit">
+              {saving ? <div className="form-spinner"></div> : <Check size={20} />}
+              <span>{saving ? 'Processing Entry...' : (isEditing ? 'Modify Department Profile' : 'Finalize Structural Entry')}</span>
             </button>
           </div>
         </form>

@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
-import { 
-  Calendar, 
-  ArrowLeft, 
-  Check,
-  Hash
-} from "lucide-react";
+import { Calendar, ArrowLeft, Check, Hash } from "lucide-react";
+import '../styles/FormPage.css';
 
 const AcademicYearsForm = () => {
   const navigate = useNavigate();
@@ -15,15 +11,10 @@ const AcademicYearsForm = () => {
 
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    year_name: ''
-  });
+  const [formData, setFormData] = useState({ year_name: '' });
 
   useEffect(() => {
-    if (isEditing) {
-      fetchAcademicYear();
-    }
+    if (isEditing) fetchAcademicYear();
   }, [id]);
 
   const fetchAcademicYear = async () => {
@@ -56,7 +47,6 @@ const AcademicYearsForm = () => {
     try {
       setSaving(true);
       const token = localStorage.getItem('token');
-      
       const url = isEditing 
         ? `http://localhost:8080/api/academic-years/${id}`
         : 'http://localhost:8080/api/academic-years';
@@ -64,10 +54,7 @@ const AcademicYearsForm = () => {
 
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ year_name: formData.year_name })
       });
 
@@ -86,95 +73,113 @@ const AcademicYearsForm = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center font-bold text-slate-400 animate-pulse">Loading Academic Year...</div>;
+  if (loading) return (
+    <div className="form-loading">
+      <div className="form-loading__spinner"></div>
+      <p className="form-loading__text">Loading Academic Year...</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-2xl mx-auto">
-      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+    <div className="form-page form-page--wide">
+      <div className="form-card">
         {/* Header */}
-        <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-          <div className="flex items-center gap-5">
-            <button 
-              type="button"
-              onClick={() => navigate('/academic-years')}
-              className="w-12 h-12 bg-slate-50 hover:bg-slate-100 rounded-2xl flex items-center justify-center text-slate-500 transition-all"
-            >
-              <ArrowLeft size={24} />
+        <div className="form-header">
+          <div className="form-header__left">
+            <button type="button" onClick={() => navigate('/academic-years')} className="form-header__back">
+              <ArrowLeft size={20} />
             </button>
-            <div className="w-14 h-14 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-600 shadow-inner">
-              <Calendar size={28} />
+            <div className="form-header__icon">
+              <Calendar size={22} />
             </div>
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1">
-                {isEditing ? 'Update Session' : 'New Academic Cycle'}
-              </h2>
-              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest opacity-70">
-                Chronology Settings
-              </p>
+            <div className="form-header__text">
+              <h2>{isEditing ? 'Chronological Session Matrix' : 'Initialize Academic Session Cycle'}</h2>
+              <p>Chronological Framework for Institutional Operations</p>
             </div>
+          </div>
+          <div className="form-header__right">
+              <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest bg-sky-50 px-4 py-2 rounded-xl border border-sky-100 shadow-sm">
+                Chronos Module v1.0
+              </span>
           </div>
         </div>
         
         {/* Body */}
-        <form onSubmit={handleSubmit} className="flex flex-col">
-          <div className="p-10 space-y-8 bg-slate-50/30">
-            {isEditing && (
-              <div className="flex items-center gap-4 p-5 bg-white rounded-2xl border-2 border-slate-100 transition-colors group hover:border-sky-100 shadow-sm max-w-sm">
-                <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 border border-slate-100 group-hover:text-sky-400 transition-all">
-                  <Hash size={24} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Session ID</p>
-                  <p className="text-lg font-black text-slate-800 leading-none tracking-tighter">CYCLE-{id.padStart(3, '0')}</p>
+        <form onSubmit={handleSubmit}>
+          <div className="form-body">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+              
+              {/* Left Column: Essential Configuration (5 cols) */}
+              <div className="xl:col-span-5 space-y-10">
+                <div className="form-section">
+                  <div className="form-section__title"><span>Session Identity</span></div>
+                  <div className="space-y-8">
+                    {isEditing && (
+                      <div className="p-8 bg-slate-50 border-2 border-slate-100 rounded-[2.5rem] flex items-center justify-between shadow-inner">
+                         <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Chronological Hash</p>
+                            <p className="text-sm font-black text-slate-900 font-mono tracking-tighter">SEC-CYCLE-{id.padStart(3, '0')}</p>
+                         </div>
+                         <div className="w-12 h-12 bg-white rounded-2xl border border-slate-200 flex items-center justify-center text-slate-300 shadow-sm"><Hash size={20} /></div>
+                      </div>
+                    )}
+                    
+                    <div className="form-field">
+                      <label className="form-label form-label--required">Official Session Reference</label>
+                      <div className="form-input-wrap h-16">
+                        <Calendar size={22} className="form-input-wrap__icon text-sky-500" />
+                        <input 
+                          type="text" 
+                          id="year_name"
+                          placeholder="e.g. 2024-2025" 
+                          value={formData.year_name} 
+                          onChange={(e) => setFormData({ ...formData, year_name: e.target.value })}
+                          className="form-input form-input--with-icon text-xl font-bold tracking-tight"
+                          required
+                        />
+                      </div>
+                      <div className="mt-4 p-4 bg-sky-50 border border-sky-100 rounded-2xl flex items-start gap-3">
+                         <div className="w-6 h-6 bg-white rounded-lg flex items-center justify-center text-sky-600 shadow-sm mt-0.5"><Calendar size={12} /></div>
+                         <p className="text-[11px] font-medium text-sky-700 leading-relaxed">
+                            <span className="font-extrabold uppercase">Standard Format:</span> YYYY-YYYY (e.g., 2023-2024). This identifier represents the full academic lifecycle across all mapped semesters.
+                         </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            )}
 
-            <div className="space-y-3">
-              <label htmlFor="year_name" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Year Reference (Required)</label>
-              <div className="relative">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-sky-500 transition-colors">
-                  <Calendar size={20} />
-                </div>
-                <input 
-                  type="text" 
-                  id="year_name"
-                  placeholder="e.g. 2024-2025" 
-                  value={formData.year_name} 
-                  onChange={(e) => setFormData({ ...formData, year_name: e.target.value })}
-                  className="w-full bg-white border-2 border-slate-100 rounded-2xl pl-14 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:border-sky-500 outline-none transition-all font-bold shadow-sm"
-                  required
-                />
+              {/* Right Column: Visual Summary / Context (7 cols) */}
+              <div className="xl:col-span-7 space-y-10">
+                 <div className="h-full bg-slate-900 rounded-[3rem] p-12 text-white relative overflow-hidden flex flex-col justify-between group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-sky-400/10 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-sky-400/20 transition-all duration-1000" />
+                    
+                    <div className="relative z-10 space-y-6">
+                       <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-sky-400"><Calendar size={32} /></div>
+                       <h3 className="text-3xl font-black tracking-tight leading-tight">Master Workflow<br/>Synchronization</h3>
+                       <p className="text-slate-400 font-medium leading-relaxed max-w-md">
+                          Academic years serve as the root parent for all institutional timelines. Initializing a session enables university-wide program scheduling and examination cycles.
+                       </p>
+                    </div>
+
+                    <div className="relative z-10 pt-10 border-t border-white/5 mt-10">
+                       <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.2em] text-sky-400 opacity-60">
+                          <span className="w-1 h-1 bg-sky-400 rounded-full"></span>
+                          Chronological Consistency Control active
+                       </div>
+                    </div>
+                 </div>
               </div>
-              <p className="text-[10px] text-slate-400 italic ml-1">* Format: YYYY-YYYY (e.g., 2023-2024)</p>
+
             </div>
           </div>
 
           {/* Footer */}
-          <div className="px-10 py-6 bg-white border-t border-slate-100 flex items-center justify-end gap-5 sticky bottom-0 z-10">
-            <button 
-              type="button"
-              className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
-              onClick={() => navigate('/academic-years')}
-            >
-              Discard changes
-            </button>
-            <button 
-              type="submit"
-              disabled={saving}
-              className="px-10 py-4 bg-sky-600 hover:bg-sky-700 text-white font-black rounded-2xl shadow-xl shadow-sky-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 text-sm uppercase tracking-widest flex items-center gap-2"
-            >
-              {saving ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>Processing...</span>
-                </>
-              ) : (
-                <>
-                  <Check size={20} />
-                  <span>{isEditing ? 'Update Session' : 'Initialize Session'}</span>
-                </>
-              )}
+          <div className="form-footer">
+            <button type="button" className="form-btn-cancel" onClick={() => navigate('/academic-years')}>Discard Lifecycle Segment</button>
+            <button type="submit" disabled={saving} className="form-btn-submit">
+              {saving ? <div className="form-spinner"></div> : <Check size={20} />}
+              <span>{saving ? 'Processing Matrix...' : (isEditing ? 'Commit Session Updates' : 'Authorize Session Initialization')}</span>
             </button>
           </div>
         </form>

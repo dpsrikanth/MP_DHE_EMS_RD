@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Users as UsersIcon, ArrowLeft, Check } from "lucide-react";
+import { Users as UsersIcon, ArrowLeft, Check, ShieldCheck, ShieldAlert } from "lucide-react";
+import '../styles/FormPage.css';
 
 const UsersForm = () => {
   const navigate = useNavigate();
@@ -16,33 +17,24 @@ const UsersForm = () => {
   const [colleges, setColleges] = useState([]);
 
   const [form, setForm] = useState({ 
-    name: '', 
-    email: '', 
-    password: '', 
-    role_id: '', 
-    university_id: '', 
-    college_id: '', 
-    is_active: true 
+    name: '', email: '', password: '', role_id: '', 
+    university_id: '', college_id: '', is_active: true 
   });
 
   useEffect(() => {
     fetchMasterData();
-    if (isEditing) {
-      fetchUser(id);
-    }
+    if (isEditing) fetchUser(id);
   }, [id]);
 
   const fetchMasterData = async () => {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-      
       const [rRes, uRes, cRes] = await Promise.all([
         fetch('http://localhost:8080/api/roles', { headers }),
         fetch('http://localhost:8080/api/universities', { headers }),
         fetch('http://localhost:8080/api/colleges', { headers })
       ]);
-
       if (rRes.ok) setRoles(await rRes.json());
       if (uRes.ok) setUniversities(await uRes.json());
       if (cRes.ok) setColleges(await cRes.json());
@@ -54,7 +46,6 @@ const UsersForm = () => {
   const fetchUser = async (userId) => {
     try {
       const token = localStorage.getItem('token');
-      // Fetch all users and find the one (since there is no specific /api/users/:id GET endpoint generally unless it's defined, but we can just use the list or assume a specific endpoint exists)
       const res = await fetch(`http://localhost:8080/api/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -63,11 +54,8 @@ const UsersForm = () => {
       const user = users.find(u => u.id.toString() === userId);
       if (user) {
         setForm({ 
-          name: user.name || '', 
-          email: user.email || '', 
-          password: '', // Don't show password hash
-          role_id: user.role_id || '', 
-          university_id: user.university_id || '', 
+          name: user.name || '', email: user.email || '', password: '',
+          role_id: user.role_id || '', university_id: user.university_id || '', 
           college_id: user.college_id || '', 
           is_active: user.is_active === undefined ? true : user.is_active 
         });
@@ -116,99 +104,137 @@ const UsersForm = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center font-bold text-slate-400 animate-pulse">Initializing Identity Module...</div>;
+  if (loading) return (
+    <div className="form-loading">
+      <div className="form-loading__spinner"></div>
+      <p className="form-loading__text">Loading User Profile...</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-8 flex items-center justify-between">
-          <div className="flex items-center gap-5">
-            <button 
-              onClick={() => navigate('/users')}
-              className="w-12 h-12 bg-slate-50 hover:bg-slate-100 rounded-2xl flex items-center justify-center text-slate-500 transition-all"
-            >
-              <ArrowLeft size={24} />
+    <div className="form-page form-page--wide">
+      <div className="form-card">
+        {/* Header */}
+        <div className="form-header">
+          <div className="form-header__left">
+            <button onClick={() => navigate('/users')} className="form-header__back">
+              <ArrowLeft size={20} />
             </button>
-            <div className="w-14 h-14 bg-indigo-500/10 rounded-[1.5rem] flex items-center justify-center text-indigo-600 shadow-inner">
-              <UsersIcon size={32} />
+            <div className="form-header__icon">
+              <UsersIcon size={22} />
             </div>
-            <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-                {isEditing ? 'Edit User Profile' : 'Register New Identity'}
-              </h1>
-              <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">System Access Configuration</p>
+            <div className="form-header__text">
+              <h2>{isEditing ? 'Modify Identity' : 'Initialize New Identity'}</h2>
+              <p>System Access & Security Credentials</p>
             </div>
+          </div>
+          <div className="form-header__right">
+             <div className="flex items-center gap-3">
+               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+                 {isEditing ? `User ID: #${id}` : 'New Profile'}
+               </span>
+             </div>
           </div>
         </div>
         
-        {/* Form Body */}
-        <div className="p-10 border-t border-slate-100 bg-slate-50/30">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
-              <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800" placeholder="e.g. John Doe" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-              <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800" placeholder="john@example.com" />
-            </div>
-            <div className="space-y-2 col-span-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                {isEditing ? 'Reset Password (Leave blank to keep current)' : 'Initial Password'}
-              </label>
-              <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800" placeholder={isEditing ? "New password..." : "Minimum 8 characters"} />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Role Type</label>
-              <select value={form.role_id} onChange={e => setForm({...form, role_id: e.target.value})} className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800 appearance-none cursor-pointer">
-                <option value="">Select Role</option>
-                {roles.map(r => <option key={r.id} value={r.id}>{r.role_name}</option>)}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
-              <div className="flex items-center justify-between gap-4 bg-white px-5 py-3.5 rounded-2xl border-2 border-slate-100">
-                <span className="text-sm font-bold text-slate-600 flex-1">{form.is_active ? 'Active' : 'Inactive'}</span>
-                <button type="button" onClick={() => setForm({...form, is_active: !form.is_active})} className={`relative w-12 h-6 rounded-full transition-all ${form.is_active ? 'bg-emerald-500' : 'bg-slate-300'}`}>
-                  <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-all ${form.is_active ? 'translate-x-6' : ''}`} />
-                </button>
+        {/* Body */}
+        <div className="form-body">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+            
+            {/* Left Column: Essential Identity */}
+            <div className="space-y-10">
+              <div className="form-section">
+                <div className="form-section__title"><span>Core Identity</span></div>
+                <div className="form-grid form-grid--2">
+                  <div className="form-field">
+                    <label className="form-label form-label--required">Official Full Name</label>
+                    <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="form-input" placeholder="e.g. John Doe" />
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label form-label--required">Primary Email Access</label>
+                    <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="form-input" placeholder="john@example.com" />
+                  </div>
+                  <div className="form-field form-grid__full">
+                    <label className="form-label form-label--required">
+                      {isEditing ? 'Credential Reset (Leave blank to maintain current)' : 'Access Password'}
+                    </label>
+                    <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} className="form-input" placeholder={isEditing ? "Enter new password..." : "Define secure password (min 8 chars)"} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-section">
+                <div className="form-section__title"><span>Security Attributes</span></div>
+                <div className="form-grid form-grid--2">
+                  <div className="form-field">
+                    <label className="form-label form-label--required">Assigned Permission Role</label>
+                    <select value={form.role_id} onChange={e => setForm({...form, role_id: e.target.value})} className="form-select">
+                      <option value="">Select Security Role</option>
+                      {roles.map(r => <option key={r.id} value={r.id}>{r.role_name}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">Administrative Status</label>
+                    <div className="form-toggle">
+                      <div className="form-toggle__info">
+                        <div className={`form-toggle__status ${form.is_active ? 'form-toggle__status--active' : 'form-toggle__status--inactive'}`}>
+                          {form.is_active ? <ShieldCheck size={16} /> : <ShieldAlert size={16} />}
+                        </div>
+                        <span className="form-toggle__label">{form.is_active ? 'Identity Active' : 'Identity Suspended'}</span>
+                      </div>
+                      <button type="button" onClick={() => setForm({...form, is_active: !form.is_active})} className={`form-toggle__track ${form.is_active ? 'form-toggle__track--on' : 'form-toggle__track--off'}`}>
+                        <div className="form-toggle__thumb" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">University (Optional)</label>
-              <select value={form.university_id} onChange={e => setForm({...form, university_id: e.target.value, college_id: ''})} className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800 appearance-none cursor-pointer">
-                <option value="">Global / Select Unv.</option>
-                {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-              </select>
+
+            {/* Right Column: Organizational Context */}
+            <div className="space-y-10">
+              <div className="form-section">
+                <div className="form-section__title"><span>Institutional Hierarchy</span></div>
+                <div className="form-section-card space-y-6">
+                  <div className="form-field">
+                    <label className="form-label">University Branch (Optional)</label>
+                    <select value={form.university_id} onChange={e => setForm({...form, university_id: e.target.value, college_id: ''})} className="form-select">
+                      <option value="">Global Administration / Select University</option>
+                      {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                    </select>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2">Determines top-level data visibility</p>
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">Affiliated College (Optional)</label>
+                    <select value={form.college_id} onChange={e => setForm({...form, college_id: e.target.value})} className="form-select">
+                      <option value="">None / Specific College Placement</option>
+                      {colleges.filter(c => !form.university_id || c.university_id.toString() === form.university_id.toString()).map(c => <option key={c.id} value={c.id}>{c.college_name}</option>)}
+                    </select>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2">Narrows access to institutional data</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-8 bg-indigo-50 border border-indigo-100 rounded-[2rem] space-y-4">
+                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm"><ShieldCheck size={24} /></div>
+                 <h4 className="text-sm font-black text-indigo-900 uppercase tracking-tight">Access Control Warning</h4>
+                 <p className="text-xs text-indigo-600/80 leading-relaxed font-bold">
+                   Changing organizational mapping will immediately alter this user's data scope. Ensure roles and institutions are correctly paired to prevent security breaches.
+                 </p>
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">College (Optional)</label>
-              <select value={form.college_id} onChange={e => setForm({...form, college_id: e.target.value})} className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800 appearance-none cursor-pointer">
-                <option value="">None / Select College</option>
-                {colleges.filter(c => !form.university_id || c.university_id.toString() === form.university_id.toString()).map(c => <option key={c.id} value={c.id}>{c.college_name}</option>)}
-              </select>
-            </div>
+
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-          <button 
-            type="button"
-            onClick={() => navigate('/users')}
-            className="px-8 py-3.5 text-sm font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors"
-          >
-            Discard
+        <div className="form-footer">
+          <button type="button" onClick={() => navigate('/users')} className="form-btn-cancel">
+            Discard Changes
           </button>
-          <button 
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="px-10 py-3.5 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 transition-all active:scale-[0.98] uppercase tracking-widest text-xs flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Check size={16} />
-            {saving ? 'Processing...' : (isEditing ? 'Update Profile' : 'Initialize Identity')}
+          <button type="button" onClick={handleSave} disabled={saving} className="form-btn-submit">
+            {saving ? <div className="form-spinner"></div> : <Check size={20} />}
+            <span>{saving ? 'Syncing...' : (isEditing ? 'Commit Profile' : 'Initialize Identity')}</span>
           </button>
         </div>
       </div>

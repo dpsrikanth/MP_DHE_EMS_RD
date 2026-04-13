@@ -2,16 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
 import Select, { components } from "react-select";
-import { 
-  BookOpen, 
-  ArrowLeft, 
-  Check,
-  Calendar,
-  Hash,
-  Layers,
-  Settings,
-  ListRestart
-} from "lucide-react";
+import { BookOpen, ArrowLeft, Check, Calendar, Hash, Layers, Settings, ListRestart } from "lucide-react";
+import '../styles/FormPage.css';
 
 const Option = (props) => {
   return (
@@ -21,7 +13,7 @@ const Option = (props) => {
           type="checkbox"
           checked={props.isSelected}
           onChange={() => null}
-          className="mr-2 rounded border-emerald-500 text-emerald-600 focus:ring-emerald-500 pointer-events-none"
+          className="mr-2 rounded border-indigo-500 text-indigo-600 focus:ring-indigo-500 pointer-events-none"
         />{" "}
         <label>{props.label}</label>
       </components.Option>
@@ -39,18 +31,12 @@ const ProgramsForm = () => {
   const [departments, setDepartments] = useState([]);
   
   const [form, setForm] = useState({ 
-    name: '', 
-    duration_years: '', 
-    department_ids: [],
-    section_name: '',
-    code: '',
-    grading_system_type: 'Normal',
+    name: '', duration_years: '', department_ids: [],
+    section_name: '', code: '', grading_system_type: 'Normal',
     enable_elective_subjects_selection: 'N'
   });
 
-  useEffect(() => {
-    fetchDepartments();
-  }, []);
+  useEffect(() => { fetchDepartments(); }, []);
 
   const fetchDepartments = async () => {
     try {
@@ -62,10 +48,7 @@ const ProgramsForm = () => {
         const result = await res.json();
         const deptOptions = result.map(d => ({ value: d.id, label: d.department_name }));
         setDepartments(deptOptions);
-        
-        if (isEditing) {
-          loadProgram(id, deptOptions);
-        }
+        if (isEditing) loadProgram(id, deptOptions);
       }
     } catch (err) {
       console.error(err);
@@ -87,14 +70,10 @@ const ProgramsForm = () => {
         const selectedDepts = item.department_ids && currentDepartments.length > 0
           ? currentDepartments.filter(d => item.department_ids.includes(d.value))
           : [];
-          
         setForm({
-          name: item.name || '', 
-          duration_years: item.duration_years || '', 
-          department_ids: selectedDepts,
-          section_name: item.section_name || '',
-          code: item.code || '',
-          grading_system_type: item.grading_system_type || 'Normal',
+          name: item.name || '', duration_years: item.duration_years || '', 
+          department_ids: selectedDepts, section_name: item.section_name || '',
+          code: item.code || '', grading_system_type: item.grading_system_type || 'Normal',
           enable_elective_subjects_selection: item.enable_elective_subjects_selection || 'N'
         });
       } else {
@@ -115,7 +94,6 @@ const ProgramsForm = () => {
     try {
       setSaving(true);
       const token = localStorage.getItem('token');
-      
       const url = isEditing 
         ? `http://localhost:8080/api/master-programs/${id}` 
         : 'http://localhost:8080/api/master-programs';
@@ -125,11 +103,9 @@ const ProgramsForm = () => {
         method,
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ 
-          name: form.name, 
-          duration_years: parseInt(form.duration_years),
+          name: form.name, duration_years: parseInt(form.duration_years),
           department_ids: form.department_ids.map(d => d.value),
-          section_name: form.section_name,
-          code: form.code,
+          section_name: form.section_name, code: form.code,
           grading_system_type: form.grading_system_type,
           enable_elective_subjects_selection: form.enable_elective_subjects_selection
         })
@@ -150,219 +126,192 @@ const ProgramsForm = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center font-bold text-slate-400 animate-pulse">Loading Program Details...</div>;
+  if (loading) return (
+    <div className="form-loading">
+      <div className="form-loading__spinner"></div>
+      <p className="form-loading__text">Loading Program Details...</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl mx-auto">
-      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+    <div className="form-page form-page--wide">
+      <div className="form-card">
         {/* Header */}
-        <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-          <div className="flex items-center gap-5">
-            <button 
-              type="button"
-              onClick={() => navigate('/programs')}
-              className="w-12 h-12 bg-slate-50 hover:bg-slate-100 rounded-2xl flex items-center justify-center text-slate-500 transition-all"
-            >
-              <ArrowLeft size={24} />
+        <div className="form-header">
+          <div className="form-header__left">
+            <button type="button" onClick={() => navigate('/programs')} className="form-header__back">
+              <ArrowLeft size={20} />
             </button>
-            <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600 shadow-inner">
-              <BookOpen size={28} />
+            <div className="form-header__icon">
+              <BookOpen size={22} />
             </div>
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1">
-                {isEditing ? 'Update Program' : 'New Program'}
-              </h2>
-              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest opacity-70">
-                Configuration
-              </p>
+            <div className="form-header__text">
+              <h2>{isEditing ? 'Academic Program Specification' : 'Initialize New Degree Program'}</h2>
+              <p>Curriculum & Structural Mapping</p>
             </div>
+          </div>
+          <div className="form-header__right">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+                Curriculum Module v2.5
+              </span>
           </div>
         </div>
         
         {/* Body */}
-        <form onSubmit={handleSave} className="flex flex-col">
-          <div className="p-10 space-y-8 bg-slate-50/30">
-            {isEditing && (
-              <div className="flex items-center gap-4 p-5 bg-white rounded-2xl border-2 border-slate-100 transition-colors group hover:border-emerald-100 shadow-sm max-w-sm">
-                <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 border border-slate-100 group-hover:text-emerald-400 transition-all">
-                  <Hash size={24} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Internal ID</p>
-                  <p className="text-lg font-black text-slate-800 leading-none tracking-tighter">REF-{id.padStart(4, '0')}</p>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Title of Degree (Required)</label>
-              <div className="relative">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-emerald-500 transition-colors">
-                  <BookOpen size={20} />
-                </div>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Bachelor of Technology" 
-                  value={form.name} 
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full bg-white border-2 border-slate-100 rounded-2xl pl-14 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 outline-none transition-all font-semibold shadow-sm"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Duration in Years (Required)</label>
-                <div className="relative">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-emerald-500 transition-colors">
-                    <Calendar size={20} />
+        <form onSubmit={handleSave}>
+          <div className="form-body">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+              
+              {/* Left Column: Program Identity (5 cols) */}
+              <div className="xl:col-span-5 space-y-10">
+                <div className="form-section">
+                  <div className="form-section__title"><span>Strategic Identity</span></div>
+                  <div className="space-y-6">
+                    {isEditing && (
+                      <div className="p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] flex items-center justify-between">
+                         <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Registry Reference</p>
+                            <p className="text-sm font-black text-slate-900 font-mono tracking-tighter">PRG-SPEC-{id.padStart(4, '0')}</p>
+                         </div>
+                         <div className="w-10 h-10 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-300 shadow-sm"><Hash size={18} /></div>
+                      </div>
+                    )}
+                    
+                    <div className="form-field">
+                      <label className="form-label form-label--required">Title of Degree / Program</label>
+                      <div className="form-input-wrap">
+                        <BookOpen size={18} className="form-input-wrap__icon" />
+                        <input type="text" placeholder="e.g. Bachelor of Technology" value={form.name} 
+                          onChange={(e) => setForm({ ...form, name: e.target.value })}
+                          className="form-input form-input--with-icon" required />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="form-field">
+                        <label className="form-label form-label--required">Duration (Academic Years)</label>
+                        <div className="form-input-wrap">
+                          <Calendar size={18} className="form-input-wrap__icon" />
+                          <input type="number" placeholder="e.g. 4" value={form.duration_years} 
+                            onChange={(e) => setForm({ ...form, duration_years: e.target.value })}
+                            className="form-input form-input--with-icon" required />
+                        </div>
+                      </div>
+                      <div className="form-field">
+                        <label className="form-label">Program Reference Code</label>
+                        <div className="form-input-wrap">
+                          <Hash size={18} className="form-input-wrap__icon" />
+                          <input type="text" placeholder="e.g. BTECH-CS" value={form.code} 
+                            onChange={(e) => setForm({ ...form, code: e.target.value })}
+                            className="form-input form-input--with-icon font-mono uppercase" />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <input 
-                    type="number" 
-                    placeholder="e.g. 4" 
-                    value={form.duration_years} 
-                    onChange={(e) => setForm({ ...form, duration_years: e.target.value })}
-                    className="w-full bg-white border-2 border-slate-100 rounded-2xl pl-14 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 outline-none transition-all font-black shadow-sm"
-                    required
-                  />
+                </div>
+
+                <div className="p-10 bg-slate-900 rounded-[3rem] text-white relative overflow-hidden group">
+                   <div className="absolute bottom-0 right-0 w-40 h-40 bg-indigo-500/10 rounded-full -mr-20 -mb-20 blur-3xl group-hover:bg-indigo-500/20 transition-all duration-700" />
+                   <div className="relative z-10 space-y-4">
+                      <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-white"><Settings size={28} /></div>
+                      <h4 className="text-xl font-black tracking-tight uppercase">Academic Logic</h4>
+                      <p className="text-sm text-slate-400 font-medium leading-relaxed">
+                        Defining program duration and grading systems will establish the base evaluation metrics for all students enrolled in this curriculum series.
+                      </p>
+                   </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Section Name</label>
-                <div className="relative">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-emerald-500 transition-colors">
-                    <Layers size={20} />
+              {/* Right Column: Configuration & Mapping (7 cols) */}
+              <div className="xl:col-span-7 space-y-10">
+                <div className="form-section">
+                  <div className="form-section__title"><span>Assessment & structural Control</span></div>
+                  <div className="bg-white border-2 border-slate-50 shadow-xl shadow-slate-200/20 rounded-[3rem] p-10 space-y-8">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="form-field">
+                          <label className="form-label">Grading System Framework</label>
+                          <div className="form-input-wrap">
+                            <Settings size={18} className="form-input-wrap__icon" />
+                            <select value={form.grading_system_type} 
+                              onChange={(e) => setForm({ ...form, grading_system_type: e.target.value })}
+                              className="form-select form-select--with-icon">
+                              <option value="Normal">Standard (Traditional)</option>
+                              <option value="CBCE">Choice Based (CBCE)</option>
+                              <option value="Non-CBCE">Structural (Non-CBCE)</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="form-field">
+                          <label className="form-label">Elective Selection Protocol</label>
+                          <div className="form-input-wrap">
+                            <ListRestart size={18} className="form-input-wrap__icon" />
+                            <select value={form.enable_elective_subjects_selection} 
+                              onChange={(e) => setForm({ ...form, enable_elective_subjects_selection: e.target.value })}
+                              className="form-select form-select--with-icon">
+                              <option value="Y">Active (Enabled)</option>
+                              <option value="N">Restricted (Disabled)</option>
+                            </select>
+                          </div>
+                        </div>
+                     </div>
+
+                     <div className="form-field">
+                        <label className="form-label flex items-center gap-2">
+                           Curriculum Section Designation
+                           <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">(Optional Branching)</span>
+                        </label>
+                        <div className="form-input-wrap">
+                          <Layers size={18} className="form-input-wrap__icon" />
+                          <input type="text" placeholder="e.g. Regular / Honors / Advanced" value={form.section_name} 
+                            onChange={(e) => setForm({ ...form, section_name: e.target.value })}
+                            className="form-input form-input--with-icon" />
+                        </div>
+                     </div>
                   </div>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. A" 
-                    value={form.section_name} 
-                    onChange={(e) => setForm({ ...form, section_name: e.target.value })}
-                    className="w-full bg-white border-2 border-slate-100 rounded-2xl pl-14 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 outline-none transition-all font-bold shadow-sm"
-                  />
                 </div>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Program Code</label>
-                <div className="relative">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-emerald-500 transition-colors">
-                    <Hash size={20} />
+                <div className="form-section">
+                  <div className="form-section__title"><span>Institutional Mapping</span></div>
+                  <div className="bg-white border-2 border-slate-50 shadow-xl shadow-slate-200/20 rounded-[3rem] p-10">
+                    <div className="form-field">
+                      <label className="form-label mb-4 flex items-center gap-3 text-slate-400">
+                         <div className="w-8 h-8 bg-indigo-50 text-indigo-500 rounded-lg flex items-center justify-center"><Layers size={16} /></div>
+                         Associated Academic Departments
+                      </label>
+                      <Select
+                        isMulti
+                        options={[{value: 'all', label: 'Select All Departments'}, ...departments]}
+                        value={form.department_ids}
+                        onChange={(selected) => {
+                          if (selected && selected.some(option => option.value === 'all')) {
+                            setForm({ ...form, department_ids: departments });
+                          } else {
+                            setForm({ ...form, department_ids: selected || [] });
+                          }
+                        }}
+                        components={{ Option }}
+                        hideSelectedOptions={false}
+                        closeMenuOnSelect={false}
+                        className="form-react-select"
+                        classNamePrefix="react-select"
+                        placeholder="Link program to institutional departments..."
+                      />
+                    </div>
                   </div>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. BAG1" 
-                    value={form.code} 
-                    onChange={(e) => setForm({ ...form, code: e.target.value })}
-                    className="w-full bg-white border-2 border-slate-100 rounded-2xl pl-14 pr-6 py-4 text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 outline-none transition-all font-bold shadow-sm"
-                  />
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Grading System</label>
-                <div className="relative">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-emerald-500 transition-colors">
-                    <Settings size={20} />
-                  </div>
-                  <select 
-                    value={form.grading_system_type} 
-                    onChange={(e) => setForm({ ...form, grading_system_type: e.target.value })}
-                    className="w-full bg-white border-2 border-slate-100 rounded-2xl pl-14 pr-6 py-4 text-slate-800 focus:border-emerald-500 outline-none transition-all font-bold appearance-none cursor-pointer shadow-sm"
-                  >
-                    <option value="Normal">Normal</option>
-                    <option value="CBCE">CBCE</option>
-                    <option value="Non-CBCE">Non-CBCE</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Enable Elective Selection</label>
-              <div className="relative">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-emerald-500 transition-colors">
-                  <ListRestart size={20} />
-                </div>
-                <select 
-                  value={form.enable_elective_subjects_selection} 
-                  onChange={(e) => setForm({ ...form, enable_elective_subjects_selection: e.target.value })}
-                  className="w-full bg-white border-2 border-slate-100 rounded-2xl pl-14 pr-6 py-4 text-slate-800 focus:border-emerald-500 outline-none transition-all font-bold appearance-none cursor-pointer shadow-sm"
-                >
-                  <option value="Y">Yes (Enabled)</option>
-                  <option value="N">No (Disabled)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Departments Mapping</label>
-              <div className="relative">
-                <Select
-                  isMulti
-                  options={[{value: 'all', label: 'Select All'}, ...departments]}
-                  value={form.department_ids}
-                  onChange={(selected) => {
-                    if (selected && selected.some(option => option.value === 'all')) {
-                       setForm({ ...form, department_ids: departments });
-                    } else {
-                       setForm({ ...form, department_ids: selected || [] });
-                    }
-                  }}
-                  components={{ Option }}
-                  hideSelectedOptions={false}
-                  closeMenuOnSelect={false}
-                  className="react-select-container text-base font-semibold"
-                  classNamePrefix="react-select"
-                  placeholder="Link to departments..."
-                  styles={{
-                    control: (base, state) => ({
-                      ...base,
-                      padding: '0.6rem',
-                      borderRadius: '1rem',
-                      borderColor: state.isFocused ? '#10b981' : '#f1f5f9',
-                      borderWidth: '2px',
-                      backgroundColor: '#ffffff',
-                      boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-                      '&:hover': {
-                        borderColor: state.isFocused ? '#10b981' : '#f1f5f9'
-                      }
-                    })
-                  }}
-                />
-              </div>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="px-10 py-6 bg-white border-t border-slate-100 flex items-center justify-end gap-5 sticky bottom-0 z-10">
-            <button 
-              type="button"
-              className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
-              onClick={() => navigate('/programs')}
-            >
-              Discard changes
+          <div className="form-footer">
+            <button type="button" className="form-btn-cancel" onClick={() => navigate('/programs')}>
+              Discard Configuration
             </button>
-            <button 
-              type="submit"
-              disabled={saving}
-              className="px-10 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 text-sm uppercase tracking-widest flex items-center gap-2"
-            >
-              {saving ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>Processing...</span>
-                </>
-              ) : (
-                <>
-                  <Check size={20} />
-                  <span>{isEditing ? 'Update Program' : 'Create Program'}</span>
-                </>
-              )}
+            <button type="submit" disabled={saving} className="form-btn-submit">
+              {saving ? <div className="form-spinner"></div> : <Check size={20} />}
+              <span>{saving ? 'Processing Program...' : (isEditing ? 'Modify Degree Profile' : 'Commit Program Policy')}</span>
             </button>
           </div>
         </form>

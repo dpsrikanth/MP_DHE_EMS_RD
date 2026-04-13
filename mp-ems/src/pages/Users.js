@@ -21,22 +21,10 @@ const Users = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [selected, setSelected] = useState(null);
   
   const [roles, setRoles] = useState([]);
   const [universities, setUniversities] = useState([]);
   const [colleges, setColleges] = useState([]);
-
-  const [form, setForm] = useState({ 
-    name: '', 
-    email: '', 
-    password: '', 
-    role_id: '', 
-    university_id: '', 
-    college_id: '', 
-    is_active: true 
-  });
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -111,61 +99,7 @@ const Users = () => {
     }
   };
 
-  useEffect(() => {
-    if (selected) {
-      setForm({ 
-        name: selected.name || '', 
-        email: selected.email || '', 
-        password: '', // Don't show password hash
-        role_id: selected.role_id || '', 
-        university_id: selected.university_id || '', 
-        college_id: selected.college_id || '', 
-        is_active: selected.is_active === undefined ? true : selected.is_active 
-      });
-    } else {
-      setForm({ 
-        name: '', 
-        email: '', 
-        password: '', 
-        role_id: '', 
-        university_id: '', 
-        college_id: '', 
-        is_active: true 
-      });
-    }
-  }, [selected]);
-
-  const handleSave = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!form.name || !form.email || (!selected && !form.password) || !form.role_id) {
-        return toast.warning('Missing required fields');
-      }
-
-      const method = selected ? 'PUT' : 'POST';
-      const url = selected 
-        ? `http://localhost:8080/api/users/${selected.id}` 
-        : 'http://localhost:8080/api/users';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
-      });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.message || 'Operation failed');
-      }
-
-      toast.success(selected ? 'User updated' : 'User created');
-      setShowModal(false);
-      setSelected(null);
-      fetchData();
-    } catch (err) {
-      toast.error(err.message);
-    }
-  };
+  // handleSave removed - logic moved to UsersForm.js
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
@@ -204,7 +138,7 @@ const Users = () => {
           <div className="flex flex-col md:flex-row md:items-center gap-4">
             <TableSearch value={searchQuery} onChange={setSearchQuery} placeholder="Search users..." />
             <button 
-              onClick={() => { setSelected(null); setShowModal(true); }}
+              onClick={() => navigate('/users/add')}
               className="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap text-sm uppercase tracking-widest"
             >
               <UserPlus size={20} />
@@ -278,83 +212,7 @@ const Users = () => {
         <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={totalItems} pageSize={pageSize} onPageSizeChange={setPageSize} />
       </div>
 
-      {/* User Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95">
-            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">{selected ? 'Edit User Profile' : 'Register New Identity'}</h2>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">System Access Configuration</p>
-              </div>
-              <button onClick={() => setShowModal(false)} className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 rounded-2xl transition-all"><X size={20} /></button>
-            </div>
-            
-            <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto scrollbar-premium">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
-                  <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800" placeholder="e.g. John Doe" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-                  <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800" placeholder="john@example.com" />
-                </div>
-                <div className="space-y-2 col-span-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    {selected ? 'Reset Password (Leave blank to keep current)' : 'Initial Password'}
-                  </label>
-                  <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800" placeholder={selected ? "New password..." : "Minimum 8 characters"} />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Role Type</label>
-                  <select value={form.role_id} onChange={e => setForm({...form, role_id: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800">
-                    <option value="">Select Role</option>
-                    {roles.map(r => <option key={r.id} value={r.id}>{r.role_name}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
-                  <div className="flex items-center gap-4 bg-slate-50 px-5 py-3.5 rounded-2xl border-2 border-slate-100">
-                    <span className="text-sm font-bold text-slate-600 flex-1">{form.is_active ? 'Active' : 'Inactive'}</span>
-                    <button onClick={() => setForm({...form, is_active: !form.is_active})} className={`relative w-12 h-6 rounded-full transition-all ${form.is_active ? 'bg-indigo-500' : 'bg-slate-300'}`}>
-                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-all ${form.is_active ? 'translate-x-6' : ''}`} />
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">University (Optional)</label>
-                  <select value={form.university_id} onChange={e => setForm({...form, university_id: e.target.value, college_id: ''})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800">
-                    <option value="">Global / Select Unv.</option>
-                    {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">College (Optional)</label>
-                  <select value={form.college_id} onChange={e => setForm({...form, college_id: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 outline-none focus:border-indigo-500 transition-all font-bold text-slate-800">
-                    <option value="">None / Select College</option>
-                    {colleges.filter(c => !form.university_id || c.university_id.toString() === form.university_id.toString()).map(c => <option key={c.id} value={c.id}>{c.college_name}</option>)}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-              <button 
-                onClick={() => setShowModal(false)}
-                className="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
-                >Discard</button>
-              <button 
-                onClick={handleSave}
-                className="px-10 py-3.5 bg-slate-900 border-b-4 border-black hover:bg-black text-white font-black rounded-2xl shadow-xl transition-all active:translate-y-1 active:border-b-0 uppercase text-xs tracking-widest"
-              >
-                {selected ? 'Update Profile' : 'Initialize Identity'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* User Modal removed - logic moved to UsersForm.js */}
 
       {/* Delete Modal */}
       {showDeleteModal && (
