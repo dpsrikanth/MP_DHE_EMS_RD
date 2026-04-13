@@ -64,9 +64,9 @@ const HallTicket = () => {
   const { student, exams, university, center } = data;
 
   return (
-    <div className="min-h-screen bg-slate-100 py-12 px-4 sm:px-6">
+    <div className="min-h-screen bg-gray-200 py-8 px-4 print:bg-white print:p-0">
       {/* Action Bar - Hidden during print */}
-      <div className="max-w-4xl mx-auto mb-8 flex justify-between items-center no-print">
+      <div className="max-w-[800px] mx-auto mb-6 flex justify-between items-center no-print">
         <button 
           onClick={() => navigate('/student/exams')}
           className="flex items-center gap-2 text-slate-600 font-bold hover:text-sky-600 transition-colors"
@@ -74,248 +74,245 @@ const HallTicket = () => {
           <ChevronLeft size={20} />
           Back to Exams
         </button>
-        <div className="flex gap-4">
-          <button 
-            onClick={handlePrint}
-            className="flex items-center gap-2 bg-white text-slate-900 px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest border border-slate-200 shadow-sm hover:bg-slate-50 transition-all"
-          >
-            <Printer size={16} />
-            Print Hall Ticket
-          </button>
-          <button 
-            onClick={handlePrint}
-            className="flex items-center gap-2 bg-sky-500 text-white px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-sky-500/20 hover:bg-sky-600 transition-all"
-          >
-            <Download size={16} />
-            Download PDF
-          </button>
-        </div>
+        <button 
+          onClick={handlePrint}
+          className="flex items-center gap-2 bg-[#1e3a8a] text-white px-6 py-2 rounded font-bold text-sm shadow hover:bg-blue-800 transition-all"
+        >
+          <Printer size={16} />
+          Print / Download Admit Card
+        </button>
       </div>
 
-      {/* Hall Ticket Card */}
-      <div className="max-w-4xl mx-auto bg-white shadow-2xl rounded-none sm:rounded-[2rem] overflow-hidden print:shadow-none print:m-0 print:rounded-none">
-        {/* Header */}
-        <div className="bg-slate-900 text-white p-8 sm:p-12 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500 rounded-full blur-[100px] opacity-20 -mr-32 -mt-32" />
-          <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center sm:items-start gap-8">
-            <div className="text-center sm:text-left">
-              <div className="flex items-center justify-center sm:justify-start gap-4 mb-4">
-                <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20">
-                  <GraduationCap size={40} className="text-sky-400" />
+      {/* Hall Ticket Document (A4 format style) */}
+      <div className="max-w-[800px] mx-auto bg-white p-6 shadow-lg print:shadow-none print:m-0 print:max-w-none print:w-full text-[11px] font-sans text-slate-800 border border-transparent print:border-none">
+        
+        {/* Main Table Container */}
+        <table className="w-full border-collapse border-2 border-[#1e3a8a]">
+          <tbody>
+            {/* Header Row */}
+            <tr>
+              <td colSpan="3" className="p-4 border-b-2 border-[#1e3a8a] text-center relative align-middle">
+                {/* Simulated Logo */}
+                <div className="absolute left-4 top-4 w-16 h-16 border-2 border-[#1e3a8a] rounded-full flex flex-col items-center justify-center bg-white text-[#1e3a8a]">
+                  <GraduationCap size={24} />
+                  <span className="text-[6px] font-bold uppercase mt-1">MP-EMS</span>
                 </div>
-                <div>
-                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-none mb-1 uppercase">
-                    {university}
-                  </h1>
-                  <p className="text-sky-400 font-black text-xs uppercase tracking-[0.3em]">Official Examination Admit Card</p>
-                </div>
+                
+                <h1 className="text-lg font-bold text-[#1e3a8a] uppercase tracking-wide leading-tight mt-1">{university || 'DHE EMS UNIVERSITY'}</h1>
+                <h2 className="text-[13px] font-bold text-[#2563eb] uppercase tracking-wider mt-1">ADMIT CARD FOR {examName}</h2>
+              </td>
+            </tr>
+
+            {/* Layout Row */}
+            <tr>
+              {/* Left Column (Info) */}
+              <td className="w-[55%] border-r border-[#1e3a8a] p-0 align-top">
+                <table className="w-full border-collapse">
+                  <tbody>
+                    <tr>
+                      <td className="w-1/3 p-1.5 px-2 text-right border-b border-r border-[#1e3a8a] font-medium text-slate-600">Center Number :</td>
+                      <td className="p-1.5 px-2 border-b border-[#1e3a8a] font-bold text-black">{center?.id || 'C-101'}</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1.5 px-2 text-right border-b border-r border-[#1e3a8a] font-medium text-slate-600 align-top">Center of <br/>Examination :</td>
+                      <td className="p-1.5 px-2 border-b border-[#1e3a8a] font-bold text-black uppercase align-top">
+                        {center?.name || student.collageName}
+                        {center?.address && <div className="text-[9px] font-normal mt-0.5 capitalize">{center.address}</div>}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-1.5 px-2 text-right border-b border-r border-[#1e3a8a] font-medium text-slate-600">Candidate's Name :</td>
+                      <td className="p-1.5 px-2 border-b border-[#1e3a8a] font-bold text-black uppercase">{student.name}</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1.5 px-2 text-right border-b border-r border-[#1e3a8a] font-medium text-slate-600">Father's Name :</td>
+                      <td className="p-1.5 px-2 border-b border-[#1e3a8a] font-bold text-black uppercase">{student.fatherName || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <td colSpan="2" className="p-1 px-2 text-left font-bold text-[#af87b9] text-[10px] bg-slate-50 italic">Candidate Mailing Address</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1 px-2 text-right border-r border-[#1e3a8a] font-medium text-slate-600">Address :</td>
+                      <td className="p-1 px-2 font-bold text-black uppercase">{student.address || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1 px-2 text-right border-r border-[#1e3a8a] font-medium text-slate-600">City / District :</td>
+                      <td className="p-1 px-2 font-bold text-black uppercase">Indore</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1 px-2 text-right border-r border-[#1e3a8a] font-medium text-slate-600">State :</td>
+                      <td className="p-1 px-2 font-bold text-black uppercase">Madhya Pradesh</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1 px-2 text-right border-r border-[#1e3a8a] font-medium text-slate-600 border-t">Email Address :</td>
+                      <td className="p-1 px-2 font-bold text-black border-t border-[#1e3a8a]">{student.email || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1 px-2 text-right border-r border-[#1e3a8a] font-medium text-slate-600 border-t">Mobile Number :</td>
+                      <td className="p-1 px-2 font-bold text-black border-t border-[#1e3a8a]">{student.contactNumber || 'N/A'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+
+              {/* Middle Column (Course Info) */}
+              <td className="w-[25%] border-r border-[#1e3a8a] p-0 align-top">
+                <table className="w-full border-collapse text-center h-full">
+                  <tbody>
+                    <tr>
+                      <td className="p-1.5 text-[#1e3a8a] font-medium border-b border-[#1e3a8a]">Course</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1.5 font-bold text-black uppercase border-b border-[#1e3a8a]">{student.programName}</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1.5 text-[#1e3a8a] font-medium border-b border-[#1e3a8a]">Semester</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1.5 font-bold text-black border-b border-[#1e3a8a]">{student.semister}</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1.5 text-[#1e3a8a] font-medium border-b border-[#1e3a8a]">Gender</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1.5 font-bold text-black uppercase border-b border-[#1e3a8a]">{student.gender || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1.5 text-[#1e3a8a] font-medium border-b border-[#1e3a8a]">Category</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1.5 font-bold text-black uppercase">GENERAL</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+
+              {/* Right Column (Roll & Photo) */}
+              <td className="w-[20%] p-0 align-top relative">
+                <table className="w-full border-collapse text-center">
+                  <tbody>
+                    <tr>
+                      <td className="p-1.5 text-[#1e3a8a] font-medium border-b border-[#1e3a8a]">Roll Number</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1.5 font-bold text-black uppercase border-b border-[#1e3a8a]">{student.rollnumber}</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 pt-4">
+                        <div className="w-24 h-[120px] mx-auto border border-slate-300 rounded overflow-hidden flex flex-col items-center justify-center bg-[#f8f9fa]">
+                          <User size={64} className="text-[#e2e8f0] translate-y-4" />
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Exam Schedule Table */}
+        <div className="mt-4">
+          <table className="w-full border-collapse border border-[#1e3a8a] text-center">
+            <thead>
+              <tr>
+                <td colSpan="5" className="p-1.5 bg-slate-50 border border-[#1e3a8a] font-bold text-[#1e3a8a] uppercase">
+                  Examination Paper Details
+                </td>
+              </tr>
+              <tr className="bg-slate-50 text-[10px] text-slate-700">
+                <th className="p-1.5 border border-[#1e3a8a] font-medium w-[15%]">Date of Exam</th>
+                <th className="p-1.5 border border-[#1e3a8a] font-medium w-[15%]">Paper Code</th>
+                <th className="p-1.5 border border-[#1e3a8a] font-medium w-[40%] text-left">Subject Name</th>
+                <th className="p-1.5 border border-[#1e3a8a] font-medium w-[15%]">Hall / Seat Number</th>
+                <th className="p-1.5 border border-[#1e3a8a] font-medium w-[15%]">Timings</th>
+              </tr>
+            </thead>
+            <tbody>
+              {exams.length > 0 ? exams.map((exam, idx) => (
+                <tr key={idx} className="font-bold text-black text-[10px]">
+                  <td className="p-1.5 border border-[#1e3a8a] whitespace-nowrap">
+                    {new Date(exam.exam_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </td>
+                  <td className="p-1.5 border border-[#1e3a8a]">{exam.subject_code || '---'}</td>
+                  <td className="p-1.5 border border-[#1e3a8a] text-left uppercase truncate max-w-[200px]" title={exam.subject_name}>
+                    {exam.subject_name}
+                  </td>
+                  <td className="p-1.5 border border-[#1e3a8a] whitespace-nowrap">
+                    {exam.hall_code ? `${exam.hall_code} / S-${exam.seat_no}` : (student.hall_code ? `${student.hall_code} / S-${student.seat_no}` : 'PENDING')}
+                  </td>
+                  <td className="p-1.5 border border-[#1e3a8a] whitespace-nowrap">
+                    {exam.start_time} - {exam.end_time}
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan="5" className="p-4 border border-[#1e3a8a] text-slate-500 font-medium">
+                    No papers scheduled.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer with Signatures & Instructions */}
+        <div className="mt-8 border-t border-[#1e3a8a] pt-4 flex flex-col justify-between" style={{ pageBreakInside: 'avoid' }}>
+          
+          {/* Instructions Block */}
+          <div className="mb-12">
+            <h4 className="font-bold text-[#1e3a8a] text-[10px] mb-2 uppercase underline">Important Instructions for Candidates</h4>
+            <ul className="list-decimal pl-4 text-[9px] text-justify font-medium text-slate-700 space-y-1 pr-4">
+              <li>Please verify all particulars including Name, Father's Name, Category, Date of Birth, Gender, State of Eligibility and Center of Examination.</li>
+              <li>Candidate must carry the printed copy of Admit Card downloaded from MP-EMS portal along with valid photo identity proof.</li>
+              <li>Candidates are advised to reach the venue at least 45 minutes before the commencement of the examination.</li>
+              <li>No candidate shall be permitted to enter the Examination Centre after the gate closing time.</li>
+              <li>Use of Electronic gadgets like Mobile Phone, Smart Watch, Calculator, etc., is strictly prohibited inside the Examination Hall.</li>
+            </ul>
+          </div>
+
+          {/* Signatures */}
+          <div className="flex justify-between items-end px-8 pb-4">
+            <div className="text-center w-48 relative">
+              <div className="absolute -top-10 left-0 right-0 h-12 flex justify-center items-center opacity-40">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/f/f6/Signature_of_R._K._Singh.svg" alt="signature" className="h-full" style={{filter: 'grayscale(100%) brightness(50%)'}} onError={(e) => e.target.style.display='none'} />
               </div>
-              <div className="inline-block px-4 py-1.5 bg-sky-500/20 rounded-full border border-sky-500/30 text-sky-400 text-[10px] font-black uppercase tracking-widest">
-                Academic Year 2025-26
+              <div className="border-t border-black w-full border-dashed pt-1">
+                <span className="font-bold text-black text-[10px] uppercase">Controller of Examinations</span>
               </div>
             </div>
             
-            <div className="w-32 h-40 bg-white/10 backdrop-blur-md border-2 border-white/20 rounded-2xl flex flex-col items-center justify-center text-white/40 p-2 text-center overflow-hidden">
-                <User size={48} className="mb-2" />
-                <span className="text-[8px] font-black uppercase tracking-widest">Student Photograph</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Student Info Grid */}
-        <div className="p-8 sm:p-12 grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12 border-b border-slate-100">
-          <div className="space-y-6">
-            <InfoItem label="Candidate Name" value={student.name} icon={<User size={16}/>} />
-            <InfoItem label="Roll Number" value={student.rollnumber} icon={<GraduationCap size={16}/>} bold />
-            <InfoItem label="Program & Semester" value={`${student.programName} - ${student.semister}`} icon={<Building size={16}/>} />
-            <InfoItem label="Home College / Institute" value={student.collageName} icon={<Building size={16}/>} />
-          </div>
-          <div className="space-y-6">
-            <InfoItem label="Father's Name" value={student.fatherName || 'N/A'} icon={<User size={16}/>} />
-            <InfoItem label="Examination" value={examName} icon={<Calendar size={16}/>} />
-            <InfoItem label="Admission No" value={student.admission_no || 'N/A'} />
-            <InfoItem label="Gender" value={student.gender || 'N/A'} />
-          </div>
-        </div>
-
-        {/* Examination Center Card */}
-        <div className="p-8 sm:p-12 border-b border-slate-100">
-          <h3 className="text-xl font-black text-slate-900 mb-6 tracking-tight flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
-              <MapPin size={18} />
-            </div>
-            Examination Center
-          </h3>
-          <div className={`relative rounded-[1.5rem] p-6 overflow-hidden border ${center?.is_external ? 'bg-indigo-50 border-indigo-100' : 'bg-emerald-50 border-emerald-100'}`}>
-            <div className={`absolute top-0 right-0 w-48 h-48 rounded-full blur-[80px] opacity-30 -mr-16 -mt-16 ${center?.is_external ? 'bg-indigo-400' : 'bg-emerald-400'}`} />
-            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner flex-shrink-0 ${center?.is_external ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                  <MapPin size={26} />
-                </div>
-                <div>
-                  <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${center?.is_external ? 'text-indigo-500' : 'text-emerald-600'}`}>
-                    {center?.is_external ? 'External Examination Center' : 'Home Examination Center'}
-                  </p>
-                  <p className="text-xl font-black text-slate-900 leading-tight">{center?.name || student.collageName}</p>
-                  {center?.address && (
-                    <p className="text-sm text-slate-500 font-medium mt-1">
-                      {center.address}
-                    </p>
-                  )}
-                  {/* Allocated Seating Info */}
-                  {(student.hall_code || student.seat_no) && (
-                    <div className="flex gap-4 mt-4">
-                      {student.hall_code && (
-                        <div className="bg-white/60 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-white/50 shadow-sm">
-                          <p className="text-[9px] font-black text-slate-400 mb-0.5 uppercase">Hall</p>
-                          <p className="text-sm font-black text-slate-900">{student.hall_code}</p>
-                        </div>
-                      )}
-                      {student.seat_no && (
-                        <div className="bg-white/60 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-white/50 shadow-sm">
-                          <p className="text-[9px] font-black text-slate-400 mb-0.5 uppercase">Seat Number</p>
-                          <p className="text-sm font-black text-slate-900">{student.seat_no}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className={`flex-shrink-0 self-start sm:self-center px-5 py-2 rounded-2xl font-black text-xs uppercase tracking-widest ${center?.is_external ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'}`}>
-                {center?.is_external ? 'External' : 'Home Center'}
+            <div className="text-center w-48">
+              <div className="h-10 mb-1"></div>
+              <div className="border-t border-black w-full border-dashed pt-1">
+                <span className="font-bold text-black text-[10px] uppercase">Signature of the Candidate</span>
+                <div className="text-[8px] text-slate-500 font-normal leading-tight">(To be signed in presence of Invigilator)</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Exam Schedule */}
-        <div className="p-8 sm:p-12">
-          <h3 className="text-xl font-black text-slate-900 mb-8 tracking-tight flex items-center gap-3">
-             <div className="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center text-sky-600">
-               <Calendar size={18} />
-             </div>
-             Examination Schedule
-          </h3>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-slate-50 border-y border-slate-100">
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject Code</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject Name</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Hall / Seat</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Time</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {exams.map((exam, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <p className="font-black text-slate-900 leading-none mb-1">
-                        {new Date(exam.exam_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </p>
-                      <p className="text-[10px] font-bold text-sky-600 uppercase tracking-widest">
-                        {new Date(exam.exam_date).toLocaleDateString('en-GB', { weekday: 'long' })}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex px-3 py-1 bg-slate-100 rounded-lg text-slate-600 text-xs font-black group-hover:bg-sky-100 group-hover:text-sky-600 transition-colors">
-                        {exam.subject_code || 'N/A'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-black text-slate-900 leading-tight line-clamp-2 max-w-xs">{exam.subject_name}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      {exam.hall_code || exam.seat_no ? (
-                        <div className="flex flex-col">
-                           <span className="text-[10px] font-black text-slate-900 uppercase">{exam.hall_code || '---'}</span>
-                           <span className="text-[9px] font-bold text-sky-600 uppercase">Seat: {exam.seat_no || 'NA'}</span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-slate-300 italic font-medium">Pending...</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Clock size={14} className="text-slate-400" />
-                        <span className="text-xs font-bold">{exam.start_time} - {exam.end_time}</span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Instructions */}
-        <div className="p-8 sm:p-12 bg-slate-50/50 border-t border-slate-100">
-          <h4 className="text-sm font-black text-slate-900 mb-6 uppercase tracking-widest">Important Instructions</h4>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8">
-            <InstructionItem text="Candidates must reach the exam center 30 minutes before the scheduled time." />
-            <InstructionItem text="Carrying a physical copy of this Hall Ticket is mandatory." />
-            <InstructionItem text="A valid Government ID proof (Aadhar/Voter ID) is required along with this ticket." />
-            <InstructionItem text="Electronic gadgets including smartwatches and mobile phones are strictly prohibited." />
-            <InstructionItem text="Possession of any incriminating material will lead to immediate disqualification." />
-            <InstructionItem text="Candidates must follow all instructions provided by the invigilators." />
-          </ul>
-        </div>
-
-        {/* Signatures */}
-        <div className="p-8 sm:p-12 flex justify-between items-end mt-12 bg-white">
-           <div className="text-center">
-             <div className="w-48 h-12 border-b-2 border-slate-200 mb-2 italic text-slate-400">Digital Signature</div>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Controller of Examinations</p>
-           </div>
-           
-           <div className="text-center">
-             <div className="w-48 h-12 border-b-2 border-slate-200 mb-2 italic text-slate-400">Seal & Signature</div>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Principal / Head of Institution</p>
-           </div>
-        </div>
-
-        {/* Print specific CSS */}
+        {/* Print specific CSS & overrides */}
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
             .no-print { display: none !important; }
-            body { background: white !important; padding: 0 !important; margin: 0 !important; }
-            .print\\:shadow-none { box-shadow: none !important; }
-            .print\\:m-0 { margin: 0 !important; }
-            .print\\:rounded-none { border-radius: 0 !important; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            @page { margin: 1cm; size: portrait; }
+            body { 
+              background: white !important; 
+              padding: 0 !important; 
+              margin: 0 !important; 
+              -webkit-print-color-adjust: exact !important; 
+              print-color-adjust: exact !important; 
+            }
+            @page { 
+              margin: 10mm; 
+              size: A4 portrait; 
+            }
           }
         `}} />
-      </div>
-      
-      {/* Footer Branding */}
-      <div className="max-w-4xl mx-auto mt-8 text-center opacity-40 print:block">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-          Generated via MP-EMS Digital Portal • {new Date(data.generatedAt).toLocaleString()}
-        </p>
       </div>
     </div>
   );
 };
 
-const InfoItem = ({ label, value, icon, bold = false }) => (
-  <div className="flex items-start gap-4">
-    {icon && <div className="mt-1 text-slate-300">{icon}</div>}
-    <div>
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">{label}</p>
-      <p className={`text-slate-900 leading-tight ${bold ? 'text-lg font-black' : 'font-bold'}`}>{value}</p>
-    </div>
-  </div>
-);
-
-const InstructionItem = ({ text }) => (
-  <li className="flex gap-3 items-start text-[10px] sm:text-xs text-slate-500 font-medium leading-relaxed italic">
-    <div className="w-1.5 h-1.5 rounded-full bg-sky-500 mt-1.5 shrink-0" />
-    {text}
-  </li>
-);
-
 export default HallTicket;
+
