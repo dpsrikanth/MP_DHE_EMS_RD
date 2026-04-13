@@ -89,7 +89,6 @@ exports.autoAllocateSeats = async (req, res) => {
         if (currentExamRes.rowCount === 0) return res.status(404).json({ error: "Exam not found" });
         const currentExam = currentExamRes.rows[0];
 
-
         await client.query('BEGIN');
 
         // 1. Fetch Students (Paid only, sorted by Program and Name)
@@ -112,7 +111,7 @@ exports.autoAllocateSeats = async (req, res) => {
             return res.status(400).json({ error: "No paid registrations found for this exam." });
         }
 
-        // 2. Fetch Approved Halls
+        // 2. Fetch Approved Home Halls
         const hallQuery = `
             SELECT id, hall_code, rows, seats_per_row
             FROM examination_halls
@@ -136,7 +135,6 @@ exports.autoAllocateSeats = async (req, res) => {
             [college_id, currentExam.exam_date, exam_id]
         );
 
-
         const overlappingExamIds = otherExamsRes.rows
             .filter(e => isOverlapping(currentExam.start_time, currentExam.end_time, e.start_time, e.end_time))
             .map(e => e.id);
@@ -152,16 +150,21 @@ exports.autoAllocateSeats = async (req, res) => {
             });
         }
 
-        // 4. Clear existing for this run (Atomic)
+        // 4. Clear existing home+external allocations for this college + exam
+        //    (Remove all home allocations AND any prior external allocations for these students)
         await client.query(`DELETE FROM seating_arrangements WHERE college_id = $1 AND exam_id = $2`, [college_id, exam_id]);
+        // Also clear any prior external allocations for these students in this exam
+        const studentIds = students.map(s => s.student_id);
+        await client.query(
+            `DELETE FROM seating_arrangements WHERE exam_id = $1 AND student_id = ANY($2) AND college_id != $3`,
+            [exam_id, studentIds, college_id]
+        );
 
-        // 5. Allocation algorithm
+        // 5. Allocation algorithm — fill HOME halls first
         let studentIdx = 0;
-        let totalAssigned = 0;
-        
+        let homeAssigned = 0;
         const pattern = req.body?.pattern || 'sequential';
 
-        // Add shuffle capability if random
         if (pattern === 'random') {
             for (let i = students.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -171,43 +174,98 @@ exports.autoAllocateSeats = async (req, res) => {
 
         for (const hall of halls) {
             if (studentIdx >= students.length) break;
-
             const { id: hall_id, rows, seats_per_row } = hall;
-            
             for (let r = 1; r <= rows; r++) {
                 if (studentIdx >= students.length) break;
-                
                 for (let s = 1; s <= seats_per_row; s++) {
                     if (studentIdx >= students.length) break;
-                    
-                    // SKIP if seat is reserved by overlapping exam
-                    if (reservedSeats.has(`${hall_id}-${r}-${s}`)) {
-                        continue;
-                    }
-
-                    // If alternate pattern skipping logic
-                    if (pattern === 'alternate' && (r + s) % 2 !== 0) {
-                        continue;
-                    }
+                    if (reservedSeats.has(`${hall_id}-${r}-${s}`)) continue;
+                    if (pattern === 'alternate' && (r + s) % 2 !== 0) continue;
 
                     const student = students[studentIdx];
-                    
                     await client.query(`
                         INSERT INTO seating_arrangements (college_id, exam_id, student_id, hall_id, row_no, seat_no)
                         VALUES ($1, $2, $3, $4, $5, $6)
                     `, [college_id, exam_id, student.student_id, hall_id, r, s]);
 
                     studentIdx++;
-                    totalAssigned++;
+                    homeAssigned++;
                 }
             }
         }
 
+        // 6. OVERFLOW: Route remaining students to allocated external center
+        let externalAssigned = 0;
+        let externalCollegeName = null;
+        let noExternalCenterWarning = null;
+
+        if (studentIdx < students.length) {
+            // Check for an allocated external center from shortage_requests
+            const shortageRes = await client.query(
+                `SELECT sr.id, sr.allocated_college_id, c.name as external_college_name
+                 FROM shortage_requests sr
+                 JOIN colleges c ON c.id = sr.allocated_college_id
+                 WHERE sr.college_id = $1 AND sr.status = 'Allocated'
+                 ORDER BY sr.updated_at DESC LIMIT 1`,
+                [college_id]
+            );
+
+            if (shortageRes.rowCount > 0 && shortageRes.rows[0].allocated_college_id) {
+                const { allocated_college_id, external_college_name } = shortageRes.rows[0];
+                externalCollegeName = external_college_name;
+
+                // Get external college's approved halls
+                const extHallRes = await client.query(
+                    `SELECT id, hall_code, rows, seats_per_row
+                     FROM examination_halls
+                     WHERE college_id = $1 AND status = 'Approved'
+                     ORDER BY hall_code ASC`,
+                    [allocated_college_id]
+                );
+                const extHalls = extHallRes.rows;
+
+                for (const hall of extHalls) {
+                    if (studentIdx >= students.length) break;
+                    const { id: hall_id, rows, seats_per_row } = hall;
+                    for (let r = 1; r <= rows; r++) {
+                        if (studentIdx >= students.length) break;
+                        for (let s = 1; s <= seats_per_row; s++) {
+                            if (studentIdx >= students.length) break;
+
+                            const student = students[studentIdx];
+                            await client.query(`
+                                INSERT INTO seating_arrangements (college_id, exam_id, student_id, hall_id, row_no, seat_no)
+                                VALUES ($1, $2, $3, $4, $5, $6)
+                                ON CONFLICT DO NOTHING
+                            `, [parseInt(allocated_college_id), exam_id, student.student_id, hall_id, r, s]);
+
+                            studentIdx++;
+                            externalAssigned++;
+                        }
+                    }
+                }
+            } else {
+                // No external center allocated yet — notify admin
+                const remaining = students.length - homeAssigned;
+                noExternalCenterWarning = `${remaining} student(s) could not be seated — no external center has been allocated yet. Please report the shortage and wait for University Admin to assign an external center.`;
+            }
+        }
+
         await client.query('COMMIT');
-        
-        res.status(200).json({ 
-            message: `Successfully allocated seats for ${totalAssigned} students.`,
-            unassignedCount: students.length - totalAssigned
+
+        const stillUnassigned = students.length - homeAssigned - externalAssigned;
+        let message = `Successfully allocated seats for ${homeAssigned + externalAssigned} of ${students.length} students.`;
+        if (externalAssigned > 0) message += ` (${externalAssigned} placed at external center: ${externalCollegeName})`;
+        if (stillUnassigned > 0) message += ` ⚠ ${stillUnassigned} student(s) still unallocated.`;
+
+        res.status(200).json({
+            message,
+            totalAssigned: homeAssigned + externalAssigned,
+            homeAssigned,
+            externalAssigned,
+            externalCollegeName,
+            unassignedCount: stillUnassigned,
+            warning: noExternalCenterWarning || null
         });
 
     } catch (error) {
@@ -255,6 +313,9 @@ exports.lockSeating = async (req, res) => {
 
 /**
  * Get the current seating arrangement details for viewing.
+ * Returns:
+ *   - All students seated in THIS college's halls (home + guests hosted here)
+ *   - All THIS college's students seated at external centers (shortage overflow)
  */
 exports.getSeatingArrangements = async (req, res) => {
     try {
@@ -263,24 +324,60 @@ exports.getSeatingArrangements = async (req, res) => {
 
         if (!college_id) return res.status(403).json({ error: "Unauthorized" });
 
-        let query = `
-            SELECT sa.*, s.name as student_name, s.rollnumber, s."programName", h.hall_code, COALESCE(esl.is_locked, false) as seating_locked
+        const params = [college_id];
+        const examFilter = exam_id ? ` AND sa.exam_id = $2` : '';
+        if (exam_id) params.push(exam_id);
+
+        // UNION Part 1: Seats in THIS college's halls (original reliable logic)
+        // UNION Part 2: Overflow students from THIS college seated at external centers
+        const query = `
+            SELECT 
+                sa.id, sa.exam_id, sa.student_id, sa.hall_id, sa.row_no, sa.seat_no,
+                sa.college_id as seat_college_id,
+                s.name as student_name, s.rollnumber, s."programName",
+                h.hall_code,
+                c_seat.name as seat_college_name,
+                COALESCE(esl.is_locked, false) as seating_locked,
+                false as is_external
             FROM seating_arrangements sa
             JOIN students s ON sa.student_id = s.id
             JOIN examination_halls h ON sa.hall_id = h.id
-            LEFT JOIN exam_seating_locks esl ON sa.exam_id = esl.exam_id AND sa.college_id = esl.college_id
+            JOIN colleges c_seat ON sa.college_id = c_seat.id
+            LEFT JOIN exam_seating_locks esl
+                ON sa.exam_id = esl.exam_id AND esl.college_id = $1
             WHERE sa.college_id = $1
+            ${examFilter}
+
+            UNION ALL
+
+            SELECT 
+                sa.id, sa.exam_id, sa.student_id, sa.hall_id, sa.row_no, sa.seat_no,
+                sa.college_id as seat_college_id,
+                s.name as student_name, s.rollnumber, s."programName",
+                h.hall_code,
+                c_seat.name as seat_college_name,
+                COALESCE(esl.is_locked, false) as seating_locked,
+                true as is_external
+            FROM seating_arrangements sa
+            JOIN students s ON sa.student_id = s.id
+            JOIN examination_halls h ON sa.hall_id = h.id
+            JOIN colleges c_seat ON sa.college_id = c_seat.id
+            LEFT JOIN exam_seating_locks esl
+                ON sa.exam_id = esl.exam_id AND esl.college_id = $1
+            WHERE sa.college_id != $1
+            ${examFilter}
+              AND sa.student_id IN (
+                  SELECT er.student_id
+                  FROM exam_registrations er
+                  JOIN students st ON er.student_id = st.id
+                  JOIN colleges hc ON st."collageName" ILIKE hc.name
+                  WHERE hc.id = $1
+                    AND er.payment_status = 'Paid'
+                    ${exam_id ? 'AND er.exam_id = $2' : ''}
+              )
+
+            ORDER BY is_external ASC, hall_code ASC, row_no ASC, seat_no ASC
         `;
-
-
-        const params = [college_id];
-
-        if (exam_id) {
-            query += ` AND sa.exam_id = $2`;
-            params.push(exam_id);
-        }
-
-        query += ` ORDER BY h.hall_code ASC, sa.row_no ASC, sa.seat_no ASC`;
 
         const result = await db.query(query, params);
         res.status(200).json(result.rows);

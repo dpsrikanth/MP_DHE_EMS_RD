@@ -53,7 +53,7 @@ const StudentDashboard = () => {
                 </div>
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Institution</p>
-                  <p className="text-slate-700 font-bold">{user.collageName || 'Mp College'}</p>
+                  <p className="text-slate-700 font-bold">{user.collageName || 'N/A'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 group">
@@ -62,7 +62,7 @@ const StudentDashboard = () => {
                 </div>
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Current Program</p>
-                  <p className="text-slate-700 font-bold">{user.programName || 'BTech'} - {user.semister || 'Semester 1'}</p>
+                  <p className="text-slate-700 font-bold">{user.programName || 'N/A'}{user.semister ? ` - ${user.semister}` : ''}</p>
                 </div>
               </div>
             </div>

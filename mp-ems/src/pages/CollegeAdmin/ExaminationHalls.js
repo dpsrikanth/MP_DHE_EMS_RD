@@ -304,6 +304,8 @@ const ExaminationHalls = () => {
 
             if (res.ok) {
                 toast.success("Shortage report sent to University Admin. Awaiting external center allotment.");
+                // Refresh shortage request state so card updates immediately
+                fetchShortageRequests();
             } else {
                 const data = await res.json();
                 toast.error(data.error || "Failed to send shortage report");
@@ -525,15 +527,36 @@ const ExaminationHalls = () => {
                             <span className={`text-xs font-black uppercase tracking-widest ml-1 ${approvedCapacity < totalLoad ? 'text-rose-400' : 'text-blue-400'
                                 }`}>Seats</span>
                         </div>
-                        {approvedCapacity < totalLoad && (
-                            <button
-                                onClick={handleReportShortage}
-                                className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2"
-                            >
-                                <SendHorizontal size={14} />
-                                Report
-                            </button>
-                        )}
+                        {approvedCapacity < totalLoad && (() => {
+                            // Check if a shortage report is already pending or allocated
+                            const pendingReport = shortageRequests.find(r => r.status === 'Pending');
+                            const allocatedReport = shortageRequests.find(r => r.status === 'Allocated');
+                            if (allocatedReport) {
+                                return (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                                        <CheckCircle2 size={12} />
+                                        Center Assigned
+                                    </span>
+                                );
+                            }
+                            if (pendingReport) {
+                                return (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-xl text-[10px] font-black uppercase tracking-widest animate-pulse">
+                                        <Clock size={12} />
+                                        Reported · Awaiting
+                                    </span>
+                                );
+                            }
+                            return (
+                                <button
+                                    onClick={handleReportShortage}
+                                    className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2"
+                                >
+                                    <SendHorizontal size={14} />
+                                    Report
+                                </button>
+                            );
+                        })()}
                     </div>
                 </div>
 
@@ -545,8 +568,15 @@ const ExaminationHalls = () => {
                             <Clock size={18} />
                         </div>
                     </div>
-                    <div className="relative z-10">
-                        <span className="text-4xl font-black text-amber-600">{pendingCapacity}</span>
+                    <div className="relative z-10 space-y-1">
+                        <span className="text-4xl font-black text-amber-600">
+                            {pendingCapacity + shortageRequests.filter(r => r.status === 'Pending').length}
+                        </span>
+                        {shortageRequests.some(r => r.status === 'Pending') && (
+                            <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">
+                                Incl. shortage report pending
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>

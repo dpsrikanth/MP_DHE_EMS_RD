@@ -338,21 +338,28 @@ const StudentCenterAllocations = () => {
                                     <tbody className="divide-y divide-slate-50">
                                         {students.map((student) => {
                                             const isSelected = selectedStudentIds.has(student.id);
-                                            const hasCustomCenter = !!student.sitting_center_id;
                                             
-                                            // Provide visual distinction if it's external vs default home
-                                            const hasBulkCenter = !!student.college_center_name;
-                                            let centerName = student.college_center_name || (selectedCollegeName);
-                                            let centerStyle = 'bg-slate-100 text-slate-500 border-slate-200';
-                                            
-                                            if (hasCustomCenter) {
+                                            // Priority: 1) Personal override, 2) Actual seat from seating_arrangements, 3) Bulk college mapping, 4) Home college
+                                            let centerName, centerStyle;
+
+                                            if (student.sitting_center_id && student.sitting_center_name) {
+                                                // Personal override set by university admin
                                                 centerName = student.sitting_center_name;
                                                 centerStyle = 'bg-indigo-50 text-indigo-700 border-indigo-200';
-                                            } else if (hasBulkCenter) {
+                                            } else if (student.actual_seated_center_name) {
+                                                // Actual seat from seating_arrangements (most accurate post-allocation)
+                                                const isHome = !student.hall_code || student.actual_seated_center_name === selectedCollegeName;
+                                                centerName = student.actual_seated_center_name;
+                                                centerStyle = isHome
+                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                    : 'bg-orange-50 text-orange-700 border-orange-200';
+                                            } else if (student.college_center_name) {
+                                                // Bulk-level mapping (college mapped to external center)
                                                 centerName = student.college_center_name;
                                                 centerStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200';
                                             } else {
-                                                centerName += ' (HOME)';
+                                                // Default: Home college
+                                                centerName = selectedCollegeName + ' (HOME)';
                                                 centerStyle = 'bg-slate-50 text-slate-400 border-slate-100';
                                             }
 
@@ -383,9 +390,16 @@ const StudentCenterAllocations = () => {
                                                         <p className="text-[10px] font-black text-slate-400 uppercase">{student.semister}</p>
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        <span className={`inline-flex px-3 py-1 rounded-xl text-[10px] font-black tracking-widest uppercase border ${centerStyle}`}>
-                                                            {centerName}
-                                                        </span>
+                                                        <div className="flex flex-col gap-1">
+                                                            <span className={`inline-flex px-3 py-1 rounded-xl text-[10px] font-black tracking-widest uppercase border ${centerStyle}`}>
+                                                                {centerName}
+                                                            </span>
+                                                            {student.hall_code && (
+                                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                                                                    {student.hall_code} · R{student.row_no} S{student.seat_no}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             );

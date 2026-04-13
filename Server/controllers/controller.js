@@ -565,14 +565,17 @@ const Login = async (req, res) => {
     const { email, password, rememberMe } = req.body;
     const user = await client.query(
       `SELECT u.id, u.name, u.email, u.password, u.password_hash, u.is_verified,
-              COALESCE(mt.college_id, sc.id, u.college_id) as college_id, 
+              COALESCE(mt.college_id, u.college_id, sc.id) as college_id, 
               COALESCE(u.university_id, sc.university_id) as university_id, 
-              r.role_name, mt.id as teacher_id, mt.department_id 
+              r.role_name, mt.id as teacher_id, mt.department_id,
+              s.rollnumber, s."programName", s.semister,
+              COALESCE(c_actual.name, sc.name, s."collageName") as college_name
        FROM public.users u 
        JOIN public.roles r ON u.role_id = r.id 
        LEFT JOIN public.master_teachers mt ON mt.user_id = u.id
        LEFT JOIN public.students s ON s.user_id = u.id
        LEFT JOIN public.colleges sc ON s."collageName" ILIKE sc.name
+       LEFT JOIN public.colleges c_actual ON c_actual.id = u.college_id
        WHERE u.email = $1`,
       [email]
     );
@@ -627,7 +630,12 @@ const Login = async (req, res) => {
         college_id: result.college_id,
         university_id: result.university_id,
         teacher_id: result.teacher_id,
-        department_id: result.department_id
+        department_id: result.department_id,
+        // Student-specific fields
+        rollnumber: result.rollnumber || null,
+        programName: result.programName || null,
+        semister: result.semister || null,
+        collageName: result.college_name || null  // Actual college name from college_id join
       }
     });
   } catch (error) {
@@ -3679,7 +3687,10 @@ const getHallTicketData = async (req, res) => {
            -- Seating details
            eh.hall_code,
            sa.row_no,
-           sa.seat_no
+           sa.seat_no,
+           sa.college_id AS actual_seat_college_id,
+           actual_col.name AS actual_seat_college_name,
+           actual_col.address AS actual_seat_college_address
         FROM students s
         JOIN exam_registrations er ON s.id = er.student_id
         JOIN exams e ON er.exam_id = e.id
@@ -3689,6 +3700,7 @@ const getHallTicketData = async (req, res) => {
         -- New Joins for Seating
         LEFT JOIN seating_arrangements sa ON sa.student_id = s.id AND sa.exam_id = e.id
         LEFT JOIN examination_halls eh ON sa.hall_id = eh.id
+        LEFT JOIN colleges actual_col ON sa.college_id = actual_col.id
         WHERE s.user_id = $1 
           AND s."deleteStatus" = true 
           AND e.name = $2 
@@ -3734,11 +3746,18 @@ const getHallTicketData = async (req, res) => {
     };
 
     // Determine examination center: 
-    // 1. External if student.sitting_center_id set (granular override)
-    // 2. External if home_col.sitting_center_id set (bulk override)
-    // 3. Else own college
+    // 1. Actual seated college from seating_arrangements (most accurate)
+    // 2. External if student.sitting_center_id set (granular override)
+    // 3. External if home_col.sitting_center_id set (bulk override)
+    // 4. Else own college
     let center;
-    if (studentRow.student_center_id) {
+    if (studentRow.actual_seat_college_id) {
+        center = {
+            name: studentRow.actual_seat_college_name,
+            address: studentRow.actual_seat_college_address,
+            is_external: studentRow.actual_seat_college_id !== studentRow.home_college_id,
+        };
+    } else if (studentRow.student_center_id) {
         center = {
             name: studentRow.student_center_name,
             address: studentRow.student_center_address,

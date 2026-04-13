@@ -124,6 +124,14 @@ const SeatingArrangement = () => {
             const data = await res.json();
             if (res.ok) {
                 toast.success(data.message);
+                // Show warning if some students couldn't be seated (no external center)
+                if (data.warning) {
+                    setTimeout(() => toast.warning(data.warning, { autoClose: 8000 }), 800);
+                }
+                // If external students were allocated show info
+                if (data.externalAssigned > 0) {
+                    setTimeout(() => toast.info(`${data.externalAssigned} student(s) seated at external center: ${data.externalCollegeName}`, { autoClose: 6000 }), 500);
+                }
                 fetchArrangements();
             } else {
                 toast.error(data.error || "Allocation failed");
@@ -413,7 +421,7 @@ const SeatingArrangement = () => {
                         <tbody className="divide-y divide-slate-100">
                             {filteredArrangements.length > 0 ? (
                                 filteredArrangements.map((a, i) => (
-                                    <tr key={a.id} className="hover:bg-indigo-50/30 transition-colors group">
+                                    <tr key={a.id} className={`hover:bg-indigo-50/30 transition-colors group ${a.is_external ? 'bg-orange-50/40' : ''}`}>
                                         <td className="py-5 px-8">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 border border-slate-200 font-black text-xs group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
@@ -429,9 +437,16 @@ const SeatingArrangement = () => {
                                             <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">{a.programName}</span>
                                         </td>
                                         <td className="py-5 px-8 text-center">
-                                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-100 text-xs font-black uppercase">
-                                                <Building2 size={12} />
-                                                {a.hall_code}
+                                            <div className="flex flex-col items-center gap-1">
+                                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-100 text-xs font-black uppercase">
+                                                    <Building2 size={12} />
+                                                    {a.hall_code}
+                                                </div>
+                                                {a.is_external && (
+                                                    <span className="text-[9px] font-black text-orange-500 uppercase tracking-widest">
+                                                        @ {a.seat_college_name}
+                                                    </span>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="py-5 px-8">
@@ -447,10 +462,17 @@ const SeatingArrangement = () => {
                                             </div>
                                         </td>
                                         <td className="py-5 px-8 text-right">
-                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black border border-emerald-100 uppercase tracking-widest">
-                                                <CheckCircle2 size={12} />
-                                                Allocated
-                                            </span>
+                                            {a.is_external ? (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-50 text-orange-600 rounded-lg text-[10px] font-black border border-orange-100 uppercase tracking-widest">
+                                                    <AlertCircle size={12} />
+                                                    External Center
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black border border-emerald-100 uppercase tracking-widest">
+                                                    <CheckCircle2 size={12} />
+                                                    Allocated
+                                                </span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))

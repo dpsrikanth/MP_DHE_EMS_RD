@@ -476,13 +476,29 @@ exports.getStudentsForAllocation = async (req, res) => {
         
         let query = `
             SELECT DISTINCT s.id, s.name, s.rollnumber, s."programName", s.semister, 
-                   s.sitting_center_id, c.name as sitting_center_name,
-                   hc_center.name as college_center_name
+                   s.sitting_center_id,
+                   c_personal.name as sitting_center_name,
+                   -- Actual seated college from seating_arrangements (most accurate)
+                   c_seated.name as actual_seated_center_name,
+                   -- Bulk college-level mapping (fallback only)
+                   hc_center.name as college_center_name,
+                   sa.hall_code,
+                   sa.row_no,
+                   sa.seat_no
             FROM students s
             JOIN colleges hc ON hc.name ILIKE s."collageName"
             JOIN exam_registrations er ON er.student_id = s.id
-            LEFT JOIN colleges c ON s.sitting_center_id = c.id
+            LEFT JOIN colleges c_personal ON s.sitting_center_id = c_personal.id
             LEFT JOIN colleges hc_center ON hc.sitting_center_id = hc_center.id
+            LEFT JOIN (
+                SELECT sa_inner.student_id, sa_inner.exam_id,
+                       h.hall_code, sa_inner.row_no, sa_inner.seat_no,
+                       sa_inner.college_id as seated_college_id
+                FROM seating_arrangements sa_inner
+                JOIN examination_halls h ON sa_inner.hall_id = h.id
+                ${ exam_id ? 'WHERE sa_inner.exam_id = ' + parseInt(exam_id) : '' }
+            ) sa ON sa.student_id = s.id
+            LEFT JOIN colleges c_seated ON c_seated.id = sa.seated_college_id
             WHERE hc.id = $1 AND s."deleteStatus" = true AND er.payment_status = 'Paid'
         `;
         const params = [collegeId];
