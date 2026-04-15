@@ -2917,7 +2917,8 @@ const getMasterTeachers = async (req, res) => {
         mt.status,
         mt.joining_date,
         mt.phone,
-        mt.address
+        mt.address,
+        mdes.designation_type
       FROM master_teachers mt
       LEFT JOIN users u ON mt.user_id = u.id
       LEFT JOIN colleges c ON mt.college_id = c.id
@@ -3293,7 +3294,7 @@ const deleteMasterTeacher = async (req, res) => {
 const getMasterDesignations = async (req, res) => {
   try {
     const result = await client.query(
-      `SELECT id, designation_name, status
+      `SELECT id, designation_name, status, designation_type
        FROM master_designations
        WHERE status = 'Active'
        ORDER BY designation_name ASC`

@@ -63,6 +63,7 @@ const Teachers = () => {
     { key: 'status', label: 'Status' }
   ];
 
+  const [staffType, setStaffType] = useState('Teaching');
   const [designationFilter, setDesignationFilter] = useState('All');
   const [designationOptions, setDesignationOptions] = useState([]);
   const [departmentOptions, setDepartmentOptions] = useState([]);
@@ -70,16 +71,22 @@ const Teachers = () => {
 
   // apply designation filter ahead of the table hook
   // teachers data may include a designation object or string depending on API
-  const filteredByDesignation = designationFilter && designationFilter !== 'All'
-    ? data.filter(d => {
+  const filteredData = data.filter(d => {
+    // 1. Staff Type Filter
+    const type = d.designation_type || 'Teaching';
+    if (staffType === 'Teaching' && type !== 'Teaching') return false;
+    if (staffType === 'Non-Teaching' && type === 'Teaching') return false;
+
+    // 2. Designation Filter
+    if (designationFilter && designationFilter !== 'All') {
       let des = d.designation;
       if (des && typeof des === 'object') {
-        // API might return { designation_name: 'Professor' }
         des = des.designation_name || des.name || '';
       }
-      return des === designationFilter;
-    })
-    : data;
+      if (des !== designationFilter) return false;
+    }
+    return true;
+  });
 
   const {
     paginatedData,
@@ -95,7 +102,7 @@ const Teachers = () => {
     totalItems,
     visibleColumns,
     toggleColumn
-  } = useDataTable(filteredByDesignation, {
+  } = useDataTable(filteredData, {
     searchFields: ['id', 'name', 'email', 'college_name', 'department', 'designation'],
     initialSort: { field: 'id', direction: 'desc' },
     initialPageSize: 10,
@@ -127,7 +134,8 @@ const Teachers = () => {
         const designations = await designResp.json();
         setDesignationOptions(designations.map(d => ({
           id: d.id,
-          name: d.designation_name
+          name: d.designation_name,
+          type: d.designation_type
         })));
       }
 
@@ -282,8 +290,8 @@ const Teachers = () => {
               <Users size={32} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 leading-none">Faculty Members</h1>
-              <p className="text-sm text-slate-500 mt-1 font-medium tracking-tight">Manage teaching staff, their affiliations and active status</p>
+              <h1 className="text-2xl font-bold text-slate-900 leading-none">Staff Management</h1>
+              <p className="text-sm text-slate-500 mt-1 font-medium tracking-tight">Manage teaching and administrative personnel across the college</p>
             </div>
           </div>
 
@@ -315,9 +323,15 @@ const Teachers = () => {
                   className="px-3 py-2 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:outline-none"
                 >
                   <option value="All">All</option>
-                  {designationOptions.map(opt => (
-                    <option key={opt.id} value={opt.name}>{opt.name}</option>
-                  ))}
+                  {designationOptions
+                    .filter(opt => {
+                      const type = opt.type || 'Teaching';
+                      if (staffType === 'Teaching') return type === 'Teaching';
+                      return type !== 'Teaching';
+                    })
+                    .map(opt => (
+                      <option key={opt.id} value={opt.name}>{opt.name}</option>
+                    ))}
                 </select>
               </div>
 
@@ -331,10 +345,40 @@ const Teachers = () => {
                 className="inline-flex items-center gap-2 px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
               >
                 <Plus size={20} />
-                <span>Add Teacher</span>
+                <span>Add Staff</span>
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Staff Category Tabs */}
+        <div className="px-8 pb-4 flex items-center gap-2 border-b border-slate-100">
+          <button
+            onClick={() => {
+              setStaffType('Teaching');
+              setDesignationFilter('All');
+            }}
+            className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${
+              staffType === 'Teaching'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            Teaching Staff
+          </button>
+          <button
+            onClick={() => {
+              setStaffType('Non-Teaching');
+              setDesignationFilter('All');
+            }}
+            className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${
+              staffType === 'Non-Teaching'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            Non-Teaching Staff
+          </button>
         </div>
 
         {/* Improved Table Layout */}
@@ -517,7 +561,7 @@ const Teachers = () => {
                         <button
                           onClick={() => handleArchive(item)}
                           className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                          title="Archive Teacher"
+                          title="Archive Staff"
                         >
                           <MdDelete size={20} />
                         </button>
@@ -597,7 +641,7 @@ const Teachers = () => {
                   <User size={30} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900 leading-none">Faculty Profile</h2>
+                  <h2 className="text-2xl font-black text-slate-900 leading-none">Staff Profile</h2>
                   <p className="text-sm text-slate-500 mt-1 font-bold uppercase tracking-wider">{viewData.name}</p>
                 </div>
               </div>

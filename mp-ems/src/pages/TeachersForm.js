@@ -5,6 +5,26 @@ import { User, Check, Mail, Building, Briefcase, ShieldCheck, ShieldAlert, Arrow
 import authUtils from '../utils/authUtils';
 import '../styles/FormPage.css';
 
+// Move Field helper outside to prevent focus loss during re-renders
+const Field = ({ label, name, type = 'text', icon: Icon, placeholder, required, half, className = '', form, errors, handleChange }) => (
+  <div className={`form-field ${half ? '' : 'form-grid__full'} ${className}`}>
+    <label className={`form-label ${required ? 'form-label--required' : ''}`}>{label}</label>
+    <div className="form-input-wrap">
+      {Icon && <Icon size={18} className="form-input-wrap__icon" />}
+      <input 
+        name={name} 
+        type={type} 
+        value={form[name] || ''} 
+        onChange={handleChange} 
+        placeholder={placeholder}
+        className={`form-input ${Icon ? 'form-input--with-icon' : ''} ${errors[name] ? 'form-input--error' : ''}`}
+        maxLength={name === 'pan_no' ? 10 : name === 'aadhaar_no' ? 12 : name === 'phone' ? 14 : undefined} 
+      />
+    </div>
+    {errors[name] && <p className="form-field-error">{errors[name]}</p>}
+  </div>
+);
+
 const TeachersForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -133,19 +153,7 @@ const TeachersForm = () => {
     } catch (err) { setErrorString(err.message); toast.error('Error: ' + err.message); } finally { setSaving(false); }
   };
 
-  // Field helper to reduce repetition
-  const Field = ({ label, name: n, type = 'text', icon: Icon, placeholder, required, half, className = '' }) => (
-    <div className={`form-field ${half ? '' : 'form-grid__full'} ${className}`}>
-      <label className={`form-label ${required ? 'form-label--required' : ''}`}>{label}</label>
-      <div className="form-input-wrap">
-        {Icon && <Icon size={18} className="form-input-wrap__icon" />}
-        <input name={n} type={type} value={form[n]} onChange={handleChange} placeholder={placeholder}
-          className={`form-input ${Icon ? 'form-input--with-icon' : ''} ${errors[n] ? 'form-input--error' : ''}`}
-          maxLength={n === 'pan_no' ? 10 : n === 'aadhaar_no' ? 12 : n === 'phone' ? 14 : undefined} />
-      </div>
-      {errors[n] && <p className="form-field-error">{errors[n]}</p>}
-    </div>
-  );
+
 
   if (loading) return (
     <div className="form-loading"><div className="form-loading__spinner"></div><p className="form-loading__text">Loading Faculty Details...</p></div>
@@ -189,11 +197,11 @@ const TeachersForm = () => {
             <div className="form-section">
               <div className="form-section__title"><span>Personal Information</span></div>
               <div className="form-grid form-grid--2">
-                <Field label="Full Name" name="name" icon={User} placeholder="e.g. Dr. Jane Doe" required half />
-                <Field label="Official Email" name="email" type="email" icon={Mail} placeholder="faculty@college.edu" required half />
-                <Field label="First Name" name="first_name" icon={User} placeholder="First" half />
-                <Field label="Last Name" name="last_name" icon={User} placeholder="Last" half />
-                <Field label="Date of Birth" name="dob" type="date" icon={Calendar} required half />
+                <Field label="Full Name" name="name" icon={User} placeholder="e.g. Dr. Jane Doe" required half form={form} errors={errors} handleChange={handleChange} />
+                <Field label="Official Email" name="email" type="email" icon={Mail} placeholder="faculty@college.edu" required half form={form} errors={errors} handleChange={handleChange} />
+                <Field label="First Name" name="first_name" icon={User} placeholder="First" half form={form} errors={errors} handleChange={handleChange} />
+                <Field label="Last Name" name="last_name" icon={User} placeholder="Last" half form={form} errors={errors} handleChange={handleChange} />
+                <Field label="Date of Birth" name="dob" type="date" icon={Calendar} required half form={form} errors={errors} handleChange={handleChange} />
                 <div className="form-field">
                   <label className={`form-label form-label--required`}>Gender</label>
                   <div className={`form-radio-group ${errors.gender ? 'form-radio-group--error' : ''}`}>
@@ -206,7 +214,7 @@ const TeachersForm = () => {
                   </div>
                   {errors.gender && <p className="form-field-error">{errors.gender}</p>}
                 </div>
-                <Field label="Mobile Number" name="phone" type="tel" icon={Phone} placeholder="+91 XXXXX XXXXX" required half />
+                <Field label="Mobile Number" name="phone" type="tel" icon={Phone} placeholder="+91 XXXXX XXXXX" required half form={form} errors={errors} handleChange={handleChange} />
               </div>
             </div>
 
@@ -253,18 +261,18 @@ const TeachersForm = () => {
                     {errors.department_id && <p className="form-field-error">{errors.department_id}</p>}
                   </div>
                 )}
-                <Field label="Qualification" name="qualification" icon={FileText} placeholder="e.g. M.Sc., Ph.D." required half />
-                <Field label="Years Experience" name="experience" type="number" icon={Calendar} placeholder="0" required half />
-                <Field label="Specialization" name="specialization" icon={FileText} placeholder="e.g. Computer Science" required half />
-                <Field label="Joining Date" name="joining_date" type="date" icon={Calendar} required half />
+                <Field label="Qualification" name="qualification" icon={FileText} placeholder="e.g. M.Sc., Ph.D." required half form={form} errors={errors} handleChange={handleChange} />
+                <Field label="Years Experience" name="experience" type="number" icon={Calendar} placeholder="0" required half form={form} errors={errors} handleChange={handleChange} />
+                <Field label="Specialization" name="specialization" icon={FileText} placeholder="e.g. Computer Science" required half form={form} errors={errors} handleChange={handleChange} />
+                <Field label="Joining Date" name="joining_date" type="date" icon={Calendar} required half form={form} errors={errors} handleChange={handleChange} />
               </div>
             </div>
 
             <div className="form-section">
               <div className="form-section__title"><span>Identity Documents</span></div>
               <div className="form-grid form-grid--2">
-                <Field label="PAN Number" name="pan_no" icon={FileText} placeholder="AAAAA0000A" required half />
-                <Field label="Aadhaar Number" name="aadhaar_no" icon={FileText} placeholder="XXXX XXXX XXXX" required half />
+                <Field label="PAN Number" name="pan_no" icon={FileText} placeholder="AAAAA0000A" required half form={form} errors={errors} handleChange={handleChange} />
+                <Field label="Aadhaar Number" name="aadhaar_no" icon={FileText} placeholder="XXXX XXXX XXXX" required half form={form} errors={errors} handleChange={handleChange} />
               </div>
             </div>
 
