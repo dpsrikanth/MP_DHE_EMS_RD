@@ -154,10 +154,10 @@ const Dashboard = () => {
               </div>
             </div>
             
-            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-50">
-              <TrendingUp size={14} className="text-emerald-500" />
-              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Growing Performance</span>
-            </div>
+            {/* <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-50">
+              <TrendingUp size={14} className="text-emerald-500" /> */}
+              {/* <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Growing Performance</span> */}
+            {/* </div> */}
           </div>
         ))}
       </div>
