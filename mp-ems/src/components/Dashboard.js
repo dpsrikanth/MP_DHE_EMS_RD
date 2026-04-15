@@ -10,7 +10,6 @@ import {
   User,
   Mail,
   TrendingUp,
-  Activity,
   Award
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
@@ -108,8 +107,6 @@ const Dashboard = () => {
   );
 
   const totalStudents = students.length || stats.totalUsers || 0;
-  const gradeLabels = ["Grade 1","Grade 2","Grade 3","Grade 4","Grade 5","Grade 6","Grade 7","Grade 8","Grade 9","Grade 10"];
-  const gradeCounts = gradeLabels.map((_, i) => Math.floor(totalStudents / gradeLabels.length) + (i < (totalStudents % gradeLabels.length) ? 1 : 0));
 
   const dashboardStats = [
     { label: 'Total Teachers', value: teachersCount, icon: <Users size={24} />, color: 'bg-blue-500', shadow: 'shadow-blue-500/20' },
@@ -162,42 +159,9 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Grade Distribution */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="stitch-card p-8 h-full">
-            <div className="flex items-center justify-between mb-8">
-              <h4 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                <Activity size={20} className="text-rose-500" /> Grade Metrics
-              </h4>
-              <Award size={20} className="text-slate-300" />
-            </div>
-            
-            <div className="space-y-5">
-              {gradeLabels.map((label, idx) => {
-                const count = gradeCounts[idx];
-                const pct = totalStudents ? Math.round((count / Math.max(1, totalStudents)) * 100) : 0;
-                return (
-                  <div className="space-y-1.5 group" key={label}>
-                    <div className="flex justify-between items-center px-1">
-                      <span className="text-xs font-bold text-slate-600 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{label}</span>
-                      <span className="text-xs font-black text-slate-900 tracking-tighter">{count}</span>
-                    </div>
-                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-100/50">
-                      <div 
-                        className="h-full bg-gradient-to-r from-indigo-500 to-sky-500 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(79,70,229,0.3)]"
-                        style={{ width: `${pct}%` }} 
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Teacher Overview */}
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 gap-8">
+        {/* Teacher Overview */}
+        <div>
           <div className="stitch-card p-8 h-full flex flex-col">
             <div className="flex items-center justify-between mb-8">
               <div>

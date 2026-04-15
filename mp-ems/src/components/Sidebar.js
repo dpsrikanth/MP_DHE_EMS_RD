@@ -68,33 +68,33 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       { id: 2, name: 'Universities', path: '/universities', icon: <School size={20} /> },
       { id: 3, name: 'Colleges', path: '/colleges', icon: <GraduationCap size={20} /> },
       { id: 4, name: 'Programs', path: '/programs', icon: <BookOpen size={20} /> },
-      { id: 14, name: 'Batches', path: '/batches', icon: <Layers size={20} /> },
       { id: 5, name: 'Academic Years', path: '/academic-years', icon: <Calendar size={20} /> },
       { id: 6, name: 'Semesters', path: '/semesters', icon: <Layers size={20} /> },
-      { id: 7, name: 'Subjects', path: '/subjects', icon: <Book size={20} /> },
-      { id: 8, name: 'Departments', path: '/departments', icon: <Building2 size={20} /> },
-      { id: 9, name: 'Faculty', path: '/teachers', icon: <Users size={20} /> },
-      { id: 10, name: 'Students', path: '/students', icon: <UserCircle size={20} /> },
       { id: 20, name: 'Users', path: '/users', icon: <Users size={20} /> },
       { id: 21, name: 'Roles', path: '/roles', icon: <ShieldCheck size={20} /> },
-      { id: 11, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
-      // { id: 12, name: 'Marks', path: '/marks', icon: <BarChart3 size={20} /> },
       { id: 13, name: 'Policies', path: '/policies', icon: <ShieldCheck size={20} /> },
-      { id: 15, name: 'Verify & Unlock', path: '/admin/marks-verification', icon: <ShieldCheck size={20} /> },
-      { id: 16, name: 'External Assignment', path: '/university/external-assignment', icon: <UserPlus size={20} /> },
-      { id: 17, name: 'Result Hub', path: '/university/external-marks', icon: <TrendingUp size={20} /> },
-      { id: 18, name: 'Grading Policy', path: '/university/grading-policy', icon: <ShieldCheck size={20} /> },
-      { id: 19, name: 'Manage Credits', path: '/university/manage-credits', icon: <BookOpen size={20} /> },
-      { id: 23, name: 'Hall Approvals', path: '/university/hall-approvals', icon: <Building2 size={20} /> },
-      { id: 24, name: 'Student Allocations', path: '/university/student-allocations', icon: <UserPlus size={20} /> },
-      { id: 28, name: 'Infrastructure Analytics', path: '/university/infrastructure-analytics', icon: <TrendingUp size={20} /> },
-      { id: 29, name: 'Exam Analytics', path: '/university/exam-analytics', icon: <TrendingUp size={20} /> },
-      { id: 30, name: 'Institutional Ranking', path: '/university/institutional-ranking', icon: <Trophy size={20} /> },
-      // { id: 22, name: 'Paper Setter', path: '/paper-setter/dashboard', icon: <FileText size={20} /> },
     ];
 
     if (authUtils.isUniversityAdmin()) {
       menuItems = menuItems.filter(item => item.name !== 'Universities' && item.name !== 'Roles');
+      menuItems.push(
+        { id: 9, name: 'Faculty', path: '/teachers', icon: <Users size={20} /> },
+        { id: 10, name: 'Students', path: '/students', icon: <UserCircle size={20} /> },
+        { id: 11, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
+        { id: 14, name: 'Batches', path: '/batches', icon: <Layers size={20} /> },
+        { id: 7, name: 'Subjects', path: '/subjects', icon: <Book size={20} /> },
+        { id: 8, name: 'Departments', path: '/departments', icon: <Building2 size={20} /> },
+        { id: 15, name: 'Verify & Unlock', path: '/admin/marks-verification', icon: <ShieldCheck size={20} /> },
+        { id: 16, name: 'External Assignment', path: '/university/external-assignment', icon: <UserPlus size={20} /> },
+        { id: 17, name: 'Result Hub', path: '/university/external-marks', icon: <TrendingUp size={20} /> },
+        { id: 18, name: 'Grading Policy', path: '/university/grading-policy', icon: <ShieldCheck size={20} /> },
+        { id: 19, name: 'Manage Credits', path: '/university/manage-credits', icon: <BookOpen size={20} /> },
+        { id: 23, name: 'Hall Approvals', path: '/university/hall-approvals', icon: <Building2 size={20} /> },
+        { id: 24, name: 'Student Allocations', path: '/university/student-allocations', icon: <UserPlus size={20} /> },
+        { id: 28, name: 'Infrastructure Analytics', path: '/university/infrastructure-analytics', icon: <TrendingUp size={20} /> },
+        { id: 29, name: 'Exam Analytics', path: '/university/exam-analytics', icon: <TrendingUp size={20} /> },
+        { id: 30, name: 'Institutional Ranking', path: '/university/institutional-ranking', icon: <Trophy size={20} /> }
+      );
     }
 
     if (authUtils.isSystemAdmin()) {
