@@ -185,6 +185,36 @@ const MarksReview = () => {
         }
     };
 
+    const handleSendBackToCollege = async () => {
+        if (!window.confirm(`Send correction request back to College Admin for review?`)) return;
+        setIsRejecting(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:8080/api/college-admin/send-back-correction`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({
+                    subject_id: subjectId,
+                    section: section,
+                    college_id: subjectMeta.collegeId,
+                    semester_id: semesterId,
+                    academic_year_id: academicYearId
+                })
+            });
+            if (res.ok) {
+                toast.success("Correction request sent to College Admin!");
+                navigate('/admin/marks-verification');
+            } else {
+                const err = await res.json();
+                toast.error(err.error || "Failed to send back to college");
+            }
+        } catch (error) {
+            toast.error("Error sending correction to college");
+        } finally {
+            setIsRejecting(false);
+        }
+    };
+
     const handleOpenReview = (student) => {
         console.log("Opening review modal for student:", student);
         setSelectedStudent(student);
@@ -401,22 +431,52 @@ const MarksReview = () => {
                                 </button>
                             )}
                         </div>
-                        {isHOD && !['Approved', 'Locked'].includes(subjectMeta?.status) && (
-                            <button
-                                disabled={isLocking}
-                                onClick={handleApproveSection}
-                                className={`inline-flex items-center gap-2 px-10 py-4 text-white font-black rounded-xl shadow-xl transition-all uppercase tracking-widest text-sm
-                                    ${isLocking ? 'bg-amber-400 cursor-not-allowed shadow-none' : 'bg-emerald-500 hover:bg-emerald-600 hover:scale-[1.02] shadow-emerald-500/20 active:scale-[0.98]'}`}
-                            >
-                                {isLocking ? (
-                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                ) : (
-                                    <ShieldCheck size={20} />
-                                )}
-                                <span>{isLocking ? 'Approving...' : 'Verify & Approve Section'}</span>
-                            </button>
-                        )}
-                        {isCollegeAdmin && subjectMeta?.status !== 'Locked' && (
+                        {isHOD && subjectMeta?.status === 'Correction Requested' ? (
+                            <div className="flex gap-4">
+                                <button
+                                    disabled={isRejecting}
+                                    onClick={handleSendBackToCollege}
+                                    className="inline-flex items-center gap-2 px-6 py-4 bg-amber-600 text-white font-black rounded-xl shadow-lg shadow-amber-600/20 hover:bg-amber-700 transition-all uppercase tracking-widest text-xs"
+                                    title="Send back to college (Scenario 2)"
+                                >
+                                    <Send size={18} />
+                                    Send to College
+                                </button>
+                                <button
+                                    disabled={isRejecting}
+                                    onClick={handleRejectWorkflow}
+                                    className="inline-flex items-center gap-2 px-10 py-4 bg-indigo-600 text-white font-black rounded-xl shadow-xl shadow-indigo-600/20 hover:bg-indigo-700 hover:scale-[1.02] transition-all uppercase tracking-widest text-sm"
+                                    title="Approve request and let faculty edit (Scenario 1)"
+                                >
+                                    <Lock size={18} />
+                                    Approve Correction (Allow Edit)
+                                </button>
+                            </div>
+                        ) : isHOD && !['Approved', 'Locked'].includes(subjectMeta?.status) ? (
+                            <div className="flex flex-col items-end gap-3">
+                                <button
+                                    disabled={isLocking}
+                                    onClick={handleApproveSection}
+                                    className={`inline-flex items-center gap-2 px-10 py-4 text-white font-black rounded-xl shadow-xl transition-all uppercase tracking-widest text-sm
+                                        ${isLocking ? 'bg-amber-400 cursor-not-allowed shadow-none' : 'bg-emerald-500 hover:bg-emerald-600 hover:scale-[1.02] shadow-emerald-500/20 active:scale-[0.98]'}`}
+                                >
+                                    {isLocking ? (
+                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    ) : (
+                                        <ShieldCheck size={20} />
+                                    )}
+                                    <span>{isLocking ? 'Approving...' : 'Verify & Approve Section'}</span>
+                                </button>
+                                <button
+                                    disabled={isRejecting}
+                                    onClick={handleRejectWorkflow}
+                                    className="text-red-500 font-bold text-xs hover:underline flex items-center gap-1"
+                                >
+                                    <AlertCircle size={14} />
+                                    Reject Section & Send Back to Faculty
+                                </button>
+                            </div>
+                        ) : isCollegeAdmin && subjectMeta?.status !== 'Locked' && (
                             <button
                                 disabled={isLocking}
                                 onClick={handleLockMarks}

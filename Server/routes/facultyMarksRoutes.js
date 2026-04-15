@@ -142,4 +142,15 @@ router.post('/attendance', facultyMarksController.saveAttendance);
  */
 router.get('/attendance-summary', facultyMarksController.getAttendanceSummary);
 
+/**
+ * @swagger
+ * /api/faculty-marks/request-unlock:
+ *   post:
+ *     summary: Request HOD to unlock submitted marks for correction
+ *     tags: [Faculty Operations]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/request-unlock', facultyMarksController.requestUnlock);
+
 module.exports = router;

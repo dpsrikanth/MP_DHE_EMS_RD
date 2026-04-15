@@ -103,7 +103,7 @@ exports.enterStudentMarks = async (req, res) => {
             const checkRes = await db.query(checkQuery, [subject_id, college_id, semester_id, academic_year_id, section]);
             const globalStatus = checkRes.rows.length > 0 ? checkRes.rows[0].status : 'Pending';
 
-            if (['Approved', 'Locked', 'Submitted', 'Rejected'].includes(globalStatus)) {
+            if (['Approved', 'Locked', 'Submitted'].includes(globalStatus)) {
                 // Check if EACH student in the batch is allowed to be edited
                 for (let data of marksData) {
                     const studentReviewQuery = `
@@ -233,6 +233,36 @@ exports.submitMarks = async (req, res) => {
     } catch (error) {
         console.error("Error in submitMarks:", error);
         res.status(500).json({ error: "Failed to submit marks" });
+    }
+};
+
+exports.requestUnlock = async (req, res) => {
+    try {
+        const { subject_id, section, college_id, semester_id, academic_year_id } = req.body;
+        const faculty_id = req.user ? req.user.id : null;
+
+        if (!faculty_id) return res.status(401).json({ error: "Unauthorized" });
+
+        const query = `
+            UPDATE marks_workflow_status 
+            SET status = 'Correction Requested', updated_at = CURRENT_TIMESTAMP 
+            WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5
+            AND status IN ('Submitted', 'Locked')
+            RETURNING *;
+        `;
+        const result = await db.query(query, [college_id, subject_id, semester_id, academic_year_id, section]);
+
+        if (result.rowCount === 0) {
+            return res.status(400).json({ error: "No submitted marks found to request correction for." });
+        }
+
+        await db.query(`INSERT INTO audit_logs (user_id, action, entity_type, entity_id) VALUES ($1, 'CORRECTION_REQUESTED', 'MARKS_WORKFLOW', $2)`,
+            [faculty_id, subject_id]);
+
+        res.status(200).json({ message: "Correction request sent to HOD", data: result.rows[0] });
+    } catch (error) {
+        console.error("requestUnlock error:", error);
+        res.status(500).json({ error: "Failed to send correction request" });
     }
 };
 

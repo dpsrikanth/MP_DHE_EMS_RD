@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { 
   Users, 
   Building2, 
@@ -25,10 +26,12 @@ const Dashboard = () => {
     pendingApprovals: 0,
     activeExams: 0
   });
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchDashboardStats();
+    fetchNotifications();
   }, []);
 
   const fetchDashboardStats = async () => {
@@ -46,6 +49,38 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
       setLoading(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/college-admin/notifications`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const markAsRead = async (id) => {
+    try {
+      const response = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/college-admin/notifications/${id}/read`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+      }
+    } catch (error) {
+      toast.error("Failed to dismiss notification");
     }
   };
 
@@ -257,16 +292,45 @@ const Dashboard = () => {
               </div>
               
               <div className="p-6 rounded-[2rem] bg-indigo-50 border border-indigo-100 mt-10">
-                <h4 className="font-black text-indigo-900 text-sm uppercase tracking-widest mb-3">System Updates</h4>
+                <h4 className="font-black text-indigo-900 text-sm uppercase tracking-widest mb-3">Correction Requests</h4>
                 <div className="space-y-4">
-                  <div className="flex gap-3">
-                    <div className="w-1 h-1 rounded-full bg-indigo-500 mt-2 shrink-0"></div>
-                    <p className="text-xs text-indigo-700 font-medium">New marks entry window for Batch 2024 is now open.</p>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="w-1 h-1 rounded-full bg-indigo-500 mt-2 shrink-0"></div>
-                    <p className="text-xs text-indigo-700 font-medium">Infrastructure audit reports due by Friday.</p>
-                  </div>
+                  {notifications.length > 0 ? (
+                    notifications.map(notif => (
+                      <div key={notif.id} className="bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm relative group overflow-hidden">
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                            <Clock size={16} />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                              {notif.subject_code} - Section {notif.section}
+                            </p>
+                            <p className="text-xs text-slate-700 font-bold leading-tight">
+                              {notif.message}
+                            </p>
+                            <div className="mt-3 flex gap-2">
+                              <button 
+                                onClick={() => navigate('/admin/marks-verification')}
+                                className="text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors"
+                              >
+                                Review & Reject
+                              </button>
+                              <button 
+                                onClick={() => markAsRead(notif.id)}
+                                className="text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 px-3 py-1.5 rounded-lg transition-colors"
+                              >
+                                Dismiss
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-6 text-center">
+                      <p className="text-xs text-indigo-400 font-medium">No pending correction requests from HODs.</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

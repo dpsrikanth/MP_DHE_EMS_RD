@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
-import { CheckCircle, Clock, ShieldAlert, FileText, ChevronRight, Lock, Building, Search, X } from 'lucide-react';
+import { CheckCircle, Clock, ShieldAlert, FileText, ChevronRight, Lock, Building, Search, X, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TableSearch } from '../../components/TableControls';
 
@@ -99,12 +99,43 @@ const MarksVerification = () => {
         }
     };
 
+    const handleSendBackToCollege = async (item) => {
+        if (!window.confirm(`Send correction request for ${item.subject_name} (Section ${item.section}) back to College Admin for review?`)) return;
+        setIsUnlocking(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:8080/api/college-admin/send-back-correction`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({
+                    subject_id: item.subject_id,
+                    section: item.section,
+                    college_id: item.college_id,
+                    semester_id: item.semester_id,
+                    academic_year_id: item.academic_year_id
+                })
+            });
+            if (res.ok) {
+                toast.success("Correction request sent to College Admin!");
+                fetchTrackingData();
+            } else {
+                const err = await res.json();
+                toast.error(err.error || "Failed to send back to college");
+            }
+        } catch (error) {
+            toast.error("Error sending correction to college");
+        } finally {
+            setIsUnlocking(false);
+        }
+    };
+
 
     const getStatusConfig = (status) => {
         switch (status) {
             case 'Submitted': return { color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', icon: Clock, label: 'Ready for Review' };
             case 'Rejected': return { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', icon: ShieldAlert, label: 'Rejected - Sent Back' };
             case 'Locked': return { color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', icon: CheckCircle, label: 'Locked & Verified' };
+            case 'Correction Requested': return { color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200', icon: ShieldAlert, label: 'Correction Requested', pulse: true };
             default: return { color: 'text-slate-500', bg: 'bg-slate-50', border: 'border-slate-200', icon: ShieldAlert, label: 'Pending' };
         }
     };
@@ -154,11 +185,11 @@ const MarksVerification = () => {
                                 <div className={`absolute top-0 left-0 w-full h-1 ${statusConfig.bg}`}></div>
                                 
                                 <div className="flex justify-between items-start mb-4">
-                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-lg ${statusConfig.bg} ${statusConfig.color} border ${statusConfig.border}`}>
+                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-lg ${statusConfig.bg} ${statusConfig.color} border ${statusConfig.border} ${statusConfig.pulse ? 'animate-pulse shadow-lg shadow-indigo-500/20' : ''}`}>
                                         <StatusIcon size={14} />
                                         {statusConfig.label}
                                     </span>
-                                    {['Submitted', 'Rejected'].includes(item.status) && (
+                                    {['Submitted', 'Rejected', 'Correction Requested'].includes(item.status) && (
                                         <button 
                                             onClick={() => handleReviewClick(item)}
                                             className="text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 p-2 rounded-xl transition-colors"
@@ -166,6 +197,24 @@ const MarksVerification = () => {
                                         >
                                             <ChevronRight size={20} />
                                         </button>
+                                    )}
+                                    {item.status === 'Correction Requested' && (
+                                        <div className="flex gap-1.5">
+                                            <button 
+                                                onClick={() => handleUnlockMarks(item)}
+                                                className="text-white hover:bg-indigo-700 bg-indigo-600 p-2 rounded-xl transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-3"
+                                                title="Approve Correction Request – Unlock for Faculty"
+                                            >
+                                                <Lock size={14} /> Allow Edit
+                                            </button>
+                                            <button 
+                                                onClick={() => handleSendBackToCollege(item)}
+                                                className="text-white hover:bg-amber-700 bg-amber-600 p-2 rounded-xl transition-all shadow-lg shadow-amber-600/30 flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-3"
+                                                title="Send to College Admin for review (when marks are already approved)"
+                                            >
+                                                <Send size={14} /> Send to College
+                                            </button>
+                                        </div>
                                     )}
                                      {item.status === 'Locked' && (
                                         <div className="flex gap-2">

@@ -268,10 +268,11 @@ const MarksEntry = () => {
         return false;
     };
 
-    const isReadOnly = ['Submitted', 'Approved', 'Locked', 'Rejected'].includes(workflowStatus);
+    const normalizedStatus = (workflowStatus || 'Pending').trim();
+    const isReadOnly = ['Submitted', 'Approved', 'Locked', 'Rejected', 'Correction Requested'].includes(normalizedStatus);
 
     const handleSaveMarks = async () => {
-        if (isReadOnly && workflowStatus !== 'Rejected') return;
+        if (isReadOnly && normalizedStatus !== 'Rejected') return;
         const assignmentStr = assignedSubjects.find(a => a.id === selectedAssignment.value);
         if (!assignmentStr) return;
 
@@ -415,6 +416,43 @@ const MarksEntry = () => {
         }
     };
 
+    const handleRequestCorrection = async () => {
+        const assignmentStr = assignedSubjects.find(a => a.id === selectedAssignment.value);
+        if (!assignmentStr || !['Submitted', 'Locked'].includes(workflowStatus)) return;
+
+        if (!window.confirm("Are you sure you want to request the HOD to unlock these marks for corrections?")) return;
+
+        setIsSaving(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:8080/api/faculty-marks/request-unlock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({
+                    subject_id: assignmentStr.subject_id,
+                    section: assignmentStr.section,
+                    college_id: assignmentStr.college_id,
+                    semester_id: assignmentStr.semester_id,
+                    academic_year_id: assignmentStr.academic_year_id
+                })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                toast.success("Correction request sent to HOD successfully!");
+                // Optimistic update to lock UI immediately
+                setWorkflowStatus('Correction Requested');
+                fetchSubjectDetails(assignmentStr);
+            } else {
+                toast.error(data.error || "Failed to send request");
+            }
+        } catch (err) {
+            toast.error("Error sending correction request");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     const options = assignedSubjects.map(a => ({
         value: a.id,
         label: `${a.subject_code} - ${a.subject_name} (Sec: ${a.section})`
@@ -431,12 +469,13 @@ const MarksEntry = () => {
                     <div className="flex items-center gap-3 mt-1.5">
                         <p className="text-sm text-slate-500 font-medium">Select a subject to enter student internal assessment marks.</p>
                         {selectedAssignment && (
-                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${workflowStatus === 'Pending' ? 'bg-slate-50 text-slate-500 border-slate-200' :
-                                workflowStatus === 'Submitted' ? 'bg-amber-50 text-amber-600 border-amber-200' :
-                                    workflowStatus === 'Rejected' ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' :
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${normalizedStatus === 'Pending' ? 'bg-slate-50 text-slate-500 border-slate-200' :
+                                normalizedStatus === 'Submitted' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                                    normalizedStatus === 'Rejected' ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' :
+                                    normalizedStatus === 'Correction Requested' ? 'bg-indigo-50 text-indigo-600 border-indigo-200 animate-pulse' :
                                         'bg-emerald-50 text-emerald-600 border-emerald-200'
                                 }`}>
-                                {workflowStatus}
+                                {normalizedStatus}
                             </span>
                         )}
                     </div>
@@ -504,7 +543,7 @@ const MarksEntry = () => {
                                     const total = calculateTotal(student.id);
                                     const status = determineStatus(student.id);
                                     const review = reviews[student.id];
-                                    const isStudentReadOnly = isReadOnly && review?.status !== 'Rejected';
+                                    const isStudentReadOnly = isReadOnly && normalizedStatus !== 'Rejected';
 
                                     return (
                                         <tr key={student.id} className="hover:bg-indigo-50/30 transition-colors group">
@@ -598,25 +637,41 @@ const MarksEntry = () => {
 
                     <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-4 sticky bottom-0 z-20">
                         {isReadOnly && (
-                            <div className="flex-1 flex items-center gap-2 text-amber-600 font-bold text-sm bg-amber-50 px-4 py-2 rounded-xl border border-amber-200">
-                                <ShieldAlert size={18} />
-                                Marks are submitted and in read-only mode till college admin review.
+                            <div className="flex-1 flex items-center justify-between gap-4 bg-amber-50 px-4 py-2 rounded-xl border border-amber-200">
+                                <div className="flex items-center gap-2 text-amber-700 font-bold text-sm">
+                                    <ShieldAlert size={18} />
+                                    {normalizedStatus === 'Correction Requested' 
+                                        ? "Correction request pending HOD approval. Marks are locked." 
+                                        : normalizedStatus === 'Locked'
+                                        ? "Marks have been locked by HOD. Request correction if changes are needed."
+                                        : "Marks are submitted and in read-only mode till college admin review."}
+                                </div>
+                                {['Submitted', 'Locked'].includes(normalizedStatus) && (
+                                    <button
+                                        onClick={handleRequestCorrection}
+                                        disabled={isSaving}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/20"
+                                    >
+                                        <ShieldAlert size={14} />
+                                        Request Correction
+                                    </button>
+                                )}
                             </div>
                         )}
                         <button
-                            disabled={isSaving || (isReadOnly && workflowStatus !== 'Rejected')}
+                            disabled={isSaving || (isReadOnly && normalizedStatus !== 'Rejected')}
                             onClick={handleSaveMarks}
                             className={`inline-flex items-center gap-2 px-6 py-2.5 text-slate-700 font-bold bg-white border border-slate-200 rounded-xl shadow-sm transition-all text-sm
-                                ${isSaving || (isReadOnly && workflowStatus !== 'Rejected') ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50 hover:border-slate-300'}`}
+                                ${isSaving || (isReadOnly && normalizedStatus !== 'Rejected') ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50 hover:border-slate-300'}`}
                         >
                             <Save size={18} />
                             Save Draft
                         </button>
                         <button
-                            disabled={isSaving || (isReadOnly && workflowStatus !== 'Rejected')}
+                            disabled={isSaving || (isReadOnly && normalizedStatus !== 'Rejected')}
                             onClick={handleSubmitMarks}
                             className={`inline-flex items-center gap-2 px-10 py-3.5 text-white font-black rounded-xl shadow-xl transition-all uppercase tracking-widest text-sm
-                                ${isSaving || (isReadOnly && workflowStatus !== 'Rejected') ? 'bg-slate-400 cursor-not-allowed shadow-none' : 'bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] shadow-indigo-600/20 active:scale-[0.98]'}`}
+                                ${isSaving || (isReadOnly && normalizedStatus !== 'Rejected') ? 'bg-slate-400 cursor-not-allowed shadow-none' : 'bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] shadow-indigo-600/20 active:scale-[0.98]'}`}
                         >
                             {isSaving ? (
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

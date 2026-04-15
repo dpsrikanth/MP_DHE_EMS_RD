@@ -835,65 +835,137 @@ exports.getMarksReport = async (req, res) => {
     }
 };
 
+// Updated unlockMarks to handle multiple roles and statuses
 exports.unlockMarks = async (req, res) => {
     try {
         const { subject_id, section, college_id, semester_id, academic_year_id } = req.body;
         const { role, id: user_id } = req.user;
 
-        // Security check: Only Admins can unlock
-        if (role?.toLowerCase() !== 'admin' && role !== 'college_admin') {
-            return res.status(403).json({ error: "Only Admins can unlock marks" });
+        // Allowed roles for this operation
+        const allowedRoles = ['admin', 'college_admin', 'HOD'];
+        if (!allowedRoles.includes(role)) {
+            return res.status(403).json({ error: "Insufficient permissions to unlock marks" });
         }
 
-        const client = await db.connect();
-        try {
-            await client.query('BEGIN');
+        // Fetch current workflow status
+        const statusRes = await db.query(
+            `SELECT status FROM marks_workflow_status WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5`,
+            [college_id, subject_id, semester_id, academic_year_id, section]
+        );
+        if (statusRes.rowCount === 0) {
+            return res.status(404).json({ error: "Workflow record not found" });
+        }
+        const currentStatus = statusRes.rows[0].status;
 
-            console.log(`--- Unlocking Marks for Subject ${subject_id}, Section ${section} ---`);
-
-            // 1. Reset workflow status to Pending
-            await client.query(`
-                UPDATE marks_workflow_status 
-                SET status = 'Pending', approved_by = NULL, updated_at = CURRENT_TIMESTAMP
-                WHERE subject_id = $1 AND section = $2 AND college_id = $3 
-                  AND semester_id = $4 AND academic_year_id = $5
-            `, [subject_id, section, college_id, semester_id, academic_year_id]);
-
-            // 2. Delete individual student reviews for this section
-            await client.query(`
-                DELETE FROM student_marks_review 
-                WHERE subject_id = $1 AND section = $2 AND college_id = $3
-                  AND semester_id = $4 AND academic_year_id = $5
-            `, [subject_id, section, college_id, semester_id, academic_year_id]);
-
-            // 3. Delete calculated marks for this subject context 
-            // Since calculation is per-subject and requires all sections locked,
-            // unlocking one section invalidates the calculation for that subject/semester.
-            await client.query(`
-                DELETE FROM calculated_internal_marks 
-                WHERE subject_id = $1 AND college_id = $2 
-                  AND semester_id = $3 AND academic_year_id = $4
-            `, [subject_id, college_id, semester_id, academic_year_id]);
-
-            // 4. Audit Log
-            await client.query(`
-                INSERT INTO audit_logs (user_id, action, entity_type, entity_id) 
-                VALUES ($1, 'MARKS_UNLOCKED', 'MARKS_WORKFLOW', $2)
-            `, [user_id, subject_id]);
-
-            await client.query('COMMIT');
-            res.status(200).json({ message: "Marks successfully unlocked. Workflow reset to Pending." });
-
-        } catch (innerError) {
-            await client.query('ROLLBACK');
-            throw innerError;
-        } finally {
-            client.release();
+        // 1️⃣ HOD approves a correction request (status = 'Correction Requested')
+        if (role === 'HOD' && currentStatus === 'Correction Requested') {
+            await db.query(
+                `UPDATE marks_workflow_status SET status = 'Rejected', approved_by = $1, updated_at = CURRENT_TIMESTAMP 
+                 WHERE college_id = $2 AND subject_id = $3 AND semester_id = $4 AND academic_year_id = $5 AND section = $6`,
+                [user_id, college_id, subject_id, semester_id, academic_year_id, section]
+            );
+            await db.query(
+                `INSERT INTO audit_logs (user_id, action, entity_type, entity_id) VALUES ($1, 'CORRECTION_APPROVED_BY_HOD', 'MARKS_WORKFLOW', $2)`,
+                [user_id, subject_id]
+            );
+            return res.status(200).json({ message: "Correction request approved – marks unlocked for editing" });
         }
 
+        // 2️⃣ College Admin rejects after HOD sent back (status = 'Locked')
+        if (role === 'college_admin' && currentStatus === 'Locked') {
+            const client = await db.connect();
+            try {
+                await client.query('BEGIN');
+                // Set status to Rejected (editable)
+                await client.query(
+                    `UPDATE marks_workflow_status SET status = 'Rejected', approved_by = $6, updated_at = CURRENT_TIMESTAMP 
+                     WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5`,
+                    [college_id, subject_id, semester_id, academic_year_id, section, user_id]
+                );
+                // Clean up reviews and calculated marks (same as original unlock)
+                await client.query(
+                    `DELETE FROM student_marks_review WHERE subject_id = $1 AND section = $2 AND college_id = $3 AND semester_id = $4 AND academic_year_id = $5`,
+                    [subject_id, section, college_id, semester_id, academic_year_id]
+                );
+                await client.query(
+                    `DELETE FROM calculated_internal_marks WHERE subject_id = $1 AND college_id = $2 AND semester_id = $3 AND academic_year_id = $4`,
+                    [subject_id, college_id, semester_id, academic_year_id]
+                );
+                await client.query(
+                    `INSERT INTO audit_logs (user_id, action, entity_type, entity_id) VALUES ($1, 'CORRECTION_REJECTED_BY_COLLEGE', 'MARKS_WORKFLOW', $2)`,
+                    [user_id, subject_id]
+                );
+                await client.query('COMMIT');
+                return res.status(200).json({ message: "Correction request rejected – marks unlocked for editing" });
+            } catch (inner) {
+                await client.query('ROLLBACK');
+                console.error('Unlock error (college_admin):', inner);
+                return res.status(500).json({ error: "Failed to unlock marks (college admin)" });
+            } finally {
+                client.release();
+            }
+        }
+
+        // 3️⃣ System admin (or generic admin) – original behavior: reset to Pending (no edit allowed)
+        if (role === 'admin') {
+            const client = await db.connect();
+            try {
+                await client.query('BEGIN');
+                await client.query(
+                    `UPDATE marks_workflow_status SET status = 'Pending', approved_by = NULL, updated_at = CURRENT_TIMESTAMP 
+                     WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5`,
+                    [college_id, subject_id, semester_id, academic_year_id, section]
+                );
+                await client.query('COMMIT');
+                return res.status(200).json({ message: "Marks unlocked to Pending (admin)" });
+            } catch (e) {
+                await client.query('ROLLBACK');
+                console.error('Admin unlock error:', e);
+                return res.status(500).json({ error: "Failed to unlock marks (admin)" });
+            } finally {
+                client.release();
+            }
+        }
+
+        // Fallback – unsupported transition
+        return res.status(400).json({ error: "Unsupported unlock operation for current role/status" });
     } catch (error) {
-        console.error("Unlock Marks Error:", error);
-        res.status(500).json({ error: "Failed to unlock marks", details: error.message });
+        console.error("unlockMarks error:", error);
+        res.status(500).json({ error: "Failed to process unlock request" });
+    }
+};
+
+// New endpoint: HOD sends correction request back to college for review
+exports.sendBackCorrection = async (req, res) => {
+    try {
+        const { subject_id, section, college_id, semester_id, academic_year_id } = req.body;
+        const { role, id: user_id } = req.user;
+        if (role !== 'HOD') {
+            return res.status(403).json({ error: "Only HOD can send correction back to college" });
+        }
+        // Verify there is a pending correction request
+        const statusRes = await db.query(
+            `SELECT status FROM marks_workflow_status WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5`,
+            [college_id, subject_id, semester_id, academic_year_id, section]
+        );
+        if (statusRes.rowCount === 0) return res.status(404).json({ error: "Workflow not found" });
+        const curStatus = statusRes.rows[0].status;
+        if (curStatus !== 'Correction Requested') {
+            return res.status(400).json({ error: "No correction request to send back" });
+        }
+        // Insert notification for college admin
+        await db.query(
+            `INSERT INTO college_notifications (college_id, subject_id, section, message) VALUES ($1, $2, $3, $4)`,
+            [college_id, subject_id, section, 'HOD sent correction request back to college for review']
+        );
+        await db.query(
+            `INSERT INTO audit_logs (user_id, action, entity_type, entity_id) VALUES ($1, 'CORRECTION_SENT_BACK_TO_COLLEGE', 'MARKS_WORKFLOW', $2)`,
+            [user_id, subject_id]
+        );
+        return res.status(200).json({ message: "Correction request sent back to college" });
+    } catch (err) {
+        console.error('sendBackCorrection error:', err);
+        res.status(500).json({ error: 'Failed to send correction back to college' });
     }
 };
 
@@ -1048,10 +1120,10 @@ exports.getCollegeDashboardStats = async (req, res) => {
             [college_id]
         );
 
-        // Get Pending Approvals
+        // Get Pending Approvals (include Correction Requested in pending count)
         const pendingApprovalsRes = await db.query(
             `SELECT COUNT(*) FROM public.marks_workflow_status 
-             WHERE college_id = $1 AND status = 'Submitted'`,
+             WHERE college_id = $1 AND status IN ('Submitted', 'Correction Requested')`,
             [college_id]
         );
 
@@ -1073,6 +1145,55 @@ exports.getCollegeDashboardStats = async (req, res) => {
     } catch (error) {
         console.error("Dashboard stats error:", error);
         res.status(500).json({ error: "Failed to fetch dashboard statistics" });
+    }
+};
+
+// (Duplicate unlockMarks removed — see enhanced version above at line ~838)
+
+exports.getCollegeNotifications = async (req, res) => {
+    try {
+        const college_id = req.user?.college_id;
+        if (!college_id) return res.status(403).json({ error: "No college assigned" });
+
+        const query = `
+            SELECT 
+                cn.*, 
+                ms.name as subject_name,
+                ms.subject_code
+            FROM college_notifications cn
+            LEFT JOIN master_subjects ms ON cn.subject_id = ms.id
+            WHERE cn.college_id = $1 AND cn.read_at IS NULL
+            ORDER BY cn.created_at DESC
+        `;
+        const result = await db.query(query, [college_id]);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("getCollegeNotifications error:", error);
+        res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+};
+
+exports.markNotificationRead = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const college_id = req.user?.college_id;
+        if (!college_id) return res.status(403).json({ error: "No college assigned" });
+
+        const query = `
+            UPDATE college_notifications 
+            SET read_at = CURRENT_TIMESTAMP 
+            WHERE id = $1 AND college_id = $2
+            RETURNING *
+        `;
+        const result = await db.query(query, [id, college_id]);
+        
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Notification not found" });
+        }
+        res.status(200).json({ message: "Notification marked as read" });
+    } catch (error) {
+        console.error("markNotificationRead error:", error);
+        res.status(500).json({ error: "Failed to update notification" });
     }
 };
 

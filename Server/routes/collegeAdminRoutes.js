@@ -443,6 +443,9 @@ router.post('/reject-workflow-section', collegeAdminController.rejectWorkflow);
  *         description: Marks unlocked successfuly
  */
 router.post('/unlock-marks', collegeAdminController.unlockMarks);
+router.post('/send-back-correction', collegeAdminController.sendBackCorrection);
+router.get('/notifications', collegeAdminController.getCollegeNotifications);
+router.put('/notifications/:id/read', collegeAdminController.markNotificationRead);
 router.get('/marks-report', collegeAdminController.getMarksReport);
 
 /**
