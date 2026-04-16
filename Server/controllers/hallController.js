@@ -15,7 +15,7 @@ exports.createHall = async (req, res) => {
         }
 
         const requested_seats = parseInt(rows) * parseInt(seats_per_row);
-        
+
         const collegeRes = await db.query('SELECT total_rooms FROM colleges WHERE id = $1', [college_id]);
         const max_rooms = collegeRes.rows[0]?.total_rooms || 0;
 
@@ -25,7 +25,7 @@ exports.createHall = async (req, res) => {
 
         const roomsRes = await db.query('SELECT COUNT(id) as current_rooms FROM examination_halls WHERE college_id = $1', [college_id]);
         const current_rooms = parseInt(roomsRes.rows[0].current_rooms) || 0;
-        
+
         if (current_rooms >= max_rooms) {
             return res.status(400).json({ error: `Cannot add hall. It exceeds your campus physical limit of ${max_rooms} total rooms.` });
         }
@@ -174,10 +174,16 @@ exports.getAllHallsForApproval = async (req, res) => {
                 ) as total_required,
                 -- Total capacity already approved for this college
                 (
-                    SELECT COALESCE(SUM(h2.rows * h2.seats_per_row), 0) 
+                    SELECT COALESCE(SUM(h2.total_capacity), 0) 
                     FROM examination_halls h2 
                     WHERE h2.college_id = c.id AND h2.status = 'Approved'
                 ) as college_approved_capacity,
+                -- Breakdown of individual approved halls
+                (
+                    SELECT COALESCE(json_agg(json_build_object('code', h2.hall_code, 'capacity', h2.total_capacity)), '[]'::json)
+                    FROM examination_halls h2
+                    WHERE h2.college_id = c.id AND h2.status = 'Approved'
+                ) as approved_halls_details,
                 -- Breakdown of guest institutions hosted here
                 (
                     SELECT COALESCE(json_agg(json_build_object('name', src.name, 'count', src.count)), '[]'::json)
@@ -237,7 +243,7 @@ exports.createShortageRequest = async (req, res) => {
     try {
         const { student_count, available_capacity, shortage } = req.body;
         const college_id = req.user?.college_id;
-        
+
         if (!college_id) {
             return res.status(403).json({ error: "Unauthorized: No college assigned" });
         }
@@ -361,8 +367,8 @@ exports.allocateCenter = async (req, res) => {
             [allocated_college_id]
         );
         if (parseInt(capacityCheck.rows[0].capacity) === 0) {
-            return res.status(400).json({ 
-                error: "Selected center has 0 approved seats. Allocation blocked." 
+            return res.status(400).json({
+                error: "Selected center has 0 approved seats. Allocation blocked."
             });
         }
 

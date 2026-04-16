@@ -24,11 +24,17 @@ exports.getInfrastructureAnalytics = async (req, res) => {
                     c.id,
                     c.name as college_name,
                     (
-                        SELECT COALESCE(SUM(rows * seats_per_row), 0) 
+                        SELECT COALESCE(SUM(total_capacity), 0) 
                         FROM examination_halls 
                         WHERE college_id = c.id AND status = 'Approved'
                           AND (exam_id = $1 OR exam_id IS NULL)
                     ) as approved_capacity,
+                    (
+                        SELECT COALESCE(json_agg(json_build_object('code', hall_code, 'capacity', total_capacity)), '[]'::json)
+                        FROM examination_halls
+                        WHERE college_id = c.id AND status = 'Approved'
+                          AND (exam_id = $1 OR exam_id IS NULL)
+                    ) as approved_halls_details,
                     (
                         SELECT COUNT(DISTINCT er.student_id) 
                         FROM exam_registrations er
@@ -48,10 +54,15 @@ exports.getInfrastructureAnalytics = async (req, res) => {
                     c.id,
                     c.name as college_name,
                     (
-                        SELECT COALESCE(SUM(rows * seats_per_row), 0) 
+                        SELECT COALESCE(SUM(total_capacity), 0) 
                         FROM examination_halls 
                         WHERE college_id = c.id AND status = 'Approved'
                     ) as approved_capacity,
+                    (
+                        SELECT COALESCE(json_agg(json_build_object('code', hall_code, 'capacity', total_capacity)), '[]'::json)
+                        FROM examination_halls
+                        WHERE college_id = c.id AND status = 'Approved'
+                    ) as approved_halls_details,
                     (
                         SELECT COUNT(*) 
                         FROM students 
@@ -61,7 +72,7 @@ exports.getInfrastructureAnalytics = async (req, res) => {
                 ORDER BY c.name ASC
             `;
         }
-        
+
         const result = await db.query(query, params);
         res.json(result.rows);
     } catch (err) {
@@ -96,7 +107,7 @@ exports.getGlobalExamStats = async (req, res) => {
                     (SELECT COUNT(*) FROM marks WHERE total_marks < $1) as total_failed
             `;
         }
-        
+
         const result = await db.query(query, params);
         res.json(result.rows[0]);
     } catch (err) {
