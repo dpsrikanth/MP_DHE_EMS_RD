@@ -35,6 +35,7 @@ const StudentsForm = () => {
   const [programs, setPrograms] = useState([]);
   const [semesters, setSemesters] = useState([]);
   const [colleges, setColleges] = useState([]);
+  const [batches, setBatches] = useState([]);
   const [bloodGroups] = useState(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
   const [dropdownLoading, setDropdownLoading] = useState(true);
 
@@ -49,18 +50,20 @@ const StudentsForm = () => {
   const fetchDropdownData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const [yearRes, policyRes, programRes, semesterRes, collegeRes] = await Promise.all([
+      const [yearRes, policyRes, programRes, semesterRes, collegeRes, batchRes] = await Promise.all([
         fetch('http://localhost:8080/api/academic-years', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('http://localhost:8080/api/master-policies', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('http://localhost:8080/api/master-programs', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('http://localhost:8080/api/master-semesters', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:8080/api/colleges', { headers: { Authorization: `Bearer ${token}` } })
+        fetch('http://localhost:8080/api/colleges', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('http://localhost:8080/api/master-batches', { headers: { Authorization: `Bearer ${token}` } })
       ]);
       let loadedColleges = [];
       if (yearRes.ok) setAcademicYears(await yearRes.json() || []);
       if (policyRes.ok) setPolicies(await policyRes.json() || []);
       if (programRes.ok) setPrograms(await programRes.json() || []);
       if (semesterRes.ok) setSemesters(await semesterRes.json() || []);
+      if (batchRes.ok) setBatches(await batchRes.json() || []);
       if (collegeRes.ok) { loadedColleges = await collegeRes.json() || []; setColleges(loadedColleges); }
       return loadedColleges;
     } catch (err) { console.error('Error fetching dropdown data:', err); return []; }
@@ -115,6 +118,7 @@ const StudentsForm = () => {
     if (!f.programName || !f.programName.trim()) errs.programName = 'Program is required';
     if (!f.admission_year) errs.admission_year = 'Admission year is required';
     if (!f.semister || !f.semister.trim()) errs.semister = 'Semester is required';
+    if (!f.batch || !f.batch.trim()) errs.batch = 'Academic batch is required';
     if (f.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) errs.email = 'Invalid email';
     if (f.contactNumber && !/^\d{10}$/.test(f.contactNumber)) errs.contactNumber = 'Contact must be 10 digits';
     return errs;
@@ -127,9 +131,9 @@ const StudentsForm = () => {
       const collegeObj = colleges.find(col => (col.college_name || col.name) === value);
       if (collegeObj) {
         await fetchCollegeData(collegeObj.id);
-        setForm(prev => ({ ...prev, policies: '', programName: '', admission_year: '', semister: '' }));
+        setForm(prev => ({ ...prev, policies: '', programName: '', admission_year: '', semister: '', batch: '' }));
       } else {
-        setForm(prev => ({ ...prev, policies: '', programName: '', admission_year: '', semister: '' }));
+        setForm(prev => ({ ...prev, policies: '', programName: '', admission_year: '', semister: '', batch: '' }));
         setCollegeSemesters([]); setCollegePrograms([]); setCollegePolicies([]); setCollegeAcademicYears([]);
       }
     }
@@ -253,7 +257,8 @@ const StudentsForm = () => {
                       options={collegeAcademicYears.map(y => ({ value: y.year_name, label: y.year_name }))} placeholder={form.collageName ? 'Select Year' : 'Select College First'} />
                     <Sel label="Current Semester" name="semister" icon={Layers} req disabled={!form.collageName}
                       options={collegeSemesters.map(s => ({ value: s.semester_name, label: s.semester_name }))} placeholder={form.collageName ? 'Select Semester' : 'Select College First'} />
-                    <F label="Batch Series" name="batch" icon={Layers} placeholder="e.g. I Year" />
+                    <Sel label="Academic Batches" name="batch" icon={Layers} req disabled={!form.programName}
+                      options={batches.filter(b => !b.program_name || b.program_name === form.programName).map(b => ({ value: b.batch_name, label: `${b.batch_name} ${b.academic_year ? '('+b.academic_year+')' : ''}` }))} placeholder={form.programName ? 'Select Batch' : 'Select Program First'} />
                     <F label="Section" name="section" icon={BookOpen} placeholder="e.g. Economics" />
                   </div>
                 </div>
