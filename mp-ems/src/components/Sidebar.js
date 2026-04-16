@@ -23,7 +23,12 @@ import {
   Mail,
   CreditCard,
   CheckCircle2,
-  Trophy
+  Trophy,
+  PieChart,
+  Map,
+  Lock,
+  Settings,
+  Hash
 } from "lucide-react";
 
 /**
@@ -76,23 +81,23 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     ];
 
     if (authUtils.isUniversityAdmin()) {
+      // Remove Universities and Roles — not needed at university level
+      // Note: Users IS kept — the backend already scopes /api/users to only show users within this university
       menuItems = menuItems.filter(item => item.name !== 'Universities' && item.name !== 'Roles');
       menuItems.push(
         { id: 9, name: 'Faculty', path: '/teachers', icon: <Users size={20} /> },
         { id: 10, name: 'Students', path: '/students', icon: <UserCircle size={20} /> },
         { id: 11, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
-        { id: 14, name: 'Batches', path: '/batches', icon: <Layers size={20} /> },
-        { id: 7, name: 'Subjects', path: '/subjects', icon: <Book size={20} /> },
         { id: 8, name: 'Departments', path: '/departments', icon: <Building2 size={20} /> },
-        { id: 15, name: 'Verify & Unlock', path: '/admin/marks-verification', icon: <ShieldCheck size={20} /> },
+        // Verify & Unlock removed — marks verification is an internal exam feature handled by college admin
         { id: 16, name: 'External Assignment', path: '/university/external-assignment', icon: <UserPlus size={20} /> },
-        { id: 17, name: 'Result Hub', path: '/university/external-marks', icon: <TrendingUp size={20} /> },
+        { id: 17, name: 'Result Hub', path: '/university/external-marks', icon: <BarChart3 size={20} /> },
         { id: 18, name: 'Grading Policy', path: '/university/grading-policy', icon: <ShieldCheck size={20} /> },
         { id: 19, name: 'Manage Credits', path: '/university/manage-credits', icon: <BookOpen size={20} /> },
         { id: 23, name: 'Hall Approvals', path: '/university/hall-approvals', icon: <Building2 size={20} /> },
         { id: 24, name: 'Student Allocations', path: '/university/student-allocations', icon: <UserPlus size={20} /> },
-        { id: 28, name: 'Infrastructure Analytics', path: '/university/infrastructure-analytics', icon: <TrendingUp size={20} /> },
-        { id: 29, name: 'Exam Analytics', path: '/university/exam-analytics', icon: <TrendingUp size={20} /> },
+        { id: 28, name: 'Infrastructure Analytics', path: '/university/infrastructure-analytics', icon: <Map size={20} /> },
+        { id: 29, name: 'Exam Analytics', path: '/university/exam-analytics', icon: <PieChart size={20} /> },
         { id: 30, name: 'Institutional Ranking', path: '/university/institutional-ranking', icon: <Trophy size={20} /> }
       );
     }
@@ -104,18 +109,21 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     if (roleName === 'college_admin') {
       menuItems = [
         { id: 1, name: 'Dashboard', path: '/college-admin/dashboard', icon: <LayoutDashboard size={20} /> },
-        { id: 2, name: 'Policy Config', path: '/college-admin/policies', icon: <ShieldCheck size={20} /> },
+        { id: 2, name: 'Policy Config', path: '/college-admin/policies', icon: <Settings size={20} /> },
         { id: 3, name: 'Marks Structure', path: '/college-admin/marks-config', icon: <BarChart3 size={20} /> },
         { id: 4, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
-        { id: 5, name: 'Verify & Lock', path: '/college-admin/marks-approval', icon: <ShieldCheck size={20} /> },
+        { id: 5, name: 'Verify & Lock', path: '/college-admin/marks-approval', icon: <Lock size={20} /> },
         { id: 8, name: 'Exam Halls', path: '/college-admin/examination-halls', icon: <Building2 size={20} /> },
         { id: 6, name: 'Teachers', path: '/teachers', icon: <Users size={20} /> },
         { id: 7, name: 'Students', path: '/students', icon: <UserCircle size={20} /> },
-        { id: 10, name: 'Roll Generator', path: '/college-admin/generate-roll-numbers', icon: <UserCircle size={20} /> },
+        { id: 12, name: 'Batches', path: '/batches', icon: <Layers size={20} /> },
+        { id: 13, name: 'Subjects', path: '/subjects', icon: <Book size={20} /> },
+        { id: 10, name: 'Roll Generator', path: '/college-admin/generate-roll-numbers', icon: <Hash size={20} /> },
         { id: 11, name: 'Seat Allocation', path: '/college-admin/seating-arrangement', icon: <LayoutDashboard size={20} /> },
         { id: 15, name: 'Faculty Status', path: '/college-admin/faculty-status', icon: <CheckCircle2 size={20} /> },
         { id: 16, name: 'College Performance', path: '/college-admin/performance', icon: <TrendingUp size={20} /> },
         { id: 17, name: 'Marks Verification', path: '/admin/marks-verification', icon: <ShieldCheck size={20} /> },
+        // Marks Verification: internal exam marks verification — college admin's responsibility
       ];
     } else if (roleName === 'Faculty' || roleName === 'Teacher') {
       menuItems = [

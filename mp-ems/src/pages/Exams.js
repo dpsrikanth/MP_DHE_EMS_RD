@@ -16,6 +16,10 @@ const Exams = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // For college admin: tab switcher between Internal and External exams
+  const isCollegeAdminRole = authUtils.isCollegeAdmin();
+  const [examTypeFilter, setExamTypeFilter] = useState(isCollegeAdminRole ? 'internal' : 'all');
+
   // Dropdown data
   const [colleges, setColleges] = useState([]);
   const [universities, setUniversities] = useState([]);
@@ -67,8 +71,16 @@ const Exams = () => {
       });
     });
     // Sort groups by ID (highest/latest first)
-    return Object.values(groups).sort((a, b) => b.id - a.id);
-  }, [data]);
+    const allGroups = Object.values(groups).sort((a, b) => b.id - a.id);
+
+    // For college admin: filter by selected tab (internal=type 1, external=type 2)
+    if (isCollegeAdminRole) {
+      const typeVal = examTypeFilter === 'internal' ? 1 : 2;
+      return allGroups.filter(g => g.exam_type === typeVal);
+    }
+    return allGroups;
+  }, [data, examTypeFilter, isCollegeAdminRole]);
+
 
   // Apply search/pagination to groupedData if needed, but useDataTable already handles 'data'.
   // We'll update useDataTable to use groupedData or manually filter/paginate here for better control.
@@ -341,15 +353,52 @@ const Exams = () => {
               visibleColumns={visibleColumns} 
               onToggle={toggleColumn} 
             />
-            <button 
-              onClick={() => navigate('/exams/add')}
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-2xl shadow-xl shadow-purple-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
-            >
-              <Plus size={20} />
-              <span>Schedule Exam</span>
-            </button>
+            {/* Only show Schedule Exam for non-college-admin, or college admin on Internal tab */}
+            {(!isCollegeAdminRole || examTypeFilter === 'internal') && (
+              <button 
+                onClick={() => navigate('/exams/add')}
+                className="inline-flex items-center gap-2 px-8 py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-2xl shadow-xl shadow-purple-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
+              >
+                <Plus size={20} />
+                <span>Schedule Exam</span>
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Tab Switcher — only visible for college admin */}
+        {isCollegeAdminRole && (
+          <div className="px-8 pb-0 flex items-center gap-2 border-b border-slate-100">
+            <button
+              onClick={() => setExamTypeFilter('internal')}
+              className={`px-6 py-3 text-xs font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 ${
+                examTypeFilter === 'internal'
+                  ? 'border-purple-500 text-purple-600 bg-purple-50/50'
+                  : 'border-transparent text-slate-400 hover:text-slate-700'
+              }`}
+            >
+              📝 Internal Exams
+            </button>
+            <button
+              onClick={() => setExamTypeFilter('external')}
+              className={`px-6 py-3 text-xs font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 ${
+                examTypeFilter === 'external'
+                  ? 'border-blue-500 text-blue-600 bg-blue-50/50'
+                  : 'border-transparent text-slate-400 hover:text-slate-700'
+              }`}
+            >
+              🌐 External Exams
+            </button>
+          </div>
+        )}
+
+        {/* Read-only banner for college admin viewing external exams */}
+        {isCollegeAdminRole && examTypeFilter === 'external' && (
+          <div className="mx-8 mt-4 px-5 py-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-center gap-3 text-sm text-blue-700 font-semibold">
+            <Globe size={16} className="shrink-0" />
+            External exams are managed by the University Admin. You can view them here but cannot create, edit or delete them.
+          </div>
+        )}
 
         {/* Premium Card-based List */}
         <div className="p-8 space-y-6">
