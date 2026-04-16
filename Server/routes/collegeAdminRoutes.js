@@ -343,6 +343,33 @@ router.get('/marks-tracking', collegeAdminController.getMarksTracking);
 
 /**
  * @swagger
+ * /api/college-admin/marks-audit-log:
+ *   get:
+ *     summary: Retrieve the audit log/history for marks submission and approval for a specific subject batch
+ *     tags: [College Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: subject_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The subject ID.
+ *       - in: query
+ *         name: workflow_id
+ *         required: false
+ *         schema:
+ *           type: integer
+ *         description: The marks workflow status ID.
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved audit log
+ */
+router.get('/marks-audit-log', collegeAdminController.getMarksAuditLog);
+
+/**
+ * @swagger
  * /api/college-admin/review-marks:
  *   get:
  *     summary: Review student marks before finalization

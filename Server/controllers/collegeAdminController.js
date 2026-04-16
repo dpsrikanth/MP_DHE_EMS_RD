@@ -444,6 +444,63 @@ exports.updateWorkflowStatus = async (req, res) => {
     }
 };
 
+exports.getMarksAuditLog = async (req, res) => {
+    try {
+        const { subject_id, workflow_id } = req.query;
+
+        if (!subject_id) {
+            return res.status(400).json({ error: "Missing required parameter: subject_id" });
+        }
+
+        const query = `
+            SELECT al.action, al.created_at, u.name as user_name, mr.role_name
+            FROM audit_logs al
+            JOIN users u ON al.user_id = u.id
+            JOIN master_roles mr ON u.role_id = mr.id
+            WHERE al.entity_type = 'MARKS_WORKFLOW' 
+              AND al.entity_id IN ($1, $2)
+            ORDER BY al.created_at ASC
+        `;
+
+        const result = await db.query(query, [subject_id, workflow_id || -1]);
+        
+        // Calculate dynamic revision
+        let currentRevision = 1;
+        const timeline = result.rows.map(row => {
+            const entry = { ...row, revision: currentRevision };
+            if (row.action === 'MARKS_SUBMITTED' || row.action === 'CORRECTION_REQUESTED') {
+                // If it's a resubmission, it generally indicates a new revision loop, wait, actually let's bump BEFORE submitting if needed, or just let MARKS_SUBMITTED be the indicator of a "Revision X".
+                // If we see a MARKS_SUBMITTED after a rejection, that is a new revision.
+                // An easy way: just bump revision after we see an unlock/rejection, so the next submit is the next rev.
+            }
+            return entry;
+        });
+
+        // Better logic for revisions: count how many times it was submitted
+        let submissionCount = 0;
+        let finalTimeline = [];
+        for (let row of result.rows) {
+            if (row.action === 'MARKS_SUBMITTED') {
+                submissionCount++;
+            }
+            // All actions after a submission logically belong to that submission's "Revision N"
+            // Actions before ANY submission (like maybe some pre-setup) belong to Revision 0 or 1
+            finalTimeline.push({
+                ...row,
+                revision: Math.max(1, submissionCount)
+            });
+        }
+
+        // Reverse so the newest is at the top
+        finalTimeline.reverse();
+
+        res.status(200).json(finalTimeline);
+    } catch (error) {
+        console.error("Error fetching marks audit log:", error);
+        res.status(500).json({ error: "Failed to fetch marks audit log" });
+    }
+};
+
 exports.getMarksTracking = async (req, res) => {
     try {
         const { college_id, semester_id } = req.query;

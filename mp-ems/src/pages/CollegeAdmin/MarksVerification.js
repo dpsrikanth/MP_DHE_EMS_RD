@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
-import { CheckCircle, Clock, ShieldAlert, FileText, ChevronRight, Lock, Building, Search, X, Send } from 'lucide-react';
+import { CheckCircle, Clock, ShieldAlert, FileText, ChevronRight, Lock, Building, Search, X, Send, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TableSearch } from '../../components/TableControls';
 
@@ -10,6 +10,12 @@ const MarksVerification = () => {
     const navigate = useNavigate();
     const [isUnlocking, setIsUnlocking] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    
+    // Audit Log Modal States
+    const [logModalOpen, setLogModalOpen] = useState(false);
+    const [selectedLogItem, setSelectedLogItem] = useState(null);
+    const [auditLogs, setAuditLogs] = useState([]);
+    const [loadingLogs, setLoadingLogs] = useState(false);
 
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const isAdmin = user.role?.toLowerCase() === 'admin' || user.role === 'college_admin';
@@ -130,6 +136,29 @@ const MarksVerification = () => {
     };
 
 
+    const handleViewLog = async (item) => {
+        setSelectedLogItem(item);
+        setLogModalOpen(true);
+        setLoadingLogs(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:8080/api/college-admin/marks-audit-log?subject_id=${item.subject_id}&workflow_id=${item.id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setAuditLogs(data);
+            } else {
+                toast.error("Failed to load audit logs");
+            }
+        } catch(err) {
+            toast.error("Error fetching logs");
+        } finally {
+            setLoadingLogs(false);
+        }
+    };
+
+
     const getStatusConfig = (status) => {
         switch (status) {
             case 'Submitted': return { color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', icon: Clock, label: 'Ready for Review' };
@@ -185,10 +214,19 @@ const MarksVerification = () => {
                                 <div className={`absolute top-0 left-0 w-full h-1 ${statusConfig.bg}`}></div>
                                 
                                 <div className="flex justify-between items-start mb-4">
-                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-lg ${statusConfig.bg} ${statusConfig.color} border ${statusConfig.border} ${statusConfig.pulse ? 'animate-pulse shadow-lg shadow-indigo-500/20' : ''}`}>
-                                        <StatusIcon size={14} />
-                                        {statusConfig.label}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-lg ${statusConfig.bg} ${statusConfig.color} border ${statusConfig.border} ${statusConfig.pulse ? 'animate-pulse shadow-lg shadow-indigo-500/20' : ''}`}>
+                                            <StatusIcon size={14} />
+                                            {statusConfig.label}
+                                        </span>
+                                        <button 
+                                            onClick={() => handleViewLog(item)}
+                                            className="text-slate-600 hover:text-indigo-600 bg-slate-50 hover:bg-slate-100 p-1.5 rounded-lg transition-colors border border-slate-200 shadow-sm"
+                                            title="View Action Log"
+                                        >
+                                            <History size={16} />
+                                        </button>
+                                    </div>
                                     {['Submitted', 'Rejected', 'Correction Requested'].includes(item.status) && (
                                         <button 
                                             onClick={() => handleReviewClick(item)}
@@ -263,6 +301,94 @@ const MarksVerification = () => {
                             </div>
                         );
                     })}
+                </div>
+            )}
+
+            {logModalOpen && selectedLogItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+                        <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <div>
+                                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                                    <History size={24} className="text-indigo-500" />
+                                    Marks Audit Trail
+                                </h3>
+                                <p className="text-sm text-slate-500 mt-1">
+                                    {selectedLogItem.subject_name} • Section {selectedLogItem.section}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setLogModalOpen(false)}
+                                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+                        
+                        <div className="p-6 overflow-y-auto">
+                            {loadingLogs ? (
+                                <div className="flex justify-center py-12">
+                                    <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                                </div>
+                            ) : auditLogs.length === 0 ? (
+                                <div className="text-center py-12 text-slate-500 font-medium">No actions recorded yet.</div>
+                            ) : (
+                                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                                    <table className="w-full text-left border-collapse bg-white">
+                                        <thead>
+                                            <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                                <th className="px-5 py-3">Revision</th>
+                                                <th className="px-5 py-3">Action</th>
+                                                <th className="px-5 py-3">Performed By</th>
+                                                <th className="px-5 py-3">Date & Time</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {auditLogs.map((log, index) => {
+                                                const date = new Date(log.created_at);
+                                                const isSubmit = log.action === 'MARKS_SUBMITTED';
+                                                const isApproved = log.action === 'STATUS_CHANGED_TO_Approved' || log.action === 'CORRECTION_APPROVED_BY_HOD';
+                                                const isLocked = log.action === 'STATUS_CHANGED_TO_Locked' || log.action === 'MARKS_LOCKED';
+                                                const isRejected = log.action === 'CORRECTION_REJECTED_BY_COLLEGE' || log.action === 'MARKS_REJECTED' || log.action === 'CORRECTION_SENT_BACK_TO_COLLEGE';
+                                                
+                                                let badgeColor = "bg-slate-100 text-slate-600";
+                                                if (isSubmit) badgeColor = "bg-indigo-50 text-indigo-700 border border-indigo-200";
+                                                else if (isApproved || isLocked) badgeColor = "bg-emerald-50 text-emerald-700 border border-emerald-200";
+                                                else if (isRejected) badgeColor = "bg-red-50 text-red-700 border border-red-200";
+
+                                                return (
+                                                    <tr key={index} className="hover:bg-slate-50/50 transition-colors">
+                                                        <td className="px-5 py-3.5 whitespace-nowrap">
+                                                            <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                                                {log.revision}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-5 py-3.5">
+                                                            <span className={`inline-flex items-center px-2.5 py-1 text-xs font-bold rounded-lg whitespace-nowrap ${badgeColor}`}>
+                                                                {log.action.replace(/_/g, ' ')}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-5 py-3.5">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-semibold text-slate-900">{log.user_name}</span>
+                                                                <span className="text-xs text-slate-500">{log.role_name}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-5 py-3.5 whitespace-nowrap">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm text-slate-700 font-medium">{date.toLocaleDateString()}</span>
+                                                                <span className="text-xs text-slate-400 font-mono">{date.toLocaleTimeString()}</span>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
