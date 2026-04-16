@@ -172,6 +172,11 @@ exports.getAllHallsForApproval = async (req, res) => {
                         (SELECT COALESCE(SUM(sr.shortage), 0) FROM shortage_requests sr WHERE sr.allocated_college_id = c.id AND sr.status = 'Allocated') -
                         (SELECT COALESCE(SUM(sr.shortage), 0) FROM shortage_requests sr WHERE sr.college_id = c.id AND sr.status = 'Allocated')
                 ) as total_required,
+                (
+                    SELECT COUNT(DISTINCT sa.student_id) 
+                    FROM seating_arrangements sa 
+                    WHERE sa.hall_id = h.id
+                ) as hall_allocated_count,
                 -- Total capacity already approved for this college
                 (
                     SELECT COALESCE(SUM(h2.total_capacity), 0) 
