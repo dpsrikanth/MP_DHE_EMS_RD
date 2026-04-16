@@ -1775,11 +1775,39 @@ const publishResults = async (req, res) => {
     const { results_published } = req.body;
     const { role, college_id: userCollegeId } = req.user;
 
-    const checkResult = await client.query('SELECT college_id FROM exams WHERE id = $1', [id]);
+    const checkResult = await client.query(
+      'SELECT college_id, exam_type, subject_id, name, semester_id FROM exams WHERE id = $1',
+      [id]
+    );
     if (checkResult.rows.length === 0) return res.status(404).json({ message: "Exam not found" });
 
-    if (role === 'college_admin' && checkResult.rows[0].college_id != userCollegeId) {
+    const exam = checkResult.rows[0];
+
+    if (role === 'college_admin' && exam.college_id != userCollegeId) {
       return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    // For internal exams (type 1): ALL subjects in the series must be Locked before publishing any
+    if (results_published && exam.exam_type == 1) {
+      // Get all subjects in this exam series (same name + college + semester)
+      const seriesRes = await client.query(
+        `SELECT e.id, e.subject_id, sub.name as subject_name,
+                COALESCE(mws.status, 'Not Submitted') as lock_status
+         FROM exams e
+         JOIN master_subjects sub ON e.subject_id = sub.id
+         LEFT JOIN marks_workflow_status mws 
+           ON mws.subject_id = e.subject_id AND mws.college_id = e.college_id
+         WHERE e.name = $1 AND e.college_id = $2 AND e.semester_id = $3`,
+        [exam.name, exam.college_id, exam.semester_id]
+      );
+
+      const unlockedSubjects = seriesRes.rows.filter(r => r.lock_status !== 'Locked');
+      if (unlockedSubjects.length > 0) {
+        const names = unlockedSubjects.map(r => `${r.subject_name} (${r.lock_status})`).join(', ');
+        return res.status(400).json({
+          message: `Cannot publish results: ${unlockedSubjects.length} subject(s) in this series are not locked yet: ${names}. Please lock ALL subjects via Verify & Lock first.`
+        });
+      }
     }
 
     const result = await client.query(
@@ -1805,35 +1833,39 @@ const getStudentResults = async (req, res) => {
     // Fetch finalized marks for exams where results are published
     const query = `
       SELECT 
-        m.id as mark_id,
+        COALESCE(m.id, 0) as mark_id,
+        e.exam_type,
         COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) as internal_marks,
         COALESCE(m.external_marks, 0) as external_marks,
         (COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) + COALESCE(m.external_marks, 0)) as total_marks,
-        m.status as result_status,
+        COALESCE(m.status, 'Internal Only') as result_status,
         e.name as exam_name,
         e.id as exam_id,
         sub.name as subject_name,
         sub.id as subject_id,
         sub.subject_code,
         sub.credit as credits,
-        mp.name as program_name,
+        p.name as program_name,
         sem.semester_name,
         s."collageName" as college_name
-      FROM marks m
-      JOIN exams e ON m.exam_id = e.id
-      JOIN master_subjects sub ON m.subject_id = sub.id
-      JOIN master_programs mp ON e.program_id = mp.id
-      JOIN master_semesters sem ON e.semester_id = sem.id
-      JOIN students s ON m.student_id = s.id
-      LEFT JOIN calculated_internal_marks cim ON m.student_id = cim.student_id 
-          AND (cim.subject_id = m.subject_id OR cim.subject_id IN (SELECT id FROM master_subjects WHERE name = sub.name))
+      FROM students s
+      JOIN master_programs p ON s."programName" = p.name
+      JOIN master_semesters sem ON s.semister = sem.semester_name
+      LEFT JOIN colleges c ON c.name = s."collageName"
+      JOIN exams e ON e.program_id = p.id AND e.semester_id = sem.id
+          AND (e.college_id = c.id OR (e.college_id IS NULL AND e.exam_type = 2))
+      JOIN master_subjects sub ON e.subject_id = sub.id
+      LEFT JOIN marks m ON m.exam_id = e.id AND m.student_id = s.id
+      LEFT JOIN calculated_internal_marks cim ON s.id = cim.student_id 
+          AND (cim.subject_id = e.subject_id OR cim.subject_id = sub.id)
       LEFT JOIN (
           SELECT student_id, subject_id, SUM(marks_obtained::float) as total_raw
           FROM student_internal_marks
           GROUP BY student_id, subject_id
-      ) raw_internal ON m.student_id = raw_internal.student_id AND m.subject_id = raw_internal.subject_id
-      WHERE m.student_id = $1 AND e.results_published = true AND (m.status IN ('Finalized', 'Approved', 'Pending Approval', 'Draft', 'Internal Only'))
-      ORDER BY e.exam_date DESC, sub.name ASC
+      ) raw_internal ON s.id = raw_internal.student_id AND e.subject_id = raw_internal.subject_id
+      WHERE s.id = $1 AND e.results_published = true 
+        AND (e.exam_type = 1 OR (e.exam_type = 2 AND m.status IN ('Finalized', 'Approved', 'Pending Approval', 'Draft', 'Internal Only')))
+      ORDER BY e.exam_type ASC, e.exam_date DESC, sub.name ASC
     `;
 
     const result = await client.query(query, [studentId]);
@@ -3591,20 +3623,19 @@ const getStudentExams = async (req, res) => {
     const student = studentRes.rows[0];
 
     // Fetch exams matching the student's program, semester, and college
-    // Note: students table stores these as strings, exams table stores them as IDs.
-    // We need to resolve Name/Semester/College to IDs or join accurately.
-    // Based on existing getExams logic, we filter by published and application open status.
-
-    // Improved query to handle string-based student fields
+    // Internal exams (type 1): show when published — no registration/enrollment needed
+    // External exams (type 2): show when published AND application is open
     const query = `
       SELECT 
         e.id, 
         e.name as exam_name, 
+        e.exam_type,
         e.semester_id,
         ms.semester_name,
         COALESCE(c.name, 'University-wide') as college_name,
         et.type_name as exam_type_name,
         sub.name as subject_name,
+        sub.subject_code,
         e.exam_date, 
         e.start_time,
         e.end_time,
@@ -3618,11 +3649,12 @@ const getStudentExams = async (req, res) => {
       JOIN master_programs mp ON e.program_id = mp.id
       LEFT JOIN exam_registrations er ON er.exam_id = e.id AND er.student_id = $1
       WHERE e.is_published = true 
-        AND e.student_application_open = true
         AND mp.name = $2
         AND ms.semester_name = $3
         AND (c.name = $4 OR (e.college_id IS NULL AND e.exam_type = 2))
-      ORDER BY e.exam_date ASC, e.start_time ASC
+        -- Internal exams: always visible when published; External: only when enrollment is open
+        AND (e.exam_type = 1 OR e.student_application_open = true)
+      ORDER BY e.exam_type ASC, e.exam_date ASC, e.start_time ASC
     `;
 
     const result = await client.query(query, [student.id, student.programName, student.semister, student.collageName]);

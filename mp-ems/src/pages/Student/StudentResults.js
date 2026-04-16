@@ -15,6 +15,7 @@ const StudentResults = () => {
   const [error, setError] = useState(null);
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
   const [searchQuery, setSearchQuery] = useState('');
+  const [resultTypeFilter, setResultTypeFilter] = useState('external');
 
   useEffect(() => {
     fetchResults();
@@ -46,6 +47,7 @@ const StudentResults = () => {
       if (!groups[key]) {
         groups[key] = {
           exam_name: record.exam_name,
+          exam_type: record.exam_type || 2, // default external if not present
           semester_name: record.semester_name,
           program_name: record.program_name,
           subjects: [],
@@ -106,6 +108,15 @@ const StudentResults = () => {
     }).filter(group => group.hasMatches); // Hide groups with no matching subjects
   }, [results, gradingConfig, searchQuery]);
 
+  // Filter series based on the selected tab
+  const filteredSeriesResults = React.useMemo(() => {
+    return examSeriesResults.filter(series => {
+      if (resultTypeFilter === 'internal') return series.exam_type === 1;
+      if (resultTypeFilter === 'external') return series.exam_type !== 1;
+      return true;
+    });
+  }, [examSeriesResults, resultTypeFilter]);
+
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
@@ -135,7 +146,31 @@ const StudentResults = () => {
         </div>
       </div>
 
-      {examSeriesResults.length === 0 ? (
+      {/* Tab Switcher */}
+      <div className="flex items-center gap-2 border-b border-slate-100">
+        <button
+          onClick={() => setResultTypeFilter('external')}
+          className={`px-6 py-3 text-xs font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 ${
+            resultTypeFilter === 'external'
+              ? 'border-emerald-500 text-emerald-600 bg-emerald-50/50'
+              : 'border-transparent text-slate-400 hover:text-slate-700'
+          }`}
+        >
+          🌐 Final Results
+        </button>
+        <button
+          onClick={() => setResultTypeFilter('internal')}
+          className={`px-6 py-3 text-xs font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 ${
+            resultTypeFilter === 'internal'
+              ? 'border-violet-500 text-violet-600 bg-violet-50/50'
+              : 'border-transparent text-slate-400 hover:text-slate-700'
+          }`}
+        >
+          📝 Internal Assessments
+        </button>
+      </div>
+
+      {filteredSeriesResults.length === 0 ? (
         <div className="py-20 text-center bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200 shadow-sm">
            <Search size={40} className="text-slate-300 mx-auto mb-4" />
            <h3 className="text-lg font-black text-slate-900 mb-1 uppercase tracking-tighter">
@@ -155,7 +190,7 @@ const StudentResults = () => {
         </div>
       ) : (
         <div className="space-y-12">
-          {examSeriesResults.map((series, idx) => (
+          {filteredSeriesResults.map((series, idx) => (
             <div key={idx} className="bg-white rounded-[1.5rem] border border-slate-100 overflow-hidden shadow-2xl shadow-slate-200/40 print:shadow-none print:border-slate-300">
               {/* College Header */}
               <div className="p-6 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
@@ -170,20 +205,61 @@ const StudentResults = () => {
                  </div>
                   <div className="flex items-center gap-4 text-right">
                     <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 italic text-shadow-sm">Semester Status</p>
-                      <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">OFFICIALLY FINALIZED</span>
+                      {series.exam_type === 1 ? (
+                        <span className="px-3 py-1 bg-violet-100 text-violet-700 rounded-full text-[10px] font-black uppercase tracking-widest">Internal Assessment</span>
+                      ) : (
+                        <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">OFFICIALLY FINALIZED</span>
+                      )}
                     </div>
-                    <button 
-                      onClick={() => window.open(`/student/result-sheet/${encodeURIComponent(series.exam_name)}`, '_blank')}
-                      className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all flex items-center gap-2 group"
-                    >
-                      <Download size={14} className="group-hover:translate-y-0.5 transition-transform" /> 
-                      Download Statement
-                    </button>
+                    {series.exam_type !== 1 && (
+                      <button 
+                        onClick={() => window.open(`/student/result-sheet/${encodeURIComponent(series.exam_name)}`, '_blank')}
+                        className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all flex items-center gap-2 group"
+                      >
+                        <Download size={14} className="group-hover:translate-y-0.5 transition-transform" /> 
+                        Download Statement
+                      </button>
+                    )}
                   </div>
                 </div>
 
-              {/* Main Table */}
+              {/* Internal Exam: Simple marks table — no grades/pass/fail */}
+              {series.exam_type === 1 ? (
+                <div className="p-0">
+                  <table className="w-full border-collapse">
+                    <thead className="bg-violet-50/60">
+                      <tr className="text-left text-[10px] font-extrabold text-slate-500 uppercase tracking-widest border-b border-violet-100">
+                        <th className="px-6 py-4">Sl. No.</th>
+                        <th className="px-4 py-4">Subject</th>
+                        <th className="px-4 py-4 text-center">Internal Marks</th>
+                        <th className="px-4 py-4 text-center">Practical Marks</th>
+                        <th className="px-4 py-4 text-center">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {series.subjects.map((sub, sIdx) => (
+                        <tr key={sIdx} className="hover:bg-violet-50/30 transition-colors">
+                          <td className="px-6 py-4 font-bold text-slate-400 text-xs">{sIdx + 1}</td>
+                          <td className="px-4 py-4">
+                            <p className="text-sm font-black text-slate-900">{sub.subject_name}</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{sub.subject_code}</p>
+                          </td>
+                          <td className="px-4 py-4 text-center font-black text-slate-700 text-sm">{sub.internal_marks ?? '-'}</td>
+                          <td className="px-4 py-4 text-center font-bold text-slate-500 text-sm">{sub.external_marks > 0 ? sub.external_marks : '-'}</td>
+                          <td className="px-4 py-4 text-center font-black text-violet-700 text-sm">{sub.total_marks}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="px-6 py-4 bg-violet-50/30 border-t border-violet-100">
+                    <p className="text-[10px] text-slate-400 font-medium italic">
+                      Internal assessment marks are for informational purposes. These do not reflect final semester results. No pass/fail is determined at this stage.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+              <>
+              {/* External: Full marks table with grades */}
               <div className="p-0">
                 <table className="w-full border-collapse border-spacing-0">
                   <thead className="bg-slate-200/30">
@@ -263,7 +339,9 @@ const StudentResults = () => {
                        <p className="text-[10px] text-slate-900 font-black uppercase tracking-widest">Controller of Exams</p>
                     </div>
                  </div>
-              </div>
+               </div>
+              </>
+              )}
             </div>
           ))}
         </div>

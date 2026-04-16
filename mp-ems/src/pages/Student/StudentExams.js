@@ -73,15 +73,16 @@ const StudentExams = () => {
     });
   }, [exams, searchQuery]);
 
-  // Group exams by series
+  // Group exams by series (exam_name + semester + exam_type)
   const examGroups = React.useMemo(() => {
     const groups = {};
     filteredExams.forEach(exam => {
-      const key = `${exam.exam_name}_${exam.semester_id}`;
+      const key = `${exam.exam_name}_${exam.semester_id}_${exam.exam_type}`;
       if (!groups[key]) {
         groups[key] = {
           exam_name: exam.exam_name,
           semester_name: exam.semester_name,
+          exam_type: exam.exam_type,        // 1 = Internal, 2 = External
           subjects: [],
           allRegistered: true,
           ids: []
@@ -89,7 +90,7 @@ const StudentExams = () => {
       }
       groups[key].subjects.push(exam);
       groups[key].ids.push(exam.id);
-      if (exam.payment_status !== 'Paid') {
+      if (exam.exam_type !== 1 && exam.payment_status !== 'Paid') {
         groups[key].allRegistered = false;
       }
     });
@@ -158,10 +159,20 @@ const StudentExams = () => {
                      <span className="text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em]">{group.semester_name}</span>
                      <span className="w-1 h-1 bg-slate-300 rounded-full" />
                      <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{group.subjects.length} Total Papers</span>
+                     {/* Internal exam badge */}
+                     {group.exam_type === 1 && (
+                       <span className="px-2 py-0.5 rounded-full bg-violet-100 text-violet-600 text-[9px] font-black uppercase tracking-widest border border-violet-200">Internal</span>
+                     )}
                    </div>
                 </div>
                 
-                {!group.allRegistered ? (
+                {/* Action: Internal = view-only notice | External = Register / Hall Ticket */}
+                {group.exam_type === 1 ? (
+                  <div className="mt-4 md:mt-0 flex items-center gap-2 px-5 py-3 bg-violet-50 border border-violet-200 rounded-2xl text-violet-700 font-bold text-xs">
+                    <BookOpen size={14} />
+                    <span>Timetable View Only — No registration required</span>
+                  </div>
+                ) : !group.allRegistered ? (
                   <button
                     onClick={() => handleRegister(group.ids)}
                     className="mt-4 md:mt-0 group relative inline-flex items-center gap-3 bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
@@ -186,9 +197,14 @@ const StudentExams = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {group.subjects.map((exam) => (
                   <div key={exam.id} className="group relative bg-white rounded-[2rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/50 hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-500 overflow-hidden">
-                    {/* Status Badge */}
+                    {/* Status Badge: Internal exams don't have registration */}
                     <div className="absolute top-6 right-6">
-                      {exam.payment_status === 'Paid' ? (
+                      {group.exam_type === 1 ? (
+                        <div className="flex items-center gap-1.5 bg-violet-50 text-violet-600 px-3 py-1 rounded-full border border-violet-100 font-black text-[8px] uppercase tracking-widest">
+                          <BookOpen size={10} />
+                          Internal
+                        </div>
+                      ) : exam.payment_status === 'Paid' ? (
                         <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full border border-emerald-100 font-black text-[8px] uppercase tracking-widest">
                           <CheckCircle size={10} />
                           Enrolled

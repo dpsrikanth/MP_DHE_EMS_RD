@@ -209,25 +209,52 @@ const Exams = () => {
       const token = localStorage.getItem('token');
       setLoading(true);
       const newStatus = !series.subjects[0].results_published;
-      
-      const promises = series.subjects.map(s => 
-        fetch(`http://localhost:8080/api/exams/${s.id}/publish-results`, {
-          method: 'PUT',
-          headers: { 
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}` 
-          },
-          body: JSON.stringify({ results_published: newStatus })
-        })
-      );
-      
-      await Promise.all(promises);
+
+      // For internal exams: fire ONE request first — backend checks ALL subjects in the series.
+      // If that passes, fire the rest. This prevents partial publish.
+      const firstResponse = await fetch(`http://localhost:8080/api/exams/${series.subjects[0].id}/publish-results`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ results_published: newStatus })
+      });
+
+      if (!firstResponse.ok) {
+        const err = await firstResponse.json();
+        toast.error(err.message || 'Failed to publish results');
+        return; // Abort — don't publish any remaining subjects
+      }
+
+      // First subject passed — now publish the rest in parallel
+      if (series.subjects.length > 1) {
+        const rest = series.subjects.slice(1);
+        const responses = await Promise.all(
+          rest.map(s =>
+            fetch(`http://localhost:8080/api/exams/${s.id}/publish-results`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ results_published: newStatus })
+            })
+          )
+        );
+        const failures = await Promise.all(
+          responses.filter(r => !r.ok).map(r => r.json())
+        );
+        if (failures.length > 0) {
+          toast.error(failures[0]?.message || 'Some subjects failed to publish');
+          fetchData();
+          return;
+        }
+      }
+
+      toast.success(`Results ${newStatus ? 'published' : 'unpublished'} for all subjects.`);
       fetchData();
     } catch (err) {
       console.error(err);
+      toast.error('Network error while publishing results');
     } finally {
       setLoading(false);
     }
+
   };
 
   const handleToggleApplications = async (series) => {
@@ -502,11 +529,10 @@ const Exams = () => {
 
                   {/* Card Section 3: Orchestration & Actions */}
                   <div className="p-8 lg:w-64 bg-slate-50/50 flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Orchestration</h4>
-                      <div className="space-y-3">
-                        {(authUtils.isAdmin() || authUtils.isCollegeAdmin()) && (
-                          <>
+                    {(authUtils.isAdmin() || (authUtils.isCollegeAdmin() && item.exam_type != 2)) ? (
+                      <div>
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Orchestration</h4>
+                        <div className="space-y-3">
                             <button 
                               onClick={() => handleTogglePublish(item)}
                               className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-xs ${item.subjects[0].is_published ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'}`}
@@ -514,13 +540,16 @@ const Exams = () => {
                               <span className="uppercase tracking-widest">{item.subjects[0].is_published ? 'Published' : 'Publish All'}</span>
                               <Globe size={16} />
                             </button>
-                            <button 
-                              onClick={() => handleToggleApplications(item)}
-                              className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-xs ${item.subjects[0].student_application_open ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'}`}
-                            >
-                              <span className="uppercase tracking-widest">{item.subjects[0].student_application_open ? 'Enrolling' : 'Open Enrollment'}</span>
-                              <Users size={16} />
-                            </button>
+                            {/* Open Enrollment: only for external exams — internal exams need no registration */}
+                            {item.exam_type !== 1 && (
+                              <button 
+                                onClick={() => handleToggleApplications(item)}
+                                className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-xs ${item.subjects[0].student_application_open ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'}`}
+                              >
+                                <span className="uppercase tracking-widest">{item.subjects[0].student_application_open ? 'Enrolling' : 'Open Enrollment'}</span>
+                                <Users size={16} />
+                              </button>
+                            )}
                             <button 
                               onClick={() => handleToggleResultsPublish(item)}
                               className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-xs ${item.subjects[0].results_published ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-slate-200 text-slate-600 hover:border-amber-400 hover:text-amber-600'}`}
@@ -528,10 +557,14 @@ const Exams = () => {
                               <span className="uppercase tracking-widest">{item.subjects[0].results_published ? 'Results Live' : 'Publish Results'}</span>
                               <Check size={16} />
                             </button>
-                          </>
-                        )}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center flex-1 text-center opacity-50 py-8">
+                        <Globe size={40} className="text-slate-300 mb-4" />
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">Managed By<br/>University</p>
+                      </div>
+                    )}
 
                     {!(authUtils.isCollegeAdmin() && item.exam_type == 2) && (
                       <div className="flex items-center gap-2 mt-8 pt-6 border-t border-slate-200">
