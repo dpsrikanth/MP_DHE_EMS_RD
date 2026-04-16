@@ -175,8 +175,8 @@ const HallApprovals = () => {
                 acc[hall.college_id] = {
                     college_id: hall.college_id,
                     college_name: hall.college_name,
-                    college_approved_capacity: hall.college_approved_capacity,
-                    total_required: hall.total_required,
+                    college_approved_capacity: Number(hall.college_approved_capacity || 0),
+                    total_required: Number(hall.total_required || 0),
                     approved_halls_details: hall.approved_halls_details,
                     halls: []
                 };
@@ -399,32 +399,72 @@ const HallApprovals = () => {
                                             </div>
 
                                             <div className="md:col-span-2 space-y-6">
-                                                <div className="bg-slate-50/80 rounded-[1.75rem] p-6 border border-slate-100 h-full flex flex-col">
+                                                <div className="bg-slate-50/80 rounded-[1.75rem] p-6 border border-slate-100 h-full flex flex-col relative overflow-hidden group/status">
+                                                    {/* Goal/Target Label */}
                                                     <div className="flex items-center justify-between mb-4">
-                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status Overview</span>
-                                                        <span className={`text-[11px] font-black ${isFulfilled ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                                            {isFulfilled ? 'Full Covered' : `${pct}% Processed`}
-                                                        </span>
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Readiness Status</span>
+                                                        <div className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-tighter ${
+                                                            isFulfilled ? 'bg-emerald-100 text-emerald-600' : 
+                                                            (Number(college.college_approved_capacity) + college.halls.reduce((sum, h) => h.status === 'Pending' ? sum + Number(h.total_capacity) : sum, 0) >= Number(college.total_required)) 
+                                                                ? 'bg-amber-100 text-amber-600' 
+                                                                : 'bg-rose-100 text-rose-600'
+                                                        }`}>
+                                                            {isFulfilled ? '✓ Verified' : '⟳ In Progress'}
+                                                        </div>
                                                     </div>
-                                                    <div className="relative h-3 w-full bg-white rounded-full p-1 border border-slate-200 overflow-hidden shadow-inner">
+
+                                                    {/* Large Ratio Display */}
+                                                    <div className="flex items-baseline gap-2 mb-1">
+                                                        <span className="text-3xl font-black text-slate-900 leading-none">{college.college_approved_capacity}</span>
+                                                        <span className="text-sm font-bold text-slate-300">/ {college.total_required}</span>
+                                                    </div>
+                                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Seeds Validated</div>
+
+                                                    {/* Progress Visual */}
+                                                    <div className="relative h-4 w-full bg-white rounded-xl p-1 border border-slate-200 overflow-hidden shadow-inner mb-6">
                                                         <div 
-                                                            className={`h-full rounded-full transition-all duration-1000 ${isFulfilled ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-purple-500 to-indigo-500'}`}
-                                                            style={{ width: `${pct}%` }}
+                                                            className={`h-full rounded-lg transition-all duration-1000 ${
+                                                                isFulfilled ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'
+                                                            }`}
+                                                            style={{ width: `${Math.min(pct, 100)}%` }}
                                                         />
                                                     </div>
-                                                    <p className={`text-[9px] font-bold mt-4 leading-relaxed ${isFulfilled ? 'text-emerald-600' : 'text-slate-400'}`}>
-                                                        {isFulfilled 
-                                                            ? `Success: ${college.total_required} students now have verified seating allocated.`
-                                                            : `Currently validated ${college.college_approved_capacity} out of ${college.total_required} required student seats.`
-                                                        }
-                                                    </p>
+
+                                                    {/* Descriptive State */}
+                                                    <div className="space-y-4">
+                                                        {isFulfilled ? (
+                                                            <div className="flex items-start gap-3 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 animate-in fade-in zoom-in duration-300">
+                                                                <CheckCircle2 className="text-emerald-500 shrink-0 mt-0.5" size={18} />
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-[11px] font-black text-emerald-700 uppercase tracking-tight">Success: Fully Seated</span>
+                                                                    <span className="text-[9px] font-bold text-emerald-600 leading-tight mt-0.5">This college has enough approved infrastructure for all {college.total_required} students.</span>
+                                                                </div>
+                                                            </div>
+                                                        ) : (Number(college.college_approved_capacity) + college.halls.reduce((sum, h) => h.status === 'Pending' ? sum + Number(h.total_capacity) : sum, 0) >= Number(college.total_required)) ? (
+                                                            <div className="flex items-start gap-3 p-4 bg-amber-50/50 rounded-2xl border border-amber-100 animate-in fade-in slide-in-from-bottom-2">
+                                                                <Clock className="text-amber-500 shrink-0 mt-0.5" size={18} />
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-[11px] font-black text-amber-700 uppercase tracking-tight">Review Pending</span>
+                                                                    <span className="text-[9px] font-bold text-amber-600 leading-tight mt-0.5">Verify the pending halls to cover the remaining {Number(college.total_required) - Number(college.college_approved_capacity)} students.</span>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex items-start gap-3 p-4 bg-rose-50/50 rounded-2xl border border-rose-100 animate-in shake">
+                                                                <AlertTriangle className="text-rose-500 shrink-0 mt-0.5" size={18} />
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-[11px] font-black text-rose-700 uppercase tracking-tight">Action: Capacity Gap</span>
+                                                                    <span className="text-[9px] font-bold text-rose-600 leading-tight mt-0.5">Alert! Total infrastructure is short by {Number(college.total_required) - (Number(college.college_approved_capacity) + college.halls.reduce((sum, h) => h.status === 'Pending' ? sum + Number(h.total_capacity) : sum, 0))} seats.</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                     
                                                     <div className="mt-auto pt-6 border-t border-slate-200">
                                                         <button 
                                                             onClick={() => setSelectedCollegeId(String(college.college_id))}
                                                             className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-slate-900/20 active:scale-95 transition-all flex items-center justify-center gap-2"
                                                         >
-                                                            Inspect Halls <ArrowRight size={14} />
+                                                            Inspect Institution <ArrowRight size={14} />
                                                         </button>
                                                     </div>
                                                 </div>
@@ -471,13 +511,20 @@ const HallApprovals = () => {
                                                 <div className="text-lg font-black text-slate-900 tabular-nums">{hall.total_capacity}</div>
                                                 <div className="text-[8px] font-black text-purple-600 uppercase tracking-tighter mt-0.5">{hall.rows}×{hall.seats_per_row}</div>
                                             </div>
-                                            <div className="bg-indigo-50/50 rounded-2xl p-3 border border-indigo-100/50 relative overflow-hidden">
-                                                <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Load Status</div>
-                                                <div className="text-lg font-black text-indigo-700 tabular-nums">{pct}%</div>
-                                                <div className="w-full h-1 bg-indigo-100 rounded-full mt-1.5 overflow-hidden">
-                                                    <div className={`h-full rounded-full ${isFulfilled ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{ width: `${Math.min(pct, 100)}%` }} />
-                                                </div>
-                                            </div>
+                                            {(() => {
+                                                const utilizationPct = hall.total_capacity > 0 
+                                                    ? Math.round(((hall.hall_allocated_count || 0) / hall.total_capacity) * 100) 
+                                                    : 0;
+                                                return (
+                                                    <div className="bg-indigo-50/50 rounded-2xl p-3 border border-indigo-100/50 relative overflow-hidden">
+                                                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Load Status</div>
+                                                        <div className="text-lg font-black text-indigo-700 tabular-nums">{utilizationPct}%</div>
+                                                        <div className="w-full h-1 bg-indigo-100 rounded-full mt-1.5 overflow-hidden">
+                                                            <div className={`h-full rounded-full ${utilizationPct >= 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{ width: `${Math.min(utilizationPct, 100)}%` }} />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
 
                                         <div className="flex flex-col gap-2 pt-2 border-t border-slate-50">
