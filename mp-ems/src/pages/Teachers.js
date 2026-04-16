@@ -340,13 +340,15 @@ const Teachers = () => {
                 visibleColumns={visibleColumns}
                 onToggle={toggleColumn}
               />
-              <button
-                onClick={() => navigate('/teachers/add')}
-                className="inline-flex items-center gap-2 px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
-              >
-                <Plus size={20} />
-                <span>Add Staff</span>
-              </button>
+              {!authUtils.isUniversityAdmin() && (
+                <button
+                  onClick={() => navigate('/teachers/add')}
+                  className="inline-flex items-center gap-2 px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
+                >
+                  <Plus size={20} />
+                  <span>Add Staff</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -440,7 +442,7 @@ const Teachers = () => {
                 <th className={`${visibleColumns.phone ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Phone</th>
                 <th className={`${visibleColumns.address ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Address</th> */}
                 <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center`}>Status</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
+                {!authUtils.isUniversityAdmin() && <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -549,24 +551,26 @@ const Teachers = () => {
                         )}
                       </td>
                     )}
-                    <td className="px-8 py-5 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => navigate(`/teachers/edit/${item.id}`)}
-                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                          title="Modify Profile"
-                        >
-                          <Pencil size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleArchive(item)}
-                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                          title="Archive Staff"
-                        >
-                          <MdDelete size={20} />
-                        </button>
-                      </div>
-                    </td>
+                    {!authUtils.isUniversityAdmin() && (
+                      <td className="px-8 py-5 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => navigate(`/teachers/edit/${item.id}`)}
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                            title="Modify Profile"
+                          >
+                            <Pencil size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleArchive(item)}
+                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                            title="Archive Staff"
+                          >
+                            <MdDelete size={20} />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               ) : (

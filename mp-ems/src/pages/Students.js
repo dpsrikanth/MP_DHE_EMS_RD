@@ -13,6 +13,7 @@ import {
   ShieldAlert
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
+import authUtils from '../utils/authUtils';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 
@@ -158,13 +159,15 @@ const Students = () => {
               visibleColumns={visibleColumns}
               onToggle={toggleColumn}
             />
-            <button
-              onClick={() => navigate('/students/add')}
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
-            >
-              <Plus size={20} />
-              <span>Enroll Student</span>
-            </button>
+            {!authUtils.isUniversityAdmin() && (
+              <button
+                onClick={() => navigate('/students/add')}
+                className="inline-flex items-center gap-2 px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
+              >
+                <Plus size={20} />
+                <span>Enroll Student</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -261,24 +264,26 @@ const Students = () => {
                         </div>
                       </td>
                     )}
-                    <td className="px-8 py-5 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => navigate(`/students/edit/${item.id}`)}
-                          className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
-                          title="Edit Record"
-                        >
-                          <Pencil size={18} />
-                        </button>
-                        <button
-                          onClick={() => openDeleteModal(item)}
-                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                          title="Remove Record"
-                        >
-                          <MdDelete size={20} />
-                        </button>
-                      </div>
-                    </td>
+                    {!authUtils.isUniversityAdmin() && (
+                      <td className="px-8 py-5 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => navigate(`/students/edit/${item.id}`)}
+                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                            title="Edit Record"
+                          >
+                            <Pencil size={18} />
+                          </button>
+                          <button
+                            onClick={() => openDeleteModal(item)}
+                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                            title="Remove Record"
+                          >
+                            <MdDelete size={20} />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               ) : (
