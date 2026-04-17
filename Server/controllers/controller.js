@@ -1696,27 +1696,150 @@ const bulkUploadStudents = async (req, res) => {
     }
 
     let addedCount = 0;
-    for (const s of students) {
-      if (!s.email || !s.name) continue;
+    let errors = [];
+    
+    for (let i = 0; i < students.length; i++) {
+      const s = students[i];
+      const rowNum = i + 1; // 1-indexed for user readability
+
+      if (!s.name) {
+        errors.push({ row: rowNum, message: "Missing required field: name" });
+        continue;
+      }
+      if (!s.email) {
+        errors.push({ row: rowNum, message: "Missing required field: email" });
+        continue;
+      }
+      if (!s.programName) {
+        errors.push({ row: rowNum, message: "Missing required field: programName" });
+        continue;
+      }
+      if (!s.semister) {
+        errors.push({ row: rowNum, message: "Missing required field: semister" });
+        continue;
+      }
+      if (!s.admission_year) {
+        errors.push({ row: rowNum, message: "Missing required field: admission_year" });
+        continue;
+      }
 
       // Ensure no duplicate email
       const checkRes = await client.query('SELECT id FROM public.students WHERE email = $1', [s.email]);
       if (checkRes.rows.length === 0) {
         await client.query(
-          `INSERT INTO public.students (name, email, "collageName", "deleteStatus") VALUES ($1, $2, $3, true)`,
-          [s.name, s.email, s.collageName || null]
+          `INSERT INTO public.students (name, email, "collageName", "programName", semister, admission_year, policies, "deleteStatus") 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+          [
+            s.name, 
+            s.email, 
+            s.collageName || null,
+            s.programName,
+            s.semister,
+            s.admission_year,
+            s.policies || null
+          ]
         );
         addedCount++;
+      } else {
+        errors.push({ row: rowNum, message: `Student with email ${s.email} already exists.` });
       }
     }
 
-    res.status(200).json({ message: `Successfully imported ${addedCount} dynamic student profiles.` });
+    if (errors.length > 0 && addedCount === 0) {
+      // Complete failure
+      return res.status(400).json({ message: "Failed to import students.", successes: 0, errors });
+    }
+    
+    // Partial or total success
+    res.status(200).json({ 
+      message: `Successfully imported ${addedCount} student profiles.`, 
+      successes: addedCount, 
+      errors 
+    });
   } catch (error) {
     console.error("Bulk upload error:", error);
     res.status(500).json({ message: "Bulk upload failed", error: error.message });
   }
 };
 // End: Bulk Student API
+
+// Start: Bulk Teacher API
+const bulkUploadTeachers = async (req, res) => {
+  try {
+    const { teachers } = req.body;
+    if (!teachers || !Array.isArray(teachers) || teachers.length === 0) {
+      return res.status(400).json({ message: "Invalid teacher payload" });
+    }
+
+    let addedCount = 0;
+    let errors = [];
+    
+    for (let i = 0; i < teachers.length; i++) {
+      const t = teachers[i];
+      const rowNum = i + 1;
+
+      if (!t.name) {
+        errors.push({ row: rowNum, message: "Missing required field: name" });
+        continue;
+      }
+      if (!t.email) {
+        errors.push({ row: rowNum, message: "Missing required field: email" });
+        continue;
+      }
+      if (!t.departmentName) {
+        errors.push({ row: rowNum, message: "Missing required field: departmentName" });
+        continue;
+      }
+      if (!t.collegeName) {
+        errors.push({ row: rowNum, message: "Missing required field: collegeName" });
+        continue;
+      }
+
+      // Ensure no duplicate email
+      const checkRes = await client.query('SELECT id FROM public.users WHERE email = $1', [t.email]);
+      if (checkRes.rows.length === 0) {
+        // Find existing department or map to null if not strict validation
+        // Assume simple insert into teachers table - Note: system actually uses `users` table for teachers commonly,
+        // Let's insert into users w/ role teacher. Wait, EMS creates users and maps to teachers table or just users?
+        // Checking getTeachers to know table: "SELECT * FROM public.users WHERE role = 'faculty' or 'teacher'"
+        // Often we create user then teacher. Assuming EMS standard `users` insertion:
+        
+        // Fetch college_id
+        const collegeRes = await client.query('SELECT id FROM public.colleges WHERE name = $1', [t.collegeName]);
+        const college_id = collegeRes.rows.length > 0 ? collegeRes.rows[0].id : null;
+
+        // Fetch department_id
+        const deptRes = await client.query('SELECT id FROM public.master_departments WHERE department_name = $1', [t.departmentName]);
+        const department_id = deptRes.rows.length > 0 ? deptRes.rows[0].id : null;
+
+        const pswHash = await require('bcryptjs').hash('Teacher@123', 10);
+
+        const insertUser = await client.query(
+          `INSERT INTO public.users (name, email, password_hash, role, college_id, department_id, is_active) 
+           VALUES ($1, $2, $3, 'faculty', $4, $5, true) RETURNING id`,
+          [t.name, t.email, pswHash, college_id, department_id]
+        );
+        addedCount++;
+      } else {
+        errors.push({ row: rowNum, message: `Teacher with email ${t.email} already exists.` });
+      }
+    }
+
+    if (errors.length > 0 && addedCount === 0) {
+      return res.status(400).json({ message: "Failed to import teachers.", successes: 0, errors });
+    }
+    
+    res.status(200).json({ 
+      message: `Successfully imported ${addedCount} teacher profiles.`, 
+      successes: addedCount, 
+      errors 
+    });
+  } catch (error) {
+    console.error("Bulk upload teachers error:", error);
+    res.status(500).json({ message: "Bulk upload failed", error: error.message });
+  }
+};
+// End: Bulk Teacher API
 
 const publishExam = async (req, res) => {
   try {
@@ -4147,6 +4270,7 @@ module.exports = {
   getStudents,
   createStudent,
   bulkUploadStudents,
+  bulkUploadTeachers,
   updateStudent,
   deleteStudent,
   getColleges,

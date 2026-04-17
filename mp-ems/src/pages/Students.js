@@ -10,12 +10,17 @@ import {
   Calendar,
   Layers,
   FileText,
-  ShieldAlert
+  ShieldAlert,
+  DownloadCloud,
+  UploadCloud,
+  ChevronDown
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import authUtils from '../utils/authUtils';
+import Papa from 'papaparse';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import BulkImportModal from '../components/BulkImportModal';
 
 const Students = () => {
   const navigate = useNavigate();
@@ -61,6 +66,10 @@ const Students = () => {
   const [deleteError, setDeleteError] = useState('');
   const [studentToDelete, setStudentToDelete] = useState(null);
 
+  // ---- Bulk Import/Export States ----
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showBulkDropdown, setShowBulkDropdown] = useState(false);
+
   // cascading states removed - logic moved to StudentsForm.js
 
   useEffect(() => {
@@ -84,6 +93,71 @@ const Students = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatColumnName = (key) => {
+    const customMap = {
+      semister: 'Semester',
+      collageName: 'College Name',
+      programName: 'Program Name',
+      adharnumber: 'Aadhaar Number',
+      bloodgroup: 'Blood Group',
+      rollnumber: 'Roll Number',
+      contactnumber: 'Contact Number',
+      fathername: 'Father Name',
+      mothername: 'Mother Name',
+      spousename: 'Spouse Name',
+      admission_year: 'Admission Year',
+      admission_date: 'Admission Date'
+    };
+    if (customMap[key.toLowerCase()]) return customMap[key.toLowerCase()];
+    
+    // Convert camelCase or snake_case to Space Case
+    const spaced = key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim();
+    
+    // Capitalize every word
+    return spaced.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
+  const handleExport = () => {
+    if (!data || data.length === 0) {
+      toast.warning('No data available to export');
+      return;
+    }
+
+    const fieldsToExclude = ['id', 'created_at', 'updated_at', 'delete_status', 'deleteStatus', 'created_by', 'updated_by', 'user_id', 'userId', 'deleted_at', 'deleted_by', 'password'];
+    const exportData = data.map(item => {
+      const row = {};
+      Object.keys(item).forEach(key => {
+        if (!fieldsToExclude.includes(key)) {
+          row[formatColumnName(key)] = item[key];
+        }
+      });
+      return row;
+    });
+
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'students_export.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowBulkDropdown(false);
+  };
+
+  const handleDownloadTemplate = () => {
+    const templateFields = ['name', 'email', 'programName', 'semister', 'admission_year', 'collageName', 'policies'];
+    const csv = Papa.unparse({ fields: templateFields, data: [] });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'students_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowBulkDropdown(false);
   };
 
   // modal submission handlers removed - logic moved to StudentsForm.js
@@ -160,13 +234,51 @@ const Students = () => {
               onToggle={toggleColumn}
             />
             {!authUtils.isUniversityAdmin() && (
-              <button
-                onClick={() => navigate('/students/add')}
-                className="inline-flex items-center gap-2 px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
-              >
-                <Plus size={20} />
-                <span>Enroll Student</span>
-              </button>
+              <div className="flex gap-2 relative">
+                <div className="relative">
+                  <button
+                    onClick={() => setShowBulkDropdown(!showBulkDropdown)}
+                    className="inline-flex items-center gap-2 px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all text-sm whitespace-nowrap"
+                  >
+                    <span>Bulk Actions</span>
+                    <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {showBulkDropdown && (
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50">
+                      <button 
+                        onClick={handleDownloadTemplate}
+                        className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                      >
+                        <FileText size={16} className="text-slate-400" />
+                        Download Template
+                      </button>
+                      <button 
+                        onClick={() => { setShowImportModal(true); setShowBulkDropdown(false); }}
+                        className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                      >
+                        <UploadCloud size={16} className="text-slate-400" />
+                        Import CSV
+                      </button>
+                      <button 
+                        onClick={handleExport}
+                        className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                      >
+                        <DownloadCloud size={16} className="text-slate-400" />
+                        Export All
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
+                <button
+                  onClick={() => navigate('/students/add')}
+                  className="inline-flex items-center gap-2 px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
+                >
+                  <Plus size={20} />
+                  <span>Enroll Student</span>
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -362,6 +474,22 @@ const Students = () => {
           </div>
         </div>
       )}
+
+      {/* ===== Bulk Import Modal ===== */}
+      <BulkImportModal 
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onUploadSuccess={fetchData}
+        endpoint="http://localhost:8080/api/students/bulk-upload"
+        entityName="students"
+        expectedColumns={{
+          name: 'Name',
+          email: 'Email',
+          programName: 'Program Name',
+          semister: 'Semester',
+          admission_year: 'Admission Year'
+        }}
+      />
     </div>
   );
 };
