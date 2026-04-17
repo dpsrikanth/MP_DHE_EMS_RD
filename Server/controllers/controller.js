@@ -721,7 +721,7 @@ const getUniversities = async (req, res) => {
   try {
     const { role, university_id } = req.user || {};
     let query = `
-      SELECT u.id, u.name, u.address, u.status, u.created_at,
+      SELECT u.id, u.name, u.address, u.status, u.university_type, u.created_at,
         (SELECT COUNT(*) FROM colleges WHERE university_id = u.id AND (status = true OR status IS NULL)) as colleges_count,
         (SELECT COUNT(*) FROM programs WHERE university_id = u.id AND (status = true OR status IS NULL)) as programs_count,
         (SELECT COUNT(*) FROM academic_years WHERE university_id = u.id AND (status = true OR status IS NULL)) as academic_years_count
@@ -746,12 +746,12 @@ const getUniversities = async (req, res) => {
 const createUniversity = async (req, res) => {
   const dbClient = await client.connect();
   try {
-    const { name, address, status } = req.body;
+    const { name, address, status, university_type } = req.body;
     if (!name) return res.status(400).json({ message: 'Name is required' });
     await dbClient.query('BEGIN');
     const universityResult = await dbClient.query(
-      'INSERT INTO universities (name, address, status) VALUES ($1, $2, $3) RETURNING id, name, address, status, created_at',
-      [name, address || null, status === undefined ? true : status]
+      'INSERT INTO universities (name, address, status, university_type) VALUES ($1, $2, $3, $4) RETURNING id, name, address, status, university_type, created_at',
+      [name, address || null, status === undefined ? true : status, university_type || null]
     );
     const newUniversity = universityResult.rows[0];
     await dbClient.query(
@@ -772,10 +772,10 @@ const createUniversity = async (req, res) => {
 const updateUniversity = async (req, res) => {
   try {
     const id = req.params.id;
-    const { name, address, status } = req.body;
+    const { name, address, status, university_type } = req.body;
     const result = await client.query(
-      'UPDATE universities SET name=$1, address=$2, status=$3 WHERE id=$4 RETURNING id, name, address, status, created_at',
-      [name, address || null, status === undefined ? true : status, id]
+      'UPDATE universities SET name=$1, address=$2, status=$3, university_type=$4 WHERE id=$5 RETURNING id, name, address, status, university_type, created_at',
+      [name, address || null, status === undefined ? true : status, university_type || null, id]
     );
     if (result.rows.length === 0) return res.status(404).json({ message: 'University not found' });
     res.json(result.rows[0]);

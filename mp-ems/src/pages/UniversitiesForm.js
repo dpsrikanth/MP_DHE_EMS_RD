@@ -20,7 +20,7 @@ const UniversitiesForm = () => {
   const { id } = useParams();
   const isEditing = Boolean(id);
 
-  const [form, setForm] = useState({ name: '', address: '', status: true });
+  const [form, setForm] = useState({ name: '', address: '', status: true, university_type: '' });
   const [dataLoading, setDataLoading] = useState(isEditing);
 
   const [configLoading, setConfigLoading] = useState(false);
@@ -64,7 +64,12 @@ const UniversitiesForm = () => {
       const data = await response.json();
       const university = data.find(u => u.id.toString() === univId);
       if (university) {
-        setForm({ name: university.name || university.university_name || '', address: university.address || '', status: university.status === undefined ? true : university.status });
+        setForm({ 
+          name: university.name || university.university_name || '', 
+          address: university.address || '', 
+          status: university.status === undefined ? true : university.status,
+          university_type: university.university_type || ''
+        });
       } else { toast.error('University not found'); navigate('/universities'); }
     } catch (err) { toast.error(err.message); } 
     finally { setDataLoading(false); }
@@ -168,6 +173,20 @@ const UniversitiesForm = () => {
                     <label className="form-label form-label--required">Institutional Name</label>
                     <input type="text" placeholder="e.g. Barkatullah University" value={form.name} 
                       onChange={(e) => setForm({ ...form, name: e.target.value })} className="form-input text-lg font-black tracking-tight" />
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label form-label--required">University Type</label>
+                    <select 
+                      value={form.university_type} 
+                      onChange={(e) => setForm({ ...form, university_type: e.target.value })} 
+                      className="form-input font-bold"
+                    >
+                      <option value="">Select University Type</option>
+                      <option value="Regular">Regular (Full-time On-campus)</option>
+                      <option value="Night">Night (Evening Classes)</option>
+                      <option value="Distance">Distance (Remote Learning)</option>
+                    </select>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase mt-2">Determines the mode of delivery for academic programs</p>
                   </div>
                   <div className="form-field">
                     <label className="form-label">Administrative Headquarters</label>
