@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 import { UploadCloud, X, FileText, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -12,13 +13,85 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
 
   if (!isOpen) return null;
 
+  // Build a lookup: maps both db keys AND human-readable names (lowercased) → db key
+  const buildColumnLookup = () => {
+    const lookup = {};
+    Object.entries(expectedColumns).forEach(([dbKey, readableName]) => {
+      lookup[dbKey.toLowerCase()] = dbKey;
+      lookup[readableName.toLowerCase()] = dbKey;
+    });
+    return lookup;
+  };
+
+  // Validate that all required columns are present (accepting both db keys and readable names)
+  const validateHeaders = (headers) => {
+    const lookup = buildColumnLookup();
+    const lowerHeaders = headers.map(h => h.trim().toLowerCase());
+    const requiredDbKeys = Object.keys(expectedColumns);
+    const missing = [];
+
+    requiredDbKeys.forEach(dbKey => {
+      const readableName = expectedColumns[dbKey];
+      const found = lowerHeaders.some(h => h === dbKey.toLowerCase() || h === readableName.toLowerCase());
+      if (!found) {
+        missing.push(readableName);
+      }
+    });
+
+    return missing;
+  };
+
+  // Map row headers to db keys (handles both naming conventions)
+  const mapRowToDbKeys = (row) => {
+    const lookup = buildColumnLookup();
+    const mapped = {};
+    Object.entries(row).forEach(([key, value]) => {
+      const lowerKey = key.trim().toLowerCase();
+      if (lookup[lowerKey]) {
+        mapped[lookup[lowerKey]] = value;
+      } else {
+        mapped[key] = value; // keep unmapped columns as-is
+      }
+    });
+    return mapped;
+  };
+
+  const isExcelFile = (filename) => {
+    const ext = filename.split('.').pop().toLowerCase();
+    return ext === 'xlsx' || ext === 'xls';
+  };
+
+  const processData = (rows, headers) => {
+    const missingCols = validateHeaders(headers);
+    if (missingCols.length > 0) {
+      toast.error(`Missing required columns: ${missingCols.join(', ')}`);
+      setFile(null);
+      setPreview([]);
+      setColumns([]);
+      return;
+    }
+
+    setColumns(headers);
+    setPreview(rows.slice(0, 5));
+    setValidationErrors([]);
+  };
+
   const handleFileUpload = (e) => {
     const selectedFile = e.target.files[0];
-    if (selectedFile && selectedFile.name.endsWith('.csv')) {
-      setFile(selectedFile);
+    if (!selectedFile) return;
+
+    const ext = selectedFile.name.split('.').pop().toLowerCase();
+    if (!['csv', 'xlsx', 'xls'].includes(ext)) {
+      toast.error('Please upload a valid CSV or Excel (.xlsx, .xls) file.');
+      return;
+    }
+
+    setFile(selectedFile);
+
+    if (ext === 'csv') {
       parseCSV(selectedFile);
     } else {
-      toast.error('Please upload a valid CSV file.');
+      parseExcel(selectedFile);
     }
   };
 
@@ -27,27 +100,39 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
-        // Validation check for headers based on the human readable expected names
         const headers = results.meta.fields || [];
-        const requiredReadableCols = Object.values(expectedColumns);
-        const missingCols = requiredReadableCols.filter((col) => !headers.includes(col));
-
-        if (missingCols.length > 0) {
-          toast.error(`Missing required columns: ${missingCols.join(', ')}`);
-          setFile(null);
-          setPreview([]);
-          setColumns([]);
-          return;
-        }
-
-        setColumns(headers);
-        setPreview(results.data.slice(0, 5)); // Show only first 5 rows for preview
-        setValidationErrors([]);
+        processData(results.data, headers);
       },
       error: (error) => {
         toast.error(`Error parsing CSV: ${error.message}`);
       }
     });
+  };
+
+  const parseExcel = (file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+        if (jsonData.length === 0) {
+          toast.error('The Excel file appears to be empty.');
+          setFile(null);
+          return;
+        }
+
+        const headers = Object.keys(jsonData[0]);
+        processData(jsonData, headers);
+      } catch (err) {
+        toast.error(`Error parsing Excel file: ${err.message}`);
+        setFile(null);
+      }
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   const handleSubmit = async () => {
@@ -56,58 +141,79 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
     setLoading(true);
     setValidationErrors([]);
 
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        try {
-          const payload = {};
-          
-          // Map the human readable CSV headers back to database schema keys
-          const mappedData = results.data.map(row => {
-            const mappedRow = { ...row };
-            Object.entries(expectedColumns).forEach(([dbKey, readableKey]) => {
-              mappedRow[dbKey] = row[readableKey];
-            });
-            return mappedRow;
-          });
+    const submitData = (rows) => {
+      const mappedData = rows.map(row => mapRowToDbKeys(row));
+      const payload = {};
+      payload[entityName] = mappedData;
 
-          payload[entityName] = mappedData; // e.g. { students: [...] } or { teachers: [...] }
+      const token = localStorage.getItem('token');
+      return fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+    };
 
-          const token = localStorage.getItem('token');
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(payload)
-          });
+    try {
+      let rows;
 
-          const data = await response.json();
-
-          if (response.ok) {
-            toast.success(data.message || 'Import successful!');
-            if (data.errors && data.errors.length > 0) {
-              setValidationErrors(data.errors);
-            } else {
-              onUploadSuccess();
-              onClose();
+      if (isExcelFile(file.name)) {
+        // Re-read the Excel file for submission
+        rows = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const data = new Uint8Array(e.target.result);
+              const workbook = XLSX.read(data, { type: 'array' });
+              const firstSheetName = workbook.SheetNames[0];
+              const worksheet = workbook.Sheets[firstSheetName];
+              resolve(XLSX.utils.sheet_to_json(worksheet, { defval: '' }));
+            } catch (err) {
+              reject(err);
             }
-          } else {
-            toast.error(data.message || 'Import failed.');
-            if (data.errors && data.errors.length > 0) {
-              setValidationErrors(data.errors);
-            }
-          }
-        } catch (error) {
-          console.error('Import error:', error);
-          toast.error('An error occurred during import.');
-        } finally {
-          setLoading(false);
+          };
+          reader.onerror = reject;
+          reader.readAsArrayBuffer(file);
+        });
+      } else {
+        // Re-parse CSV
+        rows = await new Promise((resolve, reject) => {
+          Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => resolve(results.data),
+            error: (error) => reject(error)
+          });
+        });
+      }
+
+      const response = await submitData(rows);
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(data.message || 'Import successful!');
+        if (data.errors && data.errors.length > 0) {
+          setValidationErrors(data.errors);
+        } else {
+          handleReset();
+          onUploadSuccess();
+          onClose();
+        }
+      } else {
+        toast.error(data.message || 'Import failed.');
+        if (data.errors && data.errors.length > 0) {
+          setValidationErrors(data.errors);
         }
       }
-    });
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error('An error occurred during import.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleReset = () => {
@@ -117,9 +223,14 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
     setValidationErrors([]);
   };
 
+  const handleClose = () => {
+    handleReset();
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={onClose} />
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={handleClose} />
       <div className="relative bg-white rounded-[2xl] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95">
         
         <div className="sticky top-0 bg-white border-b border-slate-100 p-6 flex items-center justify-between z-10">
@@ -128,12 +239,12 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
               <UploadCloud size={20} />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-slate-900">Bulk Import via CSV</h3>
-              <p className="text-sm text-slate-500 font-medium">Upload a CSV file containing your data records</p>
+              <h3 className="text-xl font-bold text-slate-900">Bulk Import via CSV / Excel</h3>
+              <p className="text-sm text-slate-500 font-medium">Upload a CSV or Excel file containing your data records</p>
             </div>
           </div>
           <button 
-            onClick={onClose}
+            onClick={handleClose}
             className="w-10 h-10 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center transition-colors"
           >
             <X size={20} />
@@ -145,15 +256,15 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
             <div className="border-2 border-dashed border-slate-200 rounded-3xl p-12 text-center bg-slate-50 hover:bg-slate-100/50 hover:border-emerald-300 transition-all cursor-pointer relative">
               <input
                 type="file"
-                accept=".csv"
+                accept=".csv,.xlsx,.xls"
                 onChange={handleFileUpload}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
               <div className="w-20 h-20 bg-white shadow-sm border border-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-6">
                 <FileText size={32} />
               </div>
-              <h4 className="text-lg font-bold text-slate-800 mb-2">Drag & Drop your CSV file here</h4>
-              <p className="text-sm text-slate-500 mb-6">Or click to browse your files. Maximum size 5MB.</p>
+              <h4 className="text-lg font-bold text-slate-800 mb-2">Drag & Drop your CSV or Excel file here</h4>
+              <p className="text-sm text-slate-500 mb-6">Or click to browse your files. Supports .csv, .xlsx, .xls (Max 5MB)</p>
               
               <div className="text-xs font-medium text-slate-400 flex items-center justify-center gap-2">
                 <CheckCircle2 size={14} className="text-emerald-500" />
@@ -227,7 +338,7 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
 
               <div className="flex gap-4 pt-4 border-t border-slate-100">
                 <button
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all"
                   disabled={loading}
                 >
