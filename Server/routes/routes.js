@@ -4,6 +4,7 @@ const { initiateRegistration, verifyOtp, setInitialPassword, changePassword, get
 const { getMasters, getUniversityConfig, updateUniversityConfig, getCollegeConfig, updateCollegeConfig } = require('../controllers/masterController');
 const { getSmtpConfig, updateSmtpConfig } = require('../controllers/configController');
 const { autoAllocateSeats, clearAssignments, getSeatingArrangements, lockSeating } = require('../controllers/seatController');
+const { getMilestones, createMilestone, updateMilestone, deleteMilestone } = require('../controllers/milestoneController');
 const { verifyToken } = require('../middleware/auth.middleware');
 
 /**
@@ -783,6 +784,12 @@ router.delete('/exams/:id', verifyToken, deleteExam);
 router.put('/exams/:id/publish', verifyToken, publishExam);
 router.put('/exams/:id/publish-results', verifyToken, publishResults);
 router.put('/exams/:id/toggle-applications', verifyToken, toggleStudentApplication);
+
+// Academic Milestones Routes
+router.get('/milestones', verifyToken, getMilestones);
+router.post('/milestones', verifyToken, createMilestone);
+router.put('/milestones/:id', verifyToken, updateMilestone);
+router.delete('/milestones/:id', verifyToken, deleteMilestone);
 
 /**
  * @swagger

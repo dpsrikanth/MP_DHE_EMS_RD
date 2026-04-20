@@ -16,6 +16,7 @@ import {
   ChevronRight,
   ShieldCheck,
   Building2,
+  Flag,
   Menu,
   X,
   UserPlus,
@@ -78,6 +79,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       { id: 20, name: 'Users', path: '/users', icon: <Users size={20} /> },
       { id: 21, name: 'Roles', path: '/roles', icon: <ShieldCheck size={20} /> },
       { id: 13, name: 'Policies', path: '/policies', icon: <ShieldCheck size={20} /> },
+      { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> },
+      { id: 26, name: 'Institutional Roadmap', path: '/milestones', icon: <Flag size={20} /> },
     ];
 
     if (authUtils.isUniversityAdmin()) {
@@ -123,13 +126,15 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 15, name: 'Faculty Status', path: '/college-admin/faculty-status', icon: <CheckCircle2 size={20} /> },
         { id: 16, name: 'College Performance', path: '/college-admin/performance', icon: <TrendingUp size={20} /> },
         { id: 17, name: 'Marks Verification', path: '/admin/marks-verification', icon: <ShieldCheck size={20} /> },
-        // Marks Verification: internal exam marks verification — college admin's responsibility
+        { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> },
+        { id: 26, name: 'Institutional Roadmap', path: '/milestones', icon: <Flag size={20} /> },
       ];
     } else if (roleName === 'Faculty' || roleName === 'Teacher') {
       menuItems = [
         { id: 1, name: 'Dashboard', path: '/faculty/dashboard', icon: <LayoutDashboard size={20} /> },
         { id: 2, name: 'Marks Entry', path: '/faculty/marks-entry', icon: <BarChart3 size={20} /> },
-        { id: 4, name: 'Attendance', path: '/faculty/attendance', icon: <Calendar size={20} /> }
+        { id: 4, name: 'Attendance', path: '/faculty/attendance', icon: <Calendar size={20} /> },
+        { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> }
       ];
       if (isAssignedPaperSetter) {
         menuItems.push({ id: 3, name: 'Paper Setter', path: '/paper-setter/dashboard', icon: <FileText size={20} /> });
@@ -142,6 +147,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 3, name: 'Faculty Assign', path: '/college-admin/faculty-assign', icon: <Users size={20} /> },
         { id: 4, name: 'Department Faculty', path: '/teachers', icon: <Users size={20} /> },
         { id: 5, name: 'Assign Sets (HOD)', path: '/paper-setter/dashboard', icon: <FileText size={20} /> },
+        { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> }
       ]
     } else if (roleName === 'Student') {
       menuItems = [
@@ -149,6 +155,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 2, name: 'Exam Schedule', path: '/student/exams', icon: <FileText size={20} /> },
         { id: 3, name: 'Results', path: '/student/results', icon: <BarChart3 size={20} /> },
         { id: 4, name: 'Attendance', path: '/student/attendance', icon: <Calendar size={20} /> },
+        { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> }
       ]
     } else if (roleName === 'External Faculty') {
       menuItems = [
