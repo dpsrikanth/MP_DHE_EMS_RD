@@ -85,7 +85,7 @@ const Guidelines = () => {
       </div>
       
       <footer className="pt-12 pb-8 text-center text-slate-400 font-bold text-[10px] uppercase tracking-widest">
-        2025 Secure EMS Portal • End-to-End Encryption Enabled
+        {new Date().getFullYear()} Secure EMS Portal • End-to-End Encryption Enabled
       </footer>
     </div>
   );
