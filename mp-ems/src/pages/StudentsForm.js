@@ -136,6 +136,12 @@ const StudentsForm = () => {
         setForm(prev => ({ ...prev, policies: '', programName: '', admission_year: '', semister: '', batch: '' }));
         setCollegeSemesters([]); setCollegePrograms([]); setCollegePolicies([]); setCollegeAcademicYears([]);
       }
+    } else if (name === 'batch') {
+      // Auto-populate policy when batch is selected based on master configuration
+      const selectedBatch = batches.find(b => b.batch_name === value);
+      if (selectedBatch && selectedBatch.policy_name) {
+        setForm(prev => ({ ...prev, policies: selectedBatch.policy_name }));
+      }
     }
   };
 
