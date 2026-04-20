@@ -5,15 +5,6 @@ import Select from "react-select";
 import { Calendar, ArrowLeft, Check, Hash, Layers, Settings } from "lucide-react";
 import '../styles/FormPage.css';
 
-const batchNameOptions = [
-  { value: 'July-November', label: 'July-November' },
-  { value: 'January-June', label: 'January-June' },
-  { value: 'Annual', label: 'Annual' },
-  { value: 'September-May', label: 'September-May' },
-  { value: 'October-February', label: 'October-February' },
-  { value: 'March-August', label: 'March-August' }
-];
-
 const BatchesForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -22,42 +13,59 @@ const BatchesForm = () => {
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [programs, setPrograms] = useState([]);
-  const [academicYears, setAcademicYears] = useState([]);
+  const [policies, setPolicies] = useState([]);
   
   const [form, setForm] = useState({ 
-    batch_name: null, start_date: '', end_date: '',
-    academic_year: null, import_fees_flag: 'N', program_id: null
+    batch_name: '', start_date: '', end_date: '',
+    start_year: '', end_year: '',
+    policy_id: null, import_fees_flag: 'N', program_id: null
   });
 
   useEffect(() => { fetchFormData(); }, [id]);
 
+  useEffect(() => {
+    // Dynamic batch name calculation
+    if (form.start_year && form.program_id && form.program_id.duration_years) {
+      const endYear = parseInt(form.start_year) + parseInt(form.program_id.duration_years);
+      setForm(prev => ({
+        ...prev,
+        end_year: endYear,
+        batch_name: `${form.start_year}-${endYear}`
+      }));
+    } else {
+      setForm(prev => ({ ...prev, end_year: '', batch_name: '' }));
+    }
+  }, [form.start_year, form.program_id]);
+
   const fetchFormData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const [progRes, yearRes] = await Promise.all([
+      const [progRes, polRes] = await Promise.all([
         fetch('http://localhost:8080/api/master-programs', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:8080/api/academic-years', { headers: { Authorization: `Bearer ${token}` } })
+        fetch('http://localhost:8080/api/master-policies', { headers: { Authorization: `Bearer ${token}` } })
       ]);
       
-      let progsData = [], yearsData = [];
+      let progsData = [], polsData = [];
       if (progRes.ok) {
         const result = await progRes.json();
-        progsData = result.map(p => ({ value: p.id, label: p.name }));
+        // Include duration_years in the option so we can access it
+        progsData = result.map(p => ({ value: p.id, label: p.name, duration_years: p.duration_years }));
         setPrograms(progsData);
       }
-      if (yearRes.ok) {
-        const result = await yearRes.json();
-        yearsData = result.map(y => ({ value: y.year_name, label: y.year_name }));
-        setAcademicYears(yearsData);
+      if (polRes.ok) {
+        const result = await polRes.json();
+        polsData = result.map(p => ({ value: p.id, label: p.name }));
+        setPolicies(polsData);
       }
-      if (isEditing) await loadBatch(id, progsData, yearsData);
+      
+      if (isEditing) await loadBatch(id, progsData, polsData);
     } catch (err) {
       console.error(err);
       if (isEditing) setLoading(false);
     }
   };
 
-  const loadBatch = async (batchId, loadedPrograms, loadedYears) => {
+  const loadBatch = async (batchId, loadedPrograms, loadedPolicies) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:8080/api/master-batches', {
@@ -69,14 +77,15 @@ const BatchesForm = () => {
       
       if (item) {
         const selectedProg = loadedPrograms.find(p => p.value === item.program_id) || null;
-        const selectedBatch = batchNameOptions.find(b => b.value === item.batch_name) || { value: item.batch_name, label: item.batch_name };
-        const selectedAY = loadedYears.find(y => y.value === item.academic_year) || { value: item.academic_year, label: item.academic_year };
+        const selectedPol = loadedPolicies.find(p => p.value === item.policy_id) || null;
         
         setForm({ 
-          batch_name: selectedBatch, 
+          batch_name: item.batch_name || '', 
+          start_year: item.start_year || '',
+          end_year: item.end_year || '',
           start_date: item.start_date ? item.start_date.split('T')[0] : '', 
           end_date: item.end_date ? item.end_date.split('T')[0] : '',
-          academic_year: selectedAY,
+          policy_id: selectedPol,
           import_fees_flag: item.import_fees_flag || 'N',
           program_id: selectedProg
         });
@@ -108,9 +117,10 @@ const BatchesForm = () => {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ 
           ...form,
-          batch_name: form.batch_name?.value,
-          academic_year: form.academic_year?.value,
-          program_id: form.program_id?.value
+          batch_name: form.batch_name,
+          program_id: form.program_id?.value,
+          policy_id: form.policy_id?.value,
+          academic_year: null
         })
       });
       
@@ -172,23 +182,51 @@ const BatchesForm = () => {
               <div className="form-section__title"><span>Batch Identity</span></div>
               <div className="form-grid form-grid--2">
                 <div className="form-field">
-                  <label className="form-label form-label--required">Batch Name</label>
-                  <Select options={batchNameOptions} value={form.batch_name} 
-                    onChange={(opt) => setForm({ ...form, batch_name: opt })} 
-                    className="form-react-select" classNamePrefix="react-select" placeholder="Select Batch..." />
-                </div>
-                <div className="form-field">
                   <label className="form-label form-label--required">Course / Program</label>
                   <Select options={programs} value={form.program_id} 
                     onChange={(opt) => setForm({ ...form, program_id: opt })} 
                     className="form-react-select" classNamePrefix="react-select" placeholder="Select Program..." />
                 </div>
+                <div className="form-field">
+                  <label className="form-label form-label--required">Start Year (Admission Year)</label>
+                  <div className="form-input-wrap">
+                    <Calendar size={18} className="form-input-wrap__icon" />
+                    <input type="number" value={form.start_year} min="1990" max="2100"
+                      onChange={(e) => setForm({ ...form, start_year: e.target.value })} 
+                      placeholder="e.g. 2016"
+                      className="form-input form-input--with-icon" />
+                  </div>
+                </div>
+                <div className="form-field">
+                  <label className="form-label">Calculated End Year</label>
+                  <div className="form-input-wrap">
+                    <Calendar size={18} className="form-input-wrap__icon" />
+                    <input type="number" value={form.end_year} readOnly
+                      placeholder="Auto-calculated from program"
+                      className="form-input form-input--with-icon bg-slate-50 text-slate-500 font-medium" />
+                  </div>
+                </div>
+                <div className="form-field">
+                  <label className="form-label form-label--required">Batch Name</label>
+                  <div className="form-input-wrap">
+                    <Hash size={18} className="form-input-wrap__icon" />
+                    <input type="text" value={form.batch_name} readOnly
+                      placeholder="Auto-generated (e.g. 2016-2020)"
+                      className="form-input form-input--with-icon bg-slate-50 text-slate-500 font-bold" />
+                  </div>
+                </div>
               </div>
             </div>
 
             <div className="form-section">
-              <div className="form-section__title"><span>Schedule</span></div>
+              <div className="form-section__title"><span>Configuration & Settings</span></div>
               <div className="form-grid form-grid--2">
+                <div className="form-field">
+                  <label className="form-label form-label--required">Educational Policy</label>
+                  <Select options={policies} value={form.policy_id} 
+                    onChange={(opt) => setForm({ ...form, policy_id: opt })} 
+                    className="form-react-select" classNamePrefix="react-select" placeholder="Select Policy..." />
+                </div>
                 <div className="form-field">
                   <label className="form-label">Start Date</label>
                   <div className="form-input-wrap">
@@ -207,13 +245,7 @@ const BatchesForm = () => {
                       className="form-input form-input--with-icon" />
                   </div>
                 </div>
-                <div className="form-field">
-                  <label className="form-label">Academic Year</label>
-                  <Select options={academicYears} value={form.academic_year} 
-                    onChange={(opt) => setForm({ ...form, academic_year: opt })} 
-                    className="form-react-select" classNamePrefix="react-select" placeholder="Select Year..." />
-                </div>
-                <div className="form-field">
+                {/* <div className="form-field">
                   <label className="form-label">Import Fees?</label>
                   <div className="form-input-wrap">
                     <Settings size={18} className="form-input-wrap__icon" />
@@ -225,7 +257,7 @@ const BatchesForm = () => {
                       <option value="NA">NA</option>
                     </select>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>

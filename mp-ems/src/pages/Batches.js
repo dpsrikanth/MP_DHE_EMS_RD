@@ -53,7 +53,9 @@ const Batches = () => {
   const availableColumns = [
     { key: 'id', label: 'ID' },
     { key: 'batch_name', label: 'Batch Name' },
-    { key: 'academic_year', label: 'Academic Year' },
+    { key: 'policy_name', label: 'Policy' },
+    { key: 'start_date', label: 'Start Date' },
+    { key: 'end_date', label: 'End Date' },
     { key: 'program_name', label: 'Program' },
     { key: 'status', label: 'Status' },
     { key: 'created_at', label: 'Created On' }
@@ -74,7 +76,7 @@ const Batches = () => {
     visibleColumns,
     toggleColumn
   } = useDataTable(data, { 
-    searchFields: ['id', 'batch_name', 'academic_year', 'program_name'],
+    searchFields: ['id', 'batch_name', 'policy_name', 'program_name'],
     initialSort: { field: 'id', direction: 'desc' },
     initialPageSize: 10,
     availableColumns
@@ -185,7 +187,9 @@ const Batches = () => {
               <tr className="border-y border-slate-100 bg-slate-50/50">
                 <SortHeader label="ID" field="id" currentSort={sortConfig} onSort={handleSort} className="px-8" visible={visibleColumns.id} />
                 <SortHeader label="Batch Name" field="batch_name" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.batch_name} />
-                <SortHeader label="Academic Year" field="academic_year" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.academic_year} />
+                <SortHeader label="Start Date" field="start_date" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.start_date} />
+                <SortHeader label="End Date" field="end_date" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.end_date} />
+                <SortHeader label="Policy" field="policy_name" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.policy_name} />
                 <SortHeader label="Program" field="program_name" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.program_name} />
                 <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center`}>Status</th>
                 <th className={`${visibleColumns.created_at ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Created On</th>
@@ -198,7 +202,9 @@ const Batches = () => {
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
                     {visibleColumns.id && <td className="px-8 py-5 text-sm font-bold text-slate-400">#{item.id}</td>}
                     {visibleColumns.batch_name && <td className="px-4 py-5 text-sm font-semibold text-slate-900 leading-tight">{item.batch_name}</td>}
-                    {visibleColumns.academic_year && <td className="px-4 py-5 text-sm font-bold text-sky-600 uppercase tracking-tighter"><span className="bg-sky-50 px-3 py-1 rounded-full border border-sky-100">{item.academic_year}</span></td>}
+                    {visibleColumns.start_date && <td className="px-4 py-5 text-sm text-slate-600">{item.start_date ? new Date(item.start_date).toLocaleDateString() : '—'}</td>}
+                    {visibleColumns.end_date && <td className="px-4 py-5 text-sm text-slate-600">{item.end_date ? new Date(item.end_date).toLocaleDateString() : '—'}</td>}
+                    {visibleColumns.policy_name && <td className="px-4 py-5 text-sm font-bold text-indigo-600"><span className="bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">{item.policy_name || 'No Policy'}</span></td>}
                     {visibleColumns.program_name && <td className="px-4 py-5 text-sm font-medium text-slate-600">{item.program_name}</td>}
                     {visibleColumns.status && (
                       <td className="px-4 py-5 text-center">
@@ -264,7 +270,7 @@ const Batches = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InfoItem label="Batch Name" value={viewData.batch_name} className="col-span-full" />
                 <InfoItem label="Course/Program" value={viewData.program_name} />
-                <InfoItem label="Academic Year" value={viewData.academic_year} isMono={true} />
+                <InfoItem label="Policy" value={viewData.policy_name || 'None'} />
                 <InfoItem label="Start Date" value={viewData.start_date ? new Date(viewData.start_date).toLocaleDateString() : '-'} />
                 <InfoItem label="End Date" value={viewData.end_date ? new Date(viewData.end_date).toLocaleDateString() : '-'} />
                 <InfoItem label="Fees Import Flag" value={viewData.import_fees_flag} />

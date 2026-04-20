@@ -2765,9 +2765,10 @@ const deleteMasterProgram = async (req, res) => {
 const getMasterBatches = async (req, res) => {
   try {
     const result = await client.query(
-      `SELECT mb.*, mp.name as program_name 
+      `SELECT mb.*, mp.name as program_name, p.name as policy_name 
        FROM master_batches mb
        LEFT JOIN master_programs mp ON mb.program_id = mp.id
+       LEFT JOIN master_policies p ON mb.policy_id = p.id
        WHERE mb.status = 'Active' OR mb.status IS NULL
        ORDER BY mb.id DESC`
     );
@@ -2780,14 +2781,14 @@ const getMasterBatches = async (req, res) => {
 
 const createMasterBatch = async (req, res) => {
   try {
-    const { batch_name, start_date, end_date, academic_year, import_fees_flag, program_id } = req.body;
+    const { batch_name, start_date, end_date, academic_year, import_fees_flag, program_id, policy_id, start_year, end_year } = req.body;
     if (!batch_name) return res.status(400).json({ message: "Batch name is required" });
 
     const result = await client.query(
-      `INSERT INTO master_batches (batch_name, start_date, end_date, academic_year, import_fees_flag, program_id, status)
-       VALUES ($1, $2, $3, $4, $5, $6, 'Active')
+      `INSERT INTO master_batches (batch_name, start_date, end_date, academic_year, import_fees_flag, program_id, policy_id, start_year, end_year, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Active')
        RETURNING *`,
-      [batch_name, start_date, end_date, academic_year, import_fees_flag, program_id]
+      [batch_name, start_date, end_date, academic_year, import_fees_flag, program_id, policy_id, start_year, end_year]
     );
     res.status(201).json({ message: "Batch created successfully", data: result.rows[0] });
   } catch (error) {
@@ -2799,15 +2800,15 @@ const createMasterBatch = async (req, res) => {
 const updateMasterBatch = async (req, res) => {
   try {
     const { id } = req.params;
-    const { batch_name, start_date, end_date, academic_year, import_fees_flag, program_id } = req.body;
+    const { batch_name, start_date, end_date, academic_year, import_fees_flag, program_id, policy_id, start_year, end_year } = req.body;
 
     const result = await client.query(
       `UPDATE master_batches 
        SET batch_name = $1, start_date = $2, end_date = $3, academic_year = $4, 
-           import_fees_flag = $5, program_id = $6, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $7
+           import_fees_flag = $5, program_id = $6, policy_id = $7, start_year = $8, end_year = $9, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $10
        RETURNING *`,
-      [batch_name, start_date, end_date, academic_year, import_fees_flag, program_id, id]
+      [batch_name, start_date, end_date, academic_year, import_fees_flag, program_id, policy_id, start_year, end_year, id]
     );
 
     if (result.rows.length === 0) return res.status(404).json({ message: "Batch not found" });
