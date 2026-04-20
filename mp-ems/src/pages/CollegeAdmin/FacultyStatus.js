@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserCheck, Clock, CheckCircle2, AlertCircle, Calendar, Filter } from 'lucide-react';
+import { formatDate } from '../../utils/dateUtils';
 
 const FacultyStatus = () => {
   const [data, setData] = useState([]);
@@ -121,7 +122,7 @@ const FacultyStatus = () => {
                 <td className="px-6 py-4 text-sm text-slate-400">
                   <div className="flex items-center gap-2">
                     <Clock size={14} />
-                    {item.last_updated ? new Date(item.last_updated).toLocaleDateString() : 'Never'}
+                    {item.last_updated ? formatDate(item.last_updated) : 'Never'}
                   </div>
                 </td>
               </tr>

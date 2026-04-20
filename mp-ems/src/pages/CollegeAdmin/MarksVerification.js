@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { CheckCircle, Clock, ShieldAlert, FileText, ChevronRight, Lock, Building, Search, X, Send, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
 
 const MarksVerification = () => {
@@ -376,7 +377,7 @@ const MarksVerification = () => {
                                                         </td>
                                                         <td className="px-5 py-3.5 whitespace-nowrap">
                                                             <div className="flex flex-col">
-                                                                <span className="text-sm text-slate-700 font-medium">{date.toLocaleDateString()}</span>
+                                                                <span className="text-sm text-slate-700 font-medium">{formatDate(date)}</span>
                                                                 <span className="text-xs text-slate-400 font-mono">{date.toLocaleTimeString()}</span>
                                                             </div>
                                                         </td>

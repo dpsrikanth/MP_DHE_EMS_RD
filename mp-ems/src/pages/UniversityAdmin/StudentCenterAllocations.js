@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Users, Building2, Search, CheckCircle2, X, AlertTriangle, ArrowRight, ShieldCheck, UserCheck, Info } from "lucide-react";
 import authUtils from "../../utils/authUtils";
+import { formatDate } from '../../utils/dateUtils';
 
 const StudentCenterAllocations = () => {
     const [colleges, setColleges] = useState([]);
@@ -220,7 +221,7 @@ const StudentCenterAllocations = () => {
                             <option value="">Choose Exam...</option>
                             {exams.map(e => (
                                 <option key={e.id} value={e.id}>
-                                    {`${e.program_name?.toUpperCase() || ''} • ${e.semester_name?.toUpperCase() || ''} — ${e.name?.toUpperCase() || ''} [${new Date(e.exam_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()} | ${e.start_time?.toUpperCase() || ''} — ${e.end_time?.toUpperCase() || ''}]`}
+                                    {`${e.program_name?.toUpperCase() || ''} • ${e.semester_name?.toUpperCase() || ''} — ${e.name?.toUpperCase() || ''} [${formatDate(e.exam_date).toUpperCase()} | ${e.start_time?.toUpperCase() || ''} — ${e.end_time?.toUpperCase() || ''}]`}
                                 </option>
                             ))}
                         </select>

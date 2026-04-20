@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Upload, FileText, Calendar, Clock, Loader2, FileUp, BookOpen, X, Search } from 'lucide-react';
 import { toast } from 'react-toastify';
 import authUtils from '../../utils/authUtils';
+import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
 
 const PaperSetterDashboard = () => {
@@ -89,7 +90,7 @@ const PaperSetterDashboard = () => {
       const eId = `ex${exam.exam_id}`.toLowerCase();
       const sem = (exam.semester || "").toLowerCase();
       const eDate = exam.exam_date && !isNaN(new Date(exam.exam_date)) 
-        ? new Date(exam.exam_date).toLocaleDateString().toLowerCase() 
+        ? formatDate(exam.exam_date).toLowerCase() 
         : "";
       
       return sName.includes(query) || 
@@ -168,13 +169,13 @@ const PaperSetterDashboard = () => {
                       <div className="grid grid-cols-2 gap-6 mt-4">
                         <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Exam Date</label>
-                          <p className="font-bold text-slate-700 flex items-center gap-1.5"><Calendar size={14} className="text-slate-300" /> {exam.exam_date && !isNaN(new Date(exam.exam_date)) ? new Date(exam.exam_date).toLocaleDateString() : 'TBD'}</p>
+                          <p className="font-bold text-slate-700 flex items-center gap-1.5"><Calendar size={14} className="text-slate-300" /> {exam.exam_date && !isNaN(new Date(exam.exam_date)) ? formatDate(exam.exam_date) : 'TBD'}</p>
                         </div>
                         <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Deadline</label>
                           <p className="font-bold text-rose-500 flex items-center gap-1.5"><Clock size={14} className="text-rose-300" /> {
                              exam.exam_date && !isNaN(new Date(exam.exam_date)) 
-                               ? new Date(new Date(exam.exam_date).getTime() - 20 * 24 * 60 * 60 * 1000).toLocaleDateString() 
+                               ? formatDate(new Date(new Date(exam.exam_date).getTime() - 20 * 24 * 60 * 60 * 1000)) 
                                : 'TBD'
                           }</p>
                         </div>

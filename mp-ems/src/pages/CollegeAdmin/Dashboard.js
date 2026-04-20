@@ -15,6 +15,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { formatDate } from '../../utils/dateUtils';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -142,7 +143,7 @@ const Dashboard = () => {
                 <Clock size={16} />
             </div>
             <p className="text-sm font-bold text-slate-700 pr-3">
-                {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                {formatDate(new Date())}
             </p>
         </div>
       </div>

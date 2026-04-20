@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { Calendar, Clock, BookOpen, CreditCard, CheckCircle, AlertCircle, Printer, Search, X } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
+import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
 
 const StudentExams = () => {
@@ -67,7 +68,7 @@ const StudentExams = () => {
     return exams.filter(exam => {
       const sName = (exam.subject_name || "").toLowerCase();
       const sCode = (exam.subject_code || "").toLowerCase();
-      const eDate = new Date(exam.exam_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric', weekday: 'long' }).toLowerCase();
+      const eDate = formatDate(exam.exam_date).toLowerCase();
       
       return sName.includes(query) || sCode.includes(query) || eDate.includes(query);
     });
@@ -122,7 +123,7 @@ const StudentExams = () => {
           </div>
           <div className="bg-sky-50 px-4 py-2 rounded-2xl border border-sky-100 flex items-center gap-2 text-sky-700 font-bold text-sm h-12">
             <Calendar size={18} />
-            {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
+            {formatDate(new Date())}
           </div>
         </div>
       </div>
@@ -236,7 +237,7 @@ const StudentExams = () => {
                           </div>
                           <div>
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Examination Date</p>
-                            <p className="text-xs font-bold text-slate-700">{new Date(exam.exam_date).toLocaleDateString('en-GB', { weekday: 'long' })}</p>
+                            <p className="text-xs font-bold text-slate-700">{formatDate(exam.exam_date)}</p>
                           </div>
                         </div>
                       </div>

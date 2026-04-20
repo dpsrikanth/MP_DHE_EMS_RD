@@ -17,6 +17,7 @@ import {
   ListRestart
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
+import { formatDate } from '../utils/dateUtils';
 import Select, { components } from "react-select";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
@@ -335,9 +336,7 @@ const Programs = () => {
                       </td>
                     )}
                     {visibleColumns.created_at && (
-                      <td className="px-4 py-5 text-xs font-medium text-slate-400">
-                        {item.created_at ? new Date(item.created_at).toLocaleDateString() : '—'}
-                      </td>
+                      <td className="px-4 py-5 text-xs font-medium text-slate-400">{formatDate(item.created_at)}</td>
                     )}
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -527,7 +526,7 @@ const Programs = () => {
                 <InfoItem label="Grading System" value={viewData.grading_system_type} />
                 <InfoItem label="Elective Selection" value={viewData.enable_elective_subjects_selection === 'Y' ? 'Enabled' : 'Disabled'} />
                 <InfoItem label="Status" value={viewData.status || 'Active'} />
-                <InfoItem label="Created On" value={viewData.created_at ? new Date(viewData.created_at).toLocaleString() : '-'} />
+                <InfoItem label="Created On" value={formatDate(viewData.created_at)} />
               </div>
 
               <div className="space-y-4">

@@ -9,6 +9,7 @@ import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, ColumnVisibilitySelector } from '../components/TableControls';
 import authUtils from "../utils/authUtils";
 import { toast } from 'react-toastify';
+import { formatDate } from '../utils/dateUtils';
 
 const Exams = () => {
   const navigate = useNavigate();
@@ -498,9 +499,8 @@ const Exams = () => {
                       {item.subjects.map((sub) => (
                         <div key={sub.id} className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all group/sub">
                           <div className="flex items-center gap-4">
-                            <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-slate-50 text-slate-400 border border-slate-100 group-hover/sub:bg-indigo-50 group-hover/sub:text-indigo-500 group-hover/sub:border-indigo-100 transition-colors">
-                              <span className="text-xs font-black">{new Date(sub.exam_date).getDate()}</span>
-                              <span className="text-[8px] font-bold uppercase">{new Date(sub.exam_date).toLocaleString('default', { month: 'short' })}</span>
+                            <div className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-slate-50 text-slate-400 border border-slate-100 group-hover/sub:bg-indigo-50 group-hover/sub:text-indigo-500 group-hover/sub:border-indigo-100 transition-colors shrink-0">
+                              <span className="text-[10px] font-black leading-tight text-center">{formatDate(sub.exam_date).split('-').slice(0,2).join('-')}<br/>{formatDate(sub.exam_date).split('-')[2]}</span>
                             </div>
                             <div>
                               <p className="text-sm font-bold text-slate-900 mb-0.5">{sub.subject_name}</p>

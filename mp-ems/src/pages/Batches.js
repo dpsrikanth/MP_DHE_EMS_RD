@@ -17,6 +17,7 @@ import {
   BookOpen
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
+import { formatDate } from '../utils/dateUtils';
 import Select, { components } from "react-select";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
@@ -202,8 +203,8 @@ const Batches = () => {
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
                     {visibleColumns.id && <td className="px-8 py-5 text-sm font-bold text-slate-400">#{item.id}</td>}
                     {visibleColumns.batch_name && <td className="px-4 py-5 text-sm font-semibold text-slate-900 leading-tight">{item.batch_name}</td>}
-                    {visibleColumns.start_date && <td className="px-4 py-5 text-sm text-slate-600">{item.start_date ? new Date(item.start_date).toLocaleDateString() : '—'}</td>}
-                    {visibleColumns.end_date && <td className="px-4 py-5 text-sm text-slate-600">{item.end_date ? new Date(item.end_date).toLocaleDateString() : '—'}</td>}
+                    {visibleColumns.start_date && <td className="px-4 py-5 text-sm text-slate-600">{formatDate(item.start_date)}</td>}
+                    {visibleColumns.end_date && <td className="px-4 py-5 text-sm text-slate-600">{formatDate(item.end_date)}</td>}
                     {visibleColumns.policy_name && <td className="px-4 py-5 text-sm font-bold text-indigo-600"><span className="bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">{item.policy_name || 'No Policy'}</span></td>}
                     {visibleColumns.program_name && <td className="px-4 py-5 text-sm font-medium text-slate-600">{item.program_name}</td>}
                     {visibleColumns.status && (
@@ -215,7 +216,7 @@ const Batches = () => {
                         )}
                       </td>
                     )}
-                    {visibleColumns.created_at && <td className="px-4 py-5 text-xs font-medium text-slate-400">{item.created_at ? new Date(item.created_at).toLocaleDateString() : '—'}</td>}
+                    {visibleColumns.created_at && <td className="px-4 py-5 text-xs font-medium text-slate-400">{formatDate(item.created_at)}</td>}
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button onClick={() => { setViewData(item); setShowViewModal(true); }} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all" title="View Details"><Eye size={18} /></button>
@@ -271,11 +272,11 @@ const Batches = () => {
                 <InfoItem label="Batch Name" value={viewData.batch_name} className="col-span-full" />
                 <InfoItem label="Course/Program" value={viewData.program_name} />
                 <InfoItem label="Policy" value={viewData.policy_name || 'None'} />
-                <InfoItem label="Start Date" value={viewData.start_date ? new Date(viewData.start_date).toLocaleDateString() : '-'} />
-                <InfoItem label="End Date" value={viewData.end_date ? new Date(viewData.end_date).toLocaleDateString() : '-'} />
+                <InfoItem label="Start Date" value={formatDate(viewData.start_date)} />
+                <InfoItem label="End Date" value={formatDate(viewData.end_date)} />
                 <InfoItem label="Fees Import Flag" value={viewData.import_fees_flag} />
                 <InfoItem label="Status" value={viewData.status || 'Active'} />
-                <InfoItem label="Created On" value={viewData.created_at ? new Date(viewData.created_at).toLocaleString() : '-'} />
+                <InfoItem label="Created On" value={formatDate(viewData.created_at)} />
               </div>
             </div>
             <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex justify-end">

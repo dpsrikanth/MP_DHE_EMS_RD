@@ -13,6 +13,7 @@ import {
   Info
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
+import { formatDate } from '../utils/dateUtils';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader } from '../components/TableControls';
 
@@ -206,7 +207,7 @@ const MilestoneManagement = () => {
                     </div>
                   </td>
                   <td className="px-4 py-5 font-mono text-xs font-bold text-slate-500 italic lowercase tracking-tighter">
-                     {new Date(item.start_date).toLocaleDateString()} - {new Date(item.end_date).toLocaleDateString()}
+                     {formatDate(item.start_date)} - {formatDate(item.end_date)}
                   </td>
                   <td className="px-4 py-5">
                     <div className="flex items-center gap-2">

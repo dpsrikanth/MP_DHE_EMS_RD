@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { Users, Layout, Trash2, Play, Search, Building2, ChevronRight, Download, Info, CheckCircle2, AlertCircle } from "lucide-react";
 import { TableSearch } from '../../components/TableControls';
+import { formatDate } from '../../utils/dateUtils';
 
 const SeatingArrangement = () => {
     const [arrangements, setArrangements] = useState([]);
@@ -258,7 +259,7 @@ const SeatingArrangement = () => {
                                 >
                                     <option value="">Choose an exam context...</option>
                                     {exams.map(exam => {
-                                        const examDate = exam.exam_date ? new Date(exam.exam_date).toLocaleDateString() : '';
+                                        const examDate = exam.exam_date ? formatDate(exam.exam_date) : '';
                                         const displayLabel = `${exam.program_name || 'Generic'} • ${exam.semester_name || 'N/A'} • ${exam.subject_name || 'Unknown Subject'} - ${exam.exam_name} (${examDate})`;
                                         return <option key={exam.id} value={exam.id}>{displayLabel}</option>;
                                     })}

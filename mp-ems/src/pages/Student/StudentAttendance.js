@@ -6,6 +6,7 @@ import {
   History, Search
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { formatDate } from '../../utils/dateUtils';
 
 const AttendanceDetail = ({ subjectId, dateFilter }) => {
     const [details, setDetails] = useState([]);
@@ -78,7 +79,7 @@ const AttendanceDetail = ({ subjectId, dateFilter }) => {
                     {filteredDetails.map((row, i) => (
                         <tr key={i} className="hover:bg-white transition-colors">
                             <td className="px-5 py-3 font-bold text-slate-700">
-                                {new Date(row.attendance_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                {formatDate(row.attendance_date)}
                             </td>
                             <td className="px-4 py-3 font-black text-slate-400">P{row.period_number}</td>
                             <td className="px-4 py-3 font-bold text-slate-500 italic">{row.section || 'N/A'}</td>
@@ -176,12 +177,10 @@ const CombinedHistory = ({ dateFilter }) => {
                             <td className="px-8 py-5">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-slate-100 flex flex-col items-center justify-center font-black group-hover:bg-sky-500 group-hover:text-white transition-colors duration-300">
-                                        <span className="text-[10px] leading-tight text-slate-400 group-hover:text-white/70 uppercase">{new Date(row.attendance_date).toLocaleDateString('en-GB', { month: 'short' })}</span>
-                                        <span className="text-sm leading-tight italic">{new Date(row.attendance_date).getDate()}</span>
+                                        <div className="text-[10px] italic">{formatDate(row.attendance_date)}</div>
                                     </div>
                                     <div>
-                                        <p className="text-sm font-black text-slate-900">{new Date(row.attendance_date).toLocaleDateString('en-GB', { weekday: 'long' })}</p>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{new Date(row.attendance_date).getFullYear()}</p>
+                                        <p className="text-sm font-black text-slate-900 leading-none">Session Entry</p>
                                     </div>
                                 </div>
                             </td>

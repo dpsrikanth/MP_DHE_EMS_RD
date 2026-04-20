@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FileText, CheckCircle2, Clock, BookOpen, Download, AlertCircle, Shield, XCircle, Loader2, Search, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import authUtils from '../../utils/authUtils';
+import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
 
 const SubmittedPapers = () => {
@@ -39,7 +40,7 @@ const SubmittedPapers = () => {
       const pId = `qp00${paper.paper_id}`.toLowerCase();
       const eId = `ex00${paper.assignment_id}`.toLowerCase();
       const status = (paper.status || "").toLowerCase();
-      const sDate = new Date(paper.submitted_date).toLocaleDateString().toLowerCase();
+      const sDate = formatDate(paper.submitted_date).toLowerCase();
       
       return sName.includes(query) || 
              pId.includes(query) || 
@@ -170,7 +171,7 @@ const SubmittedPapers = () => {
                       <div className="grid grid-cols-2 gap-8">
                         <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Submitted Date</label>
-                          <p className="font-bold text-slate-700">{new Date(paper.submitted_date).toLocaleDateString()}</p>
+                          <p className="font-bold text-slate-700">{formatDate(paper.submitted_date)}</p>
                         </div>
                         <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Status</label>

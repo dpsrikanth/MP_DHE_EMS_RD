@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import authUtils from '../utils/authUtils';
+import { formatDate } from '../utils/dateUtils';
 import Papa from 'papaparse';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
@@ -625,7 +626,7 @@ const Teachers = () => {
                     )}
                     {visibleColumns.dob && (
                       <td className="px-4 py-5">
-                        <p className="text-[11px] text-slate-700">{item.dob ? new Date(item.dob).toLocaleDateString('en-IN') : '-'}</p>
+                        <p className="text-[11px] text-slate-700">{formatDate(item.dob)}</p>
                       </td>
                     )}
                     {visibleColumns.gender && (
@@ -635,7 +636,7 @@ const Teachers = () => {
                     )}
                     {visibleColumns.joining_date && (
                       <td className="px-4 py-5">
-                        <p className="text-[11px] text-slate-700">{item.joining_date ? new Date(item.joining_date).toLocaleDateString('en-IN') : '-'}</p>
+                        <p className="text-[11px] text-slate-700">{formatDate(item.joining_date)}</p>
                       </td>
                     )}
                     {visibleColumns.phone && (
@@ -781,7 +782,7 @@ const Teachers = () => {
                 <InfoItem label="Full Name" value={viewData.name} />
                 <InfoItem label="Email Address" value={viewData.email} />
                 <InfoItem label="Phone Number" value={viewData.phone} />
-                <InfoItem label="Date of Birth" value={viewData.dob ? new Date(viewData.dob).toLocaleDateString('en-IN') : '-'} />
+                <InfoItem label="Date of Birth" value={formatDate(viewData.dob)} />
                 <InfoItem label="Gender" value={viewData.gender} />
                 <InfoItem label="Blood Group" value={viewData.blood_group} />
                 <InfoItem label="Marital Status" value={viewData.marital_status} />
@@ -804,7 +805,7 @@ const Teachers = () => {
                 <InfoItem label="Position" value={viewData.employee_position_name} />
                 <InfoItem label="Employee Grade" value={viewData.employee_grade_name} />
                 <InfoItem label="Category" value={viewData.employee_category_name} />
-                <InfoItem label="Joining Date" value={viewData.joining_date ? new Date(viewData.joining_date).toLocaleDateString('en-IN') : '-'} />
+                <InfoItem label="Joining Date" value={formatDate(viewData.joining_date)} />
                 <InfoItem label="Experience" value={viewData.experience ? `${viewData.experience} Years` : '-'} />
                 <InfoItem label="Experience Detail" value={viewData.experience_detail} />
                 <InfoItem label="Exp Months" value={viewData.experience_months} />

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import authUtils from '../utils/authUtils';
+import { formatDate } from '../utils/dateUtils';
 
 const InternalCalendar = () => {
   const navigate = useNavigate();
@@ -109,7 +110,7 @@ const InternalCalendar = () => {
          currentMonth: true, 
          exams: dayExams,
          milestones: dayMilestones,
-         isToday: new Date().toDateString() === cellDate.toDateString()
+         isToday: formatDate(new Date()) === formatDate(cellDate)
        });
     }
     
@@ -248,9 +249,7 @@ const InternalCalendar = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-slate-900 leading-tight">Day Details</h3>
-                  <p className="text-[10px] text-sky-500 font-extrabold uppercase tracking-widest">
-                    {monthNames[selectedDayEvents.month]} {selectedDayEvents.day}, {selectedDayEvents.year}
-                  </p>
+                    {formatDate(new Date(selectedDayEvents.year, selectedDayEvents.month, selectedDayEvents.day))}
                 </div>
               </div>
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Eye, Download, X, Search } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
 import { toast } from 'react-toastify';
+import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
 
 const SecrecyQuestionPapers = () => {
@@ -152,8 +153,8 @@ const SecrecyQuestionPapers = () => {
         const setter = (p.setter_name || "").toLowerCase();
         const sem = (p.semester || "").toLowerCase();
         const exam = (p.exam_name || "").toLowerCase();
-        const sDate = p.updated_at ? new Date(p.updated_at).toLocaleDateString().toLowerCase() : "";
-        const eDate = p.exam_date && !isNaN(new Date(p.exam_date)) ? new Date(p.exam_date).toLocaleDateString().toLowerCase() : "";
+        const sDate = p.updated_at ? formatDate(p.updated_at).toLowerCase() : "";
+        const eDate = p.exam_date && !isNaN(new Date(p.exam_date)) ? formatDate(p.exam_date).toLowerCase() : "";
 
         return sName.includes(query) || 
                setter.includes(query) || 
@@ -258,11 +259,11 @@ const SecrecyQuestionPapers = () => {
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase">Submitted Date</p>
-                    <p className="font-bold text-slate-700 text-sm mt-0.5">{paper.updated_at ? new Date(paper.updated_at).toLocaleDateString() : 'N/A'}</p>
+                    <p className="font-bold text-slate-700 text-sm mt-0.5">{paper.updated_at ? formatDate(paper.updated_at) : 'N/A'}</p>
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase">Exam Date</p>
-                    <p className="font-bold text-slate-700 text-sm mt-0.5">{paper.exam_date && !isNaN(new Date(paper.exam_date)) ? new Date(paper.exam_date).toLocaleDateString() : 'TBD'}</p>
+                    <p className="font-bold text-slate-700 text-sm mt-0.5">{paper.exam_date && !isNaN(new Date(paper.exam_date)) ? formatDate(paper.exam_date) : 'TBD'}</p>
                   </div>
                 </div>
 
@@ -367,7 +368,7 @@ const SecrecyQuestionPapers = () => {
                      </div>
                      <div>
                        <span className="text-xs font-bold text-slate-400">Exam Date: </span>
-                       <span className="text-sm font-black text-slate-700">{selectedPaperForSets?.exam_date && !isNaN(new Date(selectedPaperForSets.exam_date)) ? new Date(selectedPaperForSets.exam_date).toLocaleDateString() : 'TBD'}</span>
+                       <span className="text-sm font-black text-slate-700">{selectedPaperForSets?.exam_date && !isNaN(new Date(selectedPaperForSets.exam_date)) ? formatDate(selectedPaperForSets.exam_date) : 'TBD'}</span>
                      </div>
                      <div>
                        <span className="text-xs font-bold text-slate-400">Semester: </span>
@@ -411,7 +412,7 @@ const SecrecyQuestionPapers = () => {
                            </div>
                         </div>
                         <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded-md uppercase tracking-tighter">
-                          Uploaded • {p.updated_at ? new Date(p.updated_at).toLocaleDateString() : 'N/A'}
+                          Uploaded • {p.updated_at ? formatDate(p.updated_at) : 'N/A'}
                         </span>
                       </div>
                     ))}

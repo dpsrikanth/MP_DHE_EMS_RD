@@ -13,6 +13,7 @@ import {
   ShieldAlert
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
+import { formatDate } from '../utils/dateUtils';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 import Select from "react-select";
@@ -280,7 +281,7 @@ const Semesters = () => {
                       <td className="px-4 py-5">
                         <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Registered On</p>
                         <p className="text-xs font-semibold text-slate-500">
-                          {item.created_at ? new Date(item.created_at).toLocaleDateString() : 'System Default'}
+                          {formatDate(item.created_at)}
                         </p>
                       </td>
                     )}

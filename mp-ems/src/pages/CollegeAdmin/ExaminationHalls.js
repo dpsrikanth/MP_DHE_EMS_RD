@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import { Building2, Save, Pencil, Trash2, X, Search, Layers, Users, SendHorizontal, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js';
+import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
 
 ChartJS.register(ArcElement, Tooltip);
@@ -387,7 +388,7 @@ const ExaminationHalls = () => {
                     >
                         <option value="">— Select Exam to Filter Stats —</option>
                         {exams.map(exam => {
-                            const date = exam.exam_date ? new Date(exam.exam_date).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '';
+                            const date = exam.exam_date ? formatDate(exam.exam_date) : '';
                             const time = (exam.start_time && exam.end_time) ? ` | ${exam.start_time} – ${exam.end_time}` : '';
                             const label = `${exam.program_name || ''} • ${exam.semester_name || ''} — ${exam.exam_name}${date ? ` [${date}${time}]` : ''}`;
                             return <option key={exam.id} value={exam.id}>{label.toUpperCase()}</option>;

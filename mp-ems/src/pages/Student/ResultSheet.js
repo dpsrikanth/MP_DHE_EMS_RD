@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Printer, Download, ChevronLeft, GraduationCap, Calendar, Award, BookOpen, CheckCircle2, User, Building, MapPin } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { formatDate } from '../../utils/dateUtils';
 import authUtils from '../../utils/authUtils';
 import { useGradingPolicy } from '../../hooks/useGradingPolicy';
 import { getGradeAndPoints, isPass, calculateSGPA } from '../../utils/gradingUtils';
@@ -289,7 +290,7 @@ const ResultSheet = () => {
 
       <div className="max-w-5xl mx-auto mt-8 text-center opacity-40">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-          Generated via MP-EMS Portal • {new Date(data.generatedAt).toLocaleString()} • Secure Verification ID: EMS-{Math.random().toString(36).substring(2, 10).toUpperCase()}
+          Generated via MP-EMS Portal • {formatDate(data.generatedAt, true)} • Secure Verification ID: EMS-{Math.random().toString(36).substring(2, 10).toUpperCase()}
         </p>
       </div>
     </div>

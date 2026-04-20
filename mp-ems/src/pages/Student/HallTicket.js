@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Printer, Download, ChevronLeft, GraduationCap, Calendar, Clock, MapPin, User, Building } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { formatDate } from '../../utils/dateUtils';
 import authUtils from '../../utils/authUtils';
 
 const HallTicket = () => {
@@ -232,7 +233,7 @@ const HallTicket = () => {
               {exams.length > 0 ? exams.map((exam, idx) => (
                 <tr key={idx} className="font-bold text-black text-[10px]">
                   <td className="p-1.5 border border-[#1e3a8a] whitespace-nowrap">
-                    {new Date(exam.exam_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {formatDate(exam.exam_date)}
                   </td>
                   <td className="p-1.5 border border-[#1e3a8a]">{exam.subject_code || '---'}</td>
                   <td className="p-1.5 border border-[#1e3a8a] text-left uppercase truncate max-w-[200px]" title={exam.subject_name}>

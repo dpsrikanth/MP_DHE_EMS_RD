@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Users, TrendingUp, AlertTriangle, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { formatDate } from '../../utils/dateUtils';
 
 const InfrastructureAnalytics = () => {
   const [data, setData] = useState([]);
@@ -99,7 +100,7 @@ const InfrastructureAnalytics = () => {
             <option value="">All Exams (Aggregate)</option>
             {exams.map(exam => (
               <option key={exam.id} value={exam.id}>
-                {exam.name} ({new Date(exam.exam_date).toLocaleDateString()})
+                {exam.name} ({formatDate(exam.exam_date)})
               </option>
             ))}
           </select>

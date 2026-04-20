@@ -11,6 +11,7 @@ import {
   History
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
+import { formatDate } from '../utils/dateUtils';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 import Select from "react-select";
@@ -263,7 +264,7 @@ const AcademicYears = () => {
                         <div className="flex flex-col gap-1">
                           <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Initialization</p>
                           <p className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-                            <History size={12} /> {item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A'}
+                            <History size={12} /> {formatDate(item.created_at)}
                           </p>
                         </div>
                       </td>
