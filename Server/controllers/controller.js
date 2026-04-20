@@ -1695,67 +1695,49 @@ const bulkUploadStudents = async (req, res) => {
       return res.status(400).json({ message: "Invalid student payload" });
     }
 
-    let addedCount = 0;
+    // Phase 1: Validate ALL rows first
     let errors = [];
-    
     for (let i = 0; i < students.length; i++) {
       const s = students[i];
-      const rowNum = i + 1; // 1-indexed for user readability
+      const rowNum = i + 1;
+      if (!s.name) errors.push({ row: rowNum, message: "Missing required field: name" });
+      if (!s.email) errors.push({ row: rowNum, message: "Missing required field: email" });
+      if (!s.programName) errors.push({ row: rowNum, message: "Missing required field: programName" });
+      if (!s.semister) errors.push({ row: rowNum, message: "Missing required field: semister" });
+      if (!s.admission_year) errors.push({ row: rowNum, message: "Missing required field: admission_year" });
+      if (s.email) {
+        const checkRes = await client.query('SELECT id FROM public.students WHERE email = $1', [s.email]);
+        if (checkRes.rows.length > 0) {
+          errors.push({ row: rowNum, message: `Student with email ${s.email} already exists.` });
+        }
+      }
+    }
 
-      if (!s.name) {
-        errors.push({ row: rowNum, message: "Missing required field: name" });
-        continue;
-      }
-      if (!s.email) {
-        errors.push({ row: rowNum, message: "Missing required field: email" });
-        continue;
-      }
-      if (!s.programName) {
-        errors.push({ row: rowNum, message: "Missing required field: programName" });
-        continue;
-      }
-      if (!s.semister) {
-        errors.push({ row: rowNum, message: "Missing required field: semister" });
-        continue;
-      }
-      if (!s.admission_year) {
-        errors.push({ row: rowNum, message: "Missing required field: admission_year" });
-        continue;
-      }
+    // If ANY errors, reject entire import
+    if (errors.length > 0) {
+      return res.status(400).json({ message: `Import rejected. Found ${errors.length} error(s). No records were imported.`, successes: 0, errors });
+    }
 
-      // Ensure no duplicate email
-      const checkRes = await client.query('SELECT id FROM public.students WHERE email = $1', [s.email]);
-      if (checkRes.rows.length === 0) {
-        await client.query(
+    // Phase 2: All valid — insert inside transaction
+    const dbClient = await client.connect();
+    try {
+      await dbClient.query('BEGIN');
+      for (let i = 0; i < students.length; i++) {
+        const s = students[i];
+        await dbClient.query(
           `INSERT INTO public.students (name, email, "collageName", "programName", semister, admission_year, policies, "deleteStatus") 
            VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
-          [
-            s.name, 
-            s.email, 
-            s.collageName || null,
-            s.programName,
-            s.semister,
-            s.admission_year,
-            s.policies || null
-          ]
+          [s.name, s.email, s.collageName || null, s.programName, s.semister, s.admission_year, s.policies || null]
         );
-        addedCount++;
-      } else {
-        errors.push({ row: rowNum, message: `Student with email ${s.email} already exists.` });
       }
+      await dbClient.query('COMMIT');
+      res.status(200).json({ message: `Successfully imported ${students.length} student profiles.`, successes: students.length, errors: [] });
+    } catch (txError) {
+      await dbClient.query('ROLLBACK');
+      throw txError;
+    } finally {
+      dbClient.release();
     }
-
-    if (errors.length > 0 && addedCount === 0) {
-      // Complete failure
-      return res.status(400).json({ message: "Failed to import students.", successes: 0, errors });
-    }
-    
-    // Partial or total success
-    res.status(200).json({ 
-      message: `Successfully imported ${addedCount} student profiles.`, 
-      successes: addedCount, 
-      errors 
-    });
   } catch (error) {
     console.error("Bulk upload error:", error);
     res.status(500).json({ message: "Bulk upload failed", error: error.message });
@@ -1771,69 +1753,67 @@ const bulkUploadTeachers = async (req, res) => {
       return res.status(400).json({ message: "Invalid teacher payload" });
     }
 
-    let addedCount = 0;
+    // Phase 1: Validate ALL rows first
     let errors = [];
-    
     for (let i = 0; i < teachers.length; i++) {
       const t = teachers[i];
       const rowNum = i + 1;
+      if (!t.name) errors.push({ row: rowNum, message: "Missing required field: name" });
+      if (!t.email) errors.push({ row: rowNum, message: "Missing required field: email" });
+      if (!t.departmentName) errors.push({ row: rowNum, message: "Missing required field: departmentName" });
+      if (!t.collegeName) errors.push({ row: rowNum, message: "Missing required field: collegeName" });
+      if (t.email) {
+        const checkRes = await client.query('SELECT id FROM public.users WHERE email = $1', [t.email]);
+        if (checkRes.rows.length > 0) {
+          errors.push({ row: rowNum, message: `Teacher with email ${t.email} already exists.` });
+        }
+      }
+    }
 
-      if (!t.name) {
-        errors.push({ row: rowNum, message: "Missing required field: name" });
-        continue;
-      }
-      if (!t.email) {
-        errors.push({ row: rowNum, message: "Missing required field: email" });
-        continue;
-      }
-      if (!t.departmentName) {
-        errors.push({ row: rowNum, message: "Missing required field: departmentName" });
-        continue;
-      }
-      if (!t.collegeName) {
-        errors.push({ row: rowNum, message: "Missing required field: collegeName" });
-        continue;
-      }
+    // If ANY errors, reject entire import
+    if (errors.length > 0) {
+      return res.status(400).json({ message: `Import rejected. Found ${errors.length} error(s). No records were imported.`, successes: 0, errors });
+    }
 
-      // Ensure no duplicate email
-      const checkRes = await client.query('SELECT id FROM public.users WHERE email = $1', [t.email]);
-      if (checkRes.rows.length === 0) {
-        // Find existing department or map to null if not strict validation
-        // Assume simple insert into teachers table - Note: system actually uses `users` table for teachers commonly,
-        // Let's insert into users w/ role teacher. Wait, EMS creates users and maps to teachers table or just users?
-        // Checking getTeachers to know table: "SELECT * FROM public.users WHERE role = 'faculty' or 'teacher'"
-        // Often we create user then teacher. Assuming EMS standard `users` insertion:
-        
+    // Phase 2: All valid — insert inside transaction
+    const dbClient = await client.connect();
+    try {
+      await dbClient.query('BEGIN');
+      for (let i = 0; i < teachers.length; i++) {
+        const t = teachers[i];
+
         // Fetch college_id
-        const collegeRes = await client.query('SELECT id FROM public.colleges WHERE name = $1', [t.collegeName]);
+        const collegeRes = await dbClient.query('SELECT id FROM public.colleges WHERE name ILIKE $1', [t.collegeName]);
         const college_id = collegeRes.rows.length > 0 ? collegeRes.rows[0].id : null;
 
-        // Fetch department_id
-        const deptRes = await client.query('SELECT id FROM public.master_departments WHERE department_name = $1', [t.departmentName]);
-        const department_id = deptRes.rows.length > 0 ? deptRes.rows[0].id : null;
-
-        const pswHash = await require('bcryptjs').hash('Teacher@123', 10);
-
-        const insertUser = await client.query(
-          `INSERT INTO public.users (name, email, password_hash, role, college_id, department_id, is_active) 
-           VALUES ($1, $2, $3, 'faculty', $4, $5, true) RETURNING id`,
-          [t.name, t.email, pswHash, college_id, department_id]
+        // Create user record
+        const userResult = await dbClient.query(
+          `INSERT INTO public.users (name, email) VALUES ($1, $2) RETURNING id`,
+          [t.name, t.email]
         );
-        addedCount++;
-      } else {
-        errors.push({ row: rowNum, message: `Teacher with email ${t.email} already exists.` });
-      }
-    }
+        const userId = userResult.rows[0].id;
 
-    if (errors.length > 0 && addedCount === 0) {
-      return res.status(400).json({ message: "Failed to import teachers.", successes: 0, errors });
+        // Create teacher record linked to the user
+        await dbClient.query(
+          `INSERT INTO public.teachers (user_id, college_id, department, designation, experience, status) 
+           VALUES ($1, $2, $3, $4, $5, true)`,
+          [
+            userId,
+            college_id,
+            t.departmentName || t.department || null,
+            t.designation || null,
+            t.experience || null
+          ]
+        );
+      }
+      await dbClient.query('COMMIT');
+      res.status(200).json({ message: `Successfully imported ${teachers.length} teacher profiles.`, successes: teachers.length, errors: [] });
+    } catch (txError) {
+      await dbClient.query('ROLLBACK');
+      throw txError;
+    } finally {
+      dbClient.release();
     }
-    
-    res.status(200).json({ 
-      message: `Successfully imported ${addedCount} teacher profiles.`, 
-      successes: addedCount, 
-      errors 
-    });
   } catch (error) {
     console.error("Bulk upload teachers error:", error);
     res.status(500).json({ message: "Bulk upload failed", error: error.message });

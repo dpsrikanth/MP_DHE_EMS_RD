@@ -148,7 +148,7 @@ const Students = () => {
   };
 
   const handleDownloadTemplate = () => {
-    const templateFields = ['name', 'email', 'programName', 'semister', 'admission_year', 'collageName', 'policies'];
+    const templateFields = ['Name', 'Email', 'Program Name', 'Semester', 'Admission Year', 'College Name', 'Policies'];
     const csv = Papa.unparse({ fields: templateFields, data: [] });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');

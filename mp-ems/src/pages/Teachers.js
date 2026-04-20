@@ -288,7 +288,7 @@ const Teachers = () => {
   };
 
   const handleDownloadTemplate = () => {
-    const templateFields = ['name', 'email', 'departmentName', 'collegeName'];
+    const templateFields = ['Name', 'Email', 'Department', 'College Name'];
     const csv = Papa.unparse({ fields: templateFields, data: [] });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -864,7 +864,7 @@ const Teachers = () => {
         expectedColumns={{
           name: 'Name',
           email: 'Email',
-          departmentName: 'Department Name',
+          departmentName: 'Department',
           collegeName: 'College Name'
         }}
       />

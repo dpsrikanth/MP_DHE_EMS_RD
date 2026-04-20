@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { UploadCloud, X, FileText, CheckCircle2, ShieldAlert } from 'lucide-react';
@@ -10,6 +10,17 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
   const [preview, setPreview] = useState([]);
   const [columns, setColumns] = useState([]);
   const [validationErrors, setValidationErrors] = useState([]);
+
+  // Reset all state whenever the modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      setFile(null);
+      setPreview([]);
+      setColumns([]);
+      setValidationErrors([]);
+      setLoading(false);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -93,6 +104,15 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
     } else {
       parseExcel(selectedFile);
     }
+  };
+
+  // Normalize a string for flexible matching (lowercase, trim, collapse spaces)
+  const normalize = (str) => (str || '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+  // Find the actual CSV header that matches an expected column name
+  const findMatchingHeader = (headers, expectedName) => {
+    const norm = normalize(expectedName);
+    return headers.find(h => normalize(h) === norm);
   };
 
   const parseCSV = (file) => {
