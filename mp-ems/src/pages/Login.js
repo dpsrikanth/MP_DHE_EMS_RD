@@ -1,16 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  LogIn,
   Mail,
   Lock,
   Eye,
   EyeOff,
   CheckCircle2,
   School,
-  Calendar,
-  Award,
-  TrendingUp,
   ArrowRight
 } from "lucide-react";
 import authUtils from "../utils/authUtils";
@@ -106,24 +102,29 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center lg:justify-end font-sans p-8 sm:p-12 lg:p-16 overflow-auto">
-      {/* High-Contrast Academic/Exam Background Image */}
-      <div className="fixed inset-0 z-0 bg-slate-100">
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
-          style={{ 
-            backgroundImage: "url('/login-bg.jpg')",
-            filter: "brightness(1.05) contrast(1.3) saturate(1.1)"
-          }}
-        />
-        {/* Subtle Light Overlay for branding clarity on the left */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-transparent hidden lg:block" />
+    <div className="h-screen w-full relative flex items-center justify-center font-sans overflow-hidden bg-slate-950 p-6">
+      {/* Immersive Background Design (Full Screen) */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-5%] w-[70%] h-[70%] bg-sky-500/20 rounded-full blur-[160px] animate-pulse-soft" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[60%] h-[60%] bg-indigo-600/20 rounded-full blur-[140px] animate-pulse-soft" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-[20%] right-[10%] w-[40%] h-[40%] bg-purple-600/10 rounded-full blur-[120px] animate-pulse-soft" style={{ animationDelay: '4s' }} />
+        
+        {/* Grid Pattern Overlay */}
+        <div className="absolute inset-0 opacity-[0.1]" 
+             style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '64px 64px' }} />
+        
+        {/* Decorative Glass Elements */}
+        <div className="absolute top-[10%] left-[15%] w-64 h-64 bg-white/5 backdrop-blur-3xl rounded-[3rem] border border-white/10 shadow-2xl animate-float transform -rotate-12" />
+        <div className="absolute bottom-[10%] right-[15%] w-80 h-48 bg-white/5 backdrop-blur-2xl rounded-[2.5rem] border border-white/10 shadow-2xl animate-float-slow transform rotate-6" />
+        <div className="absolute top-[40%] right-[5%] w-16 h-16 bg-sky-500/20 rounded-2xl border border-sky-400/30 blur-[1px] animate-float" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-[30%] left-[10%] w-12 h-12 bg-indigo-500/20 rounded-full border border-indigo-400/30 animate-float-slow" style={{ animationDelay: '3s' }} />
       </div>
 
-      <div className="w-full max-w-[440px] lg:mr-12 xl:mr-24 bg-white rounded-[2.5rem] shadow-[0_40px_80px_-16px_rgba(0,0,0,0.15)] p-8 sm:p-10 lg:p-12 relative z-10 border border-slate-100">
+      {/* Centered Portal Card (Solid White) */}
+      <div className="w-full max-w-[480px] bg-white rounded-[3rem] border border-slate-100 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] p-8 sm:px-10 lg:px-12 sm:py-8 lg:py-10 relative z-10">
         {/* Header with Logo */}
-        <div className="flex flex-col items-center gap-4 mb-10">
-          <div className="w-14 h-14 bg-sky-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-sky-500/20">
+        <div className="flex flex-col items-center gap-3 mb-8">
+          <div className="w-14 h-14 bg-sky-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-sky-500/40">
             <School size={32} />
           </div>
           <div className="text-center">
@@ -133,14 +134,14 @@ const Login = () => {
         </div>
 
         <div className="mb-8 text-center">
-          <h2 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Portal Access</h2>
-          <p className="text-slate-500 font-medium text-sm">Please enter your administrative credentials</p>
+          <h2 className="text-2xl font-black text-slate-900 mb-1 tracking-tight">Portal Access</h2>
+          <p className="text-slate-500 font-medium text-xs">Please enter your administrative credentials</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
           {error && (
-            <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-sm font-semibold rounded-2xl flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+            <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-sm font-semibold rounded-2xl flex items-center gap-3">
+              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
               {error}
             </div>
           )}
@@ -158,7 +159,7 @@ const Login = () => {
                 onChange={handleChange}
                 placeholder="admin@institution.edu"
                 required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm"
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm"
               />
             </div>
           </div>
@@ -176,7 +177,7 @@ const Login = () => {
                 onChange={handleChange}
                 placeholder="••••••••"
                 required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-14 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm"
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-14 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm"
               />
               <button
                 type="button"
@@ -195,7 +196,7 @@ const Login = () => {
             <button
               type="button"
               onClick={() => setFormData({ ...formData, rememberMe: !formData.rememberMe })}
-              className={`w-10 h-6 rounded-full transition-all duration-300 relative ${formData.rememberMe ? 'bg-sky-500' : 'bg-slate-300'}`}
+              className={`w-10 h-6 rounded-full transition-all duration-300 relative ${formData.rememberMe ? 'bg-sky-500' : 'bg-slate-200'}`}
             >
               <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${formData.rememberMe ? 'translate-x-4' : ''}`} />
             </button>
@@ -225,16 +226,16 @@ const Login = () => {
           New to the system?{' '}
           <button
             onClick={() => navigate("/register", { state: { email: formData.email } })}
-            className="text-sky-500 font-black hover:text-sky-600 underline underline-offset-4 decoration-sky-200"
+            className="text-sky-500 font-black hover:text-sky-600 underline underline-offset-4 decoration-sky-100"
           >
             Register Students
           </button>
         </p>
 
         {/* Security Badge */}
-        <div className="mt-10 pt-8 border-t border-slate-100/50 flex items-center justify-center gap-2 opacity-60 transition-opacity hover:opacity-100">
+        <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
           <CheckCircle2 size={16} className="text-sky-500" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Secured by EMS-Cloud Architecture</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center leading-tight">Secured by EMS-Cloud Architecture</span>
         </div>
       </div>
     </div>
