@@ -9,6 +9,8 @@ const ExamScheduling = () => {
     const [academicYears, setAcademicYears] = useState([]);
     const [subjects, setSubjects] = useState([]);
     
+    const [availableContexts, setAvailableContexts] = useState({ programs: [], semesters: [], mapping: [] });
+    
     const [filters, setFilters] = useState({
         round_id: '',
         program_id: '',
@@ -20,7 +22,8 @@ const ExamScheduling = () => {
     const [loading, setLoading] = useState({
         init: true,
         subjects: false,
-        saving: false
+        saving: false,
+        contexts: false
     });
 
     const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
@@ -28,6 +31,15 @@ const ExamScheduling = () => {
     useEffect(() => {
         fetchInitialData();
     }, []);
+
+    // Dynamic filtering logic: Fetch available programs/semesters when round changes
+    useEffect(() => {
+        if (filters.round_id) {
+            fetchAvailableContexts(filters.round_id);
+        } else {
+            setAvailableContexts({ programs: [], semesters: [], mapping: [] });
+        }
+    }, [filters.round_id]);
 
     const fetchInitialData = async () => {
         try {
@@ -69,9 +81,43 @@ const ExamScheduling = () => {
         }
     };
 
+    const fetchAvailableContexts = async (roundId) => {
+        try {
+            setLoading(prev => ({ ...prev, contexts: true }));
+            const token = localStorage.getItem('token');
+            const headers = { Authorization: `Bearer ${token}` };
+            
+            const res = await fetch(`${API_URL}/internal-exams/available-contexts?round_id=${roundId}`, { headers });
+            const data = await res.json();
+            
+            // Assuming data is { programs: [id...], semesters: [id...], mapping: [{program_id, semester_id}...] }
+            // If the backend doesn't return mapping yet, we'll just use the IDs for now as requested.
+            setAvailableContexts({
+                programs: data.programs || [],
+                semesters: data.semesters || [],
+                mapping: data.mapping || []
+            });
+
+            // If current program is not in available, reset it
+            if (filters.program_id && data.programs && !data.programs.includes(parseInt(filters.program_id))) {
+                setFilters(prev => ({ ...prev, program_id: '', semester_id: '' }));
+            }
+
+        } catch (error) {
+            console.error("Error fetching contexts:", error);
+        } finally {
+            setLoading(prev => ({ ...prev, contexts: false }));
+        }
+    };
+
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
-        setFilters(prev => ({ ...prev, [name]: value }));
+        setFilters(prev => {
+            const newFilters = { ...prev, [name]: value };
+            // Reset semester if program changes
+            if (name === 'program_id') newFilters.semester_id = '';
+            return newFilters;
+        });
     };
 
     const fetchSubjectsAndSchedules = async () => {
@@ -213,14 +259,40 @@ const ExamScheduling = () => {
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Program</label>
                         <select name="program_id" value={filters.program_id} onChange={handleFilterChange} className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-700">
                             <option value="">Select Program</option>
-                            {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                            {programs
+                                .filter(p => {
+                                    if (!filters.round_id || availableContexts.programs.length === 0) return true;
+                                    return availableContexts.programs.includes(p.id);
+                                })
+                                .map(p => <option key={p.id} value={p.id}>{p.name}</option>)
+                            }
                         </select>
                     </div>
                     <div className="flex-1 min-w-[200px]">
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Semester</label>
                         <select name="semester_id" value={filters.semester_id} onChange={handleFilterChange} className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-700">
                             <option value="">Select Semester</option>
-                            {semesters.map(s => <option key={s.id} value={s.id}>{s.semester_name}</option>)}
+                            {semesters
+                                .filter(s => {
+                                    if (!filters.round_id || (availableContexts.programs.length === 0 && availableContexts.semesters.length === 0)) return true;
+                                    
+                                    // If we have mapping, filter strictly by (program, semester)
+                                    if (availableContexts.mapping.length > 0 && filters.program_id) {
+                                        return availableContexts.mapping.some(m => 
+                                            m.program_id === parseInt(filters.program_id) && 
+                                            m.semester_id === s.id
+                                        );
+                                    }
+                                    
+                                    // Fallback to just semester ID from the available list
+                                    if (availableContexts.semesters.length > 0) {
+                                        return availableContexts.semesters.includes(s.id);
+                                    }
+
+                                    return true;
+                                })
+                                .map(s => <option key={s.id} value={s.id}>{s.semester_name}</option>)
+                            }
                         </select>
                     </div>
                     <button 

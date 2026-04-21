@@ -368,13 +368,29 @@ const getPrograms = async (req, res) => {
 const getSubjects = async (req, res) => {
   try {
     const { role, university_id } = req.user || {};
-    let query = "SELECT s.id, s.name, s.program_id, s.semester_id, s.credits, s.status FROM subjects s";
-    const params = [];
+    const { program_id, semester_id } = req.query;
 
-    if (role === 'university_admin' && university_id) {
-      query += ` JOIN programs p ON s.program_id = p.id 
+    let query = "SELECT s.id, s.name, s.subject_code, s.credit as credits, s.status, s.program_id, s.semester_id FROM master_subjects s";
+    const params = [];
+    let whereAdded = false;
+
+    if ((role === 'university_admin' || role === 'college_admin') && university_id) {
+      query += ` JOIN master_programs p ON s.program_id = p.id 
                  WHERE (p.university_id = $1 OR EXISTS (SELECT 1 FROM university_master_programs ump WHERE ump.program_id = p.id AND ump.university_id = $1))`;
       params.push(university_id);
+      whereAdded = true;
+    }
+
+    if (program_id) {
+      query += whereAdded ? " AND s.program_id = $" + (params.length + 1) : " WHERE s.program_id = $" + (params.length + 1);
+      params.push(program_id);
+      whereAdded = true;
+    }
+
+    if (semester_id) {
+      query += whereAdded ? " AND s.semester_id = $" + (params.length + 1) : " WHERE s.semester_id = $" + (params.length + 1);
+      params.push(semester_id);
+      whereAdded = true;
     }
 
     const result = await client.query(query, params);
@@ -463,7 +479,7 @@ const deleteAcademicYear = async (req, res) => {
 const getSemesters = async (req, res) => {
   try {
     const { role, university_id } = req.user || {};
-    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
+    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : ((role === 'university_admin' || role === 'college_admin') ? university_id : null);
 
     let query = "SELECT id, semester_number, program_id, academic_year_id, start_date, end_date, status FROM semesters";
     const params = [];

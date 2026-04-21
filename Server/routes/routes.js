@@ -5,7 +5,7 @@ const { getMasters, getUniversityConfig, updateUniversityConfig, getCollegeConfi
 const { getSmtpConfig, updateSmtpConfig } = require('../controllers/configController');
 const { autoAllocateSeats, clearAssignments, getSeatingArrangements, lockSeating } = require('../controllers/seatController');
 const { getMilestones, createMilestone, updateMilestone, deleteMilestone } = require('../controllers/milestoneController');
-const { getRounds, createRound, getSchedules, saveSchedules } = require('../controllers/internalExamController');
+const { getRounds, createRound, getSchedules, saveSchedules, getAvailableContexts } = require('../controllers/internalExamController');
 const { verifyToken } = require('../middleware/auth.middleware');
 
 /**
@@ -796,6 +796,7 @@ router.delete('/milestones/:id', verifyToken, deleteMilestone);
 router.get('/internal-exams/rounds', verifyToken, getRounds);
 router.post('/internal-exams/rounds', verifyToken, createRound);
 router.get('/internal-exams/schedules', verifyToken, getSchedules);
+router.get('/internal-exams/available-contexts', verifyToken, getAvailableContexts);
 router.post('/internal-exams/schedules', verifyToken, saveSchedules);
 
 /**

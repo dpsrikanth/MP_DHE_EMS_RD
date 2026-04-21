@@ -105,3 +105,33 @@ exports.saveSchedules = async (req, res) => {
         res.status(500).json({ error: "Failed to save schedules" });
     }
 };
+
+exports.getAvailableContexts = async (req, res) => {
+    try {
+        const { round_id } = req.query; // component_name
+        const college_id = req.user?.college_id;
+        
+        if (!college_id) return res.status(403).json({ error: "Unauthorized" });
+
+        if (!round_id) {
+            return res.status(200).json({ programs: [], semesters: [] });
+        }
+
+        // We check if this round is a 'structure' round (component_name in internal_marks_structure)
+        const query = `
+            SELECT DISTINCT program_id, semester_id 
+            FROM internal_marks_structure 
+            WHERE college_id = $1 AND component_name = $2
+        `;
+        const result = await db.query(query, [college_id, round_id]);
+        
+        const programs = [...new Set(result.rows.map(r => r.program_id))];
+        const semesters = [...new Set(result.rows.map(r => r.semester_id))];
+        const mapping = result.rows; // Array of {program_id, semester_id}
+
+        res.status(200).json({ programs, semesters, mapping });
+    } catch (error) {
+        console.error("getAvailableContexts error:", error);
+        res.status(500).json({ error: "Failed to fetch available contexts" });
+    }
+};
