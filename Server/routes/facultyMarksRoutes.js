@@ -64,6 +64,8 @@ router.get('/students', facultyMarksController.getStudentsForSubject);
  *       - bearerAuth: []
  */
 router.get('/entered-marks', facultyMarksController.getEnteredMarks);
+router.get('/exam-rounds', facultyMarksController.getAvailableRounds);
+router.get('/students-for-round', facultyMarksController.getStudentsForRound);
 
 /**
  * @swagger

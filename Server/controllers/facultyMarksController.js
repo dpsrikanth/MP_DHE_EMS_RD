@@ -369,3 +369,93 @@ exports.getAttendanceSummary = async (req, res) => {
     }
 };
 
+exports.getAvailableRounds = async (req, res) => {
+    try {
+        const { teacher_id } = req.query;
+        const collegesRes = await db.query('SELECT DISTINCT college_id FROM faculty_subjects WHERE teacher_id = $1', [teacher_id]);
+        
+        if (collegesRes.rowCount === 0) return res.json([]);
+        
+        const collegeIds = collegesRes.rows.map(r => r.college_id);
+        
+        const query = `
+            SELECT component_name as id, component_name as name 
+            FROM internal_marks_structure 
+            WHERE college_id = ANY($1)
+            UNION
+            SELECT name as id, name as name 
+            FROM internal_exam_rounds 
+            WHERE college_id = ANY($1) AND status = true
+            ORDER BY name ASC
+        `;
+        const result = await db.query(query, [collegeIds]);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("getAvailableRounds error:", error);
+        res.status(500).json({ error: "Failed to fetch rounds" });
+    }
+};
+
+exports.getStudentsForRound = async (req, res) => {
+    try {
+        const { subject_id, round_name, college_id, semester_id, academic_year_id, section } = req.query;
+
+        const structRes = await db.query(`
+            SELECT id, max_marks, passing_marks 
+            FROM internal_marks_structure 
+            WHERE subject_id = $1 AND college_id = $2 AND component_name = $3
+        `, [subject_id, college_id, round_name]);
+
+        let componentId = null;
+        let structure = null;
+        if (structRes.rowCount > 0) {
+            componentId = structRes.rows[0].id;
+            structure = structRes.rows[0];
+        }
+
+        const colRes = await db.query('SELECT name FROM colleges WHERE id = $1', [college_id]);
+        const semRes = await db.query('SELECT semester_name FROM master_semesters WHERE id = $1', [semester_id]);
+        
+        if (colRes.rowCount === 0 || semRes.rowCount === 0) {
+            return res.status(400).json({ error: "Invalid context" });
+        }
+
+        const studentsQuery = `
+            SELECT s.id, s.name, s.rollnumber 
+            FROM students s 
+            WHERE s."collageName" = $1 AND s."semister" = $2
+        `;
+        const studentsRes = await db.query(studentsQuery, [colRes.rows[0].name, semRes.rows[0].semester_name]);
+
+        let marks = [];
+        if (componentId) {
+            const marksQuery = `
+                SELECT student_id, marks_obtained, is_absent 
+                FROM student_internal_marks 
+                WHERE subject_id = $1 AND component_id = $2
+            `;
+            const marksRes = await db.query(marksQuery, [subject_id, componentId]);
+            marks = marksRes.rows;
+        }
+
+        const statusQuery = `
+            SELECT status FROM marks_workflow_status 
+            WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5
+        `;
+        const statusRes = await db.query(statusQuery, [college_id, subject_id, semester_id, academic_year_id, section]);
+        const workflowStatus = statusRes.rowCount > 0 ? statusRes.rows[0].status : 'Pending';
+
+        res.status(200).json({
+            students: studentsRes.rows,
+            marks: marks,
+            component_id: componentId,
+            structure: structure,
+            workflowStatus: workflowStatus
+        });
+
+    } catch (error) {
+        console.error("getStudentsForRound error:", error);
+        res.status(500).json({ error: "Failed to fetch student marks context" });
+    }
+};
+

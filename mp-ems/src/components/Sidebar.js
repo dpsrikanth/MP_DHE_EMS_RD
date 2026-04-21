@@ -29,7 +29,8 @@ import {
   Map,
   Lock,
   Settings,
-  Hash
+  Hash,
+  ClipboardCheck
 } from "lucide-react";
 
 /**
@@ -142,8 +143,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     } else if (roleName === 'Faculty' || roleName === 'Teacher') {
       menuItems = [
         { id: 1, name: 'Dashboard', path: '/faculty/dashboard', icon: <LayoutDashboard size={20} /> },
-        { id: 2, name: 'Marks Entry', path: '/faculty/marks-entry', icon: <BarChart3 size={20} /> },
-        { id: 52, name: 'Internal Schedule', path: '/college-admin/internal-exams/schedules', icon: <Calendar size={20} /> },
+        { id: 2, name: 'General Marks', path: '/faculty/marks-entry', icon: <BarChart3 size={20} /> },
+        { id: 50, name: 'Internal Exam Entry', path: '/faculty/internal-marks', icon: <ClipboardCheck size={20} /> },
+        { id: 52, name: 'Internal Schedule', path: '/internal-calendar', icon: <Calendar size={20} /> },
         { id: 4, name: 'Attendance', path: '/faculty/attendance', icon: <Calendar size={20} /> },
         { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> }
       ];

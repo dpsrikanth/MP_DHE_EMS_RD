@@ -409,7 +409,7 @@ const getAcademicYears = async (req, res) => {
 
     const uId = (role === 'superadmin' && req.query.universityId) 
       ? req.query.universityId 
-      : ((role === 'university_admin' || role === 'college_admin') ? university_id : null);
+      : (['university_admin', 'college_admin', 'Faculty', 'Teacher', 'Teacher '].includes(role) ? university_id : null);
 
     if (uId) {
       query = `SELECT ay.id, ay.year_name, ay.created_at, ay.created_by, ay.updated_at, ay.updated_by 
@@ -479,9 +479,9 @@ const deleteAcademicYear = async (req, res) => {
 const getSemesters = async (req, res) => {
   try {
     const { role, university_id } = req.user || {};
-    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : ((role === 'university_admin' || role === 'college_admin') ? university_id : null);
+    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (['university_admin', 'college_admin', 'Faculty', 'Teacher', 'Teacher '].includes(role) ? university_id : null);
 
-    let query = "SELECT id, semester_number, program_id, academic_year_id, start_date, end_date, status FROM semesters";
+    let query = "SELECT id, semester_name, status FROM master_semesters WHERE (status = 'Active' OR status IS NULL)";
     const params = [];
 
     if (uId) {
@@ -1982,12 +1982,22 @@ const getStudentResults = async (req, res) => {
       LEFT JOIN calculated_internal_marks cim ON s.id = cim.student_id 
           AND (cim.subject_id = e.subject_id OR cim.subject_id = sub.id)
       LEFT JOIN (
-          SELECT student_id, subject_id, SUM(marks_obtained::float) as total_raw
-          FROM student_internal_marks
-          GROUP BY student_id, subject_id
+          SELECT sim.student_id, sim.subject_id, SUM(sim.marks_obtained::float) as total_raw
+          FROM student_internal_marks sim
+          JOIN students s2 ON sim.student_id = s2.id
+          JOIN colleges c2 ON s2."collageName" = c2.name
+          JOIN master_semesters sem2 ON s2.semister = sem2.semester_name
+          JOIN marks_workflow_status mws ON sim.subject_id = mws.subject_id 
+              AND mws.college_id = c2.id 
+              AND mws.semester_id = sem2.id
+              AND mws.status IN ('Approved', 'Locked')
+          GROUP BY sim.student_id, sim.subject_id
       ) raw_internal ON s.id = raw_internal.student_id AND e.subject_id = raw_internal.subject_id
       WHERE s.id = $1 AND e.results_published = true 
-        AND (e.exam_type = 1 OR (e.exam_type = 2 AND m.status IN ('Finalized', 'Approved', 'Pending Approval', 'Draft', 'Internal Only')))
+        AND (
+            (e.exam_type = 1 AND raw_internal.total_raw IS NOT NULL) OR 
+            (e.exam_type = 2 AND m.status IN ('Finalized', 'Approved', 'Pending Approval', 'Draft', 'Internal Only'))
+        )
       ORDER BY e.exam_type ASC, e.exam_date DESC, sub.name ASC
     `;
 
