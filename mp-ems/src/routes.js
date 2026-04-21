@@ -50,6 +50,7 @@ import StudentExams from "./pages/Student/StudentExams";
 import StudentResults from "./pages/Student/StudentResults";
 import StudentAttendance from "./pages/Student/StudentAttendance";
 import HODDashboard from "./pages/HOD/Dashboard";
+import AssessmentAcceptance from "./pages/HOD/AssessmentAcceptance";
 import ExternalAssignment from "./pages/UniversityAdmin/ExternalAssignment";
 import ExternalFacultyDashboard from "./pages/ExternalFaculty/Dashboard";
 import ExternalMarksEntry from "./pages/ExternalFaculty/MarksEntry";
@@ -186,6 +187,7 @@ const AppRoutes = () => {
       {/* HOD Routes */}
       <Route path="/hod/dashboard" element={<Layout><ProtectedRoute element={<HODDashboard />} /></Layout>} />
       <Route path="/hod/marks-approval" element={<Layout><ProtectedRoute element={<MarksApproval />} /></Layout>} />
+      <Route path="/hod/assessment-acceptance" element={<Layout><ProtectedRoute element={<AssessmentAcceptance />} /></Layout>} />
       <Route path="/admin/marks-approval" element={<Layout><ProtectedRoute element={<MarksApproval />} /></Layout>} />
 
       {/* New Marks Verification Routes */}

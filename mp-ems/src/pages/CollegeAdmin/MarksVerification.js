@@ -34,9 +34,9 @@ const MarksVerification = () => {
             const user = userStr ? JSON.parse(userStr) : {};
             const collegeId = user.college_id;
 
-            let url = `http://localhost:8080/api/college-admin/marks-tracking`;
+            let url = `http://localhost:8080/api/college-admin/marks-tracking?exclude_pending=true`;
             if (collegeId) {
-                url += `?college_id=${collegeId}`;
+                url += `&college_id=${collegeId}`;
             }
 
             const res = await fetch(url, {

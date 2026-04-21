@@ -101,7 +101,20 @@ exports.enterStudentMarks = async (req, res) => {
                 AND semester_id = $3 AND academic_year_id = $4 AND section = $5
             `;
             const checkRes = await db.query(checkQuery, [subject_id, college_id, semester_id, academic_year_id, section]);
-            const globalStatus = checkRes.rows.length > 0 ? checkRes.rows[0].status : 'Pending';
+            let globalStatus = checkRes.rows.length > 0 ? checkRes.rows[0].status : 'Pending';
+
+            if (globalStatus !== 'Locked' && globalStatus !== 'Approved' && marksData[0].component_id) {
+                 const caQuery = `
+                      SELECT is_accepted FROM component_acceptance
+                      WHERE college_id = $1 AND subject_id = $2 AND component_id = $3 AND section = $4
+                 `;
+                 const caRes = await db.query(caQuery, [college_id, subject_id, marksData[0].component_id, section]);
+                 if (caRes.rowCount > 0) {
+                      globalStatus = caRes.rows[0].is_accepted ? 'Approved' : 'Submitted';
+                 } else {
+                      globalStatus = 'Pending';
+                 }
+            }
 
             if (['Approved', 'Locked', 'Submitted'].includes(globalStatus)) {
                 // Check if EACH student in the batch is allowed to be edited
@@ -182,14 +195,26 @@ exports.enterStudentMarks = async (req, res) => {
 
 exports.submitMarks = async (req, res) => {
     try {
-        const { subject_id, section, faculty_id, college_id, semester_id, academic_year_id } = req.body;
+        const { subject_id, component_id, section, faculty_id, college_id, semester_id, academic_year_id } = req.body;
 
         const client = await db.connect();
         try {
             await client.query('BEGIN');
 
-            const checkQuery = `SELECT id, status, updated_at FROM marks_workflow_status WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5`;
-            const checkRes = await client.query(checkQuery, [college_id, subject_id, semester_id, academic_year_id, section]);
+            if (component_id) {
+                // Internal Exam Marks Workflow
+                const caQuery = `
+                    INSERT INTO component_acceptance 
+                    (college_id, subject_id, semester_id, academic_year_id, section, component_id, is_accepted, accepted_by)
+                    VALUES ($1, $2, $3, $4, $5, $6, FALSE, NULL)
+                    ON CONFLICT (college_id, subject_id, semester_id, academic_year_id, section, component_id)
+                    DO UPDATE SET is_accepted = FALSE
+                `;
+                await client.query(caQuery, [college_id, subject_id, semester_id, academic_year_id, section, component_id]);
+            } else {
+                // General Marks Workflow
+                const checkQuery = `SELECT id, status, updated_at FROM marks_workflow_status WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5`;
+                const checkRes = await client.query(checkQuery, [college_id, subject_id, semester_id, academic_year_id, section]);
 
             if (checkRes.rows.length > 0) {
                 const workflow = checkRes.rows[0];
@@ -209,12 +234,13 @@ exports.submitMarks = async (req, res) => {
                 }
 
                 await client.query(`UPDATE marks_workflow_status SET status = 'Submitted', updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [workflow.id]);
-            } else {
+            } else if (!component_id) {
                 await client.query(`
                     INSERT INTO marks_workflow_status 
                     (college_id, subject_id, semester_id, academic_year_id, section, status) 
                     VALUES ($1, $2, $3, $4, $5, 'Submitted')
                 `, [college_id, subject_id, semester_id, academic_year_id, section]);
+            }
             }
 
             await client.query('COMMIT');
@@ -379,13 +405,9 @@ exports.getAvailableRounds = async (req, res) => {
         const collegeIds = collegesRes.rows.map(r => r.college_id);
         
         const query = `
-            SELECT component_name as id, component_name as name 
-            FROM internal_marks_structure 
+            SELECT DISTINCT round_id as id, round_id as name
+            FROM internal_exam_schedules
             WHERE college_id = ANY($1)
-            UNION
-            SELECT name as id, name as name 
-            FROM internal_exam_rounds 
-            WHERE college_id = ANY($1) AND status = true
             ORDER BY name ASC
         `;
         const result = await db.query(query, [collegeIds]);
@@ -438,12 +460,26 @@ exports.getStudentsForRound = async (req, res) => {
             marks = marksRes.rows;
         }
 
+        let workflowStatus = 'Pending';
         const statusQuery = `
             SELECT status FROM marks_workflow_status 
             WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5
         `;
         const statusRes = await db.query(statusQuery, [college_id, subject_id, semester_id, academic_year_id, section]);
-        const workflowStatus = statusRes.rowCount > 0 ? statusRes.rows[0].status : 'Pending';
+        const globalStatus = statusRes.rowCount > 0 ? statusRes.rows[0].status : 'Pending';
+
+        if (globalStatus === 'Locked' || globalStatus === 'Approved') {
+             workflowStatus = globalStatus;
+        } else if (componentId) {
+             const caQuery = `
+                  SELECT is_accepted FROM component_acceptance
+                  WHERE college_id = $1 AND subject_id = $2 AND component_id = $3 AND section = $4
+             `;
+             const caRes = await db.query(caQuery, [college_id, subject_id, componentId, section]);
+             if (caRes.rowCount > 0) {
+                 workflowStatus = caRes.rows[0].is_accepted ? 'Approved' : 'Submitted';
+             }
+        }
 
         res.status(200).json({
             students: studentsRes.rows,

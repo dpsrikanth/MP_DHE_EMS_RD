@@ -214,8 +214,22 @@ const ResultSheet = () => {
                   <td className="px-4 py-4">
                     <p className="text-xs font-black text-slate-700 leading-tight">{sub.subject_name}</p>
                   </td>
-                  <td className="px-4 py-4 text-center font-black text-slate-900 text-sm">
-                    {sub.total_marks}
+                  <td className="px-4 py-4 text-center">
+                    {sub.batch_status === 'Locked' || sub.batch_status === 'Approved' ? (
+                      <span className="font-black text-slate-900 text-sm">{sub.total_marks}</span>
+                    ) : (
+                      <div className="flex flex-col items-center gap-1">
+                        {sub.assessment_components?.map((comp, cIdx) => (
+                           <div key={cIdx} className="flex items-center gap-2 text-[9px] whitespace-nowrap">
+                              <span className="font-bold text-slate-400 uppercase tracking-tighter">{comp.name}:</span>
+                              <span className="font-black text-slate-700">{comp.marks}</span>
+                           </div>
+                        ))}
+                        {(!sub.assessment_components || sub.assessment_components.length === 0) && (
+                          <span className="text-slate-300">-</span>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-4 text-center font-bold text-slate-600 text-xs">
                     {sub.creditsAssigned}

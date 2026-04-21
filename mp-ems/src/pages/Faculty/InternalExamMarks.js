@@ -131,13 +131,13 @@ const InternalExamMarks = () => {
         }));
     };
 
-    const handleSave = async () => {
+    const handleSave = async (silent = false) => {
         setIsSaving(true);
         try {
             const token = localStorage.getItem('token');
             if (!componentInfo) {
                 toast.error("Marks structure component not found for this round.");
-                return;
+                return false;
             }
 
             const payload = Object.entries(marksDraft).map(([studentId, data]) => ({
@@ -162,21 +162,31 @@ const InternalExamMarks = () => {
             });
 
             if (res.ok) {
-                toast.success('Marks updated successfully!');
+                if (!silent) toast.success('Marks updated successfully!');
+                return true;
             } else {
                 const err = await res.json();
                 toast.error(err.error || 'Failed to save marks');
+                return false;
             }
         } catch (err) {
             toast.error('Saving failed');
+            return false;
         } finally {
-            setIsSaving(false);
+            if (!silent) setIsSaving(false);
         }
     };
     
     const handleSubmit = async () => {
         if (!window.confirm("Are you sure you want to submit these marks to HOD? You won't be able to edit them after submission.")) return;
         
+        // Auto-save any unsaved entries before submitting to HOD
+        const isSaved = await handleSave(true);
+        if (!isSaved) {
+            setIsSaving(false);
+            return;
+        }
+
         setIsSaving(true);
         try {
             const token = localStorage.getItem('token');
@@ -185,6 +195,7 @@ const InternalExamMarks = () => {
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
                     subject_id: selectedSubject.subject_id,
+                    component_id: componentInfo.id,
                     faculty_id: teacherId,
                     college_id: selectedSubject.college_id,
                     semester_id: selectedSem.value,
@@ -469,7 +480,7 @@ const InternalExamMarks = () => {
                                     Cancel
                                 </button>
                                 <button 
-                                    onClick={handleSave}
+                                    onClick={() => handleSave(false)}
                                     disabled={isSaving || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
                                     className={`px-10 py-3 rounded-xl font-black uppercase tracking-widest text-sm transition-all flex items-center gap-2
                                         ${isSaving || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm active:scale-95'}

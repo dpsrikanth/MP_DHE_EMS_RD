@@ -1970,7 +1970,9 @@ const getStudentResults = async (req, res) => {
         sub.credit as credits,
         p.name as program_name,
         sem.semester_name,
-        s."collageName" as college_name
+        s."collageName" as college_name,
+        raw_internal.batch_status as batch_status,
+        raw_internal.components as assessment_components
       FROM students s
       JOIN master_programs p ON s."programName" = p.name
       JOIN master_semesters sem ON s.semister = sem.semester_name
@@ -1982,17 +1984,28 @@ const getStudentResults = async (req, res) => {
       LEFT JOIN calculated_internal_marks cim ON s.id = cim.student_id 
           AND (cim.subject_id = e.subject_id OR cim.subject_id = sub.id)
       LEFT JOIN (
-          SELECT sim.student_id, sim.subject_id, SUM(sim.marks_obtained::float) as total_raw
+          SELECT sim.student_id, sim.subject_id, 
+                 SUM(sim.marks_obtained::float) as total_raw,
+                 json_agg(json_build_object(
+                    'name', ims.component_name,
+                    'marks', sim.marks_obtained,
+                    'max_marks', ims.max_marks
+                 )) as components,
+                 MAX(mws2.status) as batch_status
           FROM student_internal_marks sim
+          JOIN internal_marks_structure ims ON sim.component_id = ims.id
           JOIN students s2 ON sim.student_id = s2.id
           JOIN colleges c2 ON s2."collageName" = c2.name
           JOIN master_semesters sem2 ON s2.semister = sem2.semester_name
-          JOIN marks_workflow_status mws ON sim.subject_id = mws.subject_id 
-              AND mws.college_id = c2.id 
-              AND mws.semester_id = sem2.id
-              AND mws.status IN ('Approved', 'Locked')
+          JOIN marks_workflow_status mws2 ON sim.subject_id = mws2.subject_id 
+              AND mws2.college_id = c2.id 
+              AND mws2.semester_id = sem2.id
+          LEFT JOIN component_acceptance ca ON ca.component_id = sim.component_id
+              AND ca.college_id = c2.id AND ca.section = mws2.section
+              AND ca.subject_id = sim.subject_id
+          WHERE (mws2.status IN ('Approved', 'Locked') OR ca.is_accepted = true)
           GROUP BY sim.student_id, sim.subject_id
-      ) raw_internal ON s.id = raw_internal.student_id AND e.subject_id = raw_internal.subject_id
+      ) raw_internal ON s.id = raw_internal.student_id AND sub.id = raw_internal.subject_id
       WHERE s.id = $1 AND e.results_published = true 
         AND (
             (e.exam_type = 1 AND raw_internal.total_raw IS NOT NULL) OR 
@@ -4029,7 +4042,9 @@ const getResultSheetData = async (req, res) => {
         sub.credit as credits,
         mp.name as program_name,
         sem.semester_name,
-        s."collageName" as college_name
+        s."collageName" as college_name,
+        raw_internal.batch_status as batch_status,
+        raw_internal.components as assessment_components
       FROM marks m
       JOIN exams e ON m.exam_id = e.id
       JOIN master_subjects sub ON m.subject_id = sub.id
@@ -4039,10 +4054,28 @@ const getResultSheetData = async (req, res) => {
       LEFT JOIN calculated_internal_marks cim ON m.student_id = cim.student_id 
           AND (cim.subject_id = m.subject_id OR cim.subject_id IN (SELECT id FROM master_subjects WHERE name = sub.name))
       LEFT JOIN (
-          SELECT student_id, subject_id, SUM(marks_obtained::float) as total_raw
-          FROM student_internal_marks
-          GROUP BY student_id, subject_id
-      ) raw_internal ON m.student_id = raw_internal.student_id AND m.subject_id = raw_internal.subject_id
+          SELECT sim.student_id, sim.subject_id, 
+                 SUM(sim.marks_obtained::float) as total_raw,
+                 json_agg(json_build_object(
+                    'name', ims.component_name,
+                    'marks', sim.marks_obtained,
+                    'max_marks', ims.max_marks
+                 )) as components,
+                 MAX(mws2.status) as batch_status
+          FROM student_internal_marks sim
+          JOIN internal_marks_structure ims ON sim.component_id = ims.id
+          JOIN students s2 ON sim.student_id = s2.id
+          JOIN colleges c2 ON s2."collageName" = c2.name
+          JOIN master_semesters sem2 ON s2.semister = sem2.semester_name
+          JOIN marks_workflow_status mws2 ON sim.subject_id = mws2.subject_id 
+              AND mws2.college_id = c2.id 
+              AND mws2.semester_id = sem2.id
+          LEFT JOIN component_acceptance ca ON ca.component_id = sim.component_id
+              AND ca.college_id = c2.id AND ca.section = mws2.section
+              AND ca.subject_id = sim.subject_id
+          WHERE (mws2.status IN ('Approved', 'Locked') OR ca.is_accepted = true)
+          GROUP BY sim.student_id, sim.subject_id
+      ) raw_internal ON m.student_id = raw_internal.student_id AND sub.id = raw_internal.subject_id
       WHERE m.student_id = $1 AND e.name = $2 AND e.results_published = true AND (m.status IN ('Finalized', 'Approved', 'Pending Approval', 'Draft', 'Internal Only'))
       ORDER BY sub.name ASC
     `;

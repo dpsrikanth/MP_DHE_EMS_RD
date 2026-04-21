@@ -532,6 +532,11 @@ exports.getMarksTracking = async (req, res) => {
             query += ` AND mws.semester_id = $${paramCount}`;
             params.push(semester_id);
         }
+
+        // Filter out Pending status by default for verification/approval workflows
+        if (req.query.exclude_pending === 'true') {
+            query += ` AND mws.status != 'Pending'`;
+        }
         
         const result = await db.query(query, params);
         res.status(200).json(result.rows);
@@ -1251,6 +1256,93 @@ exports.markNotificationRead = async (req, res) => {
     } catch (error) {
         console.error("markNotificationRead error:", error);
         res.status(500).json({ error: "Failed to update notification" });
+    }
+};
+
+// --- HOD Assessment Acceptance ---
+
+exports.getPendingComponentApprovals = async (req, res) => {
+    try {
+        const { college_id, role } = req.user;
+        if (role !== 'HOD' && role !== 'college_admin') {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const query = `
+            SELECT 
+                mws.subject_id, mws.semester_id, mws.academic_year_id, mws.section,
+                ms.name as subject_name, ms.subject_code,
+                mse.semester_name,
+                may.year_name,
+                ims.id as component_id, ims.component_name, ims.max_marks,
+                COUNT(DISTINCT sim.student_id) as student_count,
+                COALESCE(ca.is_accepted, FALSE) as is_accepted,
+                ca.accepted_at
+            FROM marks_workflow_status mws
+            JOIN master_subjects ms ON mws.subject_id = ms.id
+            JOIN master_semesters mse ON mws.semester_id = mse.id
+            JOIN master_academic_years may ON mws.academic_year_id = may.id
+            JOIN internal_marks_structure ims ON ims.subject_id = mws.subject_id AND ims.college_id = mws.college_id
+            JOIN student_internal_marks sim ON sim.component_id = ims.id
+            LEFT JOIN component_acceptance ca ON ca.college_id = mws.college_id 
+                AND ca.subject_id = mws.subject_id 
+                AND ca.semester_id = mws.semester_id
+                AND ca.academic_year_id = mws.academic_year_id
+                AND ca.section = mws.section
+                AND ca.component_id = ims.id
+            WHERE mws.college_id = $1
+            GROUP BY 
+                mws.subject_id, mws.semester_id, mws.academic_year_id, mws.section,
+                ms.name, ms.subject_code, mse.semester_name, may.year_name,
+                ims.id, ims.component_name, ims.max_marks, ca.is_accepted, ca.accepted_at
+            HAVING COUNT(DISTINCT sim.student_id) > 0
+            ORDER BY mws.subject_id, mws.section, ims.id
+        `;
+
+        const result = await db.query(query, [college_id]);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("getPendingComponentApprovals error:", error);
+        res.status(500).json({ error: "Failed to fetch pending assessments" });
+    }
+};
+
+exports.acceptComponent = async (req, res) => {
+    try {
+        const { college_id, id: user_id, role } = req.user;
+        if (role !== 'HOD' && role !== 'college_admin') {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const { subject_id, semester_id, academic_year_id, section, component_id } = req.body;
+
+        const query = `
+            INSERT INTO component_acceptance 
+                (college_id, subject_id, semester_id, academic_year_id, section, component_id, is_accepted, accepted_by)
+            VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7)
+            ON CONFLICT (college_id, subject_id, semester_id, academic_year_id, section, component_id)
+            DO UPDATE SET 
+                is_accepted = TRUE,
+                accepted_by = $7,
+                accepted_at = CURRENT_TIMESTAMP
+            RETURNING *
+        `;
+
+        const result = await db.query(query, [
+            college_id, subject_id, semester_id, academic_year_id, section, component_id, user_id
+        ]);
+
+        // Audit Log
+        await db.query(
+            `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_values) 
+             VALUES ($1, 'COMPONENT_ACCEPTED', 'ASSESSMENT', $2, $3)`,
+            [user_id, component_id, JSON.stringify(req.body)]
+        );
+
+        res.status(200).json({ message: "Assessment accepted successfully", data: result.rows[0] });
+    } catch (error) {
+        console.error("acceptComponent error:", error);
+        res.status(500).json({ error: "Failed to accept assessment" });
     }
 };
 

@@ -509,5 +509,9 @@ router.post('/generate-roll-numbers', collegeAdminController.allocateRollNumbers
 
 router.get('/dashboard-stats', collegeAdminController.getCollegeDashboardStats);
 
+// HOD Assessment Acceptance
+router.get('/pending-component-approvals', collegeAdminController.getPendingComponentApprovals);
+router.post('/accept-component', collegeAdminController.acceptComponent);
+
 module.exports = router;
 

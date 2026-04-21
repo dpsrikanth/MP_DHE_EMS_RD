@@ -155,7 +155,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     } else if (roleName === 'HOD') {
       menuItems = [
         { id: 1, name: 'Dashboard', path: '/hod/dashboard', icon: <LayoutDashboard size={20} /> },
-        // { id: 5, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
+        { id: 10, name: 'Assessments', path: '/hod/assessment-acceptance', icon: <ClipboardCheck size={20} /> },
         { id: 2, name: 'Marks Approval', path: '/hod/marks-approval', icon: <FileText size={20} /> },
         { id: 3, name: 'Faculty Assign', path: '/college-admin/faculty-assign', icon: <Users size={20} /> },
         { id: 4, name: 'Department Faculty', path: '/teachers', icon: <Users size={20} /> },

@@ -244,8 +244,40 @@ const StudentResults = () => {
                             <p className="text-sm font-black text-slate-900">{sub.subject_name}</p>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{sub.subject_code}</p>
                           </td>
-                          <td className="px-4 py-4 text-center font-black text-slate-700 text-sm">{sub.internal_marks ?? '-'}</td>
-                          <td className="px-4 py-4 text-center font-bold text-slate-500 text-sm">{sub.external_marks > 0 ? sub.external_marks : '-'}</td>
+                          <td className="px-4 py-4 text-center">
+                            {sub.batch_status === 'Locked' || sub.batch_status === 'Approved' ? (
+                              <span className="text-sm font-black text-slate-700">{sub.internal_marks ?? '-'}</span>
+                            ) : (
+                              <div className="flex flex-col items-center gap-1">
+                                {sub.assessment_components?.filter(c => !c.name.toUpperCase().includes('PRACTICAL')).map((comp, cIdx) => (
+                                  <div key={cIdx} className="flex items-center gap-2 text-[10px] whitespace-nowrap">
+                                    <span className="font-bold text-slate-400 uppercase tracking-tighter">{comp.name}:</span>
+                                    <span className="font-black text-slate-700">{comp.marks}</span>
+                                  </div>
+                                ))}
+                                {(!sub.assessment_components || sub.assessment_components.filter(c => !c.name.toUpperCase().includes('PRACTICAL')).length === 0) && (
+                                  <span className="text-slate-300">-</span>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            {sub.batch_status === 'Locked' || sub.batch_status === 'Approved' ? (
+                              <span className="text-sm font-bold text-slate-500">{sub.external_marks > 0 ? sub.external_marks : '-'}</span>
+                            ) : (
+                              <div className="flex flex-col items-center gap-1">
+                                {sub.assessment_components?.filter(c => c.name.toUpperCase().includes('PRACTICAL')).map((comp, cIdx) => (
+                                  <div key={cIdx} className="flex items-center gap-2 text-[10px] whitespace-nowrap">
+                                    <span className="font-bold text-slate-400 uppercase tracking-tighter">{comp.name}:</span>
+                                    <span className="font-black text-slate-700">{comp.marks}</span>
+                                  </div>
+                                ))}
+                                {(!sub.assessment_components || sub.assessment_components.filter(c => c.name.toUpperCase().includes('PRACTICAL')).length === 0) && (
+                                  <span className="text-slate-300">-</span>
+                                )}
+                              </div>
+                            )}
+                          </td>
                           <td className="px-4 py-4 text-center font-black text-violet-700 text-sm">{sub.total_marks}</td>
                         </tr>
                       ))}
