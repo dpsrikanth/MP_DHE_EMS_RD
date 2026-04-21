@@ -17,7 +17,6 @@ export const authUtils = {
     roleName: localStorage.getItem("roleName"),
     userId: localStorage.getItem("userId"),
     collegeId: localStorage.getItem("collegeId"),
-    collegeId: localStorage.getItem("collegeId"),
     departmentId: localStorage.getItem("departmentId"),
   }),
 

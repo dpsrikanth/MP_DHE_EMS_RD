@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   CheckCircle2, AlertCircle, Loader2, BookOpen,
   Search, Users, GraduationCap, ClipboardCheck,
-  TrendingUp, FileText, Download, Eye, EyeOff,
-  BarChart3, Award, Filter, ArrowUpRight
+  TrendingUp, Download, Eye, EyeOff,
+  BarChart3
 } from "lucide-react";
 import { toast } from 'react-toastify';
 import { useGradingPolicy } from "../../hooks/useGradingPolicy";
@@ -33,7 +33,7 @@ const UniversityMarksView = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [publishing, setPublishing] = useState(false);
 
-  const { config: gradingConfig, loading: configLoading } = useGradingPolicy();
+  const { config: gradingConfig } = useGradingPolicy();
 
   useEffect(() => {
     const fetchFilters = async () => {

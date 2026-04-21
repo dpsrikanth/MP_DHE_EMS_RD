@@ -21,6 +21,7 @@ const InternalCalendar = () => {
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [exams, setExams] = useState([]);
+  const [internalSchedules, setInternalSchedules] = useState([]);
   const [milestones, setMilestones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDayEvents, setSelectedDayEvents] = useState(null);
@@ -34,9 +35,10 @@ const InternalCalendar = () => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const [examsRes, milestonesRes] = await Promise.all([
+      const [examsRes, milestonesRes, internalRes] = await Promise.all([
         fetch('http://localhost:8080/api/exams', { headers }),
-        fetch('http://localhost:8080/api/milestones', { headers })
+        fetch('http://localhost:8080/api/milestones', { headers }),
+        fetch('http://localhost:8080/api/internal-exams/schedules', { headers })
       ]);
 
       if (examsRes.ok) {
@@ -47,6 +49,11 @@ const InternalCalendar = () => {
       if (milestonesRes.ok) {
         const data = await milestonesRes.json();
         setMilestones(Array.isArray(data) ? data : []);
+      }
+
+      if (internalRes.ok) {
+        const data = await internalRes.json();
+        setInternalSchedules(Array.isArray(data) ? data : []);
       }
     } catch (err) {
       console.error("Failed to fetch data:", err);
@@ -93,6 +100,13 @@ const InternalCalendar = () => {
                 examDate.getDate() === i;
        });
 
+       const dayInternal = internalSchedules.filter(s => {
+         const examDate = new Date(s.exam_date);
+         return examDate.getFullYear() === year && 
+                examDate.getMonth() === month && 
+                examDate.getDate() === i;
+       });
+
        // Find milestones active on this day
        const dayMilestones = milestones.filter(m => {
          const start = new Date(m.start_date);
@@ -134,7 +148,9 @@ const InternalCalendar = () => {
   };
 
   const handleDayClick = (dayData) => {
-    if ((dayData.exams && dayData.exams.length > 0) || (dayData.milestones && dayData.milestones.length > 0)) {
+    if ((dayData.exams && dayData.exams.length > 0) || 
+        (dayData.internalExams && dayData.internalExams.length > 0) ||
+        (dayData.milestones && dayData.milestones.length > 0)) {
       setSelectedDayEvents(dayData);
     } else {
       setSelectedDayEvents(null);
@@ -204,7 +220,7 @@ const InternalCalendar = () => {
                       ${day.isToday ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/30' : ''}`}>
                       {day.day}
                     </span>
-                    {(day.exams?.length > 0 || day.milestones?.length > 0) && (
+                    {(day.exams?.length > 0 || day.internalExams?.length > 0 || day.milestones?.length > 0) && (
                        <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse mt-3 mr-2" />
                     )}
                   </div>
@@ -220,16 +236,23 @@ const InternalCalendar = () => {
                       </div>
                     ))}
                     
-                    {/* Render Exams as indicators */}
+                    {/* Render University Exams */}
                     {day.exams && day.exams.slice(0, 2).map((exam, eIdx) => (
                       <div key={eIdx} className="px-2 py-0.5 bg-slate-900 text-white rounded-lg text-[8px] font-black uppercase tracking-wider truncate shadow-sm">
                         {exam.subject_name}
                       </div>
                     ))}
+
+                    {/* Render Internal Exams */}
+                    {day.internalExams && day.internalExams.slice(0, 1).map((s, sIdx) => (
+                      <div key={sIdx} className="px-2 py-0.5 bg-emerald-600 text-white rounded-lg text-[8px] font-black uppercase tracking-wider truncate shadow-sm">
+                        {s.subject_name} (INT)
+                      </div>
+                    ))}
                     
-                    {(day.exams?.length + day.milestones?.length > 4) && (
+                    {(day.exams?.length + day.internalExams?.length + day.milestones?.length > 4) && (
                       <div className="text-[7px] font-black text-slate-400 pl-2 uppercase tracking-widest">
-                        + {day.exams.length + day.milestones.length - 4} More
+                        + {day.exams.length + day.internalExams.length + day.milestones.length - 4} More
                       </div>
                     )}
                   </div>
@@ -282,7 +305,36 @@ const InternalCalendar = () => {
                   </div>
                 )}
 
-                {/* Exams in Detail */}
+                {/* Internal Exams in Detail */}
+                {selectedDayEvents.internalExams?.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Internal Assessments</p>
+                    {selectedDayEvents.internalExams.map((s, idx) => (
+                      <div key={idx} className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl shadow-sm hover:border-emerald-200 transition-all group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-2 text-emerald-100 group-hover:text-emerald-200 transition-colors">
+                          <BookOpen size={48} />
+                        </div>
+                        <div className="relative z-10">
+                          <div className="flex items-center gap-2 mb-2">
+                             <div className="w-5 h-5 bg-emerald-600 rounded-md flex items-center justify-center text-white">
+                               <CalendarIcon size={12} />
+                             </div>
+                             <span className="text-[10px] font-black text-emerald-700 uppercase tracking-tight">Scheduled</span>
+                          </div>
+                          <h4 className="text-sm font-black text-slate-900 mb-2">{s.subject_name}</h4>
+                          <div className="flex items-center gap-3 text-[10px] font-bold text-slate-500 uppercase">
+                             <div className="flex items-center gap-1">
+                               <Clock size={12} className="text-emerald-600" />
+                               <span>{s.start_time} - {s.end_time}</span>
+                             </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* University Exams in Detail */}
                 {selectedDayEvents.exams?.length > 0 && (
                   <div className="space-y-3">
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Scheduled Exams</p>

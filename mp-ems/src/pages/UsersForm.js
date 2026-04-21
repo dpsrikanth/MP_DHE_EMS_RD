@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Users as UsersIcon, ArrowLeft, Check, ShieldCheck, ShieldAlert } from "lucide-react";
@@ -21,12 +21,7 @@ const UsersForm = () => {
     university_id: '', college_id: '', is_active: true 
   });
 
-  useEffect(() => {
-    fetchMasterData();
-    if (isEditing) fetchUser(id);
-  }, [id]);
-
-  const fetchMasterData = async () => {
+  const fetchMasterData = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
@@ -41,9 +36,9 @@ const UsersForm = () => {
     } catch (err) {
       console.error("Error fetching masters:", err);
     }
-  };
+  }, []);
 
-  const fetchUser = async (userId) => {
+  const fetchUser = useCallback(async (userId) => {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`http://localhost:8080/api/users`, {
@@ -68,7 +63,12 @@ const UsersForm = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    fetchMasterData();
+    if (isEditing) fetchUser(id);
+  }, [id, isEditing, fetchMasterData, fetchUser]);
 
   const handleSave = async () => {
     try {

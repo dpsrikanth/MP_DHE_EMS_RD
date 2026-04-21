@@ -128,11 +128,22 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 17, name: 'Marks Verification', path: '/admin/marks-verification', icon: <ShieldCheck size={20} /> },
         { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> },
         { id: 26, name: 'Institutional Roadmap', path: '/milestones', icon: <Flag size={20} /> },
+        { 
+          id: 50, 
+          name: 'Internal Exams', 
+          type: 'parent',
+          icon: <FileText size={20} />,
+          children: [
+            { id: 51, name: 'Exam Rounds', path: '/college-admin/internal-exams/rounds', icon: <Layers size={16} /> },
+            { id: 52, name: 'Exam Schedule', path: '/college-admin/internal-exams/schedules', icon: <Calendar size={16} /> },
+          ]
+        },
       ];
     } else if (roleName === 'Faculty' || roleName === 'Teacher') {
       menuItems = [
         { id: 1, name: 'Dashboard', path: '/faculty/dashboard', icon: <LayoutDashboard size={20} /> },
         { id: 2, name: 'Marks Entry', path: '/faculty/marks-entry', icon: <BarChart3 size={20} /> },
+        { id: 52, name: 'Internal Schedule', path: '/college-admin/internal-exams/schedules', icon: <Calendar size={20} /> },
         { id: 4, name: 'Attendance', path: '/faculty/attendance', icon: <Calendar size={20} /> },
         { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> }
       ];
@@ -210,11 +221,44 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Main Menu</p>
         {menuItems.map((item) => {
           let isActive = false;
-          if (item.path.includes('?')) {
+          if (item.path && item.path.includes('?')) {
             isActive = (location.pathname + location.search) === item.path || (location.pathname === item.path.split('?')[0] && !location.search && (item.path.includes('tab=overview') || item.path.includes('tab=assigned')) && (item.name === 'Dashboard'));
           } else {
             isActive = location.pathname === item.path;
           }
+
+          if (item.type === 'parent') {
+            return (
+              <div key={item.id} className="space-y-1">
+                <div className="flex items-center gap-3 px-4 py-2 mt-2 font-bold text-[10px] text-slate-500 uppercase tracking-widest leading-loose">
+                  {item.icon}
+                  <span>{item.name}</span>
+                </div>
+                {item.children.map(child => {
+                  const isChildActive = location.pathname === child.path;
+                  return (
+                    <button
+                      key={child.id}
+                      onClick={() => handleLinkClick(child.path)}
+                      className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-200 group ml-2 ${isChildActive
+                        ? 'bg-indigo-500/10 text-indigo-400 font-semibold'
+                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+                        }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`${isChildActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'} transition-colors`}>
+                          {child.icon}
+                        </span>
+                        <span className="text-xs font-bold">{child.name}</span>
+                      </div>
+                      {isChildActive && <ChevronRight size={12} className="text-indigo-500" />}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          }
+
           return (
             <button
               key={item.id}

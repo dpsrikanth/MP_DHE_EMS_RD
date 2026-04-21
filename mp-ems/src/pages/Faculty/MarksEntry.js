@@ -19,6 +19,7 @@ const MarksEntry = () => {
     const [initialMarks, setInitialMarks] = useState({}); // Track initial state for change detection
     const [reviews, setReviews] = useState({}); // Per-student review statuses/comments
     const [searchQuery, setSearchQuery] = useState('');
+    const [subjectSchedules, setSubjectSchedules] = useState([]);
 
     useEffect(() => {
         fetchAssignedSubjects();
@@ -97,6 +98,15 @@ const MarksEntry = () => {
             setEnteredMarks(existingMarks);
             setWorkflowStatus(status);
             setReviews(reviewsData);
+
+            // 4. Fetch Internal Schedules for this subject & college
+            const internalRes = await fetch(`http://localhost:8080/api/internal-exams/schedules?program_id=${assignment.program_id}&semester_id=${assignment.semester_id}&academic_year_id=${assignment.academic_year_id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (internalRes.ok) {
+                const internalData = await internalRes.json();
+                setSubjectSchedules(internalData.filter(s => s.subject_id === assignment.subject_id));
+            }
 
             // Populate draft state with existing marks
             const draft = {};
@@ -481,6 +491,26 @@ const MarksEntry = () => {
                     </div>
                 </div>
             </div>
+
+            {selectedAssignment && subjectSchedules.length > 0 && (
+                <div className="bg-indigo-600 text-white p-4 rounded-3xl shadow-lg flex items-center justify-between animate-in slide-in-from-top duration-500">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                            <Search size={20} />
+                        </div>
+                        <div>
+                            <p className="text-xs font-black uppercase tracking-widest opacity-70">Internal Exam Schedule Detected</p>
+                            <div className="flex gap-4 mt-1">
+                                {subjectSchedules.map((s, idx) => (
+                                    <div key={idx} className="text-sm font-bold">
+                                        Exam Date: <span className="bg-white/20 px-2 py-0.5 rounded-lg text-white ml-1">{new Date(s.exam_date).toLocaleDateString()}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 md:p-8 flex flex-col md:flex-row gap-6 items-end">
                 <div className="flex-1 w-full space-y-2">

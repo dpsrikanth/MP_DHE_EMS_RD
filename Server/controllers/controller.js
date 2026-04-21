@@ -345,7 +345,9 @@ const getPrograms = async (req, res) => {
     let query = "SELECT id, name, duration_years, university_id, status FROM programs";
     const params = [];
 
-    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
+    const uId = (role === 'superadmin' && req.query.universityId) 
+      ? req.query.universityId 
+      : ((role === 'university_admin' || role === 'college_admin') ? university_id : null);
 
     if (uId) {
       query = `SELECT p.id, p.name, p.duration_years, p.university_id, p.status 
@@ -389,7 +391,9 @@ const getAcademicYears = async (req, res) => {
     let query = "SELECT id, year_name, created_at, created_by, updated_at, updated_by FROM master_academic_years WHERE deleteflag = true";
     const params = [];
 
-    const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
+    const uId = (role === 'superadmin' && req.query.universityId) 
+      ? req.query.universityId 
+      : ((role === 'university_admin' || role === 'college_admin') ? university_id : null);
 
     if (uId) {
       query = `SELECT ay.id, ay.year_name, ay.created_at, ay.created_by, ay.updated_at, ay.updated_by 

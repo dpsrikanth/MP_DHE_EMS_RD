@@ -3,10 +3,8 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users as UsersIcon, 
-  Plus, 
   Pencil, 
   X, 
-  Check,
   UserPlus,
   Shield,
   Building,
@@ -14,13 +12,12 @@ import {
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
-import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import { TableSearch, TablePagination, SortHeader } from '../components/TableControls';
 
 const Users = () => {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   
   const [roles, setRoles] = useState([]);
   const [universities, setUniversities] = useState([]);
@@ -50,8 +47,7 @@ const Users = () => {
     setPageSize,
     totalPages,
     totalItems,
-    visibleColumns,
-    toggleColumn
+    visibleColumns
   } = useDataTable(data, { 
     searchFields: ['name', 'email', 'role_name', 'college_name', 'university_name'],
     initialSort: { field: 'id', direction: 'desc' },
@@ -94,7 +90,6 @@ const Users = () => {
       setData(result);
       setLoading(false);
     } catch (err) {
-      setError(err.message);
       setLoading(false);
     }
   };

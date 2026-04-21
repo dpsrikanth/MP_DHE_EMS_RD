@@ -67,6 +67,8 @@ import SecrecyPaperSetters from "./pages/Secrecy/PaperSetters";
 import SecrecyQuestionPapers from "./pages/Secrecy/QuestionPapers";
 import SecrecyPayments from "./pages/Secrecy/Payments";
 import SmtpSettings from "./pages/SmtpSettings";
+import RoundManagement from "./pages/InternalExams/RoundManagement";
+import ExamScheduling from "./pages/InternalExams/ExamScheduling";
 import Layout from "./components/Layout";
 import UniversitiesForm from "./pages/UniversitiesForm";
 import CollegesForm from "./pages/CollegesForm";
@@ -169,6 +171,10 @@ const AppRoutes = () => {
       <Route path="/college-admin/performance" element={<Layout><ProtectedRoute element={<CollegePerformance />} /></Layout>} />
       <Route path="/college-admin/seating-arrangement" element={<Layout><ProtectedRoute element={<SeatingArrangement />} /></Layout>} />
       <Route path="/college-admin/generate-roll-numbers" element={<Layout><ProtectedRoute element={<RollNumberGenerator />} /></Layout>} />
+      
+      {/* Internal Exam Routes */}
+      <Route path="/college-admin/internal-exams/rounds" element={<Layout><ProtectedRoute element={<RoundManagement />} /></Layout>} />
+      <Route path="/college-admin/internal-exams/schedules" element={<Layout><ProtectedRoute element={<ExamScheduling />} /></Layout>} />
 
       {/* Faculty Routes */}
       <Route path="/faculty/dashboard" element={<Layout><ProtectedRoute element={<FacultyDashboard />} /></Layout>} />
