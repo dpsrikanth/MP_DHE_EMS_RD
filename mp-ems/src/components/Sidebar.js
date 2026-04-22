@@ -192,6 +192,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             { id: 20, name: 'Users', path: '/users', icon: <Users size={18} /> },
             { id: 13, name: 'Policies', path: '/policies', icon: <ShieldCheck size={18} /> },
             { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={18} /> },
+            { id: 26, name: 'Institutional Roadmap', path: '/milestones', icon: <Flag size={18} /> },
           ]
         }
       ];
@@ -285,7 +286,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         ]
       },
       { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> },
-      { id: 26, name: 'Institutional Roadmap', path: '/milestones', icon: <Flag size={20} /> },
     ];
 
     if (authUtils.isSystemAdmin()) {

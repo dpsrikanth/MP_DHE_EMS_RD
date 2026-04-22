@@ -22,6 +22,8 @@ const MilestoneManagement = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const roleName = localStorage.getItem('roleName');
+  const canEdit = roleName === 'university_admin';
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -168,13 +170,15 @@ const MilestoneManagement = () => {
             <p className="text-sm text-slate-500 font-medium tracking-tight uppercase tracking-widest">Global Academic roadmap & administrative deadlines</p>
           </div>
         </div>
-        {/* <button 
-          onClick={handleAddClick}
-          className="flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase text-xs tracking-widest"
-        >
-          <Plus size={20} />
-          <span>Add Milestone</span>
-        </button> */}
+        {canEdit && (
+          <button 
+            onClick={handleAddClick}
+            className="flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase text-xs tracking-widest"
+          >
+            <Plus size={20} />
+            <span>Add Milestone</span>
+          </button>
+        )}
       </div>
 
       {/* Main Table Card */}
@@ -190,7 +194,7 @@ const MilestoneManagement = () => {
                 <SortHeader label="Activity" field="name" currentSort={sortConfig} onSort={handleSort} className="px-8 py-5" visible={true} />
                 <SortHeader label="Timeline" field="start_date" currentSort={sortConfig} onSort={handleSort} className="px-4 py-5" visible={true} />
                 <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Responsibility</th>
-                <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
+                {canEdit && <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -215,12 +219,14 @@ const MilestoneManagement = () => {
                        <span className="text-xs font-black text-slate-600 uppercase tracking-widest">{item.responsibility}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-5 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => handleEditClick(item)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"><Pencil size={18} /></button>
-                      <button onClick={() => handleDeleteClick(item)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><MdDelete size={20} /></button>
-                    </div>
-                  </td>
+                  {canEdit && (
+                    <td className="px-4 py-5 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button onClick={() => handleEditClick(item)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"><Pencil size={18} /></button>
+                        <button onClick={() => handleDeleteClick(item)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><MdDelete size={20} /></button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
