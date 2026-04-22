@@ -57,7 +57,7 @@ const UniversityMarksView = () => {
 
   const uniqueExams = useMemo(() => {
     const map = new Map();
-    exams.forEach(e => {
+    exams.filter(e => e.exam_type === 2).forEach(e => {
       const name = e.exam_name || e.name;
       if (!name) return;
       if (!map.has(name)) map.set(name, []);

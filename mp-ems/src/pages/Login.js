@@ -77,8 +77,8 @@ const Login = () => {
           console.log("Navigating to Student Dashboard");
           navigate("/student/dashboard");
         } else if (authUtils.isExternalFaculty()) {
-          console.log("Navigating to External Faculty Dashboard");
-          navigate("/external-faculty/dashboard");
+          console.log("Navigating to External Faculty Marks Entry");
+          navigate("/external-faculty/marks-entry");
         } else if (authUtils.isSecrecy()) {
           console.log("Navigating to Secrecy Dashboard");
           navigate("/secrecy/dashboard");

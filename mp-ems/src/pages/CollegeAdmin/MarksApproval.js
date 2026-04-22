@@ -192,22 +192,24 @@ const MarksApproval = () => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-slate-500 font-medium tracking-tight">
-                                        {new Date(wf.updated_at).toLocaleString()}
+                                        {wf.updated_at ? new Date(wf.updated_at).toLocaleString() : 'Not Started'}
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         {wf.status !== 'Locked' && (
                                             <div className="flex items-center justify-end gap-2">
-                                                <button
-                                                    onClick={() => navigate(`/admin/marks-review/${wf.subject_id}/${wf.section}`, {
-                                                        state: {
-                                                            semester_id: wf.semester_id,
-                                                            academic_year_id: wf.academic_year_id
-                                                        }
-                                                    })}
-                                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors"
-                                                >
-                                                    <Eye size={12} /> {isCollegeAdmin ? 'Review' : 'Verify'}
-                                                </button>
+                                                {wf.status !== 'Pending' && (
+                                                    <button
+                                                        onClick={() => navigate(`/admin/marks-review/${wf.subject_id}/${wf.section}`, {
+                                                            state: {
+                                                                semester_id: wf.semester_id,
+                                                                academic_year_id: wf.academic_year_id
+                                                            }
+                                                        })}
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors"
+                                                    >
+                                                        <Eye size={12} /> {isCollegeAdmin ? 'Review' : 'Verify'}
+                                                    </button>
+                                                )}
 
                                                 {isCollegeAdmin && wf.status === 'Approved' && (
                                                     <button

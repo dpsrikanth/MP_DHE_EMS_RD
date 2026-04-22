@@ -573,7 +573,8 @@ const MarksEntry = () => {
                                     const total = calculateTotal(student.id);
                                     const status = determineStatus(student.id);
                                     const review = reviews[student.id];
-                                    const isStudentReadOnly = isReadOnly && normalizedStatus !== 'Rejected';
+                                    // Force read-only for marks entry here as they must be managed via the Internal module
+                                    const isStudentReadOnly = true; 
 
                                     return (
                                         <tr key={student.id} className="hover:bg-indigo-50/30 transition-colors group">

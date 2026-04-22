@@ -429,7 +429,18 @@ const InternalExamMarks = () => {
                                                         max={componentInfo?.max_marks}
                                                         disabled={entry.isAbsent || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
                                                         value={entry.marks}
-                                                        onChange={(e) => handleMarkChange(student.id, 'marks', e.target.value)}
+                                                        onChange={(e) => {
+                                                            let val = e.target.value;
+                                                            if (val !== '' && componentInfo?.max_marks !== undefined) {
+                                                                if (parseFloat(val) > parseFloat(componentInfo.max_marks)) {
+                                                                    toast.warning(`Maximum marks allowed is ${componentInfo.max_marks}`);
+                                                                    val = componentInfo.max_marks;
+                                                                } else if (parseFloat(val) < 0) {
+                                                                    val = 0;
+                                                                }
+                                                            }
+                                                            handleMarkChange(student.id, 'marks', val);
+                                                        }}
                                                         className={`w-24 text-center px-4 py-2 bg-white border-2 rounded-xl font-black text-slate-700 outline-none transition-all
                                                             ${(entry.isAbsent || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus)) ? 'opacity-30 bg-slate-50 cursor-not-allowed' : isFailed ? 'border-red-100 bg-red-50/30 text-red-600 focus:border-red-300' : 'border-slate-100 focus:border-indigo-500 focus:shadow-lg focus:shadow-indigo-500/10'}
                                                         `}

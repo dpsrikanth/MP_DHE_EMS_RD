@@ -349,24 +349,31 @@ exports.getMarksWorkflowStatus = async (req, res) => {
         const { role, department_id } = req.user;
 
         let query = `
-            SELECT ws.*, s.name as subject_name, sem.semester_name as semester, 
+            SELECT DISTINCT fs.subject_id, fs.college_id, fs.semester_id, fs.academic_year_id, fs.section,
+                   COALESCE(ws.status, 'Pending') as status,
+                   ws.id,
+                   ws.updated_at,
+                   s.name as subject_name, sem.semester_name as semester, 
                    mp.name as program_name, md.department_name
-            FROM marks_workflow_status ws
-            LEFT JOIN master_subjects s ON ws.subject_id = s.id
-            LEFT JOIN master_semesters sem ON ws.semester_id = sem.id
-            LEFT JOIN policy_program_subjects pps ON ws.subject_id = pps.subject_id 
-                AND ws.college_id = pps.college_id 
-                AND ws.semester_id = pps.semester_id
+            FROM faculty_subjects fs
+            LEFT JOIN marks_workflow_status ws 
+                 ON ws.subject_id = fs.subject_id AND ws.section = fs.section 
+                 AND ws.college_id = fs.college_id AND ws.semester_id = fs.semester_id 
+                 AND ws.academic_year_id = fs.academic_year_id
+            LEFT JOIN master_subjects s ON fs.subject_id = s.id
+            LEFT JOIN master_semesters sem ON fs.semester_id = sem.id
+            LEFT JOIN policy_program_subjects pps 
+                 ON fs.subject_id = pps.subject_id AND fs.college_id = pps.college_id AND fs.semester_id = pps.semester_id
             LEFT JOIN master_programs mp ON pps.program_id = mp.id
             LEFT JOIN master_departments md ON pps.department_id = md.id
-            WHERE ws.college_id = $1
+            WHERE fs.college_id = $1
         `;
         let params = [college_id];
         let paramCount = 1;
 
         if (semester_id) {
             paramCount++;
-            query += ` AND ws.semester_id = $${paramCount}`;
+            query += ` AND fs.semester_id = $${paramCount}`;
             params.push(semester_id);
         }
 
@@ -1270,7 +1277,7 @@ exports.getPendingComponentApprovals = async (req, res) => {
 
         const query = `
             SELECT 
-                mws.subject_id, mws.semester_id, mws.academic_year_id, mws.section,
+                fs.subject_id, fs.semester_id, fs.academic_year_id, fs.section,
                 ms.name as subject_name, ms.subject_code,
                 mse.semester_name,
                 may.year_name,
@@ -1278,25 +1285,25 @@ exports.getPendingComponentApprovals = async (req, res) => {
                 COUNT(DISTINCT sim.student_id) as student_count,
                 COALESCE(ca.is_accepted, FALSE) as is_accepted,
                 ca.accepted_at
-            FROM marks_workflow_status mws
-            JOIN master_subjects ms ON mws.subject_id = ms.id
-            JOIN master_semesters mse ON mws.semester_id = mse.id
-            JOIN master_academic_years may ON mws.academic_year_id = may.id
-            JOIN internal_marks_structure ims ON ims.subject_id = mws.subject_id AND ims.college_id = mws.college_id
+            FROM faculty_subjects fs
+            JOIN master_subjects ms ON fs.subject_id = ms.id
+            JOIN master_semesters mse ON fs.semester_id = mse.id
+            JOIN master_academic_years may ON fs.academic_year_id = may.id
+            JOIN internal_marks_structure ims ON ims.subject_id = fs.subject_id AND ims.college_id = fs.college_id
             JOIN student_internal_marks sim ON sim.component_id = ims.id
-            LEFT JOIN component_acceptance ca ON ca.college_id = mws.college_id 
-                AND ca.subject_id = mws.subject_id 
-                AND ca.semester_id = mws.semester_id
-                AND ca.academic_year_id = mws.academic_year_id
-                AND ca.section = mws.section
+            LEFT JOIN component_acceptance ca ON ca.college_id = fs.college_id 
+                AND ca.subject_id = fs.subject_id 
+                AND ca.semester_id = fs.semester_id
+                AND ca.academic_year_id = fs.academic_year_id
+                AND ca.section = fs.section
                 AND ca.component_id = ims.id
-            WHERE mws.college_id = $1
+            WHERE fs.college_id = $1
             GROUP BY 
-                mws.subject_id, mws.semester_id, mws.academic_year_id, mws.section,
+                fs.subject_id, fs.semester_id, fs.academic_year_id, fs.section,
                 ms.name, ms.subject_code, mse.semester_name, may.year_name,
                 ims.id, ims.component_name, ims.max_marks, ca.is_accepted, ca.accepted_at
             HAVING COUNT(DISTINCT sim.student_id) > 0
-            ORDER BY mws.subject_id, mws.section, ims.id
+            ORDER BY fs.subject_id, fs.section, ims.id
         `;
 
         const result = await db.query(query, [college_id]);

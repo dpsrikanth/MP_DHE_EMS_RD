@@ -160,15 +160,20 @@ exports.getResultHubData = async (req, res) => {
         const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
         const query = `
-            WITH marks_base AS (
+            WITH raw_internal AS (
+                SELECT student_id, subject_id, SUM(marks_obtained::float) as total_raw
+                FROM student_internal_marks
+                GROUP BY student_id, subject_id
+            ),
+            marks_base AS (
                 SELECT 
                     m.id as mark_id, 
                     s.id as student_id,
                     e.id as exam_id,
                     COALESCE(m.status, 'Not Entered') as marks_status,
-                    COALESCE(cim.total_internal, m.internal_marks, 0) as internal_marks, 
+                    COALESCE(cim.total_internal, m.internal_marks, ri.total_raw, 0) as internal_marks, 
                     COALESCE(m.external_marks, 0) as external_marks,
-                    (COALESCE(cim.total_internal, m.internal_marks, 0) + COALESCE(m.external_marks, 0)) as total_marks,
+                    (COALESCE(cim.total_internal, m.internal_marks, ri.total_raw, 0) + COALESCE(m.external_marks, 0)) as total_marks,
                     s.rollnumber, CONCAT(s.first_name, ' ', s.last_name) as student_name,
                     s."collageName" as college_name, s."programName" as program_name,
                     e.name as exam_name,
@@ -193,6 +198,7 @@ exports.getResultHubData = async (req, res) => {
                 LEFT JOIN marks m ON m.student_id = s.id AND m.exam_id = e.id AND m.subject_id = e.subject_id
                 LEFT JOIN calculated_internal_marks cim ON cim.student_id = s.id 
                     AND cim.subject_id = e.subject_id
+                LEFT JOIN raw_internal ri ON ri.student_id = s.id AND ri.subject_id = sub.id
                 ${whereClause}
             )
             SELECT * FROM marks_base

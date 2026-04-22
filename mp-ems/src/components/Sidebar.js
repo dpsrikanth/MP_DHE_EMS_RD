@@ -220,6 +220,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       return items;
     }
 
+    if (roleName === 'External Faculty') {
+      return [
+        { id: 2, name: 'Marks Entry', path: '/external-faculty/marks-entry', icon: <FileText size={18} /> },
+      ];
+    }
+
     if (roleName === 'HOD') {
       return [
         { id: 1, name: 'Dashboard', path: '/hod/dashboard', icon: <LayoutDashboard size={20} /> },

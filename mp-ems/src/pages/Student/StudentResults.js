@@ -16,6 +16,7 @@ const StudentResults = () => {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
   const [searchQuery, setSearchQuery] = useState('');
   const [resultTypeFilter, setResultTypeFilter] = useState('external');
+  const [selectedSemester, setSelectedSemester] = useState('All');
 
   useEffect(() => {
     fetchResults();
@@ -108,14 +109,19 @@ const StudentResults = () => {
     }).filter(group => group.hasMatches); // Hide groups with no matching subjects
   }, [results, gradingConfig, searchQuery]);
 
-  // Filter series based on the selected tab
+  const availableSemesters = React.useMemo(() => {
+    return Array.from(new Set(examSeriesResults.map(series => series.semester_name))).filter(Boolean).sort();
+  }, [examSeriesResults]);
+
+  // Filter series based on the selected tab and semester
   const filteredSeriesResults = React.useMemo(() => {
     return examSeriesResults.filter(series => {
-      if (resultTypeFilter === 'internal') return series.exam_type === 1;
-      if (resultTypeFilter === 'external') return series.exam_type !== 1;
+      if (resultTypeFilter === 'internal' && series.exam_type !== 1) return false;
+      if (resultTypeFilter === 'external' && series.exam_type === 1) return false;
+      if (selectedSemester !== 'All' && series.semester_name !== selectedSemester) return false;
       return true;
     });
-  }, [examSeriesResults, resultTypeFilter]);
+  }, [examSeriesResults, resultTypeFilter, selectedSemester]);
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
@@ -146,29 +152,48 @@ const StudentResults = () => {
         </div>
       </div>
 
-      {/* Tab Switcher */}
-      <div className="flex items-center gap-2 border-b border-slate-100">
-        <button
-          onClick={() => setResultTypeFilter('external')}
-          className={`px-6 py-3 text-xs font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 ${
-            resultTypeFilter === 'external'
-              ? 'border-emerald-500 text-emerald-600 bg-emerald-50/50'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
-          }`}
-        >
-          🌐 Final Results
-        </button>
-        <button
-          onClick={() => setResultTypeFilter('internal')}
-          className={`px-6 py-3 text-xs font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 ${
-            resultTypeFilter === 'internal'
-              ? 'border-violet-500 text-violet-600 bg-violet-50/50'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
-          }`}
-        >
-          📝 Internal Assessments
-        </button>
+      {/* Tab Switcher & Filters */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+          <button
+            onClick={() => setResultTypeFilter('external')}
+            className={`px-6 py-3 text-xs font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 whitespace-nowrap ${
+              resultTypeFilter === 'external'
+                ? 'border-emerald-500 text-emerald-600 bg-emerald-50/50'
+                : 'border-transparent text-slate-400 hover:text-slate-700'
+            }`}
+          >
+            🌐 Final Results
+          </button>
+          <button
+            onClick={() => setResultTypeFilter('internal')}
+            className={`px-6 py-3 text-xs font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 whitespace-nowrap ${
+              resultTypeFilter === 'internal'
+                ? 'border-violet-500 text-violet-600 bg-violet-50/50'
+                : 'border-transparent text-slate-400 hover:text-slate-700'
+            }`}
+          >
+            📝 Internal Assessments
+          </button>
+        </div>
+
+        {availableSemesters.length > 0 && (
+          <div className="flex items-center gap-3 pb-3 sm:pb-0 pr-2">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Semester:</span>
+            <select
+              value={selectedSemester}
+              onChange={(e) => setSelectedSemester(e.target.value)}
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm cursor-pointer transition-all hover:bg-white min-w-[140px]"
+            >
+              <option value="All">All Semesters</option>
+              {availableSemesters.map(sem => (
+                <option key={sem} value={sem}>{sem}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
+
 
       {filteredSeriesResults.length === 0 ? (
         <div className="py-20 text-center bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200 shadow-sm">

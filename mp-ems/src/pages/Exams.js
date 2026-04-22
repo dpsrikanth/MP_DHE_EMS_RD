@@ -381,8 +381,8 @@ const Exams = () => {
               visibleColumns={visibleColumns} 
               onToggle={toggleColumn} 
             />
-            {/* Only show Schedule Exam for non-college-admin, or college admin on Internal tab */}
-            {(!isCollegeAdminRole || examTypeFilter === 'internal') && (
+            {/* Hide Schedule Exam for college-admin — internal exams are now managed via the Internal Schedule module */}
+            {!isCollegeAdminRole && (
               <button 
                 onClick={() => navigate('/exams/add')}
                 className="inline-flex items-center gap-2 px-8 py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-2xl shadow-xl shadow-purple-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"

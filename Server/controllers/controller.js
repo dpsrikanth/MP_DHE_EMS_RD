@@ -1356,65 +1356,110 @@ const getExams = async (req, res) => {
     const { role, college_id } = req.user;
     const params = [];
     let visibilityClause = '';
+    let internalVisibilityClause = '';
 
     if (role === 'college_admin') {
       visibilityClause = `WHERE (e.college_id = $1 OR (e.exam_type = 2 AND e.college_id IS NULL AND e.university_id = (SELECT university_id FROM colleges WHERE id = $1)))`;
+      internalVisibilityClause = `WHERE ies.college_id = $1`;
       params.push(college_id);
     } else if (role === 'HOD') {
       const { department_id } = req.user;
       visibilityClause = `WHERE (e.college_id = $1 OR (e.exam_type = 2 AND e.college_id IS NULL AND e.university_id = (SELECT university_id FROM colleges WHERE id = $1))) AND e.department_id = $2`;
+      internalVisibilityClause = `WHERE ies.college_id = $1`;
       params.push(college_id, department_id);
     } else if (role === 'university_admin') {
       const university_id = req.user?.university_id || req.user?.universityId;
       visibilityClause = `WHERE (e.university_id = $1 OR c.university_id = $1)`;
+      internalVisibilityClause = `WHERE c.university_id = $1`;
       params.push(university_id);
     }
 
     let query = `
-      SELECT 
-        e.id, 
-        e.name as exam_name, 
-        e.semester_id, 
-        ms.semester_name,
-        e.college_id, 
-        e.university_id,
-        COALESCE(c.name, COALESCE(u.name, 'University-wide')) as college_name,
-        e.exam_type, 
-        et.type_name as exam_type_name,
-        e.department_id,
-        md.department_name,
-        e.program_id,
-        mp.name as program_name,
-        e.academic_year_id,
-        ay.year_name,
-        e.subject_id,
-        sub.name as subject_name,
-        e.exam_date, 
-        e.start_time,
-        e.end_time,
-        e.status,
-        e.is_published,
-        e.student_application_open,
-        COALESCE(esl.is_locked, false) as seating_locked,
-        (SELECT EXISTS (
-          SELECT 1 FROM internal_marks_structure ims 
-          WHERE ims.college_id = COALESCE(e.college_id, ${params.length > 0 ? '$1' : 'null'}) 
-          AND ims.department_id = e.department_id 
-          AND ims.program_id = e.program_id 
-          AND ims.subject_id = e.subject_id
-        )) as has_marks_structure
-      FROM exams e
-      LEFT JOIN colleges c ON e.college_id = c.id
-      LEFT JOIN universities u ON e.university_id = u.id
-      LEFT JOIN exam_types et ON e.exam_type = et.id
-      LEFT JOIN master_departments md ON e.department_id = md.id
-      LEFT JOIN master_programs mp ON e.program_id = mp.id
-      LEFT JOIN master_academic_years ay ON e.academic_year_id = ay.id
-      LEFT JOIN master_semesters ms ON e.semester_id = ms.id
-      LEFT JOIN master_subjects sub ON e.subject_id = sub.id
-      LEFT JOIN exam_seating_locks esl ON e.id = esl.exam_id AND esl.college_id = ${role === 'university_admin' ? 'null' : (params.length > 0 ? '$1' : 'null')}
-      ${visibilityClause}
-      ORDER BY e.created_at DESC
+      SELECT * FROM (
+        SELECT 
+          e.id, 
+          e.name as exam_name, 
+          e.semester_id, 
+          ms.semester_name,
+          e.college_id, 
+          e.university_id,
+          COALESCE(c.name, COALESCE(u.name, 'University-wide')) as college_name,
+          e.exam_type, 
+          et.type_name as exam_type_name,
+          e.department_id,
+          md.department_name,
+          e.program_id,
+          mp.name as program_name,
+          e.academic_year_id,
+          ay.year_name as academic_year_name,
+          e.subject_id,
+          sub.name as subject_name,
+          e.exam_date, 
+          e.start_time::text,
+          e.end_time::text,
+          e.status,
+          e.is_published,
+          e.student_application_open,
+          COALESCE(esl.is_locked, false) as seating_locked,
+          (SELECT EXISTS (
+            SELECT 1 FROM internal_marks_structure ims 
+            WHERE ims.college_id = COALESCE(e.college_id, ${params.length > 0 ? '$1' : 'null'}) 
+            AND ims.department_id = e.department_id 
+            AND ims.program_id = e.program_id 
+            AND ims.subject_id = e.subject_id
+          )) as has_marks_structure,
+          e.created_at
+        FROM exams e
+        LEFT JOIN colleges c ON e.college_id = c.id
+        LEFT JOIN universities u ON e.university_id = u.id
+        LEFT JOIN exam_types et ON e.exam_type = et.id
+        LEFT JOIN master_departments md ON e.department_id = md.id
+        LEFT JOIN master_programs mp ON e.program_id = mp.id
+        LEFT JOIN master_academic_years ay ON e.academic_year_id = ay.id
+        LEFT JOIN master_semesters ms ON e.semester_id = ms.id
+        LEFT JOIN master_subjects sub ON e.subject_id = sub.id
+        LEFT JOIN exam_seating_locks esl ON e.id = esl.exam_id AND esl.college_id = ${role === 'university_admin' ? 'null' : (params.length > 0 ? '$1' : 'null')}
+        ${visibilityClause}
+
+        UNION ALL
+
+        SELECT 
+          ies.id + 1000000 AS id,
+          COALESCE(ier.name, ies.round_id) as exam_name, 
+          ies.semester_id, 
+          ms.semester_name,
+          ies.college_id, 
+          c.university_id,
+          c.name as college_name,
+          1 as exam_type, 
+          'Internal Assessment' as exam_type_name,
+          NULL::integer as department_id,
+          NULL::text as department_name,
+          ies.program_id,
+          mp.name as program_name,
+          ies.academic_year_id,
+          ay.year_name as academic_year_name,
+          ies.subject_id,
+          sub.name as subject_name,
+          ies.exam_date, 
+          ies.start_time::text,
+          ies.end_time::text,
+          true as status,
+          true as is_published,
+          false as student_application_open,
+          false as seating_locked,
+          true as has_marks_structure,
+          ies.created_at
+        FROM internal_exam_schedules ies
+        LEFT JOIN internal_exam_rounds ier ON (CASE WHEN ies.round_id ~ '^[0-9]+$' THEN ies.round_id::integer ELSE NULL END = ier.id)
+        LEFT JOIN colleges c ON ies.college_id = c.id
+        LEFT JOIN master_programs mp ON ies.program_id = mp.id
+        LEFT JOIN master_academic_years ay ON ies.academic_year_id = ay.id
+        LEFT JOIN master_semesters ms ON ies.semester_id = ms.id
+        LEFT JOIN master_subjects sub ON ies.subject_id = sub.id
+        ${internalVisibilityClause}
+      ) AS combined_exams
+      ORDER BY created_at DESC
     `;
 
     const result = await client.query(query, params);
@@ -2891,13 +2936,14 @@ const getSubjectMappings = async (req, res) => {
         mse.semester_name,
         ms.name AS subject_name,
         ms.subject_code,
-        mt.name AS teacher_name,
+        u.name AS teacher_name,
         mt.employee_code AS teacher_employee_number
       FROM master_subject_mappings msm
       LEFT JOIN master_programs mp ON msm.program_id = mp.id
       LEFT JOIN master_semesters mse ON msm.semester_id = mse.id
       LEFT JOIN master_subjects ms ON msm.subject_id = ms.id
       LEFT JOIN master_teachers mt ON msm.teacher_id = mt.id
+      LEFT JOIN users u ON mt.user_id = u.id
       WHERE msm.status = 'Active'
       ORDER BY msm.id DESC`
     );
