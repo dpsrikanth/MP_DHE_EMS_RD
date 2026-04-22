@@ -118,7 +118,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 4, name: 'Exams', path: '/exams', icon: <FileText size={20} /> },
         { id: 5, name: 'Verify & Lock', path: '/college-admin/marks-approval', icon: <Lock size={20} /> },
         { id: 8, name: 'Exam Halls', path: '/college-admin/examination-halls', icon: <Building2 size={20} /> },
-        { id: 6, name: 'Teachers', path: '/teachers', icon: <Users size={20} /> },
+        { id: 6, name: 'Faculty', path: '/teachers', icon: <Users size={20} /> },
         { id: 7, name: 'Students', path: '/students', icon: <UserCircle size={20} /> },
         { id: 12, name: 'Batches', path: '/batches', icon: <Layers size={20} /> },
         { id: 13, name: 'Subjects', path: '/subjects', icon: <Book size={20} /> },
