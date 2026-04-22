@@ -168,13 +168,13 @@ const MilestoneManagement = () => {
             <p className="text-sm text-slate-500 font-medium tracking-tight uppercase tracking-widest">Global Academic roadmap & administrative deadlines</p>
           </div>
         </div>
-        <button 
+        {/* <button 
           onClick={handleAddClick}
           className="flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase text-xs tracking-widest"
         >
           <Plus size={20} />
           <span>Add Milestone</span>
-        </button>
+        </button> */}
       </div>
 
       {/* Main Table Card */}

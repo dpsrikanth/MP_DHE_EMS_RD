@@ -190,7 +190,11 @@ const StudentResults = () => {
         </div>
       ) : (
         <div className="space-y-12">
-          {filteredSeriesResults.map((series, idx) => (
+          {filteredSeriesResults.map((series, idx) => {
+            const internalComponents = Array.from(new Set(series.subjects.flatMap(s => (s.assessment_components || []).filter(c => !c.name.toUpperCase().includes('PRACTICAL')).map(c => c.name)))).sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
+            const practicalComponents = Array.from(new Set(series.subjects.flatMap(s => (s.assessment_components || []).filter(c => c.name.toUpperCase().includes('PRACTICAL')).map(c => c.name)))).sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
+            
+            return (
             <div key={idx} className="bg-white rounded-[1.5rem] border border-slate-100 overflow-hidden shadow-2xl shadow-slate-200/40 print:shadow-none print:border-slate-300">
               {/* College Header */}
               <div className="p-6 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
@@ -231,8 +235,20 @@ const StudentResults = () => {
                       <tr className="text-left text-[10px] font-extrabold text-slate-500 uppercase tracking-widest border-b border-violet-100">
                         <th className="px-6 py-4">Sl. No.</th>
                         <th className="px-4 py-4">Subject</th>
-                        <th className="px-4 py-4 text-center">Internal Marks</th>
-                        <th className="px-4 py-4 text-center">Practical Marks</th>
+                        {internalComponents.length > 0 ? (
+                          internalComponents.map(comp => (
+                            <th key={comp} className="px-4 py-4 text-center">{comp}</th>
+                          ))
+                        ) : (
+                          <th className="px-4 py-4 text-center">Internal Marks</th>
+                        )}
+                        {practicalComponents.length > 0 ? (
+                          practicalComponents.map(comp => (
+                            <th key={comp} className="px-4 py-4 text-center">{comp}</th>
+                          ))
+                        ) : (
+                          <th className="px-4 py-4 text-center">Practical Marks</th>
+                        )}
                         <th className="px-4 py-4 text-center">Total</th>
                       </tr>
                     </thead>
@@ -244,40 +260,42 @@ const StudentResults = () => {
                             <p className="text-sm font-black text-slate-900">{sub.subject_name}</p>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{sub.subject_code}</p>
                           </td>
-                          <td className="px-4 py-4 text-center">
-                            {sub.batch_status === 'Locked' || sub.batch_status === 'Approved' ? (
-                              <span className="text-sm font-black text-slate-700">{sub.internal_marks ?? '-'}</span>
-                            ) : (
-                              <div className="flex flex-col items-center gap-1">
-                                {sub.assessment_components?.filter(c => !c.name.toUpperCase().includes('PRACTICAL')).map((comp, cIdx) => (
-                                  <div key={cIdx} className="flex items-center gap-2 text-[10px] whitespace-nowrap">
-                                    <span className="font-bold text-slate-400 uppercase tracking-tighter">{comp.name}:</span>
-                                    <span className="font-black text-slate-700">{comp.marks}</span>
-                                  </div>
-                                ))}
-                                {(!sub.assessment_components || sub.assessment_components.filter(c => !c.name.toUpperCase().includes('PRACTICAL')).length === 0) && (
-                                  <span className="text-slate-300">-</span>
-                                )}
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-4 py-4 text-center">
-                            {sub.batch_status === 'Locked' || sub.batch_status === 'Approved' ? (
-                              <span className="text-sm font-bold text-slate-500">{sub.external_marks > 0 ? sub.external_marks : '-'}</span>
-                            ) : (
-                              <div className="flex flex-col items-center gap-1">
-                                {sub.assessment_components?.filter(c => c.name.toUpperCase().includes('PRACTICAL')).map((comp, cIdx) => (
-                                  <div key={cIdx} className="flex items-center gap-2 text-[10px] whitespace-nowrap">
-                                    <span className="font-bold text-slate-400 uppercase tracking-tighter">{comp.name}:</span>
-                                    <span className="font-black text-slate-700">{comp.marks}</span>
-                                  </div>
-                                ))}
-                                {(!sub.assessment_components || sub.assessment_components.filter(c => c.name.toUpperCase().includes('PRACTICAL')).length === 0) && (
-                                  <span className="text-slate-300">-</span>
-                                )}
-                              </div>
-                            )}
-                          </td>
+                          {internalComponents.length > 0 ? (
+                            internalComponents.map(compName => {
+                              const match = (sub.assessment_components || []).find(c => c.name === compName);
+                              return (
+                                <td key={compName} className="px-4 py-4 text-center">
+                                  {match ? <span className="text-sm font-black text-violet-700">{match.marks}</span> : <span className="text-slate-300">-</span>}
+                                </td>
+                              );
+                            })
+                          ) : (
+                            <td className="px-4 py-4 text-center">
+                              {sub.batch_status === 'Locked' || sub.batch_status === 'Approved' ? (
+                                <span className="text-sm font-black text-slate-700">{sub.internal_marks ?? '-'}</span>
+                              ) : (
+                                <span className="text-slate-300">-</span>
+                              )}
+                            </td>
+                          )}
+                          {practicalComponents.length > 0 ? (
+                            practicalComponents.map(compName => {
+                              const match = (sub.assessment_components || []).find(c => c.name === compName);
+                              return (
+                                <td key={compName} className="px-4 py-4 text-center">
+                                  {match ? <span className="text-sm font-black text-emerald-700">{match.marks}</span> : <span className="text-slate-300">-</span>}
+                                </td>
+                              );
+                            })
+                          ) : (
+                            <td className="px-4 py-4 text-center">
+                              {sub.batch_status === 'Locked' || sub.batch_status === 'Approved' ? (
+                                <span className="text-sm font-bold text-slate-500">{sub.external_marks > 0 ? sub.external_marks : '-'}</span>
+                              ) : (
+                                <span className="text-slate-300">-</span>
+                              )}
+                            </td>
+                          )}
                           <td className="px-4 py-4 text-center font-black text-violet-700 text-sm">{sub.total_marks}</td>
                         </tr>
                       ))}
@@ -375,7 +393,8 @@ const StudentResults = () => {
               </>
               )}
             </div>
-          ))}
+          );
+        })}
         </div>
       )}
     </div>

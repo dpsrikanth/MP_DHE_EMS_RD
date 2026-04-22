@@ -129,23 +129,14 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 17, name: 'Marks Verification', path: '/admin/marks-verification', icon: <ShieldCheck size={20} /> },
         { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> },
         { id: 26, name: 'Institutional Roadmap', path: '/milestones', icon: <Flag size={20} /> },
-        { 
-          id: 50, 
-          name: 'Internal Exams', 
-          type: 'parent',
-          icon: <FileText size={20} />,
-          children: [
-            { id: 51, name: 'Exam Rounds', path: '/college-admin/internal-exams/rounds', icon: <Layers size={16} /> },
-            { id: 52, name: 'Exam Schedule', path: '/college-admin/internal-exams/schedules', icon: <Calendar size={16} /> },
-          ]
-        },
+        { id: 50, name: 'Internal Exam Schedule', path: '/college-admin/internal-exams/schedules', icon: <Calendar size={20} /> },
       ];
     } else if (roleName === 'Faculty' || roleName === 'Teacher') {
       menuItems = [
         { id: 1, name: 'Dashboard', path: '/faculty/dashboard', icon: <LayoutDashboard size={20} /> },
         { id: 2, name: 'General Marks', path: '/faculty/marks-entry', icon: <BarChart3 size={20} /> },
         { id: 50, name: 'Internal Exam Entry', path: '/faculty/internal-marks', icon: <ClipboardCheck size={20} /> },
-        { id: 52, name: 'Internal Schedule', path: '/internal-calendar', icon: <Calendar size={20} /> },
+        // { id: 52, name: 'Internal Schedule', path: '/internal-calendar', icon: <Calendar size={20} /> },
         { id: 4, name: 'Attendance', path: '/faculty/attendance', icon: <Calendar size={20} /> },
         { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> }
       ];
