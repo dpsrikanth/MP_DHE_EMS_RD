@@ -128,7 +128,7 @@ const Login = () => {
             <School size={32} />
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight italic">EMS<span className="text-sky-500 not-italic ml-1">Admin</span></h1>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight italic">Intense</h1>
             <p className="text-[10px] text-sky-500 font-black tracking-[0.2em] uppercase mt-1">Institution Portal</p>
           </div>
         </div>
@@ -235,7 +235,7 @@ const Login = () => {
         {/* Security Badge */}
         <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
           <CheckCircle2 size={16} className="text-sky-500" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center leading-tight">Secured by EMS-Cloud Architecture</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center leading-tight">Secured by Intense-Cloud Architecture</span>
         </div>
       </div>
     </div>

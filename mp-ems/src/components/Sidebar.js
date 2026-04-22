@@ -207,7 +207,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             <School className="text-white" size={24} />
           </div>
           <h1 className="text-2xl font-black tracking-tight text-white italic">
-            EMS<span className="text-indigo-500 not-italic ml-1">Admin</span>
+            Intense
           </h1>
         </div>
         <button

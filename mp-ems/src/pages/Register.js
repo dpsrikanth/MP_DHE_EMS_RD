@@ -208,7 +208,7 @@ const Register = () => {
             <div className="w-9 h-9 bg-sky-500 rounded-xl flex items-center justify-center text-white">
               <School size={20} />
             </div>
-            <h1 className="text-lg font-black text-slate-900 tracking-tight italic">EMS<span className="text-sky-500">Admin</span></h1>
+            <h1 className="text-lg font-black text-slate-900 tracking-tight italic">Intense</h1>
           </div>
         </div>
 

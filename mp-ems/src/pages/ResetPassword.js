@@ -63,7 +63,7 @@ const ResetPassword = () => {
               <School size={32} />
             </div>
             <div>
-              <h1 className="text-3xl font-black text-white tracking-tight italic">EMS<span className="text-sky-400 not-italic ml-1">Admin</span></h1>
+              <h1 className="text-3xl font-black text-white tracking-tight italic">Intense</h1>
               <p className="text-sky-400/80 font-bold text-sm tracking-widest uppercase">Institution Portal</p>
             </div>
           </div>
@@ -82,7 +82,7 @@ const ResetPassword = () => {
           <div className="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center text-white">
             <School size={24} />
           </div>
-          <h1 className="text-xl font-black text-slate-900 tracking-tight italic">EMS<span className="text-sky-500">Admin</span></h1>
+          <h1 className="text-xl font-black text-slate-900 tracking-tight italic">Intense</h1>
         </div>
 
         <div className="max-w-sm mx-auto lg:mx-0 w-full">
@@ -172,7 +172,7 @@ const ResetPassword = () => {
 
           <div className="mt-8 xl:mt-12 pt-6 xl:pt-8 border-t border-slate-50 flex items-center justify-center gap-2 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
             <CheckCircle2 size={16} className="text-sky-500" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Secured by EMS-Cloud Architecture</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Secured by Intense-Cloud Architecture</span>
           </div>
         </div>
       </div>
