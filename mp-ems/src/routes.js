@@ -86,6 +86,7 @@ import RolesForm from "./pages/RolesForm";
 import ExamsForm from "./pages/ExamsForm";
 import PoliciesForm from "./pages/PoliciesForm";
 import DepartmentsForm from "./pages/DepartmentsForm";
+import Profile from "./pages/Profile";
 
 const AppRoutes = () => {
   return (
@@ -227,6 +228,7 @@ const AppRoutes = () => {
       <Route path="/university/exam-analytics" element={<Layout><ProtectedRoute element={<ExamAnalytics />} /></Layout>} />
       <Route path="/university/institutional-ranking" element={<Layout><ProtectedRoute element={<InstitutionalRanking />} /></Layout>} />
       <Route path="/university/student-allocations" element={<Layout><ProtectedRoute element={<StudentCenterAllocations />} /></Layout>} />
+      <Route path="/profile" element={<Layout><ProtectedRoute element={<Profile />} /></Layout>} />
       <Route path="/smtp-settings" element={<Layout><ProtectedRoute element={<SmtpSettings />} /></Layout>} />
     </Routes>
   );

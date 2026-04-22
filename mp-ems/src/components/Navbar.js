@@ -22,6 +22,8 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   const roleName = localStorage.getItem('roleName') || 'Guest';
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const displayName = user.name || roleName;
 
   const getPageTitle = (path) => {
     const route = path.split('/')[1];
@@ -43,7 +45,7 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
   };
 
   const getInitials = () => {
-    return roleName
+    return displayName
       .split(' ')
       .map(word => word[0])
       .join('')
@@ -101,8 +103,10 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
             className="flex items-center gap-3 p-1.5 pl-3 pr-2 hover:bg-slate-100 rounded-2xl transition-all duration-200 border border-transparent hover:border-slate-200 group"
           >
             <div className="flex flex-col items-end mr-1">
-              <p className="text-xs font-bold text-slate-900 leading-none mb-1">{roleName}</p>
-              <p className="text-[10px] font-semibold text-sky-500 uppercase tracking-wider leading-none">Admin Mode</p>
+              <p className="text-xs font-bold text-slate-900 leading-none mb-1">{displayName}</p>
+              <p className="text-[10px] font-semibold text-sky-500 uppercase tracking-wider leading-none">
+                {roleName.replace('_', ' ')}
+              </p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-sky-500/20">
               {getInitials()}
@@ -124,14 +128,20 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
                       {getInitials()}
                     </div>
                     <div className="flex-1 overflow-hidden">
-                      <p className="text-sm font-bold text-slate-900 truncate">{roleName}</p>
-                      <p className="text-xs text-slate-500 truncate">Administrator Account</p>
+                      <p className="text-sm font-bold text-slate-900 truncate">{displayName}</p>
+                      <p className="text-xs text-slate-500 truncate">{roleName.replace('_', ' ')} Profile</p>
                     </div>
                   </div>
                 </div>
                 
                 <div className="p-2">
-                  <button className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-sky-600 rounded-xl transition-colors">
+                  <button 
+                    onClick={() => {
+                      setShowDropdown(false);
+                      navigate('/profile');
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-sky-600 rounded-xl transition-colors"
+                  >
                     <User size={18} />
                     <span>My Profile</span>
                   </button>

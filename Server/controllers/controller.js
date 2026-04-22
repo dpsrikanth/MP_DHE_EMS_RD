@@ -588,14 +588,17 @@ const Login = async (req, res) => {
               COALESCE(mt.college_id, u.college_id, sc.id) as college_id, 
               COALESCE(u.university_id, sc.university_id) as university_id, 
               r.role_name, mt.id as teacher_id, mt.department_id,
+              md.department_name,
               s.rollnumber, s."programName", s.semister,
-              COALESCE(c_actual.name, sc.name, s."collageName") as college_name
+              COALESCE(c_actual.name, sc.name, s."collageName", c_mt.name) as college_name
        FROM public.users u 
        JOIN public.roles r ON u.role_id = r.id 
        LEFT JOIN public.master_teachers mt ON mt.user_id = u.id
+       LEFT JOIN public.master_departments md ON mt.department_id = md.id
        LEFT JOIN public.students s ON s.user_id = u.id
        LEFT JOIN public.colleges sc ON s."collageName" ILIKE sc.name
        LEFT JOIN public.colleges c_actual ON c_actual.id = u.college_id
+       LEFT JOIN public.colleges c_mt ON c_mt.id = mt.college_id
        WHERE u.email = $1`,
       [email]
     );
@@ -651,6 +654,7 @@ const Login = async (req, res) => {
         university_id: result.university_id,
         teacher_id: result.teacher_id,
         department_id: result.department_id,
+        department_name: result.department_name || null,
         // Student-specific fields
         rollnumber: result.rollnumber || null,
         programName: result.programName || null,
