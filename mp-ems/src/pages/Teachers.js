@@ -54,7 +54,7 @@ const Teachers = () => {
     { key: 'id', label: 'ID' },
     { key: 'name', label: 'Name' },
     { key: 'email', label: 'Email' },
-    { key: 'college_name', label: 'College' },
+    ...(authUtils.isUniversityAdmin() ? [{ key: 'college_name', label: 'College' }] : []),
     { key: 'department', label: 'Department' },
     { key: 'designation', label: 'Designation' },
     { key: 'qualification', label: 'Qualification' },
@@ -266,7 +266,7 @@ const Teachers = () => {
       return;
     }
 
-    const fieldsToExclude = ['id', 'created_at', 'updated_at', 'delete_status', 'deleteStatus', 'created_by', 'updated_by', 'user_id', 'userId', 'deleted_at', 'deleted_by', 'password'];
+    const fieldsToExclude = ['id', 'created_at', 'updated_at', 'delete_status', 'deleteStatus', 'created_by', 'updated_by', 'user_id', 'userId', 'deleted_at', 'deleted_by', 'password', 'college_name', 'department'];
     const exportData = data.map(item => {
       const row = {};
       Object.keys(item).forEach(key => {
@@ -289,7 +289,7 @@ const Teachers = () => {
   };
 
   const handleDownloadTemplate = () => {
-    const templateFields = ['Name', 'Email', 'Department', 'College Name'];
+    const templateFields = ['Name', 'Email', 'Department Code'];
     const csv = Papa.unparse({ fields: templateFields, data: [] });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -515,13 +515,15 @@ const Teachers = () => {
                   visible={visibleColumns.name}
                 />
                 <th className={`${visibleColumns.email ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Email</th>
-                <SortHeader
-                  label="College"
-                  field="college_name"
-                  currentSort={sortConfig}
-                  onSort={handleSort}
-                  visible={visibleColumns.college_name}
-                />
+                {authUtils.isUniversityAdmin() && (
+                  <SortHeader
+                    label="College"
+                    field="college_name"
+                    currentSort={sortConfig}
+                    onSort={handleSort}
+                    visible={visibleColumns.college_name}
+                  />
+                )}
                 <SortHeader
                   label="Department"
                   field="department"
@@ -584,7 +586,7 @@ const Teachers = () => {
                         <p className="text-[13px] text-slate-700 font-medium">{item.email}</p>
                       </td>
                     )}
-                    {visibleColumns.college_name && (
+                    {authUtils.isUniversityAdmin() && visibleColumns.college_name && (
                       <td className="px-4 py-5">
                         <p className="text-[13px] text-slate-700 font-medium">{item.college_name || 'Global'}</p>
                       </td>
@@ -865,8 +867,7 @@ const Teachers = () => {
         expectedColumns={{
           name: 'Name',
           email: 'Email',
-          departmentName: 'Department',
-          collegeName: 'College Name'
+          departmentCode: 'Department Code'
         }}
       />
     </div>

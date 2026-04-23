@@ -28,6 +28,7 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
   const getPageTitle = (path) => {
     const route = path.split('/')[1];
     if (!route) return 'Dashboard';
+    if (route === 'teachers') return 'Faculty';
     
     // Convert kebab-case or path to Title Case
     return route

@@ -30,6 +30,7 @@ const Students = () => {
 
   const availableColumns = [
     { key: 'id', label: 'Student ID' },
+    { key: 'admission_no', label: 'Admission Number' },
     { key: 'policies', label: 'Policy' },
     { key: 'programName', label: 'Program' },
     { key: 'admission_year', label: 'Academic Year' },
@@ -125,7 +126,7 @@ const Students = () => {
       return;
     }
 
-    const fieldsToExclude = ['id', 'created_at', 'updated_at', 'delete_status', 'deleteStatus', 'created_by', 'updated_by', 'user_id', 'userId', 'deleted_at', 'deleted_by', 'password'];
+    const fieldsToExclude = ['id', 'created_at', 'updated_at', 'delete_status', 'deleteStatus', 'created_by', 'updated_by', 'user_id', 'userId', 'deleted_at', 'deleted_by', 'password', 'collageName'];
     const exportData = data.map(item => {
       const row = {};
       Object.keys(item).forEach(key => {
@@ -148,7 +149,7 @@ const Students = () => {
   };
 
   const handleDownloadTemplate = () => {
-    const templateFields = ['Name', 'Email', 'Program Name', 'Semester', 'Admission Year', 'College Name', 'Policies'];
+    const templateFields = ['Name', 'Email', 'Program Name', 'Semester', 'Admission Year', 'Admission Number', 'Policies'];
     const csv = Papa.unparse({ fields: templateFields, data: [] });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -297,6 +298,13 @@ const Students = () => {
                   visible={visibleColumns.id}
                 />
                 <SortHeader
+                  label="Admission No"
+                  field="admission_no"
+                  currentSort={sortConfig}
+                  onSort={handleSort}
+                  visible={visibleColumns.admission_no}
+                />
+                <SortHeader
                   label="Policy"
                   field="policies"
                   currentSort={sortConfig}
@@ -337,6 +345,11 @@ const Students = () => {
                         <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
                           ID-{item.id.toString().padStart(4, '0')}
                         </span>
+                      </td>
+                    )}
+                    {visibleColumns.admission_no && (
+                      <td className="px-4 py-5 font-bold text-slate-900">
+                        <span className="text-[13px]">{item.admission_no || '—'}</span>
                       </td>
                     )}
                     {visibleColumns.policies && (
@@ -487,7 +500,8 @@ const Students = () => {
           email: 'Email',
           programName: 'Program Name',
           semister: 'Semester',
-          admission_year: 'Admission Year'
+          admission_year: 'Admission Year',
+          admission_no: 'Admission Number'
         }}
       />
     </div>

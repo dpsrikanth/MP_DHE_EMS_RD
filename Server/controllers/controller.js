@@ -1794,9 +1794,9 @@ const bulkUploadStudents = async (req, res) => {
       for (let i = 0; i < students.length; i++) {
         const s = students[i];
         await dbClient.query(
-          `INSERT INTO public.students (name, email, "collageName", "programName", semister, admission_year, policies, "deleteStatus") 
-           VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
-          [s.name, s.email, s.collageName || null, s.programName, s.semister, s.admission_year, s.policies || null]
+          `INSERT INTO public.students (name, email, "collageName", "programName", semister, admission_year, policies, admission_no, "deleteStatus") 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)`,
+          [s.name, s.email, s.collageName || null, s.programName, s.semister, s.admission_year, s.policies || null, s.admission_no || null]
         );
       }
       await dbClient.query('COMMIT');
@@ -1824,17 +1824,54 @@ const bulkUploadTeachers = async (req, res) => {
 
     // Phase 1: Validate ALL rows first
     let errors = [];
+    const college_id = req.user.college_id;
+    
+    // We will collect resolved department IDs here to use in Phase 2
+    const resolvedDepartments = {};
+    const emailsInFile = new Set();
+    
+    // Fetch a default designation
+    const desigRes = await client.query("SELECT id FROM master_designations WHERE status = 'Active' LIMIT 1");
+    const defaultDesignationId = desigRes.rows.length > 0 ? desigRes.rows[0].id : null;
+
+    if (!defaultDesignationId) {
+      return res.status(400).json({ message: "No active designations found in the system to assign to imported teachers." });
+    }
+
     for (let i = 0; i < teachers.length; i++) {
       const t = teachers[i];
       const rowNum = i + 1;
       if (!t.name) errors.push({ row: rowNum, message: "Missing required field: name" });
       if (!t.email) errors.push({ row: rowNum, message: "Missing required field: email" });
-      if (!t.departmentName) errors.push({ row: rowNum, message: "Missing required field: departmentName" });
-      if (!t.collegeName) errors.push({ row: rowNum, message: "Missing required field: collegeName" });
+      if (!t.departmentCode) errors.push({ row: rowNum, message: "Missing required field: departmentCode" });
+      
       if (t.email) {
-        const checkRes = await client.query('SELECT id FROM public.users WHERE email = $1', [t.email]);
-        if (checkRes.rows.length > 0) {
-          errors.push({ row: rowNum, message: `Teacher with email ${t.email} already exists.` });
+        if (emailsInFile.has(t.email)) {
+          errors.push({ row: rowNum, message: `Duplicate email ${t.email} within the import file.` });
+        } else {
+          emailsInFile.add(t.email);
+          const checkRes = await client.query(`
+            SELECT u.id, mt.id as mt_id 
+            FROM public.users u 
+            LEFT JOIN master_teachers mt ON u.id = mt.user_id 
+            WHERE u.email = $1`, [t.email]
+          );
+          if (checkRes.rows.length > 0) {
+            if (checkRes.rows[0].mt_id) {
+              errors.push({ row: rowNum, message: `Teacher with email ${t.email} already exists.` });
+            } else {
+              t.existingUserId = checkRes.rows[0].id;
+            }
+          }
+        }
+      }
+      
+      if (t.departmentCode && !resolvedDepartments[t.departmentCode]) {
+        const deptRes = await client.query('SELECT id FROM master_departments WHERE department_code = $1', [t.departmentCode]);
+        if (deptRes.rows.length > 0) {
+          resolvedDepartments[t.departmentCode] = deptRes.rows[0].id;
+        } else {
+          errors.push({ row: rowNum, message: `Department Code ${t.departmentCode} not found in the system.` });
         }
       }
     }
@@ -1851,27 +1888,30 @@ const bulkUploadTeachers = async (req, res) => {
       for (let i = 0; i < teachers.length; i++) {
         const t = teachers[i];
 
-        // Fetch college_id
-        const collegeRes = await dbClient.query('SELECT id FROM public.colleges WHERE name ILIKE $1', [t.collegeName]);
-        const college_id = collegeRes.rows.length > 0 ? collegeRes.rows[0].id : null;
+        const department_id = resolvedDepartments[t.departmentCode];
+        const finalEmployeeCode = `EMP-${Date.now()}-${i}`;
 
-        // Create user record
-        const userResult = await dbClient.query(
-          `INSERT INTO public.users (name, email) VALUES ($1, $2) RETURNING id`,
-          [t.name, t.email]
-        );
-        const userId = userResult.rows[0].id;
+        let userId = t.existingUserId;
+        if (!userId) {
+          // Create user record
+          const userResult = await dbClient.query(
+            `INSERT INTO public.users (name, email) VALUES ($1, $2) RETURNING id`,
+            [t.name, t.email]
+          );
+          userId = userResult.rows[0].id;
+        }
 
-        // Create teacher record linked to the user
+        // Create master teacher record linked to the user
         await dbClient.query(
-          `INSERT INTO public.teachers (user_id, college_id, department, designation, experience, status) 
-           VALUES ($1, $2, $3, $4, $5, true)`,
+          `INSERT INTO public.master_teachers (
+            user_id, employee_code, college_id, department_id, designation_id, status
+          ) VALUES ($1, $2, $3, $4, $5, 'Active')`,
           [
             userId,
+            finalEmployeeCode,
             college_id,
-            t.departmentName || t.department || null,
-            t.designation || null,
-            t.experience || null
+            department_id,
+            defaultDesignationId
           ]
         );
       }
@@ -3135,6 +3175,7 @@ const getMasterTeachers = async (req, res) => {
         u.email,
         c.name AS college_name,
         md.department_name AS department,
+        md.department_code AS "departmentCode",
         mdes.designation_name AS designation,
         mt.qualification,
         mt.experience_years AS experience,
