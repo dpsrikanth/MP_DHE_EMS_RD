@@ -220,11 +220,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       return items;
     }
 
-    if (roleName === 'Paper Setter') {
+    if (roleName === 'Paper Setter' || roleName === 'PAPER_SETTER' || authUtils.isPaperSetter()) {
       return [
         { id: 1, name: 'Dashboard', path: '/paper-setter/dashboard', icon: <LayoutDashboard size={20} /> },
         { id: 2, name: 'Guidelines', path: '/paper-setter/guidelines', icon: <ClipboardCheck size={20} /> },
         { id: 3, name: 'Submitted Papers', path: '/paper-setter/submitted-papers', icon: <FileText size={20} /> },
+        { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> }
       ];
     }
 
