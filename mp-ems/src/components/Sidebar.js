@@ -220,6 +220,23 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       return items;
     }
 
+    if (roleName === 'Paper Setter') {
+      return [
+        { id: 1, name: 'Dashboard', path: '/paper-setter/dashboard', icon: <LayoutDashboard size={20} /> },
+        { id: 2, name: 'Guidelines', path: '/paper-setter/guidelines', icon: <ClipboardCheck size={20} /> },
+        { id: 3, name: 'Submitted Papers', path: '/paper-setter/submitted-papers', icon: <FileText size={20} /> },
+      ];
+    }
+
+    if (roleName === 'Secrecy' || authUtils.isSecrecy()) {
+      return [
+        { id: 1, name: 'Dashboard', path: '/secrecy/dashboard', icon: <LayoutDashboard size={20} /> },
+        { id: 2, name: 'Paper Setters', path: '/secrecy/paper-setters', icon: <Users size={20} /> },
+        { id: 3, name: 'Question Papers', path: '/secrecy/question-papers', icon: <BookOpen size={20} /> },
+        { id: 4, name: 'Payments', path: '/secrecy/payments', icon: <CreditCard size={20} /> },
+      ];
+    }
+
     if (roleName === 'External Faculty') {
       return [
         { id: 2, name: 'Marks Entry', path: '/external-faculty/marks-entry', icon: <FileText size={18} /> },
