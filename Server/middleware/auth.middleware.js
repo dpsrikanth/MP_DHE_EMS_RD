@@ -6,7 +6,6 @@ const verifyToken=(req,res,next)=>
     {
 return res.status(401).json({message:"header missing"})
     }
-    console.log(authheader,"authHraders")
     const token=authheader.split(" ")[1];
     if(!token)
     {

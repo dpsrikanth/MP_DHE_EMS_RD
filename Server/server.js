@@ -27,6 +27,8 @@ const corsOptions = {
   credentials: true
 };
 
+app.use(cors(corsOptions));
+
 // Security Middlewares
 // 1. HTTP Security Headers
 app.use(helmet({
@@ -42,8 +44,6 @@ const globalLimiter = rateLimit({
   legacyHeaders: false,
 });
 app.use(globalLimiter);
-
-app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

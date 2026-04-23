@@ -149,7 +149,7 @@ const Students = () => {
   };
 
   const handleDownloadTemplate = () => {
-    const templateFields = ['Name', 'Email', 'Program Name', 'Semester', 'Admission Year', 'Admission Number', 'Policies'];
+    const templateFields = ['Name', 'Email', 'Program Name', 'Semester', 'Admission Year', 'Admission No', 'Roll Number', 'Department Code', 'College Name', 'Policies'];
     const csv = Papa.unparse({ fields: templateFields, data: [] });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -501,8 +501,12 @@ const Students = () => {
           programName: 'Program Name',
           semister: 'Semester',
           admission_year: 'Admission Year',
-          admission_no: 'Admission Number'
+          admission_no: 'Admission No',
+          rollnumber: 'Roll Number',
+          collageName: 'College Name',
+          department: 'Department Code'
         }}
+        optionalColumns={['admission_no', 'rollnumber', 'collageName', 'department']}
       />
     </div>
   );

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
-import { UploadCloud, X, FileText, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { UploadCloud, X, FileText, CheckCircle2, ShieldAlert, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityName, expectedColumns }) => {
+const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityName, expectedColumns, optionalColumns = [] }) => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [preview, setPreview] = useState([]);
   const [columns, setColumns] = useState([]);
   const [validationErrors, setValidationErrors] = useState([]);
@@ -19,6 +20,7 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
       setColumns([]);
       setValidationErrors([]);
       setLoading(false);
+      setProcessing(false);
     }
   }, [isOpen]);
 
@@ -42,6 +44,7 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
     const missing = [];
 
     requiredDbKeys.forEach(dbKey => {
+      if (optionalColumns.includes(dbKey)) return; // Skip if optional
       const readableName = expectedColumns[dbKey];
       const found = lowerHeaders.some(h => h === dbKey.toLowerCase() || h === readableName.toLowerCase());
       if (!found) {
@@ -76,15 +79,15 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
     const missingCols = validateHeaders(headers);
     if (missingCols.length > 0) {
       toast.error(`Missing required columns: ${missingCols.join(', ')}`);
-      setFile(null);
-      setPreview([]);
       setColumns([]);
+      setProcessing(false);
       return;
     }
 
     setColumns(headers);
     setPreview(rows.slice(0, 5));
     setValidationErrors([]);
+    setProcessing(false);
   };
 
   const handleFileUpload = (e) => {
@@ -98,6 +101,7 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
     }
 
     setFile(selectedFile);
+    setProcessing(true);
 
     if (ext === 'csv') {
       parseCSV(selectedFile);
@@ -125,6 +129,7 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
       },
       error: (error) => {
         toast.error(`Error parsing CSV: ${error.message}`);
+        setProcessing(false);
       }
     });
   };
@@ -142,6 +147,7 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
         if (jsonData.length === 0) {
           toast.error('The Excel file appears to be empty.');
           setFile(null);
+          setProcessing(false);
           return;
         }
 
@@ -150,6 +156,7 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
       } catch (err) {
         toast.error(`Error parsing Excel file: ${err.message}`);
         setFile(null);
+        setProcessing(false);
       }
     };
     reader.readAsArrayBuffer(file);
@@ -286,10 +293,24 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
               <h4 className="text-lg font-bold text-slate-800 mb-2">Drag & Drop your CSV or Excel file here</h4>
               <p className="text-sm text-slate-500 mb-6">Or click to browse your files. Supports .csv, .xlsx, .xls (Max 5MB)</p>
               
-              <div className="text-xs font-medium text-slate-400 flex items-center justify-center gap-2">
-                <CheckCircle2 size={14} className="text-emerald-500" />
-                Required columns: <span className="text-slate-700">{Object.values(expectedColumns).join(', ')}</span>
+              <div className="text-xs font-medium text-slate-400 flex flex-col items-center justify-center gap-1">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-emerald-500" />
+                  Required columns: <span className="text-slate-700">{Object.entries(expectedColumns).filter(([k]) => !optionalColumns.includes(k)).map(([,v]) => v).join(', ')}</span>
+                </div>
+                {optionalColumns.length > 0 && (
+                  <div className="flex items-center gap-2 opacity-80">
+                    <CheckCircle2 size={14} className="text-slate-300" />
+                    Optional: <span className="text-slate-500 italic">{optionalColumns.map(k => expectedColumns[k]).join(', ')}</span>
+                  </div>
+                )}
               </div>
+            </div>
+          ) : processing ? (
+            <div className="flex flex-col items-center justify-center py-24 animate-in fade-in zoom-in-95">
+              <Loader2 className="w-16 h-16 text-emerald-500 animate-spin mb-6" />
+              <h4 className="text-lg font-bold text-slate-800 mb-2 text-center">Analyzing your file...</h4>
+              <p className="text-sm text-slate-500 font-medium text-center">Validating headers and preparing preview</p>
             </div>
           ) : (
             <div className="space-y-6">

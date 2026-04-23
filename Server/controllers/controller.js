@@ -914,22 +914,29 @@ const getStudents = async (req, res) => {
     if (role === 'university_admin') {
       if (!university_id) return res.json([]);
       query = `
-        SELECT s.* 
+        SELECT s.*, md.department_code as department
         FROM public.students s
         JOIN public.colleges c ON s."collageName" ILIKE c.name
+        LEFT JOIN public.master_departments md ON s.department = md.department_name
         WHERE s."deleteStatus" = true AND c.university_id = $1
       `;
       params.push(university_id);
     } else if (role === 'college_admin') {
       query = `
-        SELECT s.* 
+        SELECT s.*, md.department_code as department
         FROM public.students s
         JOIN public.colleges c ON s."collageName" ILIKE c.name
+        LEFT JOIN public.master_departments md ON s.department = md.department_name
         WHERE s."deleteStatus" = true AND c.id = $1
       `;
       params.push(college_id);
     } else {
-      query += ` WHERE s."deleteStatus" = true`;
+      query = `
+        SELECT s.*, md.department_code as department
+        FROM public.students s
+        LEFT JOIN public.master_departments md ON s.department = md.department_name
+        WHERE s."deleteStatus" = true
+      `;
     }
 
     query += ` ORDER BY s.id ASC`;
@@ -939,6 +946,59 @@ const getStudents = async (req, res) => {
   } catch (err) {
     console.error("Get students error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+const calculateNextSerial = async (dbClient, year, deptOrProg, type = 'admission') => {
+  try {
+    const years = year.split('-').map(y => y.trim());
+    const startYear = years[0];
+    const endYear = years[1] || (parseInt(startYear) + 1).toString();
+    
+    const startYearSuffix = startYear.slice(-2);
+    const endYearSuffix = endYear.slice(-2);
+    
+    const code = deptOrProg ? deptOrProg.trim().toUpperCase() : (type === 'roll' ? 'BT' : 'GEN');
+    // For Roll No, we often want 2 chars (e.g. BT), for Admission we want 3 (e.g. COM)
+    const code2 = code.substring(0, 2);
+    const code3 = code.substring(0, 3);
+
+    if (type === 'roll') {
+      // Pattern: EndYearSuffix + Code2 + '13' + Serial
+      const pattern = `${endYearSuffix}${code2}13%`;
+      const res = await dbClient.query(
+        `SELECT rollnumber FROM public.students 
+         WHERE rollnumber LIKE $1 
+         ORDER BY rollnumber DESC LIMIT 1`,
+        [pattern]
+      );
+
+      if (res.rows.length === 0) return 1;
+
+      const lastNo = res.rows[0].rollnumber;
+      const serialStr = lastNo.replace(`${endYearSuffix}${code2}13`, '');
+      const lastSerial = parseInt(serialStr);
+      return isNaN(lastSerial) ? 1 : lastSerial + 1;
+    } else {
+      // Admission No Pattern: StartYear (4 digits) + Code3 + Serial
+      const pattern = `${startYear}${code3}%`;
+      const res = await dbClient.query(
+        `SELECT admission_no FROM public.students 
+         WHERE admission_no LIKE $1 
+         ORDER BY admission_no DESC LIMIT 1`,
+        [pattern]
+      );
+
+      if (res.rows.length === 0) return 1;
+
+      const lastNo = res.rows[0].admission_no;
+      const serialStr = lastNo.replace(`${startYear}${code3}`, '');
+      const lastSerial = parseInt(serialStr);
+      return isNaN(lastSerial) ? 1 : lastSerial + 1;
+    }
+  } catch (err) {
+    console.error("Error in calculateNextSerial:", err);
+    return 1;
   }
 };
 
@@ -954,10 +1014,45 @@ const createStudent = async (req, res) => {
       father_first_name, father_last_name, father_mobile_phone,
       father_address_email, father_state, father_pin_code, mother_first_name,
       mother_last_name, mother_mobile_phone, mother_address_email,
-      mother_state, mother_pin_code
+      mother_state, mother_pin_code, department
     } = req.body;
 
     if (!first_name) return res.status(400).json({ message: 'First name is required' });
+
+    let finalAdmissionNo = admission_no;
+    let finalRollNo = rollnumber;
+
+    if (!finalAdmissionNo || !finalRollNo) {
+      const yearStr = admission_year || 'unknown';
+      const years = yearStr.split('-').map(y => y.trim());
+      const startYear = years[0];
+      const endYear = years[1] || (parseInt(startYear) + 1).toString();
+      const endYearSuffix = endYear.slice(-2);
+
+      if (!finalAdmissionNo) {
+        const next = await calculateNextSerial(client, yearStr, department, 'admission');
+        const deptCode3 = (department ? department.substring(0, 3).toUpperCase() : 'GEN');
+        finalAdmissionNo = `${startYear}${deptCode3}${next.toString().padStart(3, '0')}`;
+      }
+      if (!finalRollNo) {
+        // Roll No uses Program Name (e.g. BTech -> BT)
+        const next = await calculateNextSerial(client, yearStr, programName, 'roll');
+        const progCode2 = (programName ? programName.substring(0, 2).toUpperCase() : 'BT');
+        finalRollNo = `${endYearSuffix}${progCode2}13${next.toString().padStart(2, '0')}`;
+      }
+    }
+
+    // Check for uniqueness among active students
+    if (email) {
+      const checkEmail = await client.query('SELECT id FROM public.students WHERE TRIM(email) ILIKE TRIM($1) AND "deleteStatus" = true', [email]);
+      if (checkEmail.rows.length > 0) return res.status(400).json({ message: `Student with email ${email} already exists.` });
+    }
+    
+    const checkAdm = await client.query('SELECT id FROM public.students WHERE admission_no = $1 AND "deleteStatus" = true', [finalAdmissionNo]);
+    if (checkAdm.rows.length > 0) return res.status(400).json({ message: `Admission No ${finalAdmissionNo} already exists.` });
+
+    const checkRoll = await client.query('SELECT id FROM public.students WHERE rollnumber = $1 AND "deleteStatus" = true', [finalRollNo]);
+    if (checkRoll.rows.length > 0) return res.status(400).json({ message: `Roll Number ${finalRollNo} already exists.` });
 
     const result = await client.query(
       `INSERT INTO students (
@@ -970,12 +1065,12 @@ const createStudent = async (req, res) => {
         father_first_name, father_last_name, father_mobile_phone,
         father_address_email, father_state, father_pin_code, mother_first_name,
         mother_last_name, mother_mobile_phone, mother_address_email,
-        mother_state, mother_pin_code, created_at, updated_at, "deleteStatus"
+        mother_state, mother_pin_code, department, created_at, updated_at, "deleteStatus"
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
         $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
         $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37,
-        $38, $39, $40, $41, $42, $43, $44, $45, $46, $47,
+        $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48,
         CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true)
       RETURNING *`,
       [
@@ -985,14 +1080,14 @@ const createStudent = async (req, res) => {
         admission_year || null,
         semister || null,
         collageName || null,
-        rollnumber || null,
+        finalRollNo || null,
         email || null,
         contactNumber || null,
         address || null,
         fatherName || null,
         adharnumber || null,
         bloodgroup || null,
-        admission_no || null,
+        finalAdmissionNo || null,
         admission_date || null,
         first_name || null,
         middle_name || null,
@@ -1025,7 +1120,8 @@ const createStudent = async (req, res) => {
         mother_mobile_phone || null,
         mother_address_email || null,
         mother_state || null,
-        mother_pin_code || null
+        mother_pin_code || null,
+        department || null
       ]
     );
     res.status(201).json(result.rows[0]);
@@ -1048,7 +1144,7 @@ const updateStudent = async (req, res) => {
       father_first_name, father_last_name, father_mobile_phone,
       father_address_email, father_state, father_pin_code, mother_first_name,
       mother_last_name, mother_mobile_phone, mother_address_email,
-      mother_state, mother_pin_code
+      mother_state, mother_pin_code, department
     } = req.body;
 
     if (!first_name) return res.status(400).json({ message: 'First name is required' });
@@ -1077,8 +1173,9 @@ const updateStudent = async (req, res) => {
            father_address_email = $39, father_state = $40, father_pin_code = $41,
            mother_first_name = $42, mother_last_name = $43, mother_mobile_phone = $44,
            mother_address_email = $45, mother_state = $46, mother_pin_code = $47,
+           department = $48,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $48 AND "deleteStatus" = true
+       WHERE id = $49 AND "deleteStatus" = true
        RETURNING *`,
       [
         name || null,
@@ -1128,6 +1225,7 @@ const updateStudent = async (req, res) => {
         mother_address_email || null,
         mother_state || null,
         mother_pin_code || null,
+        department || null,
         id
       ]
     );
@@ -1766,6 +1864,10 @@ const bulkUploadStudents = async (req, res) => {
 
     // Phase 1: Validate ALL rows first
     let errors = [];
+    const emailsInBatch = new Set();
+    const admissionNosInBatch = new Set();
+    const rollNosInBatch = new Set();
+
     for (let i = 0; i < students.length; i++) {
       const s = students[i];
       const rowNum = i + 1;
@@ -1774,10 +1876,46 @@ const bulkUploadStudents = async (req, res) => {
       if (!s.programName) errors.push({ row: rowNum, message: "Missing required field: programName" });
       if (!s.semister) errors.push({ row: rowNum, message: "Missing required field: semister" });
       if (!s.admission_year) errors.push({ row: rowNum, message: "Missing required field: admission_year" });
+
+      // Check for duplicates in the current batch
       if (s.email) {
-        const checkRes = await client.query('SELECT id FROM public.students WHERE email = $1', [s.email]);
+        if (emailsInBatch.has(s.email.toLowerCase())) {
+          errors.push({ row: rowNum, message: `Duplicate email ${s.email} found in the upload file.` });
+        }
+        emailsInBatch.add(s.email.toLowerCase());
+      }
+      if (s.admission_no) {
+        if (admissionNosInBatch.has(s.admission_no.toString().trim())) {
+          errors.push({ row: rowNum, message: `Duplicate Admission No ${s.admission_no} found in the upload file.` });
+        }
+        admissionNosInBatch.add(s.admission_no.toString().trim());
+      }
+      if (s.rollnumber) {
+        if (rollNosInBatch.has(s.rollnumber.toString().trim())) {
+          errors.push({ row: rowNum, message: `Duplicate Roll No ${s.rollnumber} found in the upload file.` });
+        }
+        rollNosInBatch.add(s.rollnumber.toString().trim());
+      }
+
+      // Check for duplicates in the database (only active students)
+      if (s.email) {
+        const checkRes = await client.query('SELECT id FROM public.students WHERE TRIM(email) ILIKE TRIM($1) AND "deleteStatus" = true', [s.email]);
         if (checkRes.rows.length > 0) {
-          errors.push({ row: rowNum, message: `Student with email ${s.email} already exists.` });
+          errors.push({ row: rowNum, message: `Student with email ${s.email} already exists as an active record.` });
+        }
+      }
+      if (s.admission_no) {
+        const cleanVal = s.admission_no.toString().trim();
+        const checkRes = await client.query('SELECT id FROM public.students WHERE TRIM(admission_no) = $1 AND "deleteStatus" = true', [cleanVal]);
+        if (checkRes.rows.length > 0) {
+          errors.push({ row: rowNum, message: `Admission No ${cleanVal} already exists as an active record.` });
+        }
+      }
+      if (s.rollnumber) {
+        const cleanVal = s.rollnumber.toString().trim();
+        const checkRes = await client.query('SELECT id FROM public.students WHERE TRIM(rollnumber) = $1 AND "deleteStatus" = true', [cleanVal]);
+        if (checkRes.rows.length > 0) {
+          errors.push({ row: rowNum, message: `Roll No ${cleanVal} already exists as an active record.` });
         }
       }
     }
@@ -1791,12 +1929,64 @@ const bulkUploadStudents = async (req, res) => {
     const dbClient = await client.connect();
     try {
       await dbClient.query('BEGIN');
+      
+      // Fetch the current college name if the user is a college admin
+      let autoCollegeName = null;
+      if (req.user.role === 'college_admin' && req.user.college_id) {
+        const collegeRes = await dbClient.query('SELECT name FROM colleges WHERE id = $1', [req.user.college_id]);
+        if (collegeRes.rows.length > 0) {
+          autoCollegeName = collegeRes.rows[0].name;
+        }
+      }
+
+      // Cache for next serials to avoid duplicate generation within the same bulk
+      const serialCache = {}; 
+
       for (let i = 0; i < students.length; i++) {
         const s = students[i];
+        
+        let finalAdmissionNo = s.admission_no;
+        let finalRollNo = s.rollnumber;
+
+        if (!finalAdmissionNo || !finalRollNo) {
+          const yearKey = s.admission_year || 'unknown';
+          const deptKey = s.department || 'General';
+          const progKey = s.programName || 'BTech';
+          const cacheKey = `${yearKey}_${deptKey}`;
+
+          if (!serialCache[cacheKey]) {
+            const nextAdm = await calculateNextSerial(dbClient, yearKey, s.department, 'admission');
+            const nextRoll = await calculateNextSerial(dbClient, yearKey, s.programName, 'roll');
+            serialCache[cacheKey] = { adm: nextAdm, roll: nextRoll };
+          } else {
+            serialCache[cacheKey].adm++;
+            serialCache[cacheKey].roll++;
+          }
+
+          const years = yearKey.split('-').map(y => y.trim());
+          const startYear = years[0];
+          const endYear = years[1] || (parseInt(startYear) + 1).toString();
+          const endYearSuffix = endYear.slice(-2);
+
+          if (!finalAdmissionNo) {
+            const deptCode3 = (s.department ? s.department.substring(0, 3).toUpperCase() : 'GEN');
+            const padded = serialCache[cacheKey].adm.toString().padStart(3, '0');
+            finalAdmissionNo = `${startYear}${deptCode3}${padded}`;
+          }
+          if (!finalRollNo) {
+            const progCode2 = (s.programName ? s.programName.substring(0, 2).toUpperCase() : 'BT');
+            const padded = serialCache[cacheKey].roll.toString().padStart(2, '0');
+            finalRollNo = `${endYearSuffix}${progCode2}13${padded}`;
+          }
+        }
+
+        // Use s.collageName if provided, otherwise fallback to the admin's college
+        const finalCollege = s.collageName || s.collegeName || autoCollegeName;
+
         await dbClient.query(
-          `INSERT INTO public.students (name, email, "collageName", "programName", semister, admission_year, policies, admission_no, "deleteStatus") 
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)`,
-          [s.name, s.email, s.collageName || null, s.programName, s.semister, s.admission_year, s.policies || null, s.admission_no || null]
+          `INSERT INTO public.students (name, email, "collageName", "programName", semister, admission_year, policies, admission_no, rollnumber, department, "deleteStatus") 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true)`,
+          [s.name, s.email, finalCollege, s.programName, s.semister, s.admission_year, s.policies || null, finalAdmissionNo, finalRollNo, s.department || null]
         );
       }
       await dbClient.query('COMMIT');
@@ -4368,6 +4558,20 @@ const unmapMasterPolicy = async (req, res) => {
 };
 
 
+const getNextAdmissionSerialRoute = async (req, res) => {
+  try {
+    const { year, department } = req.params;
+    if (!year || !department) return res.status(400).json({ message: "Year and Department are required" });
+
+    const next = await calculateNextSerial(client, year, department, 'admission');
+    res.json({ nextSerial: next });
+  } catch (error) {
+    console.error("Get next admission serial error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
 module.exports = {
   initiateRegistration,
   verifyOtp,
@@ -4492,5 +4696,6 @@ module.exports = {
   mapMasterAcademicYear,
   unmapMasterAcademicYear,
   mapMasterPolicy,
-  unmapMasterPolicy
+  unmapMasterPolicy,
+  getNextAdmissionSerial: getNextAdmissionSerialRoute
 };
