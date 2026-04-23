@@ -2,8 +2,10 @@ require("dotenv").config();
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const app = express();
-const port = 8080;
+const port = process.env.PORT || 8080;
 const routes = require('./routes/routes');
 const collegeAdminRoutes = require('./routes/collegeAdminRoutes');
 const facultyMarksRoutes = require('./routes/facultyMarksRoutes');
@@ -20,10 +22,27 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./swagger');
 
 const corsOptions = {
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://[::1]:3000'],
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://[::1]:3000'],
   optionsSuccessStatus: 200,
   credentials: true
 };
+
+// Security Middlewares
+// 1. HTTP Security Headers
+app.use(helmet({
+  crossOriginResourcePolicy: false, // Allow cross-origin images/resources if needed
+}));
+
+// 2. Global Rate Limiting
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 150, // Limit each IP to 150 requests per windowMs
+  message: { message: 'Too many requests from this IP, please try again after 15 minutes' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(globalLimiter);
+
 app.use(cors(corsOptions));
 
 app.use(express.json());

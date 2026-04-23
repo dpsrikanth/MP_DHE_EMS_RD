@@ -6,8 +6,31 @@ const { getSmtpConfig, updateSmtpConfig } = require('../controllers/configContro
 const { autoAllocateSeats, clearAssignments, getSeatingArrangements, lockSeating } = require('../controllers/seatController');
 const { getMilestones, createMilestone, updateMilestone, deleteMilestone } = require('../controllers/milestoneController');
 const { getRounds, createRound, getSchedules, saveSchedules, getAvailableContexts } = require('../controllers/internalExamController');
-const { verifyToken } = require('../middleware/auth.middleware');
+const { verifyToken, authorizeRole } = require('../middleware/auth.middleware');
+const rateLimit = require('express-rate-limit');
+const { body, validationResult } = require('express-validator');
 
+// Auth Rate Limiter
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login/auth requests per windowMs
+  message: { message: 'Too many authentication attempts, please try again after 15 minutes' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Login Validation Middleware
+const validateLogin = [
+  body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
+  body('password').notEmpty().withMessage('Password is required'),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: 'Validation failed', errors: errors.array() });
+    }
+    next();
+  }
+];
 /**
  * @swagger
  * tags:
@@ -129,9 +152,9 @@ router.get('/roles', getRoles);
  *       200:
  *         description: Role deleted successfully
  */
-router.post('/roles', verifyToken, createRole);
-router.put('/roles/:id', verifyToken, updateRole);
-router.delete('/roles/:id', verifyToken, deleteRole);
+router.post('/roles', verifyToken, authorizeRole('superadmin'), createRole);
+router.put('/roles/:id', verifyToken, authorizeRole('superadmin'), updateRole);
+router.delete('/roles/:id', verifyToken, authorizeRole('superadmin'), deleteRole);
 
 /**
  * @swagger
@@ -152,10 +175,10 @@ router.delete('/roles/:id', verifyToken, deleteRole);
  *       200:
  *         description: Login successful
  */
-router.post('/login', Login);
-router.post('/refresh-token', refreshToken);
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password', resetPassword);
+router.post('/login', authLimiter, validateLogin, Login);
+router.post('/refresh-token', authLimiter, refreshToken);
+router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/reset-password', authLimiter, resetPassword);
 
 /**
  * @swagger
