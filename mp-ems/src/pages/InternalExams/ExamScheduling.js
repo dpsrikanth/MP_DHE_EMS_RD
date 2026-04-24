@@ -8,6 +8,8 @@ const ExamScheduling = () => {
     const [semesters, setSemesters] = useState([]);
     const [academicYears, setAcademicYears] = useState([]);
     const [subjects, setSubjects] = useState([]);
+    const [milestones, setMilestones] = useState([]);
+    const [activeMilestone, setActiveMilestone] = useState(null);
     
     const [availableContexts, setAvailableContexts] = useState({ programs: [], semesters: [], mapping: [] });
     
@@ -131,16 +133,19 @@ const ExamScheduling = () => {
             const token = localStorage.getItem('token');
             const headers = { Authorization: `Bearer ${token}` };
 
-            // Fetch subjects and existing schedules
-            const [subjectsRes, schedulesRes] = await Promise.all([
+            // Fetch subjects, existing schedules, and milestones
+            const [subjectsRes, schedulesRes, milestonesRes] = await Promise.all([
                 fetch(`${API_URL}/subjects?program_id=${filters.program_id}&semester_id=${filters.semester_id}`, { headers }),
-                fetch(`${API_URL}/internal-exams/schedules?round_id=${filters.round_id}&program_id=${filters.program_id}&semester_id=${filters.semester_id}&academic_year_id=${filters.academic_year_id}`, { headers })
+                fetch(`${API_URL}/internal-exams/schedules?round_id=${filters.round_id}&program_id=${filters.program_id}&semester_id=${filters.semester_id}&academic_year_id=${filters.academic_year_id}`, { headers }),
+                fetch(`${API_URL}/milestones?semester_id=${filters.semester_id}&college_id=${localStorage.getItem('collegeId')}`, { headers })
             ]);
             
             const subjectsData = await subjectsRes.json();
             const schedulesData = await schedulesRes.json();
+            const milestonesData = await milestonesRes.json();
 
             setSubjects(subjectsData);
+            setMilestones(milestonesData);
 
             const initialSchedules = {};
             schedulesData.forEach(s => {
@@ -160,7 +165,60 @@ const ExamScheduling = () => {
         }
     };
 
+    const getActiveMilestone = () => {
+        if (!filters.round_id || milestones.length === 0) return null;
+        
+        const round = rounds.find(r => r.id.toString() === filters.round_id.toString());
+        if (!round) return null;
+
+        const roundName = round.name.toUpperCase();
+        const roundNum = roundName.replace(/\D/g, "");
+
+        // Find milestones that might match
+        const matches = milestones.filter(m => {
+            const mName = m.name.toUpperCase();
+            
+            // Rule 1: Name contains the round name (e.g. "MID-1" in "INTERNAL EXAM 1 (MID-1)")
+            if (mName.includes(roundName)) return true;
+
+            // Rule 2: If round is "IA X", look for "INTERNAL EXAM X" or "MID-X"
+            if (roundName.includes("IA") && roundNum) {
+                if (mName.includes("INTERNAL EXAM " + roundNum)) return true;
+                if (mName.includes("MID-" + roundNum)) return true;
+            }
+
+            // Rule 3: If round is "MID-X", look for "INTERNAL EXAM X"
+            if (roundName.includes("MID") && roundNum) {
+                if (mName.includes("INTERNAL EXAM " + roundNum)) return true;
+            }
+
+            return false;
+        });
+
+        // Filter for "Internal" type if possible, and prefer names with "EXAM"
+        const internalMatches = matches.filter(m => m.type === 'Internal');
+        const bestMatches = internalMatches.length > 0 ? internalMatches : matches;
+        
+        const bestMatch = bestMatches.find(m => m.name.toUpperCase().includes("EXAM")) || bestMatches[0];
+        
+        if (bestMatch) {
+            return {
+                start: bestMatch.start_date.split('T')[0],
+                end: bestMatch.end_date.split('T')[0],
+                name: bestMatch.name
+            };
+        }
+        return null;
+    };
+
     const handleScheduleChange = (subjectId, field, value) => {
+        if (field === 'exam_date' && value) {
+            const range = getActiveMilestone();
+            if (range && (value < range.start || value > range.end)) {
+                toast.error(`You cannot select dates like that! Please select a date between ${range.start} and ${range.end} for ${range.name}`);
+            }
+        }
+
         setSchedules(prev => ({
             ...prev,
             [subjectId]: {
@@ -181,6 +239,18 @@ const ExamScheduling = () => {
         if (scheduleArray.length === 0) {
             toast.warning("No dates assigned to any subjects");
             return;
+        }
+
+        // Validate against milestone range
+        const range = getActiveMilestone();
+        if (range) {
+            const invalidSchedules = scheduleArray.filter(s => 
+                s.exam_date < range.start || s.exam_date > range.end
+            );
+            if (invalidSchedules.length > 0) {
+                toast.error(`Some dates are outside the allowed range for ${range.name} (${range.start} to ${range.end})`);
+                return;
+            }
         }
 
         try {
@@ -331,12 +401,26 @@ const ExamScheduling = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-5">
-                                            <input 
-                                                type="date"
-                                                className="w-full bg-slate-50 border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 font-medium text-slate-600"
-                                                value={schedules[sub.id]?.exam_date || ''}
-                                                onChange={(e) => handleScheduleChange(sub.id, 'exam_date', e.target.value)}
-                                            />
+                                            {(() => {
+                                                const range = getActiveMilestone();
+                                                return (
+                                                    <>
+                                                        <input 
+                                                            type="date"
+                                                            className={`w-full bg-slate-50 border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 font-medium text-slate-600 ${
+                                                                range && schedules[sub.id]?.exam_date && (schedules[sub.id].exam_date < range.start || schedules[sub.id].exam_date > range.end) ? 'ring-2 ring-red-500/50' : ''
+                                                            }`}
+                                                            value={schedules[sub.id]?.exam_date || ''}
+                                                            onChange={(e) => handleScheduleChange(sub.id, 'exam_date', e.target.value)}
+                                                        />
+                                                        {range && (
+                                                            <div className="text-[9px] text-slate-400 mt-1 font-bold italic">
+                                                                Range: {range.start} to {range.end}
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
                                         </td>
                                         <td className="px-6 py-5">
                                             <div className="flex items-center bg-slate-50 rounded-lg px-3 group-focus-within:ring-2 ring-indigo-500/20">
