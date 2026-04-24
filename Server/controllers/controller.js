@@ -599,7 +599,7 @@ const Login = async (req, res) => {
        LEFT JOIN public.colleges sc ON s."collageName" ILIKE sc.name
        LEFT JOIN public.colleges c_actual ON c_actual.id = u.college_id
        LEFT JOIN public.colleges c_mt ON c_mt.id = mt.college_id
-       WHERE u.email = $1`,
+       WHERE u.email ILIKE $1`,
       [email]
     );
     if (user.rows.length === 0) return res.status(400).json({ message: "User not found" });
