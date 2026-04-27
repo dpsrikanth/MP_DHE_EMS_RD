@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   FileText, Plus, Pencil, X, Check, Calendar, Book, Layers, Hash, ArrowRight,
-  AlertCircle, Globe, Users, BookOpen, Clock
+  AlertCircle, Globe, Users, BookOpen, Clock, Filter, ChevronDown
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
@@ -19,7 +19,14 @@ const Exams = () => {
 
   // For college admin: tab switcher between Internal and External exams
   const isCollegeAdminRole = authUtils.isCollegeAdmin();
+  const isUniversityAdminRole = authUtils.isUniversityAdmin() || authUtils.isAdmin();
   const [examTypeFilter, setExamTypeFilter] = useState(isCollegeAdminRole ? 'internal' : 'all');
+
+  // University Admin cascading filters
+  const [filterCollege, setFilterCollege] = useState('');
+  const [filterProgram, setFilterProgram] = useState('');
+  const [filterSemester, setFilterSemester] = useState('');
+  const [filterExamType, setFilterExamType] = useState('');
 
   // Dropdown data
   const [colleges, setColleges] = useState([]);
@@ -72,15 +79,155 @@ const Exams = () => {
       });
     });
     // Sort groups by ID (highest/latest first)
-    const allGroups = Object.values(groups).sort((a, b) => b.id - a.id);
+    let allGroups = Object.values(groups).sort((a, b) => b.id - a.id);
 
     // For college admin: filter by selected tab (internal=type 1, external=type 2)
     if (isCollegeAdminRole) {
       const typeVal = examTypeFilter === 'internal' ? 1 : 2;
-      return allGroups.filter(g => g.exam_type === typeVal);
+      let filtered = allGroups.filter(g => g.exam_type === typeVal);
+      if (filterProgram) {
+        filtered = filtered.filter(g => String(g.program_id) === String(filterProgram));
+      }
+      if (filterSemester) {
+        filtered = filtered.filter(g => String(g.semester_id) === String(filterSemester));
+      }
+      return filtered;
     }
+
+    // University Admin cascading filters
+    // Note: External exams (exam_type=2) are university-wide with college_id=NULL,
+    // so we include them alongside the selected college's exams.
+    if (isUniversityAdminRole) {
+      if (filterCollege) {
+        allGroups = allGroups.filter(g => 
+          String(g.college_id) === String(filterCollege) || !g.college_id
+        );
+      }
+      if (filterProgram) {
+        allGroups = allGroups.filter(g => String(g.program_id) === String(filterProgram));
+      }
+      if (filterSemester) {
+        allGroups = allGroups.filter(g => String(g.semester_id) === String(filterSemester));
+      }
+      if (filterExamType) {
+        allGroups = allGroups.filter(g => String(g.exam_type) === String(filterExamType));
+      }
+    }
+
     return allGroups;
-  }, [data, examTypeFilter, isCollegeAdminRole]);
+  }, [data, examTypeFilter, isCollegeAdminRole, isUniversityAdminRole, filterCollege, filterProgram, filterSemester, filterExamType]);
+
+  // Cascading filter options: derive available options from the actual data
+  const filterOptions = useMemo(() => {
+    // Build all groups first (ungrouped data for option derivation)
+    const groups = {};
+    data.forEach(item => {
+      const key = `${item.exam_name}_${item.semester_id}_${item.college_id || 'null'}_${item.exam_type}_${item.program_id}_${item.academic_year_id}`;
+      if (!groups[key]) {
+        groups[key] = { ...item };
+      }
+    });
+    const allGroups = Object.values(groups);
+
+    // Available colleges from actual exam data
+    const collegeSet = new Map();
+    allGroups.forEach(g => {
+      if (g.college_id) collegeSet.set(String(g.college_id), g.college_name || `College #${g.college_id}`);
+    });
+    const availableColleges = Array.from(collegeSet, ([id, name]) => ({ id, name }));
+
+    // Programs: filtered by selected college (include external/university-wide exams too)
+    let filteredForPrograms = allGroups;
+    if (filterCollege) filteredForPrograms = filteredForPrograms.filter(g => 
+      String(g.college_id) === String(filterCollege) || !g.college_id
+    );
+    const programSet = new Map();
+    filteredForPrograms.forEach(g => {
+      if (g.program_id) programSet.set(String(g.program_id), g.program_name || `Program #${g.program_id}`);
+    });
+    const availablePrograms = Array.from(programSet, ([id, name]) => ({ id, name }));
+
+    // Semesters: filtered by selected college + program (include external/university-wide exams too)
+    let filteredForSemesters = allGroups;
+    if (filterCollege) filteredForSemesters = filteredForSemesters.filter(g => 
+      String(g.college_id) === String(filterCollege) || !g.college_id
+    );
+    if (filterProgram) filteredForSemesters = filteredForSemesters.filter(g => String(g.program_id) === String(filterProgram));
+    const semesterSet = new Map();
+    filteredForSemesters.forEach(g => {
+      if (g.semester_id) semesterSet.set(String(g.semester_id), g.semester_name || `Semester ${g.semester_id}`);
+    });
+    const availableSemesters = Array.from(semesterSet, ([id, name]) => ({ id, name }));
+
+    // Exam types: filtered by college + program + semester (include external/university-wide exams too)
+    let filteredForTypes = allGroups;
+    if (filterCollege) filteredForTypes = filteredForTypes.filter(g => 
+      String(g.college_id) === String(filterCollege) || !g.college_id
+    );
+    if (filterProgram) filteredForTypes = filteredForTypes.filter(g => String(g.program_id) === String(filterProgram));
+    if (filterSemester) filteredForTypes = filteredForTypes.filter(g => String(g.semester_id) === String(filterSemester));
+    const typeSet = new Map();
+    filteredForTypes.forEach(g => {
+      if (g.exam_type) typeSet.set(String(g.exam_type), g.exam_type_name || (g.exam_type === 1 ? 'Internal' : 'External'));
+    });
+    const availableExamTypes = Array.from(typeSet, ([id, name]) => ({ id, name }));
+
+    return { availableColleges, availablePrograms, availableSemesters, availableExamTypes };
+  }, [data, filterCollege, filterProgram, filterSemester]);
+
+  // College Admin filter options: derive from exams matching current tab (internal/external)
+  const collegeAdminFilterOptions = useMemo(() => {
+    if (!isCollegeAdminRole) return { programs: [], semesters: [] };
+    const typeVal = examTypeFilter === 'internal' ? 1 : 2;
+    const groups = {};
+    data.forEach(item => {
+      const key = `${item.exam_name}_${item.semester_id}_${item.college_id || 'null'}_${item.exam_type}_${item.program_id}_${item.academic_year_id}`;
+      if (!groups[key]) groups[key] = { ...item };
+    });
+    let tabExams = Object.values(groups).filter(g => g.exam_type === typeVal);
+
+    // Programs in current tab
+    const progSet = new Map();
+    tabExams.forEach(g => {
+      if (g.program_id) progSet.set(String(g.program_id), g.program_name || `Program #${g.program_id}`);
+    });
+    const programs = Array.from(progSet, ([id, name]) => ({ id, name }));
+
+    // Semesters: filtered by selected program
+    let filteredForSem = tabExams;
+    if (filterProgram) filteredForSem = filteredForSem.filter(g => String(g.program_id) === String(filterProgram));
+    const semSet = new Map();
+    filteredForSem.forEach(g => {
+      if (g.semester_id) semSet.set(String(g.semester_id), g.semester_name || `Semester ${g.semester_id}`);
+    });
+    const semesters = Array.from(semSet, ([id, name]) => ({ id, name }));
+
+    return { programs, semesters };
+  }, [data, isCollegeAdminRole, examTypeFilter, filterProgram]);
+
+  // Reset downstream filters when a parent filter changes
+  const handleCollegeFilterChange = (val) => {
+    setFilterCollege(val);
+    setFilterProgram('');
+    setFilterSemester('');
+    setFilterExamType('');
+  };
+  const handleProgramFilterChange = (val) => {
+    setFilterProgram(val);
+    setFilterSemester('');
+    setFilterExamType('');
+  };
+  const handleSemesterFilterChange = (val) => {
+    setFilterSemester(val);
+    setFilterExamType('');
+  };
+  const handleClearAllFilters = () => {
+    setFilterCollege('');
+    setFilterProgram('');
+    setFilterSemester('');
+    setFilterExamType('');
+  };
+  const hasActiveFilters = filterCollege || filterProgram || filterSemester || filterExamType;
 
 
   // Apply search/pagination to groupedData if needed, but useDataTable already handles 'data'.
@@ -376,11 +523,14 @@ const Exams = () => {
               onChange={setSearchQuery} 
               placeholder="Search by exam name or ID..."
             />
-            <ColumnVisibilitySelector 
-              columns={availableColumns} 
-              visibleColumns={visibleColumns} 
-              onToggle={toggleColumn} 
-            />
+            {/* Column visibility: hidden for university admin and college admin */}
+            {!isUniversityAdminRole && !isCollegeAdminRole && (
+              <ColumnVisibilitySelector 
+                columns={availableColumns} 
+                visibleColumns={visibleColumns} 
+                onToggle={toggleColumn} 
+              />
+            )}
             {/* Hide Schedule Exam for college-admin — internal exams are now managed via the Internal Schedule module */}
             {!isCollegeAdminRole && (
               <button 
@@ -394,11 +544,108 @@ const Exams = () => {
           </div>
         </div>
 
+        {/* University Admin: Cascading Filter Bar */}
+        {isUniversityAdminRole && (
+          <div className="px-8 py-5 bg-gradient-to-r from-slate-50/80 to-purple-50/40 border-t border-slate-100">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center text-purple-500">
+                <Filter size={14} />
+              </div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Filter Examinations</span>
+              {hasActiveFilters && (
+                <button
+                  onClick={handleClearAllFilters}
+                  className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all"
+                >
+                  <X size={12} />
+                  Clear All
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* College Filter */}
+              <div className="relative">
+                <select
+                  value={filterCollege}
+                  onChange={(e) => handleCollegeFilterChange(e.target.value)}
+                  className="w-full appearance-none bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 rounded-xl px-4 py-3 pr-10 text-xs font-bold text-slate-700 outline-none transition-all cursor-pointer shadow-sm"
+                >
+                  <option value="">All Colleges</option>
+                  {filterOptions.availableColleges.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+
+              {/* Program Filter */}
+              <div className="relative">
+                <select
+                  value={filterProgram}
+                  onChange={(e) => handleProgramFilterChange(e.target.value)}
+                  disabled={!filterCollege}
+                  className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-xs font-bold outline-none transition-all cursor-pointer shadow-sm ${
+                    filterCollege 
+                      ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-purple-500 text-slate-700' 
+                      : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <option value="">{filterCollege ? 'All Programs' : 'Select College First'}</option>
+                  {filterOptions.availablePrograms.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+
+              {/* Semester Filter */}
+              <div className="relative">
+                <select
+                  value={filterSemester}
+                  onChange={(e) => handleSemesterFilterChange(e.target.value)}
+                  disabled={!filterProgram}
+                  className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-xs font-bold outline-none transition-all cursor-pointer shadow-sm ${
+                    filterProgram 
+                      ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-purple-500 text-slate-700' 
+                      : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <option value="">{filterProgram ? 'All Semesters' : 'Select Program First'}</option>
+                  {filterOptions.availableSemesters.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+
+              {/* Exam Type Filter */}
+              <div className="relative">
+                <select
+                  value={filterExamType}
+                  onChange={(e) => setFilterExamType(e.target.value)}
+                  disabled={!filterSemester}
+                  className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-xs font-bold outline-none transition-all cursor-pointer shadow-sm ${
+                    filterSemester 
+                      ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-purple-500 text-slate-700' 
+                      : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <option value="">{filterSemester ? 'All Types' : 'Select Semester First'}</option>
+                  {filterOptions.availableExamTypes.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Tab Switcher — only visible for college admin */}
         {isCollegeAdminRole && (
           <div className="px-8 pb-0 flex items-center gap-2 border-b border-slate-100">
             <button
-              onClick={() => setExamTypeFilter('internal')}
+              onClick={() => { setExamTypeFilter('internal'); setFilterProgram(''); setFilterSemester(''); }}
               className={`px-6 py-3 text-xs font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 ${
                 examTypeFilter === 'internal'
                   ? 'border-purple-500 text-purple-600 bg-purple-50/50'
@@ -408,7 +655,7 @@ const Exams = () => {
               📝 Internal Exams
             </button>
             <button
-              onClick={() => setExamTypeFilter('external')}
+              onClick={() => { setExamTypeFilter('external'); setFilterProgram(''); setFilterSemester(''); }}
               className={`px-6 py-3 text-xs font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 ${
                 examTypeFilter === 'external'
                   ? 'border-blue-500 text-blue-600 bg-blue-50/50'
@@ -417,6 +664,63 @@ const Exams = () => {
             >
               🌐 External Exams
             </button>
+          </div>
+        )}
+
+        {/* College Admin: Program & Semester Filter Bar */}
+        {isCollegeAdminRole && (
+          <div className="px-8 py-4 bg-gradient-to-r from-slate-50/80 to-purple-50/40 border-t border-slate-100">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center text-purple-500">
+                <Filter size={14} />
+              </div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Filter by Program & Semester</span>
+              {(filterProgram || filterSemester) && (
+                <button
+                  onClick={() => { setFilterProgram(''); setFilterSemester(''); }}
+                  className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all"
+                >
+                  <X size={12} />
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Program Filter */}
+              <div className="relative">
+                <select
+                  value={filterProgram}
+                  onChange={(e) => handleProgramFilterChange(e.target.value)}
+                  className="w-full appearance-none bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 rounded-xl px-4 py-3 pr-10 text-xs font-bold text-slate-700 outline-none transition-all cursor-pointer shadow-sm"
+                >
+                  <option value="">All Programs</option>
+                  {collegeAdminFilterOptions.programs.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+
+              {/* Semester Filter */}
+              <div className="relative">
+                <select
+                  value={filterSemester}
+                  onChange={(e) => setFilterSemester(e.target.value)}
+                  disabled={!filterProgram}
+                  className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-xs font-bold outline-none transition-all cursor-pointer shadow-sm ${
+                    filterProgram 
+                      ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-purple-500 text-slate-700' 
+                      : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <option value="">{filterProgram ? 'All Semesters' : 'Select Program First'}</option>
+                  {collegeAdminFilterOptions.semesters.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
           </div>
         )}
 
@@ -595,7 +899,7 @@ const Exams = () => {
               <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tighter">No Schedules Found</h3>
               <p className="text-slate-500 mb-8 max-w-xs mx-auto font-medium">Capture institutional assessments by establishing a new examination schedule.</p>
               <button 
-                onClick={() => setSearchQuery('')}
+                onClick={() => { setSearchQuery(''); handleClearAllFilters(); }}
                 className="px-8 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all"
               >
                 Clear Filters
