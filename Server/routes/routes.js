@@ -4,8 +4,9 @@ const { initiateRegistration, verifyOtp, setInitialPassword, changePassword, get
 const { getMasters, getUniversityConfig, updateUniversityConfig, getCollegeConfig, updateCollegeConfig } = require('../controllers/masterController');
 const { getSmtpConfig, updateSmtpConfig } = require('../controllers/configController');
 const { autoAllocateSeats, clearAssignments, getSeatingArrangements, lockSeating } = require('../controllers/seatController');
-const { getMilestones, createMilestone, updateMilestone, deleteMilestone } = require('../controllers/milestoneController');
+const { getMilestones, createMilestone, updateMilestone, deleteMilestone, cloneMilestones } = require('../controllers/milestoneController');
 const { getRounds, createRound, getSchedules, saveSchedules, getAvailableContexts } = require('../controllers/internalExamController');
+const { getSetting, updateSetting } = require('../controllers/settingsController');
 const { verifyToken, authorizeRole } = require('../middleware/auth.middleware');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
@@ -529,6 +530,10 @@ router.get('/colleges/:id/config', verifyToken, getCollegeConfig);
  */
 router.put('/colleges/:id/config', verifyToken, updateCollegeConfig);
 
+// System Settings
+router.get('/settings/:key', verifyToken, getSetting);
+router.put('/settings/:key', verifyToken, authorizeRole('university_admin'), updateSetting);
+
 // College cascading data endpoints
 /**
  * @swagger
@@ -545,19 +550,7 @@ router.get('/colleges/:collegeId/semesters', verifyToken, getCollegeSemesters);
 router.get('/colleges/:collegeId/programs', verifyToken, getCollegePrograms);
 router.get('/colleges/:collegeId/policies', verifyToken, getCollegePolicies);
 router.get('/colleges/:collegeId/academic-years', verifyToken, getCollegeAcademicYears);
-router.get('/programs', verifyToken, getPrograms);
-/**
- * @swagger
- * /api/programs:
- *   post:
- *     summary: Create a new academic program
- *     tags: [Academic Hierarchy]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       201:
- *         description: Program created
- */
+
 /**
  * @swagger
  * /api/programs:
@@ -615,19 +608,6 @@ router.get('/programs', verifyToken, getPrograms);
 router.post('/programs', verifyToken, createProgram);
 router.put('/programs/:id', verifyToken, updateProgram);
 router.delete('/programs/:id', verifyToken, deleteProgram);
-/**
- * @swagger
- * /api/academic-years:
- *   get:
- *     summary: Get all academic years
- *     tags: [Academic Hierarchy]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of academic years
- */
-router.get('/academic-years', verifyToken, getAcademicYears);
 /**
  * @swagger
  * /api/academic-years:

@@ -380,7 +380,7 @@ exports.getMarksWorkflowStatus = async (req, res) => {
         // HOD filtering
         if (role === 'HOD' && department_id) {
             paramCount++;
-            query += ` AND pps.department_id = $${paramCount}`;
+            query += ` AND (pps.department_id = $${paramCount} OR pps.department_id IS NULL)`;
             params.push(department_id);
         }
 

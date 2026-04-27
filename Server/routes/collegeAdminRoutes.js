@@ -336,7 +336,6 @@ router.delete('/faculty-assignments/:id', collegeAdminController.deleteFacultyAs
  *     responses:
  *       200:
  *         description: Workflow status updated
- */
 router.get('/workflow-status', collegeAdminController.getMarksWorkflowStatus);
 router.post('/workflow-status', collegeAdminController.updateWorkflowStatus);
 router.get('/marks-tracking', collegeAdminController.getMarksTracking);

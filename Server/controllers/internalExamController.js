@@ -72,6 +72,57 @@ exports.saveSchedules = async (req, res) => {
 
         if (!college_id) return res.status(403).json({ error: "Unauthorized" });
 
+        const milestonesResult = await db.query(
+            "SELECT * FROM academic_milestones WHERE (college_id = $1 OR college_id IS NULL) AND delete_status = true",
+            [college_id]
+        );
+        const milestones = milestonesResult.rows;
+
+        let roundName = round_id;
+        const roundInfo = await db.query(
+            "SELECT name FROM internal_exam_rounds WHERE id::text = $1 AND college_id = $2",
+            [round_id, college_id]
+        );
+        if (roundInfo.rows.length > 0) roundName = roundInfo.rows[0].name;
+
+        const schedulingMilestone = milestones.find(m => {
+            const mName = m.name.toUpperCase();
+            const rName = String(roundName).toUpperCase();
+            const rNum = rName.replace(/\D/g, "");
+
+            const isTopicMatch = mName.includes(rName) || 
+                            (rName.includes("IA") && rNum && (mName.includes("INTERNAL EXAM " + rNum) || mName.includes("MID-" + rNum))) ||
+                            (rName.includes("MID") && rNum && mName.includes("INTERNAL EXAM " + rNum));
+                            
+            return isTopicMatch && mName.includes("SCHEDULE");
+        });
+
+        const settingsResult = await db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'roadmap_validation'");
+        const isValidationEnabled = settingsResult.rows.length > 0 ? settingsResult.rows[0].setting_value.enabled : true;
+
+        if (isValidationEnabled && schedulingMilestone) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Check Deadline
+            if (schedulingMilestone.end_date) {
+                const deadline = new Date(schedulingMilestone.end_date);
+                deadline.setHours(23, 59, 59, 999);
+                if (today > deadline) {
+                    return res.status(403).json({ error: "Scheduling is closed for this exam. Deadline passed." });
+                }
+            }
+
+            // Check Start Date
+            if (schedulingMilestone.start_date) {
+                const startDate = new Date(schedulingMilestone.start_date);
+                startDate.setHours(0, 0, 0, 0);
+                if (today < startDate) {
+                    return res.status(403).json({ error: "Scheduling for this exam has not opened yet." });
+                }
+            }
+        }
+
         const client = await db.connect();
         try {
             await client.query('BEGIN');

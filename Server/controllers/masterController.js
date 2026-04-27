@@ -6,7 +6,7 @@ const getMasters = async (req, res) => {
 
     let policies, programs, academicYears, semesters, departments;
     const subjects = await client.query(`
-      SELECT s.id, s.name, s.subject_code,
+      SELECT s.id, s.name, s.subject_code, s.program_id, s.semester_id,
              COALESCE(
                (SELECT json_agg(department_id) 
                 FROM master_subject_departments 

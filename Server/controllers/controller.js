@@ -2234,6 +2234,30 @@ const getStudentResults = async (req, res) => {
 
     // Fetch finalized marks for exams where results are published
     const query = `
+      WITH raw_internal AS (
+          SELECT sim.student_id, sim.subject_id, 
+                 SUM(sim.marks_obtained::float) as total_raw,
+                 json_agg(json_build_object(
+                    'name', ims.component_name,
+                    'marks', sim.marks_obtained,
+                    'max_marks', ims.max_marks
+                 )) as components,
+                 MAX(mws2.status) as batch_status
+          FROM student_internal_marks sim
+          JOIN internal_marks_structure ims ON sim.component_id = ims.id
+          JOIN students s2 ON sim.student_id = s2.id
+          JOIN colleges c2 ON s2."collageName" = c2.name
+          JOIN master_semesters sem2 ON s2.semister = sem2.semester_name
+          LEFT JOIN marks_workflow_status mws2 ON sim.subject_id = mws2.subject_id 
+              AND mws2.college_id = c2.id 
+              AND mws2.semester_id = sem2.id
+          LEFT JOIN component_acceptance ca ON ca.component_id = sim.component_id
+              AND ca.college_id = c2.id 
+              AND ca.subject_id = sim.subject_id
+          WHERE (mws2.status IN ('Approved', 'Locked') OR ca.is_accepted = true)
+          GROUP BY sim.student_id, sim.subject_id
+      )
+      
       SELECT 
         COALESCE(m.id, 0) as mark_id,
         e.exam_type,
@@ -2254,43 +2278,50 @@ const getStudentResults = async (req, res) => {
         raw_internal.components as assessment_components
       FROM students s
       JOIN master_programs p ON s."programName" = p.name
-      JOIN master_semesters sem ON s.semister = sem.semester_name
       LEFT JOIN colleges c ON c.name = s."collageName"
-      JOIN exams e ON e.program_id = p.id AND e.semester_id = sem.id
+      JOIN exams e ON e.program_id = p.id 
           AND (e.college_id = c.id OR (e.college_id IS NULL AND e.exam_type = 2))
+      JOIN master_semesters sem ON e.semester_id = sem.id
       JOIN master_subjects sub ON e.subject_id = sub.id
       LEFT JOIN marks m ON m.exam_id = e.id AND m.student_id = s.id
       LEFT JOIN calculated_internal_marks cim ON s.id = cim.student_id 
           AND (cim.subject_id = e.subject_id OR cim.subject_id = sub.id)
+      LEFT JOIN raw_internal ON s.id = raw_internal.student_id AND sub.id = raw_internal.subject_id
+      WHERE s.id = $1 AND e.results_published = true AND e.exam_type = 2
+        AND m.status IN ('Finalized', 'Approved', 'Pending Approval', 'Draft', 'Internal Only')
+
+      UNION ALL
+
+      SELECT 
+        0 as mark_id,
+        1 as exam_type,
+        raw_internal.total_raw as internal_marks,
+        0 as external_marks,
+        raw_internal.total_raw as total_marks,
+        raw_internal.batch_status as result_status,
+        sem.semester_name || ' Internal Assessments' as exam_name,
+        0 as exam_id,
+        sub.name as subject_name,
+        sub.id as subject_id,
+        sub.subject_code,
+        sub.credit as credits,
+        p.name as program_name,
+        sem.semester_name,
+        s."collageName" as college_name,
+        raw_internal.batch_status as batch_status,
+        raw_internal.components as assessment_components
+      FROM students s
+      JOIN master_programs p ON s."programName" = p.name
+      JOIN raw_internal ON s.id = raw_internal.student_id
+      JOIN master_subjects sub ON raw_internal.subject_id = sub.id
       LEFT JOIN (
-          SELECT sim.student_id, sim.subject_id, 
-                 SUM(sim.marks_obtained::float) as total_raw,
-                 json_agg(json_build_object(
-                    'name', ims.component_name,
-                    'marks', sim.marks_obtained,
-                    'max_marks', ims.max_marks
-                 )) as components,
-                 MAX(mws2.status) as batch_status
-          FROM student_internal_marks sim
-          JOIN internal_marks_structure ims ON sim.component_id = ims.id
-          JOIN students s2 ON sim.student_id = s2.id
-          JOIN colleges c2 ON s2."collageName" = c2.name
-          JOIN master_semesters sem2 ON s2.semister = sem2.semester_name
-          JOIN marks_workflow_status mws2 ON sim.subject_id = mws2.subject_id 
-              AND mws2.college_id = c2.id 
-              AND mws2.semester_id = sem2.id
-          LEFT JOIN component_acceptance ca ON ca.component_id = sim.component_id
-              AND ca.college_id = c2.id AND ca.section = mws2.section
-              AND ca.subject_id = sim.subject_id
-          WHERE (mws2.status IN ('Approved', 'Locked') OR ca.is_accepted = true)
-          GROUP BY sim.student_id, sim.subject_id
-      ) raw_internal ON s.id = raw_internal.student_id AND sub.id = raw_internal.subject_id
-      WHERE s.id = $1 AND e.results_published = true 
-        AND (
-            (e.exam_type = 1 AND raw_internal.total_raw IS NOT NULL) OR 
-            (e.exam_type = 2 AND m.status IN ('Finalized', 'Approved', 'Pending Approval', 'Draft', 'Internal Only'))
-        )
-      ORDER BY e.exam_type ASC, e.exam_date DESC, sub.name ASC
+          SELECT DISTINCT subject_id, semester_id 
+          FROM faculty_subjects
+      ) fs_sem ON fs_sem.subject_id = raw_internal.subject_id
+      JOIN master_semesters sem ON fs_sem.semester_id = sem.id
+      WHERE s.id = $1 AND raw_internal.total_raw IS NOT NULL
+      
+      ORDER BY exam_type ASC, subject_name ASC
     `;
 
     const result = await client.query(query, [studentId]);
@@ -2329,7 +2360,7 @@ const getStudentAttendance = async (req, res) => {
           subject_id, 
           COUNT(DISTINCT (attendance_date, period_number, section)) as total_sessions
         FROM student_attendance
-        WHERE college_id = $1 AND semester_id = $2
+        WHERE college_id = $1
         GROUP BY subject_id
       ),
       student_present AS (
@@ -2464,9 +2495,10 @@ const getStudentsForMarks = async (req, res) => {
     const programNameText = programRes.rows[0]?.name || '';
     const semesterNameText = semRes.rows[0]?.semester_name || '';
 
-    // This fetches all students matching the criteria, and LEFT JOINs the marks table
-    // so we get existing marks if any, or null if they haven't been entered yet.
-    // Notice how students table uses string columns like "collageName" instead of foreign keys
+    // Fetch all students in the same program+college who are active.
+    // We intentionally do NOT filter by semister string here — the subject/exam context
+    // already defines the semester scope. Students should always appear in their program's
+    // roster across all semesters so promoted students remain visible historically.
     const query = `
       SELECT 
         s.id as student_id,
@@ -2481,36 +2513,24 @@ const getStudentsForMarks = async (req, res) => {
         m.hod_id
       FROM students s
       LEFT JOIN marks m ON s.id = m.student_id 
-        AND m.subject_id = $4 
-        AND (m.exam_id = $5 OR $5 IS NULL)
-        AND (m.academic_year_id = $6 OR $6 IS NULL)
+        AND m.subject_id = $3 
+        AND (m.exam_id = $4 OR $4 IS NULL)
+        AND (m.academic_year_id = $5 OR $5 IS NULL)
       WHERE s."collageName" ILIKE $1 
         AND s."programName" ILIKE $2 
-        AND IFNULL(s.semister, '') ILIKE $3 
         AND s."deleteStatus" = true
       ORDER BY s.rollnumber ASC NULLS LAST, s.name ASC
     `;
 
-    // Try a broad match since the student data is hand-typed varying text
-    const semRegex = `%${semesterNameText.replace(/semester /i, '').trim()}%`;
-
     const values = [
       `%${collegeNameText}%`,
       `%${programNameText}%`,
-      semRegex,
       subject_id,
       exam_id || null,
       academic_year_id || null
     ];
 
-    let result;
-    try {
-      result = await client.query(query, values);
-    } catch (err) {
-      // IFNULL isn't native to pg, we should use COALESCE
-      const safeQuery = query.replace("IFNULL(s.semister, '')", "COALESCE(s.semister, '')");
-      result = await client.query(safeQuery, values);
-    }
+    const result = await client.query(query, values);
 
     res.json(result.rows);
   } catch (error) {

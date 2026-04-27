@@ -43,9 +43,25 @@ const MarksConfig = () => {
     }, [semesters, selectedProgram]);
 
     const filteredSubjects = React.useMemo(() => {
-        if (!selectedDepartment) return subjects;
-        return subjects.filter(s => s.department_ids && s.department_ids.includes(selectedDepartment.value));
-    }, [subjects, selectedDepartment]);
+        let filtered = subjects;
+        
+        // Filter by Department if selected
+        if (selectedDepartment) {
+            filtered = filtered.filter(s => s.department_ids && s.department_ids.includes(selectedDepartment.value));
+        }
+        
+        // Filter by Program if selected
+        if (selectedProgram) {
+            filtered = filtered.filter(s => s.program_id === selectedProgram.value);
+        }
+        
+        // Filter by Semester if selected
+        if (selectedSemester) {
+            filtered = filtered.filter(s => s.semester_id === selectedSemester.value);
+        }
+        
+        return filtered;
+    }, [subjects, selectedDepartment, selectedProgram, selectedSemester]);
 
     const filteredStructures = useMemo(() => {
         if (!searchQuery.trim()) return savedStructures;

@@ -62,10 +62,16 @@ const MarksApproval = () => {
     };
 
     const filteredWorkflows = useMemo(() => {
-        if (!searchQuery.trim()) return workflows;
+        let result = workflows;
+
+        if (selectedSemester) {
+            result = result.filter(wf => String(wf.semester_id) === String(selectedSemester.value));
+        }
+
+        if (!searchQuery.trim()) return result;
         
         const query = searchQuery.toLowerCase();
-        return workflows.filter(wf => {
+        return result.filter(wf => {
             const subjectMatch = (wf.subject_name?.toLowerCase().includes(query)) || 
                                (String(wf.subject_id).includes(query));
             const semesterMatch = (wf.semester?.toLowerCase().includes(query)) || 
@@ -76,7 +82,7 @@ const MarksApproval = () => {
             
             return subjectMatch || semesterMatch || statusMatch || dateMatch;
         });
-    }, [workflows, searchQuery]);
+    }, [workflows, searchQuery, selectedSemester]);
 
     const handleFilterChange = (selected) => {
         setSelectedSemester(selected);

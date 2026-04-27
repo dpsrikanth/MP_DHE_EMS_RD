@@ -28,21 +28,23 @@ exports.getStudentsForSubject = async (req, res) => {
         // Fetch string names for matching with students table
         const colRes = await db.query('SELECT name FROM colleges WHERE id = $1', [college_id]);
         const progRes = await db.query('SELECT name FROM master_programs WHERE id = $1', [program_id]);
-        const semRes = await db.query('SELECT semester_name FROM master_semesters WHERE id = $1', [semester_id]);
 
-        if (colRes.rowCount === 0 || progRes.rowCount === 0 || semRes.rowCount === 0) {
-            return res.status(400).json({ error: "Invalid college, program, or semester ID" });
+        if (colRes.rowCount === 0 || progRes.rowCount === 0) {
+            return res.status(400).json({ error: "Invalid college or program ID" });
         }
 
         const collageName = colRes.rows[0].name;
         const programName = progRes.rows[0].name;
-        const semister = semRes.rows[0].semester_name;
 
+        // Intentionally NOT filtering by semister here — the subject/exam already defines the
+        // semester scope, and students must remain visible in their program rosters across
+        // all semesters after promotion.
         const query = `
             SELECT * FROM students 
-            WHERE "collageName" = $1 AND "programName" = $2 AND "semister" = $3
+            WHERE "collageName" = $1 AND "programName" = $2 AND "deleteStatus" = true
+            ORDER BY rollnumber ASC NULLS LAST, name ASC
         `;
-        const result = await db.query(query, [collageName, programName, semister]);
+        const result = await db.query(query, [collageName, programName]);
         res.status(200).json(result.rows);
     } catch (error) {
         console.error(error);
@@ -443,11 +445,13 @@ exports.getStudentsForRound = async (req, res) => {
         }
 
         const studentsQuery = `
-            SELECT s.id, s.name, s.rollnumber 
+            SELECT DISTINCT s.id, s.name, s.rollnumber 
             FROM students s 
-            WHERE s."collageName" = $1 AND s."semister" = $2
+            LEFT JOIN student_internal_marks sim ON s.id = sim.student_id
+            WHERE s."collageName" = $1 
+            AND (s."semister" = $2 OR sim.subject_id = $3)
         `;
-        const studentsRes = await db.query(studentsQuery, [colRes.rows[0].name, semRes.rows[0].semester_name]);
+        const studentsRes = await db.query(studentsQuery, [colRes.rows[0].name, semRes.rows[0].semester_name, subject_id]);
 
         let marks = [];
         if (componentId) {

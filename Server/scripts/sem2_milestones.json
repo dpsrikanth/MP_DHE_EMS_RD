@@ -1,0 +1,188 @@
+[
+  {
+    "id": 32,
+    "name": "Commencement of Classes",
+    "start_date": "2025-01-14T18:30:00.000Z",
+    "end_date": "2025-01-14T18:30:00.000Z"
+  },
+  {
+    "id": 33,
+    "name": "INTERNAL EXAM 1 SCHEDULE DETAILS (MID-1)",
+    "start_date": "2025-01-31T18:30:00.000Z",
+    "end_date": "2025-02-04T18:30:00.000Z"
+  },
+  {
+    "id": 34,
+    "name": "Internal Exam 1 (Mid-1)",
+    "start_date": "2025-02-14T18:30:00.000Z",
+    "end_date": "2025-02-18T18:30:00.000Z"
+  },
+  {
+    "id": 35,
+    "name": "Internal Marks Entry (Mid-1)",
+    "start_date": "2025-02-20T18:30:00.000Z",
+    "end_date": "2025-02-24T18:30:00.000Z"
+  },
+  {
+    "id": 36,
+    "name": "Internal Marks Approval (Mid-1)",
+    "start_date": "2025-02-25T18:30:00.000Z",
+    "end_date": "2025-03-01T18:30:00.000Z"
+  },
+  {
+    "id": 37,
+    "name": "INTERNAL EXAM 2 SCHEDULE DETAILS (MID-2)",
+    "start_date": "2025-03-03T18:30:00.000Z",
+    "end_date": "2025-03-07T18:30:00.000Z"
+  },
+  {
+    "id": 38,
+    "name": "Internal Exam 2 (Mid-2)",
+    "start_date": "2025-03-17T18:30:00.000Z",
+    "end_date": "2025-03-21T18:30:00.000Z"
+  },
+  {
+    "id": 39,
+    "name": "Internal Marks Entry (Mid-2)",
+    "start_date": "2025-03-23T18:30:00.000Z",
+    "end_date": "2025-03-27T18:30:00.000Z"
+  },
+  {
+    "id": 40,
+    "name": "Internal Marks Approval (Mid-2)",
+    "start_date": "2025-03-28T18:30:00.000Z",
+    "end_date": "2025-04-01T18:30:00.000Z"
+  },
+  {
+    "id": 41,
+    "name": "INTERNAL EXAM 3 SCHEDULE DETAILS (MID-3)",
+    "start_date": "2025-04-02T18:30:00.000Z",
+    "end_date": "2025-04-06T18:30:00.000Z"
+  },
+  {
+    "id": 42,
+    "name": "Internal Exam 3 (Mid-3)",
+    "start_date": "2025-04-16T18:30:00.000Z",
+    "end_date": "2025-04-20T18:30:00.000Z"
+  },
+  {
+    "id": 43,
+    "name": "INTERNAL EXAM 3 (MID-3)",
+    "start_date": "2025-04-16T18:30:00.000Z",
+    "end_date": "2025-04-20T18:30:00.000Z"
+  },
+  {
+    "id": 44,
+    "name": "Internal Marks Entry (Mid-3)",
+    "start_date": "2025-04-22T18:30:00.000Z",
+    "end_date": "2025-04-26T18:30:00.000Z"
+  },
+  {
+    "id": 45,
+    "name": "PRACTICAL EXAM SCHEDULE DETAILS",
+    "start_date": "2025-04-26T18:30:00.000Z",
+    "end_date": "2025-05-01T18:30:00.000Z"
+  },
+  {
+    "id": 46,
+    "name": "Internal Marks Approval (Mid-3)",
+    "start_date": "2025-04-27T18:30:00.000Z",
+    "end_date": "2025-05-01T18:30:00.000Z"
+  },
+  {
+    "id": 47,
+    "name": "Practical Exam",
+    "start_date": "2025-05-03T18:30:00.000Z",
+    "end_date": "2025-05-07T18:30:00.000Z"
+  },
+  {
+    "id": 48,
+    "name": "Practical Marks Entry",
+    "start_date": "2025-05-08T18:30:00.000Z",
+    "end_date": "2025-05-10T18:30:00.000Z"
+  },
+  {
+    "id": 49,
+    "name": "Practical Marks Approval",
+    "start_date": "2025-05-11T18:30:00.000Z",
+    "end_date": "2025-05-12T18:30:00.000Z"
+  },
+  {
+    "id": 50,
+    "name": "External Exam Registration",
+    "start_date": "2025-05-13T18:30:00.000Z",
+    "end_date": "2025-05-15T18:30:00.000Z"
+  },
+  {
+    "id": 51,
+    "name": "Internal Marks Lock & Submission",
+    "start_date": "2025-05-16T18:30:00.000Z",
+    "end_date": "2025-05-17T18:30:00.000Z"
+  },
+  {
+    "id": 52,
+    "name": "Student Enroll for External Exam",
+    "start_date": "2025-05-18T18:30:00.000Z",
+    "end_date": "2025-05-22T18:30:00.000Z"
+  },
+  {
+    "id": 53,
+    "name": "Question Paper Upload",
+    "start_date": "2025-05-23T18:30:00.000Z",
+    "end_date": "2025-05-25T18:30:00.000Z"
+  },
+  {
+    "id": 54,
+    "name": "Question Paper Finalization",
+    "start_date": "2025-05-26T18:30:00.000Z",
+    "end_date": "2025-05-27T18:30:00.000Z"
+  },
+  {
+    "id": 55,
+    "name": "Seat Allocation & Mapping",
+    "start_date": "2025-05-28T18:30:00.000Z",
+    "end_date": "2025-05-30T18:30:00.000Z"
+  },
+  {
+    "id": 56,
+    "name": "Seating Arrangement Lock",
+    "start_date": "2025-05-31T18:30:00.000Z",
+    "end_date": "2025-06-01T18:30:00.000Z"
+  },
+  {
+    "id": 57,
+    "name": "Hall Ticket Release",
+    "start_date": "2025-06-02T18:30:00.000Z",
+    "end_date": "2025-06-02T18:30:00.000Z"
+  },
+  {
+    "id": 58,
+    "name": "External Faculty Assignment",
+    "start_date": "2025-06-03T18:30:00.000Z",
+    "end_date": "2025-06-06T18:30:00.000Z"
+  },
+  {
+    "id": 59,
+    "name": "Last Working Day",
+    "start_date": "2025-06-06T18:30:00.000Z",
+    "end_date": "2025-06-06T18:30:00.000Z"
+  },
+  {
+    "id": 60,
+    "name": "External (End Semester) Exams",
+    "start_date": "2025-06-11T18:30:00.000Z",
+    "end_date": "2025-06-26T18:30:00.000Z"
+  },
+  {
+    "id": 61,
+    "name": "Valuation of Answer Scripts",
+    "start_date": "2025-06-27T18:30:00.000Z",
+    "end_date": "2025-07-12T18:30:00.000Z"
+  },
+  {
+    "id": 62,
+    "name": "Results Declaration",
+    "start_date": "2025-07-22T18:30:00.000Z",
+    "end_date": "2025-07-22T18:30:00.000Z"
+  }
+]

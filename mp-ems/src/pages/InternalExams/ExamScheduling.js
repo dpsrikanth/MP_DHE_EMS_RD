@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Calendar, Save, Clock, Search, BookOpen, GraduationCap } from 'lucide-react';
-
+import { Calendar, Save, Clock, Search, BookOpen, GraduationCap, Flag } from 'lucide-react';
+import { formatDate } from '../../utils/dateUtils';
 const ExamScheduling = () => {
     const [rounds, setRounds] = useState([]);
     const [programs, setPrograms] = useState([]);
@@ -10,9 +10,10 @@ const ExamScheduling = () => {
     const [subjects, setSubjects] = useState([]);
     const [milestones, setMilestones] = useState([]);
     const [activeMilestone, setActiveMilestone] = useState(null);
-    
+    const [isValidationEnabled, setIsValidationEnabled] = useState(true);
+
     const [availableContexts, setAvailableContexts] = useState({ programs: [], semesters: [], mapping: [] });
-    
+
     const [filters, setFilters] = useState({
         round_id: '',
         program_id: '',
@@ -32,7 +33,23 @@ const ExamScheduling = () => {
 
     useEffect(() => {
         fetchInitialData();
+        fetchValidationSetting();
     }, []);
+
+    const fetchValidationSetting = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_URL}/settings/roadmap_validation`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setIsValidationEnabled(data.enabled);
+            }
+        } catch (err) {
+            console.error("Failed to fetch validation setting", err);
+        }
+    };
 
     // Dynamic filtering logic: Fetch available programs/semesters when round changes
     useEffect(() => {
@@ -66,8 +83,8 @@ const ExamScheduling = () => {
             setAcademicYears(yearsData);
 
             // Default to B.Tech if it exists
-            const btech = programsData.find(p => 
-                p.name.toLowerCase().includes('btech') || 
+            const btech = programsData.find(p =>
+                p.name.toLowerCase().includes('btech') ||
                 p.name.toLowerCase().includes('b.tech') ||
                 p.id === 2 // Legacy B.Tech ID
             );
@@ -88,10 +105,10 @@ const ExamScheduling = () => {
             setLoading(prev => ({ ...prev, contexts: true }));
             const token = localStorage.getItem('token');
             const headers = { Authorization: `Bearer ${token}` };
-            
+
             const res = await fetch(`${API_URL}/internal-exams/available-contexts?round_id=${roundId}`, { headers });
             const data = await res.json();
-            
+
             // Assuming data is { programs: [id...], semesters: [id...], mapping: [{program_id, semester_id}...] }
             // If the backend doesn't return mapping yet, we'll just use the IDs for now as requested.
             setAvailableContexts({
@@ -137,24 +154,26 @@ const ExamScheduling = () => {
             const [subjectsRes, schedulesRes, milestonesRes] = await Promise.all([
                 fetch(`${API_URL}/subjects?program_id=${filters.program_id}&semester_id=${filters.semester_id}`, { headers }),
                 fetch(`${API_URL}/internal-exams/schedules?round_id=${filters.round_id}&program_id=${filters.program_id}&semester_id=${filters.semester_id}&academic_year_id=${filters.academic_year_id}`, { headers }),
-                fetch(`${API_URL}/milestones?semester_id=${filters.semester_id}&college_id=${localStorage.getItem('collegeId')}`, { headers })
+                fetch(`${API_URL}/milestones?semester_id=${filters.semester_id}&program_id=${filters.program_id}&academic_year_id=${filters.academic_year_id}&college_id=${localStorage.getItem('collegeId')}`, { headers })
             ]);
-            
+
             const subjectsData = await subjectsRes.json();
             const schedulesData = await schedulesRes.json();
             const milestonesData = await milestonesRes.json();
 
-            setSubjects(subjectsData);
-            setMilestones(milestonesData);
+            setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
+            setMilestones(Array.isArray(milestonesData) ? milestonesData : []);
 
             const initialSchedules = {};
-            schedulesData.forEach(s => {
-                initialSchedules[s.subject_id] = {
-                    exam_date: s.exam_date ? s.exam_date.split('T')[0] : '',
-                    start_time: s.start_time,
-                    end_time: s.end_time
-                };
-            });
+            if (Array.isArray(schedulesData)) {
+                schedulesData.forEach(s => {
+                    initialSchedules[s.subject_id] = {
+                        exam_date: s.exam_date ? s.exam_date.split('T')[0] : '',
+                        start_time: s.start_time,
+                        end_time: s.end_time
+                    };
+                });
+            }
             setSchedules(initialSchedules);
 
         } catch (error) {
@@ -166,8 +185,8 @@ const ExamScheduling = () => {
     };
 
     const getActiveMilestone = () => {
-        if (!filters.round_id || milestones.length === 0) return null;
-        
+        if (!filters.round_id || !Array.isArray(milestones) || milestones.length === 0) return null;
+
         const round = rounds.find(r => r.id.toString() === filters.round_id.toString());
         if (!round) return null;
 
@@ -177,7 +196,7 @@ const ExamScheduling = () => {
         // Find milestones that might match
         const matches = milestones.filter(m => {
             const mName = m.name.toUpperCase();
-            
+
             // Rule 1: Name contains the round name (e.g. "MID-1" in "INTERNAL EXAM 1 (MID-1)")
             if (mName.includes(roundName)) return true;
 
@@ -198,24 +217,83 @@ const ExamScheduling = () => {
         // Filter for "Internal" type if possible, and prefer names with "EXAM"
         const internalMatches = matches.filter(m => m.type === 'Internal');
         const bestMatches = internalMatches.length > 0 ? internalMatches : matches;
-        
-        const bestMatch = bestMatches.find(m => m.name.toUpperCase().includes("EXAM")) || bestMatches[0];
-        
+
+        // Ensure the regular active milestone isn't the schedule one
+        const bestMatch = bestMatches.find(m => m.name.toUpperCase().includes("EXAM") && !m.name.toUpperCase().includes("SCHEDULE")) || bestMatches.find(m => !m.name.toUpperCase().includes("SCHEDULE")) || bestMatches[0];
+
         if (bestMatch) {
+            const getLocalYYYYMMDD = (isoStr) => {
+                const d = new Date(isoStr);
+                if (isNaN(d.getTime())) return isoStr.split('T')[0];
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            };
             return {
-                start: bestMatch.start_date.split('T')[0],
-                end: bestMatch.end_date.split('T')[0],
+                start: getLocalYYYYMMDD(bestMatch.start_date),
+                end: getLocalYYYYMMDD(bestMatch.end_date),
                 name: bestMatch.name
             };
         }
         return null;
     };
 
+    const getSchedulingMilestone = () => {
+        if (!filters.round_id || !Array.isArray(milestones) || milestones.length === 0) return null;
+        const round = rounds.find(r => r.id.toString() === filters.round_id.toString());
+        if (!round) return null;
+        const roundName = round.name.toUpperCase();
+        const roundNum = roundName.replace(/\D/g, "");
+
+        const matches = milestones.filter(m => {
+            const mName = m.name.toUpperCase();
+            const isTopicMatch = mName.includes(roundName) ||
+                (roundName.includes("IA") && roundNum && (mName.includes("INTERNAL EXAM " + roundNum) || mName.includes("MID-" + roundNum))) ||
+                (roundName.includes("MID") && roundNum && mName.includes("INTERNAL EXAM " + roundNum));
+            return isTopicMatch && mName.includes("SCHEDULE");
+        });
+
+        if (matches.length > 0) {
+            const getLocalYYYYMMDD = (isoStr) => {
+                const d = new Date(isoStr);
+                if (isNaN(d.getTime())) return isoStr.split('T')[0];
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            };
+            return {
+                start: getLocalYYYYMMDD(matches[0].start_date),
+                end: getLocalYYYYMMDD(matches[0].end_date),
+                startFull: matches[0].start_date,
+                endFull: matches[0].end_date,
+                name: matches[0].name
+            };
+        }
+        return null;
+    };
+
+    const isSchedulingClosed = () => {
+        const scheduleRange = getSchedulingMilestone();
+        if (scheduleRange) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (scheduleRange.endFull) {
+                const deadline = new Date(scheduleRange.endFull);
+                deadline.setHours(23, 59, 59, 999);
+                if (today > deadline) return { closed: true, reason: 'Deadline passed' };
+            }
+
+            if (scheduleRange.startFull) {
+                const start = new Date(scheduleRange.startFull);
+                start.setHours(0, 0, 0, 0);
+                if (today < start) return { closed: true, reason: 'Window not yet open' };
+            }
+        }
+        return { closed: false };
+    };
+
     const handleScheduleChange = (subjectId, field, value) => {
         if (field === 'exam_date' && value) {
             const range = getActiveMilestone();
             if (range && (value < range.start || value > range.end)) {
-                toast.error(`You cannot select dates like that! Please select a date between ${range.start} and ${range.end} for ${range.name}`);
+                // toast.error(`You cannot select dates like that! Please select a date between ${range.start} and ${range.end} for ${range.name}`);
             }
         }
 
@@ -244,12 +322,12 @@ const ExamScheduling = () => {
         // Validate against milestone range
         const range = getActiveMilestone();
         if (range) {
-            const invalidSchedules = scheduleArray.filter(s => 
+            const invalidSchedules = scheduleArray.filter(s =>
                 s.exam_date < range.start || s.exam_date > range.end
             );
             if (invalidSchedules.length > 0) {
-                toast.error(`Some dates are outside the allowed range for ${range.name} (${range.start} to ${range.end})`);
-                return;
+                // toast.error(`Some dates are outside the allowed range for ${range.name} (${range.start} to ${range.end})`);
+                // return;
             }
         }
 
@@ -258,9 +336,9 @@ const ExamScheduling = () => {
             const token = localStorage.getItem('token');
             const response = await fetch(`${API_URL}/internal-exams/schedules`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}` 
+                    Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     ...filters,
@@ -281,6 +359,11 @@ const ExamScheduling = () => {
 
     if (loading.init) return <div className="p-8 text-center">Loading configuration...</div>;
 
+    const closedResult = isSchedulingClosed();
+    const closed = isValidationEnabled ? closedResult.closed : false;
+    const scheduleWindow = getSchedulingMilestone();
+    const active = getActiveMilestone();
+
     return (
         <div className="p-8 bg-slate-50 min-h-screen">
             <div className="max-w-6xl mx-auto">
@@ -297,14 +380,31 @@ const ExamScheduling = () => {
                     {subjects.length > 0 && (
                         <button
                             onClick={handleSave}
-                            disabled={loading.saving}
-                            className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50"
+                            disabled={loading.saving || closed}
+                            className={`px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-lg disabled:opacity-50 ${closed ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200'
+                                }`}
                         >
                             <Save size={20} />
-                            {loading.saving ? "Saving..." : "Save Schedule"}
+                            {loading.saving ? "Saving..." : closed ? "Scheduling Closed" : "Save Schedule"}
                         </button>
                     )}
                 </div>
+
+                {closed && (
+                    <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-4">
+                        <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-red-200">
+                            <Clock size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-black text-red-600 uppercase tracking-tight">{closedResult.reason || 'Scheduling is closed'}</h3>
+                            <p className="text-[10px] font-bold text-red-500/70 uppercase tracking-widest">
+                                {closedResult.reason === 'Window not yet open'
+                                    ? `Opens: ${formatDate(scheduleWindow?.startFull, true)}`
+                                    : `Closed: ${formatDate(scheduleWindow?.endFull, true)}`}
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-wrap gap-4 items-end mb-8">
                     <div className="flex-1 min-w-[200px]">
@@ -345,15 +445,15 @@ const ExamScheduling = () => {
                             {semesters
                                 .filter(s => {
                                     if (!filters.round_id || (availableContexts.programs.length === 0 && availableContexts.semesters.length === 0)) return true;
-                                    
+
                                     // If we have mapping, filter strictly by (program, semester)
                                     if (availableContexts.mapping.length > 0 && filters.program_id) {
-                                        return availableContexts.mapping.some(m => 
-                                            m.program_id === parseInt(filters.program_id) && 
+                                        return availableContexts.mapping.some(m =>
+                                            m.program_id === parseInt(filters.program_id) &&
                                             m.semester_id === s.id
                                         );
                                     }
-                                    
+
                                     // Fallback to just semester ID from the available list
                                     if (availableContexts.semesters.length > 0) {
                                         return availableContexts.semesters.includes(s.id);
@@ -365,7 +465,7 @@ const ExamScheduling = () => {
                             }
                         </select>
                     </div>
-                    <button 
+                    <button
                         onClick={fetchSubjectsAndSchedules}
                         disabled={loading.subjects}
                         className="bg-slate-800 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-900 transition-all shadow-lg shadow-slate-200 disabled:opacity-50"
@@ -374,6 +474,48 @@ const ExamScheduling = () => {
                         {loading.subjects ? 'Loading...' : 'Go'}
                     </button>
                 </div>
+
+                {isValidationEnabled && active && (
+                    <div className="mb-8 flex flex-wrap items-center gap-6 px-1 bg-white/50 p-4 rounded-2xl border border-slate-100 shadow-sm">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600">
+                                <Flag size={20} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Active Milestone</p>
+                                <p className="text-sm font-black text-slate-900 leading-none">{active.name}</p>
+                            </div>
+                        </div>
+
+                        <div className="h-10 w-px bg-slate-200 hidden md:block" />
+
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600">
+                                <Calendar size={20} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Exam Round Dates</p>
+                                <p className="text-sm font-black text-blue-600 leading-none italic">
+                                    {formatDate(active.start)} - {formatDate(active.end)}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="h-10 w-px bg-slate-200 hidden md:block" />
+
+                        <div className="flex items-center gap-4 animate-in slide-in-from-right duration-500">
+                            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600">
+                                <Clock size={20} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none mb-1 text-left">Scheduling Window</p>
+                                <p className="text-sm font-black text-amber-600 leading-none italic text-left">
+                                    {scheduleWindow ? `${formatDate(scheduleWindow.startFull, true)} to ${formatDate(scheduleWindow.endFull, true)}` : 'Open / No Deadline'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {subjects.length > 0 && (
                     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
@@ -405,17 +547,18 @@ const ExamScheduling = () => {
                                                 const range = getActiveMilestone();
                                                 return (
                                                     <>
-                                                        <input 
+                                                        <input
                                                             type="date"
-                                                            className={`w-full bg-slate-50 border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 font-medium text-slate-600 ${
-                                                                range && schedules[sub.id]?.exam_date && (schedules[sub.id].exam_date < range.start || schedules[sub.id].exam_date > range.end) ? 'ring-2 ring-red-500/50' : ''
-                                                            }`}
+                                                            disabled={closed}
+                                                            className={`w-full bg-slate-50 border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 font-medium text-slate-600 ${false && range && schedules[sub.id]?.exam_date && (schedules[sub.id].exam_date < range.start || schedules[sub.id].exam_date > range.end) ? 'ring-2 ring-red-500/50' : ''
+                                                                } ${closed ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                                                             value={schedules[sub.id]?.exam_date || ''}
                                                             onChange={(e) => handleScheduleChange(sub.id, 'exam_date', e.target.value)}
                                                         />
-                                                        {range && (
-                                                            <div className="text-[9px] text-slate-400 mt-1 font-bold italic">
-                                                                Range: {range.start} to {range.end}
+                                                        {isValidationEnabled && scheduleWindow && (
+                                                            <div className="text-[9px] text-amber-500 mt-1 font-bold italic flex items-center gap-1">
+                                                                <Clock size={10} />
+                                                                Deadline: {formatDate(scheduleWindow.endFull)}
                                                             </div>
                                                         )}
                                                     </>
@@ -423,22 +566,24 @@ const ExamScheduling = () => {
                                             })()}
                                         </td>
                                         <td className="px-6 py-5">
-                                            <div className="flex items-center bg-slate-50 rounded-lg px-3 group-focus-within:ring-2 ring-indigo-500/20">
+                                            <div className={`flex items-center bg-slate-50 rounded-lg px-3 group-focus-within:ring-2 ring-indigo-500/20 ${closed ? 'opacity-50' : ''}`}>
                                                 <Clock size={14} className="text-slate-400" />
-                                                <input 
-                                                    type="time" 
-                                                    className="w-full bg-transparent border-none py-2 text-sm focus:ring-0 font-medium text-slate-600"
+                                                <input
+                                                    type="time"
+                                                    disabled={closed}
+                                                    className="w-full bg-transparent border-none py-2 text-sm focus:ring-0 font-medium text-slate-600 disabled:cursor-not-allowed"
                                                     value={schedules[sub.id]?.start_time || ''}
                                                     onChange={(e) => handleScheduleChange(sub.id, 'start_time', e.target.value)}
                                                 />
                                             </div>
                                         </td>
                                         <td className="px-6 py-5">
-                                            <div className="flex items-center bg-slate-50 rounded-lg px-3 group-focus-within:ring-2 ring-indigo-500/20">
+                                            <div className={`flex items-center bg-slate-50 rounded-lg px-3 group-focus-within:ring-2 ring-indigo-500/20 ${closed ? 'opacity-50' : ''}`}>
                                                 <Clock size={14} className="text-slate-400" />
-                                                <input 
-                                                    type="time" 
-                                                    className="w-full bg-transparent border-none py-2 text-sm focus:ring-0 font-medium text-slate-600"
+                                                <input
+                                                    type="time"
+                                                    disabled={closed}
+                                                    className="w-full bg-transparent border-none py-2 text-sm focus:ring-0 font-medium text-slate-600 disabled:cursor-not-allowed"
                                                     value={schedules[sub.id]?.end_time || ''}
                                                     onChange={(e) => handleScheduleChange(sub.id, 'end_time', e.target.value)}
                                                 />
@@ -450,7 +595,7 @@ const ExamScheduling = () => {
                         </table>
                     </div>
                 )}
-                
+
                 {subjects.length === 0 && !loading.subjects && (
                     <div className="py-24 text-center bg-white rounded-3xl border border-dashed border-slate-200">
                         <GraduationCap className="mx-auto text-slate-200 mb-4" size={64} />
