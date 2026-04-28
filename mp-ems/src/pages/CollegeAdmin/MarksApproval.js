@@ -131,6 +131,14 @@ const MarksApproval = () => {
         }
     };
 
+    // HOD's responsibility ends at "Approved". Locking is a College Admin step.
+    // For HOD, show 'Approved' when actual status is 'Locked' so the display
+    // reflects the HOD's last action, not the College Admin's subsequent lock.
+    const getDisplayStatus = (actualStatus) => {
+        if (isHOD && actualStatus === 'Locked') return 'Approved';
+        return actualStatus;
+    };
+
     if (loading && workflows.length === 0) return (
         <div className="flex justify-center items-center h-64">
             <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
@@ -193,17 +201,27 @@ const MarksApproval = () => {
                                         {wf.semester || `Sem ${wf.semester_id}`} <span className="text-slate-400">|</span> Sec {wf.section}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase ${getStatusStyle(wf.status)}`}>
-                                            {wf.status}
+                                        <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase ${getStatusStyle(getDisplayStatus(wf.status))}`}>
+                                            {getDisplayStatus(wf.status)}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-slate-500 font-medium tracking-tight">
                                         {wf.updated_at ? new Date(wf.updated_at).toLocaleString() : 'Not Started'}
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        {wf.status !== 'Locked' && (
+                                        {wf.status === 'Locked' ? (
+                                            <span className="inline-flex items-center gap-1 text-slate-400 text-sm font-bold">
+                                                <Lock size={14} /> Read-only
+                                            </span>
+                                        ) : wf.status === 'Approved' && isHOD ? (
+                                            // HOD: already approved — show badge only, no action needed
+                                            <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-bold border border-green-200">
+                                                <CheckCircle2 size={12} /> Approved
+                                            </span>
+                                        ) : (
                                             <div className="flex items-center justify-end gap-2">
-                                                {wf.status !== 'Pending' && (
+                                                {/* HOD: Verify only when action is needed (Submitted / Rejected / Correction Requested) */}
+                                                {isHOD && ['Submitted', 'Rejected', 'Correction Requested'].includes(wf.status) && (
                                                     <button
                                                         onClick={() => navigate(`/admin/marks-review/${wf.subject_id}/${wf.section}`, {
                                                             state: {
@@ -213,19 +231,11 @@ const MarksApproval = () => {
                                                         })}
                                                         className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors"
                                                     >
-                                                        <Eye size={12} /> {isCollegeAdmin ? 'Review' : 'Verify'}
+                                                        <Eye size={12} /> Verify
                                                     </button>
                                                 )}
 
-                                                {isCollegeAdmin && wf.status === 'Approved' && (
-                                                    <button
-                                                        onClick={() => updateStatus(wf.id, 'Locked')}
-                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-800 text-white hover:bg-slate-900 rounded-lg text-xs font-bold shadow-md shadow-slate-900/20 transition-all"
-                                                    >
-                                                        <Lock size={12} /> Lock Marks
-                                                    </button>
-                                                )}
-
+                                                {/* HOD: Quick reject button on Submitted rows */}
                                                 {isHOD && wf.status === 'Submitted' && (
                                                     <button
                                                         onClick={() => updateStatus(wf.id, 'Pending')}
@@ -234,12 +244,32 @@ const MarksApproval = () => {
                                                         Reject
                                                     </button>
                                                 )}
+
+                                                {/* College Admin: Review button for non-Pending statuses */}
+                                                {isCollegeAdmin && wf.status !== 'Pending' && (
+                                                    <button
+                                                        onClick={() => navigate(`/admin/marks-review/${wf.subject_id}/${wf.section}`, {
+                                                            state: {
+                                                                semester_id: wf.semester_id,
+                                                                academic_year_id: wf.academic_year_id
+                                                            }
+                                                        })}
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors"
+                                                    >
+                                                        <Eye size={12} /> Review
+                                                    </button>
+                                                )}
+
+                                                {/* College Admin: Lock button once HOD approved */}
+                                                {isCollegeAdmin && wf.status === 'Approved' && (
+                                                    <button
+                                                        onClick={() => updateStatus(wf.id, 'Locked')}
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-800 text-white hover:bg-slate-900 rounded-lg text-xs font-bold shadow-md shadow-slate-900/20 transition-all"
+                                                    >
+                                                        <Lock size={12} /> Lock Marks
+                                                    </button>
+                                                )}
                                             </div>
-                                        )}
-                                        {wf.status === 'Locked' && (
-                                            <span className="inline-flex items-center gap-1 text-slate-400 text-sm font-bold">
-                                                <Lock size={14} /> Read-only
-                                            </span>
                                         )}
                                     </td>
                                 </tr>

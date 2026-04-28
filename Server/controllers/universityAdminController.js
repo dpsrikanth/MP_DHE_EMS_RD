@@ -132,21 +132,25 @@ exports.getExternalAssignments = async (req, res) => {
 exports.getResultHubData = async (req, res) => {
     try {
         const { exam_id, exam_name, college_id, program_id } = req.query;
-
+        const university_id = req.user?.university_id || req.user?.universityId || null;
+ 
+        const params = [university_id, exam_name || null];
         const conditions = [];
-        const params = [];
-        let paramIdx = 1;
-
+        let paramIdx = 3; // Start from 3 for additional filters
+ 
         // For External Exams (Type 2), require paid registrations. For Internal (Type 1), be more inclusive.
         conditions.push(`(e.exam_type = 1 OR er.payment_status = 'Paid')`);
-
+ 
+        // University filter (always $1)
+        conditions.push(`($1::integer IS NULL OR e.university_id = $1 OR c.university_id = $1)`);
+ 
         if (exam_id) {
             conditions.push(`e.id = $${paramIdx++}`);
             params.push(exam_id);
         }
         if (exam_name) {
-            conditions.push(`e.name = $${paramIdx++}`);
-            params.push(exam_name);
+            // Exam name filter (always $2)
+            conditions.push(`($2::text IS NULL OR TRIM(e.name) ILIKE TRIM($2))`);
         }
         if (college_id) {
             conditions.push(`c.id = $${paramIdx++}`);
@@ -156,14 +160,56 @@ exports.getResultHubData = async (req, res) => {
             conditions.push(`e.program_id = $${paramIdx++}`);
             params.push(program_id);
         }
-
+ 
         const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-
+ 
         const query = `
-            WITH raw_internal AS (
-                SELECT student_id, subject_id, SUM(marks_obtained::float) as total_raw
-                FROM student_internal_marks
-                GROUP BY student_id, subject_id
+            WITH target_subjects AS (
+                SELECT DISTINCT subject_id 
+                FROM exams 
+                WHERE $2::text IS NOT NULL AND TRIM(name) ILIKE TRIM($2)
+                UNION
+                SELECT DISTINCT subject_id
+                FROM internal_exam_schedules
+                WHERE $2::text IS NOT NULL AND TRIM(round_id) ILIKE TRIM($2)
+            ),
+            ia_ranked AS (
+                SELECT 
+                    sim_ia.student_id, 
+                    sim_ia.subject_id, 
+                    sim_ia.marks_obtained::float as marks,
+                    ROW_NUMBER() OVER (PARTITION BY sim_ia.student_id, sim_ia.subject_id ORDER BY sim_ia.marks_obtained::float DESC) as rnk
+                FROM student_internal_marks sim_ia
+                JOIN internal_marks_structure ims_ia ON sim_ia.component_id = ims_ia.id
+                JOIN target_subjects ts ON sim_ia.subject_id = ts.subject_id
+                WHERE ims_ia.component_name ILIKE 'IA%'
+            ),
+            ia_summary AS (
+                SELECT ir.student_id, ir.subject_id, SUM(ir.marks) as ia_total
+                FROM ia_ranked ir
+                WHERE ir.rnk <= 2
+                GROUP BY ir.student_id, ir.subject_id
+            ),
+            other_summary AS (
+                SELECT 
+                    sim_o.student_id, 
+                    sim_o.subject_id, 
+                    SUM(sim_o.marks_obtained::float) as other_total
+                FROM student_internal_marks sim_o
+                JOIN internal_marks_structure ims_o ON sim_o.component_id = ims_o.id
+                JOIN target_subjects ts ON sim_o.subject_id = ts.subject_id
+                WHERE ims_o.component_name NOT ILIKE 'IA%' 
+                  AND ims_o.component_name NOT ILIKE 'TOTAL%'
+                  AND ims_o.component_name NOT ILIKE 'BEST_OF_3%'
+                GROUP BY sim_o.student_id, sim_o.subject_id
+            ),
+            raw_internal AS (
+                SELECT 
+                    COALESCE(i.student_id, o.student_id) as student_id,
+                    COALESCE(i.subject_id, o.subject_id) as subject_id,
+                    (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0)) as total_raw
+                FROM ia_summary i
+                FULL OUTER JOIN other_summary o ON i.student_id = o.student_id AND i.subject_id = o.subject_id
             ),
             marks_base AS (
                 SELECT 
@@ -185,27 +231,36 @@ exports.getResultHubData = async (req, res) => {
                 FROM exams e
                 JOIN master_programs mp ON e.program_id = mp.id
                 JOIN master_semesters ms ON e.semester_id = ms.id
-                JOIN students s ON s."programName" = mp.name AND s.semister = ms.semester_name
+                JOIN students s ON TRIM(s."programName") ILIKE TRIM(mp.name)
+                    AND (
+                        (e.exam_type = 1 AND TRIM(s.semister) ILIKE TRIM(ms.semester_name))
+                        OR (e.exam_type = 2) -- External exams driven by registration
+                    )
                 JOIN master_subjects sub ON e.subject_id = sub.id
                 LEFT JOIN exam_registrations er ON er.student_id = s.id AND er.exam_id = e.id
                 -- Join Colleges to get ID and link with Workflow Status
-                JOIN colleges c ON s."collageName" ILIKE c.name
-                -- CRITICAL: Only show marks that have been officially 'Locked' by the College Admin or Finalized by External
-                JOIN marks_workflow_status mws ON mws.college_id = c.id 
+                LEFT JOIN colleges c ON TRIM(s."collageName") ILIKE TRIM(c.name)
+                -- For INTERNAL exams: only show marks that have been officially 'Locked'/'Approved'.
+                -- For EXTERNAL exams (exam_type=2): no internal workflow exists — marks go through
+                --   the 'marks' table submitted by external faculty, so LEFT JOIN and skip filter.
+                LEFT JOIN marks_workflow_status mws ON mws.college_id = c.id 
                     AND mws.subject_id = sub.id 
-                    -- If a student has no section, they match with the finalized workflow of that college/subject
                     AND (mws.section = s.section OR s.section IS NULL OR s.section = '')
-                    AND mws.status IN ('Locked', 'Approved', 'Finalized', 'Submitted')
                 LEFT JOIN marks m ON m.student_id = s.id AND m.exam_id = e.id AND m.subject_id = e.subject_id
                 LEFT JOIN calculated_internal_marks cim ON cim.student_id = s.id 
                     AND cim.subject_id = e.subject_id
+                    AND cim.college_id = c.id
                 LEFT JOIN raw_internal ri ON ri.student_id = s.id AND ri.subject_id = sub.id
                 ${whereClause}
+                -- For internal exams: require a locked/approved workflow. External exams bypass this.
+                AND (
+                    e.exam_type = 2
+                    OR mws.status IN ('Locked', 'Approved', 'Finalized', 'Submitted')
+                )
             )
             SELECT * FROM marks_base
             ORDER BY subject_name ASC, rollnumber ASC
         `;
-
         const result = await db.query(query, params);
         const rows = result.rows;
 
@@ -226,16 +281,16 @@ exports.getResultHubData = async (req, res) => {
         if (exam_name) {
             const workflowCheck = await db.query(`
                 SELECT COUNT(*) as total, 
-                       COUNT(*) FILTER (WHERE status IN ('Locked', 'Finalized')) as locked
+                       COUNT(*) FILTER (WHERE mws.status IN ('Locked', 'Finalized')) as locked
                 FROM marks_workflow_status mws
                 JOIN master_subjects sub ON mws.subject_id = sub.id
                 WHERE (mws.college_id = $1 OR $1 IS NULL)
                   AND sub.id IN (
-                      SELECT subject_id FROM exams WHERE name = $2
+                      SELECT subject_id FROM exams WHERE TRIM(name) ILIKE TRIM($2)
                       UNION
-                      SELECT subject_id FROM internal_exam_schedules WHERE round_id = $2
+                      SELECT subject_id FROM internal_exam_schedules WHERE TRIM(round_id) ILIKE TRIM($2)
                   )
-            `, [college_id || null, exam_name]);
+            `, [college_id || null, exam_name || null]);
             
             const stats = workflowCheck.rows[0];
             // If we have subjects, all must be locked. If we have NO subjects in workflow table, it's NOT ready.
@@ -261,7 +316,9 @@ exports.getResultHubData = async (req, res) => {
         });
     } catch (error) {
         console.error("getResultHubData error:", error);
-        res.status(500).json({ error: "Failed to fetch result hub data" });
+        res.status(500).json({ 
+            error: "Failed to fetch result hub data"
+        });
     }
 };
 
@@ -290,9 +347,40 @@ exports.getFinalizedExternalMarks = async (req, res) => {
                 LEFT JOIN calculated_internal_marks cim ON er.student_id = cim.student_id 
                     AND (cim.subject_id = e.subject_id OR cim.subject_id IN (SELECT id FROM master_subjects WHERE name = sub.name))
                 LEFT JOIN (
-                    SELECT student_id, subject_id, SUM(marks_obtained::float) as total_raw
-                    FROM student_internal_marks
-                    GROUP BY student_id, subject_id
+                    WITH ia_ranked AS (
+                        SELECT 
+                            sim_ia.student_id, 
+                            sim_ia.subject_id, 
+                            sim_ia.marks_obtained::float as marks,
+                            ROW_NUMBER() OVER (PARTITION BY sim_ia.student_id, sim_ia.subject_id ORDER BY sim_ia.marks_obtained::float DESC) as rnk
+                        FROM student_internal_marks sim_ia
+                        JOIN internal_marks_structure ims_ia ON sim_ia.component_id = ims_ia.id
+                        WHERE ims_ia.component_name ILIKE 'IA%'
+                    ),
+                    ia_summary AS (
+                        SELECT ir.student_id, ir.subject_id, SUM(ir.marks) as ia_total
+                        FROM ia_ranked ir
+                        WHERE ir.rnk <= 2
+                        GROUP BY ir.student_id, ir.subject_id
+                    ),
+                    other_summary AS (
+                        SELECT 
+                            sim_o.student_id, 
+                            sim_o.subject_id, 
+                            SUM(sim_o.marks_obtained::float) as other_total
+                        FROM student_internal_marks sim_o
+                        JOIN internal_marks_structure ims_o ON sim_o.component_id = ims_o.id
+                        WHERE ims_o.component_name NOT ILIKE 'IA%' 
+                          AND ims_o.component_name NOT ILIKE 'TOTAL%'
+                          AND ims_o.component_name NOT ILIKE 'BEST_OF_3%'
+                        GROUP BY sim_o.student_id, sim_o.subject_id
+                    )
+                    SELECT 
+                        COALESCE(i.student_id, o.student_id) as student_id,
+                        COALESCE(i.subject_id, o.subject_id) as subject_id,
+                        (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0)) as total_raw
+                    FROM ia_summary i
+                    FULL OUTER JOIN other_summary o ON i.student_id = o.student_id AND i.subject_id = o.subject_id
                 ) raw_internal ON er.student_id = raw_internal.student_id AND e.subject_id = raw_internal.subject_id
                 WHERE er.payment_status = 'Paid'
                   AND (m.status IN ('Pending Approval', 'Approved', 'Draft', 'Internal Only') OR cim.id IS NOT NULL OR raw_internal.total_raw IS NOT NULL)
