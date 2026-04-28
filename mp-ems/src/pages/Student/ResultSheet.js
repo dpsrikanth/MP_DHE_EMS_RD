@@ -216,7 +216,10 @@ const ResultSheet = () => {
                   </td>
                   <td className="px-4 py-4 text-center">
                     {sub.batch_status === 'Locked' || sub.batch_status === 'Approved' ? (
-                      <span className="font-black text-slate-900 text-sm">{sub.total_marks}</span>
+                      <span className="font-black text-slate-900 text-sm">
+                        {sub.total_marks}
+                        {Number(sub.grace_marks) > 0 && <span className="text-[10px] text-emerald-500 ml-1 font-black" title={`Grace Marks: ${sub.grace_marks}`}> (G)</span>}
+                      </span>
                     ) : (
                       <div className="flex flex-col items-center gap-1">
                         {sub.assessment_components?.map((comp, cIdx) => (

@@ -335,6 +335,68 @@ const GradingPolicy = () => {
                             </div>
                         </div>
 
+                        {/* Grace Marks Policy */}
+                        <div className="pt-8 border-t border-slate-100 space-y-6">
+                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <ShieldCheck size={16} />
+                                Grace Marks Policy
+                            </h3>
+
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="space-y-1 flex-1">
+                                    <h4 className="text-sm font-bold text-slate-900">Enable Grace Marks</h4>
+                                    <p className="text-[10px] text-slate-500 font-medium tracking-tight uppercase">Automatically apply grace marks on publication.</p>
+                                </div>
+                                <button 
+                                    onClick={() => setConfig({ 
+                                        ...config, 
+                                        grace_policy: { 
+                                            ...config.grace_policy, 
+                                            is_enabled: !config.grace_policy?.is_enabled 
+                                        } 
+                                    })}
+                                    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${config.grace_policy?.is_enabled ? 'bg-sky-500' : 'bg-slate-200'}`}
+                                >
+                                    <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${config.grace_policy?.is_enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                                </button>
+                            </div>
+
+                            {config.grace_policy?.is_enabled && (
+                                <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-4 duration-300">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Max Total</label>
+                                        <input 
+                                            type="number" 
+                                            value={config.grace_policy?.max_total_grace || 0}
+                                            onChange={(e) => setConfig({ 
+                                                ...config, 
+                                                grace_policy: { 
+                                                    ...config.grace_policy, 
+                                                    max_total_grace: Number(e.target.value) 
+                                                } 
+                                            })}
+                                            className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-black text-slate-700 outline-none focus:bg-white focus:border-sky-500 transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Per Subject</label>
+                                        <input 
+                                            type="number" 
+                                            value={config.grace_policy?.max_per_subject_grace || 0}
+                                            onChange={(e) => setConfig({ 
+                                                ...config, 
+                                                grace_policy: { 
+                                                    ...config.grace_policy, 
+                                                    max_per_subject_grace: Number(e.target.value) 
+                                                } 
+                                            })}
+                                            className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-black text-slate-700 outline-none focus:bg-white focus:border-sky-500 transition-all"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                         <div className="bg-amber-50 rounded-2xl p-5 border border-amber-100 flex gap-4">
                             <AlertTriangle size={24} className="text-amber-500 shrink-0" />
                             <div className="space-y-1">

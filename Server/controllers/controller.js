@@ -5,6 +5,7 @@ const client = require("../db");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const sendEmail = require("../utils/sendEmail");// -- Phase 1: Student Account Activation (Self-Onboarding) --
+const { applyGraceMarks } = require("../utils/graceUtils");
 
 const initiateRegistration = async (req, res) => {
   try {
@@ -2205,13 +2206,21 @@ const publishResults = async (req, res) => {
     const { results_published } = req.body;
     const { role, college_id: userCollegeId } = req.user;
 
+    const numericId = parseInt(id);
+    const isInternalSchedule = numericId >= 1000000;
+    const realId = isInternalSchedule ? numericId - 1000000 : numericId;
+
     const checkResult = await client.query(
-      'SELECT college_id, exam_type, subject_id, name, semester_id FROM exams WHERE id = $1',
-      [id]
+      `SELECT e.college_id, e.exam_type, e.subject_id, e.name, e.semester_id, c.university_id 
+       FROM exams e 
+       LEFT JOIN colleges c ON e.college_id = c.id
+       WHERE e.id = $1`,
+      [realId]
     );
     if (checkResult.rows.length === 0) return res.status(404).json({ message: "Exam not found" });
 
     const exam = checkResult.rows[0];
+    const universityId = exam.university_id || req.user.university_id;
 
     if (role === 'college_admin' && exam.college_id != userCollegeId) {
       return res.status(403).json({ message: "Unauthorized" });
@@ -2273,9 +2282,23 @@ const publishResults = async (req, res) => {
         }
     }
 
+    // Apply Grace Marks if publishing
+    if (results_published) {
+        console.log(`[GRACE] Processing grace marks for series: ${exam.name}`);
+        const studentsRes = await client.query(
+            `SELECT DISTINCT student_id FROM marks m
+             JOIN exams e ON m.exam_id = e.id
+             WHERE e.name = $1 AND e.semester_id = $2`,
+            [exam.name, exam.semester_id]
+        );
+        for (const row of studentsRes.rows) {
+            await applyGraceMarks(row.student_id, exam.name, universityId, req.user.id);
+        }
+    }
+
     const result = await client.query(
       "UPDATE exams SET results_published = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *",
-      [results_published, id]
+      [results_published, realId]
     );
     res.json({ message: `Results ${results_published ? 'published' : 'unpublished'} successfully`, data: result.rows[0] });
   } catch (error) {
@@ -2324,7 +2347,8 @@ const getStudentResults = async (req, res) => {
         e.exam_type,
         COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) as internal_marks,
         COALESCE(m.external_marks, 0) as external_marks,
-        (COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) + COALESCE(m.external_marks, 0)) as total_marks,
+        COALESCE(m.grace_marks, 0) as grace_marks,
+        (COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) + COALESCE(m.external_marks, 0) + COALESCE(m.grace_marks, 0)) as total_marks,
         COALESCE(m.status, 'Internal Only') as result_status,
         e.name as exam_name,
         e.id as exam_id,

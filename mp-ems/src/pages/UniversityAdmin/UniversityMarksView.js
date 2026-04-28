@@ -484,6 +484,7 @@ const UniversityMarksView = () => {
                           <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Ext</th>
                         )}
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Total</th>
+                        <th className="px-8 py-5 text-[10px] font-black text-indigo-500 uppercase tracking-widest text-center">Grace</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Grade</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">GP</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Credits</th>
@@ -514,6 +515,11 @@ const UniversityMarksView = () => {
                             )}
                             <td className="px-8 py-5 text-center">
                               <span className="text-lg font-black text-slate-900">{item.total_marks || 0}</span>
+                            </td>
+                            <td className="px-8 py-5 text-center">
+                              <span className={`text-xs font-black ${Number(item.grace_marks) > 0 ? 'text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md' : 'text-slate-300 opacity-30'}`}>
+                                {item.grace_marks > 0 ? `+${item.grace_marks}` : '—'}
+                              </span>
                             </td>
                             <td className="px-8 py-5 text-center font-black text-slate-700">{item.grade}</td>
                             <td className="px-8 py-5 text-center font-bold text-slate-500 text-xs italic">{item.grade_point}</td>

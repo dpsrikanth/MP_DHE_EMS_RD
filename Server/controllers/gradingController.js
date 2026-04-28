@@ -12,7 +12,12 @@ const DEFAULT_CONFIG = {
     ],
     pass_threshold: 40,
     calculate_sgpa_on_earned_only: false,
-    subject_credits: {}
+    subject_credits: {},
+    grace_policy: {
+        max_total_grace: 0,
+        max_per_subject_grace: 0,
+        is_enabled: false
+    }
 };
 
 /**
@@ -74,17 +79,18 @@ exports.updateGradingConfig = async (req, res) => {
         }
 
         const result = await db.query(`
-            INSERT INTO grading_configs (university_id, grade_scale, pass_threshold, calculate_sgpa_on_earned_only, subject_credits, updated_at)
-            VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
+            INSERT INTO grading_configs (university_id, grade_scale, pass_threshold, calculate_sgpa_on_earned_only, subject_credits, grace_policy, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
             ON CONFLICT (university_id) 
             DO UPDATE SET 
                 grade_scale = EXCLUDED.grade_scale,
                 pass_threshold = EXCLUDED.pass_threshold,
                 calculate_sgpa_on_earned_only = EXCLUDED.calculate_sgpa_on_earned_only,
                 subject_credits = EXCLUDED.subject_credits,
+                grace_policy = EXCLUDED.grace_policy,
                 updated_at = CURRENT_TIMESTAMP
             RETURNING *
-        `, [universityId, JSON.stringify(grade_scale), pass_threshold, calculate_sgpa_on_earned_only, JSON.stringify(subject_credits || {})]);
+        `, [universityId, JSON.stringify(grade_scale), pass_threshold, calculate_sgpa_on_earned_only, JSON.stringify(subject_credits || {}), JSON.stringify(req.body.grace_policy || DEFAULT_CONFIG.grace_policy)]);
 
         res.status(200).json({
             message: "Grading configuration updated successfully",
