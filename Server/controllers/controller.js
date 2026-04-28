@@ -2295,28 +2295,56 @@ const getStudentResults = async (req, res) => {
 
     // Fetch finalized marks for exams where results are published
     const query = `
-      WITH raw_internal AS (
-          SELECT sim.student_id, sim.subject_id, 
-                 SUM(sim.marks_obtained::float) as total_raw,
-                 json_agg(json_build_object(
-                    'name', ims.component_name,
-                    'marks', sim.marks_obtained,
-                    'max_marks', ims.max_marks
-                 )) as components,
-                 MAX(mws2.status) as batch_status
-          FROM student_internal_marks sim
-          JOIN internal_marks_structure ims ON sim.component_id = ims.id
-          JOIN students s2 ON sim.student_id = s2.id
+      WITH ia_ranked AS (
+          SELECT 
+              sim_ia.student_id, 
+              sim_ia.subject_id, 
+              sim_ia.marks_obtained::float as marks,
+              ROW_NUMBER() OVER (PARTITION BY sim_ia.student_id, sim_ia.subject_id ORDER BY sim_ia.marks_obtained::float DESC) as rnk
+          FROM student_internal_marks sim_ia
+          JOIN internal_marks_structure ims_ia ON sim_ia.component_id = ims_ia.id
+          WHERE ims_ia.component_name ILIKE 'IA%'
+      ),
+      ia_summary AS (
+          SELECT ir.student_id, ir.subject_id, SUM(ir.marks) as ia_total
+          FROM ia_ranked ir
+          WHERE ir.rnk <= 2
+          GROUP BY ir.student_id, ir.subject_id
+      ),
+      other_summary AS (
+          SELECT 
+              sim_o.student_id, 
+              sim_o.subject_id, 
+              SUM(sim_o.marks_obtained::float) as other_total
+          FROM student_internal_marks sim_o
+          JOIN internal_marks_structure ims_o ON sim_o.component_id = ims_o.id
+          WHERE ims_o.component_name NOT ILIKE 'IA%' 
+            AND ims_o.component_name NOT ILIKE 'TOTAL%'
+            AND ims_o.component_name NOT ILIKE 'BEST_OF_3%'
+          GROUP BY sim_o.student_id, sim_o.subject_id
+      ),
+      raw_internal AS (
+          SELECT 
+              COALESCE(i.student_id, o.student_id) as student_id,
+              COALESCE(i.subject_id, o.subject_id) as subject_id,
+              (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0)) as total_raw,
+              json_agg(json_build_object(
+                 'name', 'Aggregated Internal',
+                 'marks', (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0))
+              )) as components,
+              MAX(mws2.status) as batch_status
+          FROM ia_summary i
+          FULL OUTER JOIN other_summary o ON i.student_id = o.student_id AND i.subject_id = o.subject_id
+          JOIN students s2 ON COALESCE(i.student_id, o.student_id) = s2.id
           JOIN colleges c2 ON s2."collageName" = c2.name
           JOIN master_semesters sem2 ON s2.semister = sem2.semester_name
-          LEFT JOIN marks_workflow_status mws2 ON sim.subject_id = mws2.subject_id 
+          LEFT JOIN marks_workflow_status mws2 ON COALESCE(i.subject_id, o.subject_id) = mws2.subject_id 
               AND mws2.college_id = c2.id 
               AND mws2.semester_id = sem2.id
-          LEFT JOIN component_acceptance ca ON ca.component_id = sim.component_id
-              AND ca.college_id = c2.id 
-              AND ca.subject_id = sim.subject_id
+          LEFT JOIN component_acceptance ca ON ca.college_id = c2.id 
+              AND ca.subject_id = COALESCE(i.subject_id, o.subject_id)
           WHERE (mws2.status IN ('Approved', 'Locked') OR ca.is_accepted = true)
-          GROUP BY sim.student_id, sim.subject_id
+          GROUP BY COALESCE(i.student_id, o.student_id), COALESCE(i.subject_id, o.subject_id), i.ia_total, o.other_total
       )
       
       SELECT 
