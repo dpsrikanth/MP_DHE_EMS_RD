@@ -5,6 +5,7 @@ const db = require('../db');
 exports.getAssignedSubjects = async (req, res) => {
     try {
         const { teacher_id } = req.params;
+        console.log(`[DEBUG] getAssignedSubjects called for teacher_id: ${teacher_id}`);
         const query = `
             SELECT fs.*, ms.name as subject_name, ms.subject_code, pps.program_id, sem.semester_name 
             FROM faculty_subjects fs
@@ -14,9 +15,10 @@ exports.getAssignedSubjects = async (req, res) => {
             WHERE fs.teacher_id = $1 AND fs.status = 'Active'
         `;
         const result = await db.query(query, [teacher_id]);
+        console.log(`[DEBUG] Found ${result.rows.length} subjects for teacher_id: ${teacher_id}`);
         res.status(200).json(result.rows);
     } catch (error) {
-        console.error(error);
+        console.error("[DEBUG] Error in getAssignedSubjects:", error);
         res.status(500).json({ error: "Failed to fetch assigned subjects" });
     }
 };
@@ -55,8 +57,13 @@ exports.getStudentsForSubject = async (req, res) => {
 exports.getEnteredMarks = async (req, res) => {
     try {
         const { subject_id, section, college_id, semester_id, academic_year_id } = req.query;
-        let query = `SELECT * FROM student_internal_marks WHERE subject_id = $1`;
-        let params = [subject_id];
+        let query = `
+            SELECT sim.* 
+            FROM student_internal_marks sim
+            JOIN internal_marks_structure ims ON sim.component_id = ims.id
+            WHERE sim.subject_id = $1 AND ims.college_id = $2
+        `;
+        let params = [subject_id, college_id];
 
         const marksRes = await db.query(query, params);
 
@@ -105,7 +112,8 @@ exports.enterStudentMarks = async (req, res) => {
             const checkRes = await db.query(checkQuery, [subject_id, college_id, semester_id, academic_year_id, section]);
             let globalStatus = checkRes.rows.length > 0 ? checkRes.rows[0].status : 'Pending';
 
-            if (globalStatus !== 'Locked' && globalStatus !== 'Approved' && marksData[0].component_id) {
+            // If the section is rejected or correction is requested, allow editing regardless of component acceptance
+            if (!['Locked', 'Approved', 'Rejected', 'Correction Requested'].includes(globalStatus) && marksData[0].component_id) {
                  const caQuery = `
                       SELECT is_accepted FROM component_acceptance
                       WHERE college_id = $1 AND subject_id = $2 AND component_id = $3 AND section = $4

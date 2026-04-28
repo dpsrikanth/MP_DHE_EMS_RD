@@ -11,9 +11,11 @@ import {
     Clock
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import authUtils from "../../utils/authUtils";
 
 const HODDashboard = () => {
+    const navigate = useNavigate();
     const [stats, setStats] = useState({
         pendingApprovals: 0,
         totalStudents: 0,
@@ -123,13 +125,19 @@ const HODDashboard = () => {
                         </h2>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <button className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-sky-500 hover:text-white transition-all duration-300 border border-slate-100 font-bold group">
+                        <button 
+                            onClick={() => navigate('/hod/marks-approval')}
+                            className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-sky-500 hover:text-white transition-all duration-300 border border-slate-100 font-bold group"
+                        >
                             <div className="w-10 h-10 rounded-xl bg-white text-sky-500 flex items-center justify-center shadow-sm group-hover:text-sky-600">
                                 <CheckCircle size={20} />
                             </div>
                             <span className="text-sm">Approve Pending Marks</span>
                         </button>
-                        <button className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-slate-900 hover:text-white transition-all duration-300 border border-slate-100 font-bold group">
+                        <button 
+                            onClick={() => navigate('/college-admin/faculty-assign')}
+                            className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-slate-900 hover:text-white transition-all duration-300 border border-slate-100 font-bold group"
+                        >
                             <div className="w-10 h-10 rounded-xl bg-white text-slate-900 flex items-center justify-center shadow-sm group-hover:text-black">
                                 <Users size={20} />
                             </div>

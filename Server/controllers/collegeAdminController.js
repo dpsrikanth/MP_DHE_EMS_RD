@@ -345,8 +345,14 @@ exports.deleteFacultyAssignment = async (req, res) => {
 // --- Marks Verification & Approval Workflow APIs ---
 exports.getMarksWorkflowStatus = async (req, res) => {
     try {
-        const { college_id, semester_id } = req.query;
-        const { role, department_id } = req.user;
+        const { semester_id } = req.query;
+        let { college_id } = req.query;
+        const { role, department_id, college_id: user_college_id } = req.user;
+
+        // Security: For HOD and College Admin, ALWAYS use the college_id from their token
+        if (role === 'HOD' || role === 'college_admin') {
+            college_id = user_college_id;
+        }
 
         let query = `
             SELECT DISTINCT fs.subject_id, fs.college_id, fs.semester_id, fs.academic_year_id, fs.section,
@@ -366,12 +372,21 @@ exports.getMarksWorkflowStatus = async (req, res) => {
                  ON fs.subject_id = pps.subject_id AND fs.college_id = pps.college_id AND fs.semester_id = pps.semester_id
             LEFT JOIN master_programs mp ON pps.program_id = mp.id
             LEFT JOIN master_departments md ON pps.department_id = md.id
-            WHERE fs.college_id = $1
+            WHERE 1=1
         `;
-        let params = [college_id];
-        let paramCount = 1;
 
-        if (semester_id) {
+        let params = [];
+        let paramCount = 0;
+
+        if (college_id && college_id !== 'null') {
+            paramCount++;
+            query += ` AND fs.college_id = $${paramCount}`;
+            params.push(college_id);
+        } else if (role !== 'admin' && role !== 'superadmin' && role !== 'university_admin') {
+            return res.status(400).json({ error: "College ID is required" });
+        }
+
+        if (semester_id && semester_id !== 'null') {
             paramCount++;
             query += ` AND fs.semester_id = $${paramCount}`;
             params.push(semester_id);
@@ -404,10 +419,10 @@ exports.updateWorkflowStatus = async (req, res) => {
         const ayId = parseInt(academic_year_id);
 
         // Security: Only allow specific roles for specific status changes
-        if (status === 'Locked' && role !== 'college_admin') {
+        if (status === 'Locked' && role !== 'college_admin' && role !== 'admin' && role !== 'superadmin') {
             return res.status(403).json({ error: "Only College Admins can lock marks" });
         }
-        if ((status === 'Approved' || status === 'Rejected') && (role !== 'HOD' && role !== 'college_admin')) {
+        if ((status === 'Approved' || status === 'Rejected') && (role !== 'HOD' && role !== 'college_admin' && role !== 'admin' && role !== 'superadmin')) {
             return res.status(403).json({ error: "Unauthorized status change" });
         }
 
@@ -583,7 +598,9 @@ exports.reviewMarks = async (req, res) => {
                 AND smr.college_id = $3
                 AND smr.semester_id = $4
                 AND smr.academic_year_id = $5
-            WHERE sim.subject_id = $1
+            WHERE sim.subject_id = $1 
+              AND s."collageName" IN (SELECT name FROM colleges WHERE id = $3)
+              AND smr.section = $2
         `;
         const result = await db.query(query, [subject_id, section, college_id, semester_id, academic_year_id]);
 
@@ -675,10 +692,10 @@ exports.rejectWorkflow = async (req, res) => {
 
 exports.lockMarks = async (req, res) => {
     try {
-        const { subject_id, section, college_id, semester_id, academic_year_id } = req.body;
+        const { subject_id, section, college_id, semester_id, academic_year_id, studentsGraceMarks } = req.body;
         const { id: approved_by, role } = req.user;
 
-        if (role !== 'college_admin') {
+        if (role !== 'college_admin' && role !== 'admin' && role !== 'superadmin') {
             return res.status(403).json({ error: "Only College Admins can lock marks" });
         }
 
@@ -803,17 +820,24 @@ exports.lockMarks = async (req, res) => {
                 s.ia.sort((a, b) => b.score - a.score);
                 let bestOf2Score = (s.ia[0]?.score || 0) + (s.ia[1]?.score || 0);
 
-                let total = bestOf2Score + s.practical;
+                // Apply Grace Marks
+                const graceInfo = studentsGraceMarks && studentsGraceMarks[studentId] ? studentsGraceMarks[studentId] : { marks: 0, reason: '' };
+                const graceMarks = parseFloat(graceInfo.marks) || 0;
+                const graceReason = graceInfo.reason || '';
+
+                let total = bestOf2Score + s.practical + graceMarks;
                 let passStatus = total >= cumulativePassMarks ? 'Pass' : 'Fail';
 
                 await client.query(`
                     INSERT INTO calculated_internal_marks 
-                    (student_id, subject_id, college_id, semester_id, academic_year_id, best_of_3_score, practical_score, total_internal, passing_status)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                    (student_id, subject_id, college_id, semester_id, academic_year_id, best_of_3_score, practical_score, total_internal, passing_status, grace_marks, grace_marks_reason)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                     ON CONFLICT (student_id, subject_id, college_id, semester_id, academic_year_id) 
                     DO UPDATE SET best_of_3_score = EXCLUDED.best_of_3_score, practical_score = EXCLUDED.practical_score, 
-                    total_internal = EXCLUDED.total_internal, passing_status = EXCLUDED.passing_status, updated_at = CURRENT_TIMESTAMP
-                `, [studentId, sId, cId, semId, ayId, bestOf2Score, s.practical, total, passStatus]);
+                    total_internal = EXCLUDED.total_internal, passing_status = EXCLUDED.passing_status, 
+                    grace_marks = EXCLUDED.grace_marks, grace_marks_reason = EXCLUDED.grace_marks_reason,
+                    updated_at = CURRENT_TIMESTAMP
+                `, [studentId, sId, cId, semId, ayId, bestOf2Score, s.practical, total, passStatus, graceMarks, graceReason]);
             }
 
             // 3. Update Workflow Status to Locked

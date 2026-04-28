@@ -20,8 +20,12 @@ const MarksReview = () => {
 
     // Review Modal States
     const [isReviewOpen, setIsReviewOpen] = useState(false);
+    const [isGraceOpen, setIsGraceOpen] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [reviewComment, setReviewComment] = useState('');
+    const [graceMarks, setGraceMarks] = useState(0);
+    const [graceReason, setGraceReason] = useState('');
+    const [studentsGraceMarks, setStudentsGraceMarks] = useState({});
     const [isSavingReview, setIsSavingReview] = useState(false);
 
     // Extracted subject metadata
@@ -133,7 +137,8 @@ const MarksReview = () => {
                     section: section,
                     college_id: subjectMeta.collegeId,
                     semester_id: semesterId,
-                    academic_year_id: academicYearId
+                    academic_year_id: academicYearId,
+                    studentsGraceMarks: studentsGraceMarks
                 })
             });
 
@@ -215,6 +220,22 @@ const MarksReview = () => {
         }
     };
 
+    const handleOpenGrace = (student) => {
+        setSelectedStudent(student);
+        setGraceMarks(studentsGraceMarks[student.student_id]?.marks || 0);
+        setGraceReason(studentsGraceMarks[student.student_id]?.reason || '');
+        setIsGraceOpen(true);
+    };
+
+    const handleSaveGrace = () => {
+        setStudentsGraceMarks(prev => ({
+            ...prev,
+            [selectedStudent.student_id]: { marks: graceMarks, reason: graceReason }
+        }));
+        setIsGraceOpen(false);
+        toast.success(`Grace marks updated for ${selectedStudent.student_name}`);
+    };
+
     const handleOpenReview = (student) => {
         console.log("Opening review modal for student:", student);
         setSelectedStudent(student);
@@ -285,10 +306,12 @@ const MarksReview = () => {
 
         iaScores.sort((a, b) => b - a);
         const bestOf3 = (iaScores[0] || 0) + (iaScores[1] || 0);
-        const total = bestOf3 + practicalScore;
+        
+        const grace = studentsGraceMarks[studentMarks[0]?.student_id]?.marks || 0;
+        const total = bestOf3 + practicalScore + parseFloat(grace);
         const isPass = total >= passMark;
 
-        return { bestOf3, practicalScore, total, isPass, passMark };
+        return { bestOf3, practicalScore, total, isPass, passMark, grace };
     };
 
     return (
@@ -337,6 +360,7 @@ const MarksReview = () => {
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Practical</th>
                                     <th className="px-6 py-4 text-xs font-black text-slate-800 uppercase tracking-widest text-center border-l border-slate-200">Total</th>
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Result Status</th>
+                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Grace Marks</th>
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Action / Status</th>
                                 </tr>
                             </thead>
@@ -384,6 +408,19 @@ const MarksReview = () => {
                                                 <span className={`text-xs font-black uppercase tracking-widest ${preview.isPass ? 'text-green-500' : 'text-red-500'}`}>
                                                     {preview.isPass ? 'PASS' : 'FAIL'}
                                                 </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                {(isHOD || isCollegeAdmin) && subjectMeta?.status !== 'Locked' ? (
+                                                    <button
+                                                        onClick={() => handleOpenGrace(student)}
+                                                        className={`p-2 rounded-lg transition-colors flex flex-col items-center gap-1 hover:scale-[1.05] ${studentsGraceMarks[student.student_id]?.marks > 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                                                    >
+                                                        <ShieldCheck size={16} />
+                                                        <span className="text-[8px] font-black">{studentsGraceMarks[student.student_id]?.marks > 0 ? `+${studentsGraceMarks[student.student_id].marks}` : 'ADD GRACE'}</span>
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-sm font-bold text-slate-700">{studentsGraceMarks[student.student_id]?.marks || 0}</span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 text-center">
                                                 {isCollegeAdmin ? (
@@ -555,6 +592,63 @@ const MarksReview = () => {
                             >
                                 <CheckCircle size={16} />
                                 {isSavingReview ? 'Saving...' : 'Approve Marks'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Grace Marks Modal */}
+            {isGraceOpen && selectedStudent && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-slate-900">Add Grace Marks</h3>
+                            <button onClick={() => setIsGraceOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-6">
+                            <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex items-center gap-3 text-amber-800">
+                                <ShieldCheck size={24} />
+                                <div>
+                                    <p className="text-sm font-bold">Applying Grace Marks for {selectedStudent.student_name}</p>
+                                    <p className="text-xs opacity-80">These marks will be added to the final internal total.</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700 ml-1">Grace Marks Value</label>
+                                <input
+                                    type="number"
+                                    className="w-full p-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-lg font-bold"
+                                    placeholder="0.00"
+                                    value={graceMarks}
+                                    onChange={(e) => setGraceMarks(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700 ml-1">Reason for Grace Marks</label>
+                                <textarea
+                                    className="w-full h-24 p-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-sm resize-none"
+                                    placeholder="Enter reason (e.g., Medical issues, Special participation...)"
+                                    value={graceReason}
+                                    onChange={(e) => setGraceReason(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="p-6 bg-slate-50 flex gap-3">
+                            <button
+                                onClick={() => setIsGraceOpen(false)}
+                                className="flex-1 py-3.5 bg-white border-2 border-slate-200 text-slate-600 font-black rounded-xl hover:bg-slate-50 transition-all uppercase tracking-widest text-xs"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSaveGrace}
+                                className="flex-1 py-3.5 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all uppercase tracking-widest text-xs"
+                            >
+                                Apply Grace Marks
                             </button>
                         </div>
                     </div>
