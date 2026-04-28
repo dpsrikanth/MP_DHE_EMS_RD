@@ -263,7 +263,8 @@ const UniversityMarksView = () => {
               </button>
               <button
                 onClick={togglePublish}
-                disabled={publishing}
+                disabled={publishing || (!summary?.canPublish && !summary?.resultsPublished)}
+                title={!summary?.canPublish && !summary?.resultsPublished ? "Results cannot be published until all subjects are 'Locked' by colleges and external marks are submitted." : ""}
                 className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-lg disabled:opacity-50 ${
                   summary?.resultsPublished
                     ? 'bg-emerald-500 text-white shadow-emerald-500/20 hover:bg-emerald-600'

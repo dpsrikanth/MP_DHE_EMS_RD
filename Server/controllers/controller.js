@@ -1497,6 +1497,7 @@ const getExams = async (req, res) => {
           e.end_time::text,
           e.status,
           e.is_published,
+          e.results_published,
           e.student_application_open,
           COALESCE(esl.is_locked, false) as seating_locked,
           (SELECT EXISTS (
@@ -1506,6 +1507,28 @@ const getExams = async (req, res) => {
             AND ims.program_id = e.program_id 
             AND ims.subject_id = e.subject_id
           )) as has_marks_structure,
+          CASE 
+            WHEN e.exam_type = 1 THEN (
+                SELECT EXISTS (
+                    SELECT 1 FROM marks_workflow_status mws 
+                    WHERE mws.subject_id = e.subject_id AND mws.college_id = e.college_id AND mws.status IN ('Locked', 'Finalized')
+                )
+            )
+            WHEN e.exam_type = 2 THEN (
+                (SELECT EXISTS (
+                    SELECT 1 FROM marks_workflow_status mws 
+                    WHERE mws.subject_id = e.subject_id 
+                      AND (mws.college_id = e.college_id OR e.college_id IS NULL)
+                      AND mws.status IN ('Locked', 'Finalized')
+                ))
+                AND
+                (SELECT EXISTS (
+                    SELECT 1 FROM external_faculty_assignments efa
+                    WHERE efa.exam_id = e.id AND (efa.subject_id = e.subject_id OR efa.subject_id IS NULL) AND efa.status = 'Submitted'
+                ))
+            )
+            ELSE false
+          END as marks_submitted,
           e.created_at
         FROM exams e
         LEFT JOIN colleges c ON e.college_id = c.id
@@ -1544,9 +1567,14 @@ const getExams = async (req, res) => {
           ies.end_time::text,
           true as status,
           true as is_published,
+          COALESCE(ies.results_published, false) as results_published,
           false as student_application_open,
           false as seating_locked,
           true as has_marks_structure,
+          (SELECT EXISTS (
+             SELECT 1 FROM marks_workflow_status mws 
+             WHERE mws.subject_id = ies.subject_id AND mws.college_id = ies.college_id AND mws.status IN ('Locked', 'Finalized')
+          )) as marks_submitted,
           ies.created_at
         FROM internal_exam_schedules ies
         LEFT JOIN internal_exam_rounds ier ON (CASE WHEN ies.round_id ~ '^[0-9]+$' THEN ies.round_id::integer ELSE NULL END = ier.id)
@@ -2210,6 +2238,39 @@ const publishResults = async (req, res) => {
           message: `Cannot publish results: ${unlockedSubjects.length} subject(s) in this series are not locked yet: ${names}. Please lock ALL subjects via Verify & Lock first.`
         });
       }
+    }
+    
+    // For external exams (type 2): Check if BOTH internal marks are locked AND external marks are submitted
+    if (results_published && exam.exam_type == 2) {
+        const seriesRes = await client.query(
+            `SELECT e.id, sub.name as subject_name,
+                    (SELECT EXISTS (
+                        SELECT 1 FROM external_faculty_assignments efa
+                        WHERE efa.exam_id = e.id AND (efa.subject_id = e.subject_id OR efa.subject_id IS NULL) AND efa.status = 'Submitted'
+                    )) as is_external_submitted,
+                    (SELECT EXISTS (
+                        SELECT 1 FROM marks_workflow_status mws
+                        WHERE mws.subject_id = e.subject_id 
+                          AND (mws.college_id = e.college_id OR e.college_id IS NULL)
+                          AND mws.status IN ('Locked', 'Finalized')
+                    )) as is_internal_locked
+             FROM exams e
+             JOIN master_subjects sub ON e.subject_id = sub.id
+             WHERE e.name = $1 AND e.semester_id = $2 AND e.program_id = (SELECT program_id FROM exams WHERE id = $3)`,
+            [exam.name, exam.semester_id, realId]
+        );
+
+        const unready = seriesRes.rows.filter(r => !r.is_external_submitted || !r.is_internal_locked);
+        if (unready.length > 0) {
+            const externalPending = seriesRes.rows.filter(r => !r.is_external_submitted).map(r => r.subject_name);
+            const internalPending = seriesRes.rows.filter(r => !r.is_internal_locked).map(r => r.subject_name);
+            
+            let errMsg = "Cannot publish results:";
+            if (externalPending.length > 0) errMsg += `\n- External marks pending for: ${externalPending.join(', ')}`;
+            if (internalPending.length > 0) errMsg += `\n- Internal marks NOT LOCKED for: ${internalPending.join(', ')}`;
+            
+            return res.status(400).json({ message: errMsg });
+        }
     }
 
     const result = await client.query(

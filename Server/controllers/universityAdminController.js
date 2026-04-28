@@ -220,11 +220,29 @@ exports.getResultHubData = async (req, res) => {
         const resultsPublished = rows.length > 0 ? rows[0].results_published : false;
         let examType = rows.length > 0 ? rows[0].exam_type : null;
         
-        // Fallback: If no marks records but an exam_name was searched, get the type of that exam series
-        if (!examType && exam_name) {
-            const typeRes = await db.query("SELECT exam_type FROM exams WHERE name = $1 LIMIT 1", [exam_name]);
-            if (typeRes.rows.length > 0) examType = typeRes.rows[0].exam_type;
+        // Validation for "canPublish" button in UI
+        let workflowReady = true;
+        if (exam_name) {
+            const workflowCheck = await db.query(`
+                SELECT COUNT(*) as total, 
+                       COUNT(*) FILTER (WHERE status IN ('Locked', 'Finalized')) as locked
+                FROM marks_workflow_status mws
+                JOIN master_subjects sub ON mws.subject_id = sub.id
+                WHERE (mws.college_id = $1 OR $1 IS NULL)
+                  AND sub.id IN (
+                      SELECT subject_id FROM exams WHERE name = $2
+                      UNION
+                      SELECT subject_id FROM internal_exam_schedules WHERE round_id = $2
+                  )
+            `, [college_id || null, exam_name]);
+            
+            const stats = workflowCheck.rows[0];
+            // If we have subjects, all must be locked. If we have NO subjects in workflow table, it's NOT ready.
+            if (parseInt(stats.total) === 0 || parseInt(stats.locked) < parseInt(stats.total)) {
+                workflowReady = false;
+            }
         }
+        const canPublish = rows.length > 0 && workflowReady;
 
         res.status(200).json({
             marks: rows,
@@ -236,7 +254,8 @@ exports.getResultHubData = async (req, res) => {
                 avgMarks,
                 totalRecords: totalWithMarks.length,
                 resultsPublished,
-                examType
+                examType,
+                canPublish
             }
         });
     } catch (error) {

@@ -856,7 +856,9 @@ const Exams = () => {
                             )}
                             <button 
                               onClick={() => handleToggleResultsPublish(item)}
-                              className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-xs ${item.subjects[0].results_published ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-slate-200 text-slate-600 hover:border-amber-400 hover:text-amber-600'}`}
+                              disabled={!item.subjects.every(s => s.marks_submitted) && !item.subjects[0].results_published}
+                              title={!item.subjects.every(s => s.marks_submitted) && !item.subjects[0].results_published ? "All internal marks must be 'Locked' by colleges and external marks must be 'Submitted' before publishing." : ""}
+                              className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-xs ${item.subjects[0].results_published ? 'bg-amber-50 border-amber-200 text-amber-700' : (!item.subjects.every(s => s.marks_submitted) ? 'bg-slate-50 border-slate-200 text-slate-300 cursor-not-allowed grayscale' : 'bg-white border-slate-200 text-slate-600 hover:border-amber-400 hover:text-amber-600')}`}
                             >
                               <span className="uppercase tracking-widest">{item.subjects[0].results_published ? 'Results Live' : 'Publish Results'}</span>
                               <Check size={16} />
