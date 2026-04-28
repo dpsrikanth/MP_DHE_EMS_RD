@@ -587,6 +587,9 @@ exports.reviewMarks = async (req, res) => {
         }
 
         // Fetch raw marks for all students for this subject
+        // NOTE: smr.section filter is ONLY in the LEFT JOIN, NOT in WHERE —
+        // putting it in WHERE converts the LEFT JOIN to an INNER JOIN and hides
+        // students whose marks haven't been individually reviewed yet (smr row is NULL).
         const query = `
             SELECT sim.*, s.name as student_name, s.rollnumber, 
                    smr.status as review_status, smr.comment as review_comment
@@ -600,7 +603,6 @@ exports.reviewMarks = async (req, res) => {
                 AND smr.academic_year_id = $5
             WHERE sim.subject_id = $1 
               AND s."collageName" IN (SELECT name FROM colleges WHERE id = $3)
-              AND smr.section = $2
         `;
         const result = await db.query(query, [subject_id, section, college_id, semester_id, academic_year_id]);
 
