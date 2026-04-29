@@ -110,7 +110,7 @@ const UniversityMarksView = () => {
       const ids = uniqueExams.get(selectedExam) || [];
 
       // Update all IDs in the series
-      await Promise.all(ids.map(id => 
+      await Promise.all(ids.map(id =>
         fetch(`${API}/exams/${id}/publish-results`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -133,30 +133,34 @@ const UniversityMarksView = () => {
     const isInternalOnly = summary?.examType === 1;
     const headers = ["Roll No", "Student Name", "College", "Program", "Subject", "Internal"];
     if (!isInternalOnly) headers.push("External");
-    headers.push("Total", "Grade", "GP", "Credits", "Credit Pts", "Result");
-    
+    const budget = marks[0]?.grace_budget ? ` (${marks[0].grace_budget})` : '';
+    headers.push("Total", `Grace${budget}`, "Grade", "GP", "Credits", "Credit Pts", "Result");
+
     const csvRows = [headers.join(",")];
     marks.forEach(row => {
       if (!gradingConfig) return;
-      
+
       const internal = Number(row.internal_marks || 0);
       const external = Number(row.external_marks || 0);
-      const total = isInternalOnly ? internal : (internal + external);
-      
+      const total = Number(row.total_marks || 0);
+      const grace = Number(row.grace_marks || 0);
+      let pass = row.result_status || (isPass(total, gradingConfig.pass_threshold) ? 'Pass' : 'Fail');
+      if (grace > 0 && pass.includes('Pass')) pass += ' (G)';
+
       const { grade, gradePoint } = getGradeAndPoints(total, gradingConfig.grade_scale);
-      const pass = isPass(total, gradingConfig.pass_threshold) ? 'Pass' : 'Fail';
       const subjectId = row.subject_id || row.id;
       const overrideCredits = gradingConfig.subject_credits?.[subjectId];
       const credits = overrideCredits !== undefined ? Number(overrideCredits) : Number(row.credits || 0);
       const creditPoints = gradePoint * credits;
-      
+
       const rowData = [
         row.rollnumber, `"${row.student_name}"`, `"${row.college_name || ''}"`, `"${row.program_name || ''}"`,
         `"${row.subject_name}"`, internal
       ];
       if (!isInternalOnly) rowData.push(external);
-      rowData.push(total, grade, gradePoint, credits, creditPoints, pass);
-      
+      const graceDisplay = grace > 0 ? `+${grace}` : '0';
+      rowData.push(total, graceDisplay, grade, gradePoint, credits, creditPoints, `"${pass}"`);
+
       csvRows.push(rowData.join(","));
     });
     const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
@@ -186,13 +190,13 @@ const UniversityMarksView = () => {
       const subjectId = curr.subject_id || curr.id;
       const overrideCredits = gradingConfig.subject_credits?.[subjectId];
       const credits = overrideCredits !== undefined ? Number(overrideCredits) : Number(curr.credits || 0);
-      
+
       acc[curr.subject_name].push({
-        ...curr, 
-        total_marks: totalMarks, 
-        grade, 
+        ...curr,
+        total_marks: totalMarks,
+        grade,
         grade_point: gradePoint,
-        credits, 
+        credits,
         credit_points: curr.credit_points !== undefined ? Number(curr.credit_points) : (gradePoint * credits),
         result_status: subjectIsPass ? 'Pass' : 'Fail'
       });
@@ -226,11 +230,11 @@ const UniversityMarksView = () => {
       const credits = overrideCredits !== undefined ? Number(overrideCredits) : Number(curr.credits || 0);
 
       acc[curr.student_id].subjects.push({
-        ...curr, 
-        total_marks: totalMarks, 
-        grade, 
+        ...curr,
+        total_marks: totalMarks,
+        grade,
         grade_point: gradePoint,
-        credits, 
+        credits,
         credit_points: curr.credit_points !== undefined ? Number(curr.credit_points) : (gradePoint * credits),
         result_status: subjectIsPass ? 'Pass' : 'Fail'
       });
@@ -280,11 +284,10 @@ const UniversityMarksView = () => {
                 onClick={togglePublish}
                 disabled={publishing || (!summary?.canPublish && !summary?.resultsPublished)}
                 title={!summary?.canPublish && !summary?.resultsPublished ? "Results cannot be published until all subjects are 'Locked' by colleges and external marks are submitted." : ""}
-                className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-lg disabled:opacity-50 ${
-                  summary?.resultsPublished
-                    ? 'bg-emerald-500 text-white shadow-emerald-500/20 hover:bg-emerald-600'
-                    : 'bg-slate-900 text-white shadow-slate-900/20 hover:bg-slate-800'
-                }`}
+                className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-lg disabled:opacity-50 ${summary?.resultsPublished
+                  ? 'bg-emerald-500 text-white shadow-emerald-500/20 hover:bg-emerald-600'
+                  : 'bg-slate-900 text-white shadow-slate-900/20 hover:bg-slate-800'
+                  }`}
               >
                 {summary?.resultsPublished ? <Eye size={16} /> : <EyeOff size={16} />}
                 {summary?.resultsPublished ? 'Published' : 'Publish Results'}
@@ -372,7 +375,7 @@ const UniversityMarksView = () => {
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Avg Marks</p>
             </div>
             <p className="text-3xl font-black text-slate-900 tracking-tight">{summary.avgMarks}</p>
-           </div>
+          </div>
           <div className="stitch-card p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${summary.resultsPublished ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-100 text-slate-400'}`}>
@@ -455,7 +458,7 @@ const UniversityMarksView = () => {
                     className={`h-10 px-6 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeSubject === name
                       ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20 scale-105'
                       : 'bg-white text-slate-400 border-2 border-slate-50 hover:border-indigo-200 hover:text-indigo-500'
-                    }`}
+                      }`}
                   >
                     {name}
                   </button>
@@ -500,7 +503,7 @@ const UniversityMarksView = () => {
                         )}
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Total</th>
                         {summary?.isGraceEnabled && (
-                          <th className="px-8 py-5 text-[10px] font-black text-indigo-500 uppercase tracking-widest text-center">Grace</th>
+                          <th className="px-8 py-5 text-[10px] font-black text-indigo-500 uppercase tracking-widest text-center">Grace {subjectWiseData[activeSubject]?.[0]?.grace_budget ? `(${subjectWiseData[activeSubject][0].grace_budget})` : ''}</th>
                         )}
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Grade</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">GP</th>
@@ -545,13 +548,12 @@ const UniversityMarksView = () => {
                             <td className="px-8 py-5 text-center font-bold text-slate-600">{item.credits || 0}</td>
                             <td className="px-8 py-5 text-center font-black text-indigo-500">{item.credit_points || 0}</td>
                             <td className="px-8 py-5 text-center">
-                              <div className={`inline-flex items-center gap-1.5 text-[8px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider border ${
-                                item.result_status === 'Pass'
-                                  ? 'text-emerald-500 bg-emerald-50 border-emerald-100'
-                                  : 'text-rose-500 bg-rose-50 border-rose-100'
-                              }`}>
-                                {item.result_status === 'Pass' ? <CheckCircle2 size={10} /> : <AlertCircle size={10} />}
-                                {item.result_status}
+                              <div className={`inline-flex items-center gap-1.5 text-[8px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider border ${item.result_status?.includes('Pass')
+                                ? 'text-emerald-500 bg-emerald-50 border-emerald-100'
+                                : 'text-rose-500 bg-rose-50 border-rose-100'
+                                }`}>
+                                {item.result_status?.includes('Pass') ? <CheckCircle2 size={10} /> : <AlertCircle size={10} />}
+                                {item.result_status}{item.grace_marks > 0 ? ' (G)' : ''}
                               </div>
                             </td>
                           </tr>

@@ -19,13 +19,11 @@ const GradingPolicy = () => {
     const roleName = localStorage.getItem('roleName') || '';
     const isSuperOrAdmin = user.role === 'superadmin' || user.role === 'superAdmin' || user.role === 'admin' || roleName === 'superadmin' || roleName === 'superAdmin' || roleName === 'admin';
     const isUniversityAdmin = user.role === 'university_admin' || roleName === 'university_admin';
-    const isHighLevelAdmin = isSuperOrAdmin; // Only super/system admins get the full university dropdown
 
     useEffect(() => {
         if (isSuperOrAdmin) {
             fetchUniversities();
         } else if (isUniversityAdmin) {
-            // University admins: fetch their own university info then load config
             fetchOwnUniversity();
         } else {
             fetchConfig();
@@ -54,7 +52,6 @@ const GradingPolicy = () => {
         try {
             const token = localStorage.getItem('token');
             const uniId = localStorage.getItem('universityId') || user.university_id;
-            // Fetch all universities and filter to this admin's university
             const res = await fetch('http://localhost:8080/api/universities', {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -85,7 +82,6 @@ const GradingPolicy = () => {
         try {
             const token = localStorage.getItem('token');
             let url = 'http://localhost:8080/api/grading/config';
-            // Both super admins and university admins pass their selected university ID
             if ((isSuperOrAdmin || isUniversityAdmin) && selectedUni) {
                 url += `?targetUniversityId=${selectedUni}`;
             }
@@ -94,7 +90,6 @@ const GradingPolicy = () => {
             });
             if (res.ok) {
                 const data = await res.json();
-                // Ensure grade_scale is an array and sorted
                 const scale = Array.isArray(data.grade_scale) ? data.grade_scale : [];
                 const rawPolicy = data.grace_policy;
                 const parsedPolicy = typeof rawPolicy === 'string' ? JSON.parse(rawPolicy) : rawPolicy;
@@ -135,16 +130,13 @@ const GradingPolicy = () => {
     };
 
     const handleSave = async () => {
-        // Validation
         if (config.grade_scale.length === 0) {
             return toast.warning("Grade scale cannot be empty");
         }
-
         const hasEmpty = config.grade_scale.some(r => !r.grade || r.min === undefined);
         if (hasEmpty) {
             return toast.warning("Please fill all grade details");
         }
-
         setSaving(true);
         try {
             const token = localStorage.getItem('token');
@@ -159,16 +151,13 @@ const GradingPolicy = () => {
                     targetUniversityId: (isSuperOrAdmin || isUniversityAdmin) ? selectedUni : undefined
                 })
             });
-
             if (res.ok) {
                 const result = await res.json();
                 toast.success("Grading policy updated successfully");
-                // Immediately update state with the returned config to ensure UI stays synced
                 if (result.config) {
                     const scale = Array.isArray(result.config.grade_scale) ? result.config.grade_scale : [];
                     const rawPolicy = result.config.grace_policy;
                     const parsedPolicy = typeof rawPolicy === 'string' ? JSON.parse(rawPolicy) : rawPolicy;
-
                     setConfig({
                         ...result.config,
                         grade_scale: scale.sort((a, b) => b.min - a.min),
@@ -352,74 +341,7 @@ const GradingPolicy = () => {
                                 </button>
                             </div>
                         </div>
-
-                        {/* Grace Marks Policy */}
-                        <div className="pt-8 border-t border-slate-100 space-y-6">
-                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                <ShieldCheck size={16} />
-                                Grace Marks Policy
-                            </h3>
-
-                            <div className="flex items-center justify-between gap-4">
-                                <div className="space-y-1 flex-1">
-                                    <h4 className="text-sm font-bold text-slate-900">Enable Grace Marks</h4>
-                                    <p className="text-[10px] text-slate-500 font-medium tracking-tight uppercase">Automatically apply grace marks on publication.</p>
-                                </div>
-                                <button
-                                    onClick={() => setConfig({
-                                        ...config,
-                                        grace_policy: {
-                                            ...config.grace_policy,
-                                            is_enabled: !config.grace_policy?.is_enabled
-                                        }
-                                    })}
-                                    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${config.grace_policy?.is_enabled ? 'bg-sky-500' : 'bg-slate-200'}`}
-                                >
-                                    <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${config.grace_policy?.is_enabled ? 'translate-x-5' : 'translate-x-0'}`} />
-                                </button>
-                            </div>
-
-                            {config.grace_policy?.is_enabled && (
-                                <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-4 duration-300">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Max Total</label>
-                                        <input
-                                            type="number"
-                                            value={config.grace_policy?.max_total_grace || 0}
-                                            onChange={(e) => setConfig({
-                                                ...config,
-                                                grace_policy: {
-                                                    ...config.grace_policy,
-                                                    max_total_grace: Number(e.target.value)
-                                                }
-                                            })}
-                                            className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-black text-slate-700 outline-none focus:bg-white focus:border-sky-500 transition-all"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Per Subject</label>
-                                        <input
-                                            type="number"
-                                            max="5"
-                                            value={config.grace_policy?.max_per_subject_grace || 0}
-                                            onChange={(e) => {
-                                                let val = Number(e.target.value);
-                                                if (val > 5) val = 5;
-                                                setConfig({
-                                                    ...config,
-                                                    grace_policy: {
-                                                        ...config.grace_policy,
-                                                        max_per_subject_grace: val
-                                                    }
-                                                });
-                                            }}
-                                            className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-black text-slate-700 outline-none focus:bg-white focus:border-sky-500 transition-all"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
+                        
                         <div className="bg-amber-50 rounded-2xl p-5 border border-amber-100 flex gap-4">
                             <AlertTriangle size={24} className="text-amber-500 shrink-0" />
                             <div className="space-y-1">

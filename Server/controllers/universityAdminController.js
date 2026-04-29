@@ -64,7 +64,7 @@ exports.assignExternalFaculty = async (req, res) => {
     const client = await db.connect();
     try {
         await client.query('BEGIN');
-        
+
         if (subject_ids && Array.isArray(subject_ids) && subject_ids.length > 0) {
             // Subject-level assignments
             for (const subject_id of subject_ids) {
@@ -84,7 +84,7 @@ exports.assignExternalFaculty = async (req, res) => {
                 DO UPDATE SET assigned_by = EXCLUDED.assigned_by, assigned_at = CURRENT_TIMESTAMP
             `, [faculty_user_id, exam_id, assigned_by]);
         }
-        
+
         await client.query('COMMIT');
         res.status(201).json({ message: "Assignments created successfully" });
     } catch (error) {
@@ -133,17 +133,17 @@ exports.getResultHubData = async (req, res) => {
     try {
         const { exam_id, exam_name, college_id, program_id } = req.query;
         const university_id = req.user?.university_id || req.user?.universityId || null;
- 
+
         const params = [university_id, exam_name || null];
         const conditions = [];
         let paramIdx = 3; // Start from 3 for additional filters
- 
+
         // For External Exams (Type 2), require paid registrations. For Internal (Type 1), be more inclusive.
         conditions.push(`(e.exam_type = 1 OR er.payment_status = 'Paid')`);
- 
+
         // University filter (always $1)
         conditions.push(`($1::integer IS NULL OR e.university_id = $1 OR c.university_id = $1)`);
- 
+
         if (exam_id) {
             conditions.push(`e.id = $${paramIdx++}`);
             params.push(exam_id);
@@ -160,9 +160,9 @@ exports.getResultHubData = async (req, res) => {
             conditions.push(`e.program_id = $${paramIdx++}`);
             params.push(program_id);
         }
- 
+
         const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
- 
+
         const query = `
             WITH target_subjects AS (
                 SELECT DISTINCT subject_id 
@@ -207,9 +207,10 @@ exports.getResultHubData = async (req, res) => {
                 SELECT 
                     COALESCE(i.student_id, o.student_id) as student_id,
                     COALESCE(i.subject_id, o.subject_id) as subject_id,
-                    (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0)) as total_raw
+                    (COALESCE(i.ia_total, 0) + COALESCE(o.total_other, 0)) as total_raw
                 FROM ia_summary i
-                FULL OUTER JOIN other_summary o ON i.student_id = o.student_id AND i.subject_id = o.subject_id
+                FULL OUTER JOIN (SELECT student_id, subject_id, other_total as total_other FROM other_summary) o 
+                    ON i.student_id = o.student_id AND i.subject_id = o.subject_id
             ),
             marks_base AS (
                 SELECT 
@@ -226,6 +227,7 @@ exports.getResultHubData = async (req, res) => {
                     (gc.grace_policy->>'max_per_subject_grace')::numeric as max_grace,
                     -- Raw total before grace
                     (COALESCE(cim.total_internal, m.internal_marks, ri.total_raw, 0) + COALESCE(m.external_marks, 0)) as raw_total,
+                    COALESCE(m.grace_marks, 0) as grace_marks,
                     s.rollnumber, CONCAT(s.first_name, ' ', s.last_name) as student_name,
                     s."collageName" as college_name, s."programName" as program_name,
                     e.name as exam_name,
@@ -259,45 +261,87 @@ exports.getResultHubData = async (req, res) => {
                     e.exam_type = 2
                     OR mws.status IN ('Locked', 'Approved', 'Finalized', 'Submitted')
                 )
-            ),
-            marks_with_grace AS (
-                SELECT 
-                    mb.*,
-                    CASE 
-                        WHEN mb.is_grace_enabled = true 
-                             AND mb.raw_total < mb.pass_threshold 
-                             AND (mb.pass_threshold - mb.raw_total) <= mb.max_grace
-                        THEN (mb.pass_threshold - mb.raw_total)
-                        ELSE 0
-                    END as grace_marks
-                FROM marks_base mb
             )
             SELECT 
-                mwg.mark_id, mwg.student_id, mwg.exam_id, mwg.marks_status, 
-                mwg.internal_marks, mwg.external_marks, mwg.raw_total, mwg.grace_marks,
-                mwg.rollnumber, mwg.student_name, mwg.college_name, mwg.program_name,
-                mwg.exam_name, mwg.exam_type, mwg.results_published,
-                mwg.subject_name, mwg.subject_id, mwg.credits,
-                mwg.pass_threshold, mwg.grade_scale, mwg.is_grace_enabled,
-                (mwg.raw_total + mwg.grace_marks) as total_marks,
+                mb.mark_id, mb.student_id, mb.exam_id, mb.marks_status, 
+                mb.internal_marks, mb.external_marks, mb.raw_total, mb.grace_marks,
+                mb.rollnumber, mb.student_name, mb.college_name, mb.program_name,
+                mb.exam_name, mb.exam_type, mb.results_published,
+                mb.subject_name, mb.subject_id, mb.credits,
+                mb.pass_threshold, mb.grade_scale, mb.is_grace_enabled,
+                (mb.raw_total + mb.grace_marks) as total_marks,
                 CASE 
-                    WHEN (mwg.raw_total + mwg.grace_marks) >= mwg.pass_threshold THEN 'Pass'
+                    WHEN (mb.raw_total + mb.grace_marks) >= mb.pass_threshold THEN 'Pass'
                     ELSE 'Fail'
                 END as result_status
-            FROM marks_with_grace mwg
-            ORDER BY subject_name ASC, mwg.rollnumber ASC
+            FROM marks_base mb
+            ORDER BY subject_name ASC, mb.rollnumber ASC
         `;
         const result = await db.query(query, params);
         let rows = result.rows;
+        const resultsPublished = rows.length > 0 ? rows[0].results_published : false;
+
+        // Fetch total number of subjects in this series to calculate the 1% budget correctly
+        let seriesSubjectCount = 5; // Default fallback
+        if (exam_name) {
+            const seriesInfo = await db.query(
+                "SELECT COUNT(DISTINCT subject_id) as count FROM exams WHERE TRIM(name) ILIKE TRIM($1)",
+                [exam_name]
+            );
+            seriesSubjectCount = parseInt(seriesInfo.rows[0].count) || 5;
+        }
+
+        // Group by Student for Grace Marks Preview
+        const studentGroups = {};
+        rows.forEach(r => {
+            if (!studentGroups[r.student_id]) studentGroups[r.student_id] = [];
+            studentGroups[r.student_id].push(r);
+        });
+
+        // Apply Strict Grace Preview per Student
+        Object.keys(studentGroups).forEach(stuId => {
+            const studentMarks = studentGroups[stuId];
+            const passThreshold = Number(studentMarks[0].pass_threshold) || 40;
+            const isGraceEnabled = studentMarks[0].is_grace_enabled;
+            const maxPerSubject = Number(studentMarks[0].max_grace) || 5;
+
+            if (isGraceEnabled) {
+                const budget = seriesSubjectCount;
+                const fails = studentMarks.filter(m => Number(m.raw_total) < passThreshold && Number(m.raw_total) > 0);
+
+                const hasNoInternalFails = fails.every(m => Number(m.internal_marks) > 0);
+                const withinFailureLimit = fails.length > 0 && fails.length <= 2;
+
+                if (withinFailureLimit && hasNoInternalFails) {
+                    let totalNeeded = 0;
+                    let withinCaps = true;
+                    fails.forEach(m => {
+                        const gap = passThreshold - Number(m.raw_total);
+                        if (gap > maxPerSubject) withinCaps = false;
+                        totalNeeded += gap;
+                    });
+
+                    if (withinCaps && totalNeeded <= budget) {
+                        fails.forEach(m => {
+                            m.grace_marks = passThreshold - Number(m.raw_total);
+                            m.total_marks = passThreshold;
+                            m.result_status = 'Pass';
+                        });
+                    }
+                }
+            }
+            // Add budget info for frontend display
+            studentMarks.forEach(m => m.grace_budget = seriesSubjectCount);
+        });
 
         // Calculate Grade and Grade Points for each row based on the scale
         rows = rows.map(row => {
             let grade = 'F';
             let gradePoint = 0;
-            // Use the final total_marks (Raw + Grace)
+            // Use the final total_marks (Raw + Grace/Preview)
             const total = Number(row.total_marks);
             const scale = typeof row.grade_scale === 'string' ? JSON.parse(row.grade_scale) : (row.grade_scale || []);
-            
+
             // Assuming scale is sorted descending by min marks
             const sortedScale = [...scale].sort((a, b) => b.min - a.min);
             for (const s of sortedScale) {
@@ -325,9 +369,8 @@ exports.getResultHubData = async (req, res) => {
         const avgMarks = totalWithMarks.length > 0
             ? (totalWithMarks.reduce((s, r) => s + Number(r.total_marks), 0) / totalWithMarks.length).toFixed(1)
             : '0.0';
-        const resultsPublished = rows.length > 0 ? rows[0].results_published : false;
         let examType = rows.length > 0 ? rows[0].exam_type : null;
-        
+
         // Validation for "canPublish" button in UI
         let workflowReady = true;
         if (exam_name) {
@@ -343,7 +386,7 @@ exports.getResultHubData = async (req, res) => {
                       SELECT subject_id FROM internal_exam_schedules WHERE TRIM(round_id) ILIKE TRIM($2)
                   )
             `, [college_id || null, exam_name || null]);
-            
+
             const stats = workflowCheck.rows[0];
             // If we have subjects, all must be locked. If we have NO subjects in workflow table, it's NOT ready.
             if (parseInt(stats.total) === 0 || parseInt(stats.locked) < parseInt(stats.total)) {
@@ -369,7 +412,7 @@ exports.getResultHubData = async (req, res) => {
         });
     } catch (error) {
         console.error("getResultHubData error:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: "Failed to fetch result hub data"
         });
     }
@@ -640,7 +683,7 @@ exports.getStudentsForAllocation = async (req, res) => {
     try {
         const { collegeId } = req.params;
         const { exam_id } = req.query;
-        
+
         let query = `
             SELECT DISTINCT s.id, s.name, s.rollnumber, s."programName", s.semister, 
                    s.sitting_center_id,
@@ -663,7 +706,7 @@ exports.getStudentsForAllocation = async (req, res) => {
                        sa_inner.college_id as seated_college_id
                 FROM seating_arrangements sa_inner
                 JOIN examination_halls h ON sa_inner.hall_id = h.id
-                ${ exam_id ? 'WHERE sa_inner.exam_id = ' + parseInt(exam_id) : '' }
+                ${exam_id ? 'WHERE sa_inner.exam_id = ' + parseInt(exam_id) : ''}
             ) sa ON sa.student_id = s.id
             LEFT JOIN colleges c_seated ON c_seated.id = sa.seated_college_id
             WHERE hc.id = $1 AND s."deleteStatus" = true AND er.payment_status = 'Paid'
@@ -676,7 +719,7 @@ exports.getStudentsForAllocation = async (req, res) => {
         }
 
         query += ` ORDER BY s.rollnumber ASC`;
-        
+
         const result = await db.query(query, params);
         res.status(200).json(result.rows);
     } catch (error) {
@@ -702,9 +745,9 @@ exports.allocateStudentsToCenter = async (req, res) => {
         `;
         const result = await db.query(query, [targetCenterId || null, studentIds]);
 
-        res.status(200).json({ 
-            message: "Student centers allocated successfully", 
-            allocated_count: result.rowCount 
+        res.status(200).json({
+            message: "Student centers allocated successfully",
+            allocated_count: result.rowCount
         });
     } catch (error) {
         console.error("Allocate students center error:", error);

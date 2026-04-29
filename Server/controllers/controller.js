@@ -21,8 +21,8 @@ const initiateRegistration = async (req, res) => {
       [email]
     );
     if (studentProfile.rows.length === 0) {
-      return res.status(403).json({ 
-        message: "This email is not pre-registered in our records. Please contact your college administrator." 
+      return res.status(403).json({
+        message: "This email is not pre-registered in our records. Please contact your college administrator."
       });
     }
 
@@ -31,7 +31,7 @@ const initiateRegistration = async (req, res) => {
     // Find College ID and its associated University ID
     let college_id = null;
     let university_id = null;
-    
+
     if (collageName) {
       const collegeRes = await client.query('SELECT id, university_id FROM public.colleges WHERE name ILIKE $1', [collageName]);
       if (collegeRes.rows.length > 0) {
@@ -289,7 +289,7 @@ const updateUser = async (req, res) => {
     if (requesterRole === 'university_admin') {
       const existingUser = await client.query("SELECT university_id FROM public.users WHERE id = $1", [id]);
       if (existingUser.rows.length === 0) return res.status(404).json({ message: "User not found" });
-      
+
       const targetUnivId = existingUser.rows[0].university_id;
       if (targetUnivId !== null && targetUnivId != requesterUnivId) {
         return res.status(403).json({ message: "Unauthorized to update this user" });
@@ -346,8 +346,8 @@ const getPrograms = async (req, res) => {
     let query = "SELECT id, name, duration_years, university_id, status FROM programs";
     const params = [];
 
-    const uId = (role === 'superadmin' && req.query.universityId) 
-      ? req.query.universityId 
+    const uId = (role === 'superadmin' && req.query.universityId)
+      ? req.query.universityId
       : ((role === 'university_admin' || role === 'college_admin') ? university_id : null);
 
     if (uId) {
@@ -408,8 +408,8 @@ const getAcademicYears = async (req, res) => {
     let query = "SELECT id, year_name, created_at, created_by, updated_at, updated_by FROM master_academic_years WHERE deleteflag = true";
     const params = [];
 
-    const uId = (role === 'superadmin' && req.query.universityId) 
-      ? req.query.universityId 
+    const uId = (role === 'superadmin' && req.query.universityId)
+      ? req.query.universityId
       : (['university_admin', 'college_admin', 'Faculty', 'Teacher', 'Teacher '].includes(role) ? university_id : null);
 
     if (uId) {
@@ -609,8 +609,8 @@ const Login = async (req, res) => {
 
     // Role-based Verification Enforcement: Only students are required to complete OTP activation
     if (result.role_name.toLowerCase() === 'student' && !result.is_verified) {
-      return res.status(401).json({ 
-        message: "Email not verified. Please complete your account activation on the Register page using the code sent to your email." 
+      return res.status(401).json({
+        message: "Email not verified. Please complete your account activation on the Register page using the code sent to your email."
       });
     }
 
@@ -955,10 +955,10 @@ const calculateNextSerial = async (dbClient, year, deptOrProg, type = 'admission
     const years = year.split('-').map(y => y.trim());
     const startYear = years[0];
     const endYear = years[1] || (parseInt(startYear) + 1).toString();
-    
+
     const startYearSuffix = startYear.slice(-2);
     const endYearSuffix = endYear.slice(-2);
-    
+
     const code = deptOrProg ? deptOrProg.trim().toUpperCase() : (type === 'roll' ? 'BT' : 'GEN');
     // For Roll No, we often want 2 chars (e.g. BT), for Admission we want 3 (e.g. COM)
     const code2 = code.substring(0, 2);
@@ -1048,7 +1048,7 @@ const createStudent = async (req, res) => {
       const checkEmail = await client.query('SELECT id FROM public.students WHERE TRIM(email) ILIKE TRIM($1) AND "deleteStatus" = true', [email]);
       if (checkEmail.rows.length > 0) return res.status(400).json({ message: `Student with email ${email} already exists.` });
     }
-    
+
     const checkAdm = await client.query('SELECT id FROM public.students WHERE admission_no = $1 AND "deleteStatus" = true', [finalAdmissionNo]);
     if (checkAdm.rows.length > 0) return res.status(400).json({ message: `Admission No ${finalAdmissionNo} already exists.` });
 
@@ -1672,7 +1672,7 @@ const createExam = async (req, res) => {
           );
           if (structureCheck.rows.length === 0) {
             console.log(`Skipping subject ${subject_id}: No marks structure found for this program context.`);
-            continue; 
+            continue;
           }
         }
 
@@ -1686,7 +1686,7 @@ const createExam = async (req, res) => {
         createdExams.push(result.rows[0]);
       }
       if (createdExams.length === 0) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: "No exams were scheduled. This usually happens when the selected subjects do not have a Marks Structure defined in the system. Please configure the Marks Structure first.",
           errorType: 'MISSING_STRUCTURE'
         });
@@ -1958,7 +1958,7 @@ const bulkUploadStudents = async (req, res) => {
     const dbClient = await client.connect();
     try {
       await dbClient.query('BEGIN');
-      
+
       // Fetch the current college name if the user is a college admin
       let autoCollegeName = null;
       if (req.user.role === 'college_admin' && req.user.college_id) {
@@ -1969,11 +1969,11 @@ const bulkUploadStudents = async (req, res) => {
       }
 
       // Cache for next serials to avoid duplicate generation within the same bulk
-      const serialCache = {}; 
+      const serialCache = {};
 
       for (let i = 0; i < students.length; i++) {
         const s = students[i];
-        
+
         let finalAdmissionNo = s.admission_no;
         let finalRollNo = s.rollnumber;
 
@@ -2044,11 +2044,11 @@ const bulkUploadTeachers = async (req, res) => {
     // Phase 1: Validate ALL rows first
     let errors = [];
     const college_id = req.user.college_id;
-    
+
     // We will collect resolved department IDs here to use in Phase 2
     const resolvedDepartments = {};
     const emailsInFile = new Set();
-    
+
     // Fetch a default designation
     const desigRes = await client.query("SELECT id FROM master_designations WHERE status = 'Active' LIMIT 1");
     const defaultDesignationId = desigRes.rows.length > 0 ? desigRes.rows[0].id : null;
@@ -2063,7 +2063,7 @@ const bulkUploadTeachers = async (req, res) => {
       if (!t.name) errors.push({ row: rowNum, message: "Missing required field: name" });
       if (!t.email) errors.push({ row: rowNum, message: "Missing required field: email" });
       if (!t.departmentCode) errors.push({ row: rowNum, message: "Missing required field: departmentCode" });
-      
+
       if (t.email) {
         if (emailsInFile.has(t.email)) {
           errors.push({ row: rowNum, message: `Duplicate email ${t.email} within the import file.` });
@@ -2084,7 +2084,7 @@ const bulkUploadTeachers = async (req, res) => {
           }
         }
       }
-      
+
       if (t.departmentCode && !resolvedDepartments[t.departmentCode]) {
         const deptRes = await client.query('SELECT id FROM master_departments WHERE department_code = $1', [t.departmentCode]);
         if (deptRes.rows.length > 0) {
@@ -2248,11 +2248,11 @@ const publishResults = async (req, res) => {
         });
       }
     }
-    
+
     // For external exams (type 2): Check if BOTH internal marks are locked AND external marks are submitted
     if (results_published && exam.exam_type == 2) {
-        const seriesRes = await client.query(
-            `SELECT e.id, sub.name as subject_name,
+      const seriesRes = await client.query(
+        `SELECT e.id, sub.name as subject_name,
                     (SELECT EXISTS (
                         SELECT 1 FROM external_faculty_assignments efa
                         WHERE efa.exam_id = e.id AND (efa.subject_id = e.subject_id OR efa.subject_id IS NULL) AND efa.status = 'Submitted'
@@ -2266,34 +2266,34 @@ const publishResults = async (req, res) => {
              FROM exams e
              JOIN master_subjects sub ON e.subject_id = sub.id
              WHERE e.name = $1 AND e.semester_id = $2 AND e.program_id = (SELECT program_id FROM exams WHERE id = $3)`,
-            [exam.name, exam.semester_id, realId]
-        );
+        [exam.name, exam.semester_id, realId]
+      );
 
-        const unready = seriesRes.rows.filter(r => !r.is_external_submitted || !r.is_internal_locked);
-        if (unready.length > 0) {
-            const externalPending = seriesRes.rows.filter(r => !r.is_external_submitted).map(r => r.subject_name);
-            const internalPending = seriesRes.rows.filter(r => !r.is_internal_locked).map(r => r.subject_name);
-            
-            let errMsg = "Cannot publish results:";
-            if (externalPending.length > 0) errMsg += `\n- External marks pending for: ${externalPending.join(', ')}`;
-            if (internalPending.length > 0) errMsg += `\n- Internal marks NOT LOCKED for: ${internalPending.join(', ')}`;
-            
-            return res.status(400).json({ message: errMsg });
-        }
+      const unready = seriesRes.rows.filter(r => !r.is_external_submitted || !r.is_internal_locked);
+      if (unready.length > 0) {
+        const externalPending = seriesRes.rows.filter(r => !r.is_external_submitted).map(r => r.subject_name);
+        const internalPending = seriesRes.rows.filter(r => !r.is_internal_locked).map(r => r.subject_name);
+
+        let errMsg = "Cannot publish results:";
+        if (externalPending.length > 0) errMsg += `\n- External marks pending for: ${externalPending.join(', ')}`;
+        if (internalPending.length > 0) errMsg += `\n- Internal marks NOT LOCKED for: ${internalPending.join(', ')}`;
+
+        return res.status(400).json({ message: errMsg });
+      }
     }
 
     // Apply Grace Marks if publishing
     if (results_published) {
-        console.log(`[GRACE] Processing grace marks for series: ${exam.name}`);
-        const studentsRes = await client.query(
-            `SELECT DISTINCT student_id FROM marks m
+      console.log(`[GRACE] Processing grace marks for series: ${exam.name}`);
+      const studentsRes = await client.query(
+        `SELECT DISTINCT student_id FROM marks m
              JOIN exams e ON m.exam_id = e.id
              WHERE e.name = $1 AND e.semester_id = $2`,
-            [exam.name, exam.semester_id]
-        );
-        for (const row of studentsRes.rows) {
-            await applyGraceMarks(row.student_id, exam.name, universityId, req.user.id);
-        }
+        [exam.name, exam.semester_id]
+      );
+      for (const row of studentsRes.rows) {
+        await applyGraceMarks(row.student_id, exam.name, universityId, req.user.id);
+      }
     }
 
     const result = await client.query(
@@ -4261,9 +4261,9 @@ const getHallTicketData = async (req, res) => {
     const { examName, semesterId } = req.params;
     const userId = req.user.id;
 
-     // 1. Get complete student details AND verify paid exam registration
-     const studentRes = await client.query(
-       `SELECT 
+    // 1. Get complete student details AND verify paid exam registration
+    const studentRes = await client.query(
+      `SELECT 
            s.id, s.name, s.rollnumber, s."programName", s.semister, s."collageName", 
            s."fatherName", s.email, s."contactNumber", s.address, s.adharnumber,
            s.admission_no, s.batch, s.section, s.gender,
@@ -4301,21 +4301,21 @@ const getHallTicketData = async (req, res) => {
           AND e.name = $2 
           AND e.semester_id = $3
           AND er.payment_status = 'Paid'`,
-       [userId, examName, semesterId]
-     );
- 
-     if (studentRes.rows.length === 0) {
-       return res.status(403).json({ 
-         message: "Hall Ticket restricted. You must have a confirmed (Paid) registration for this exam session to generate an admit card." 
-       });
-     }
+      [userId, examName, semesterId]
+    );
+
+    if (studentRes.rows.length === 0) {
+      return res.status(403).json({
+        message: "Hall Ticket restricted. You must have a confirmed (Paid) registration for this exam session to generate an admit card."
+      });
+    }
 
     const studentRow = studentRes.rows[0];
 
     // Hall Ticket Generation Guard: Block access if seat is not yet allocated
     if (!studentRow.seat_no) {
-      return res.status(403).json({ 
-        message: "Hallticket not generated, please check after sometime" 
+      return res.status(403).json({
+        message: "Hallticket not generated, please check after sometime"
       });
     }
 
@@ -4347,29 +4347,29 @@ const getHallTicketData = async (req, res) => {
     // 4. Else own college
     let center;
     if (studentRow.actual_seat_college_id) {
-        center = {
-            name: studentRow.actual_seat_college_name,
-            address: studentRow.actual_seat_college_address,
-            is_external: studentRow.actual_seat_college_id !== studentRow.home_college_id,
-        };
+      center = {
+        name: studentRow.actual_seat_college_name,
+        address: studentRow.actual_seat_college_address,
+        is_external: studentRow.actual_seat_college_id !== studentRow.home_college_id,
+      };
     } else if (studentRow.student_center_id) {
-        center = {
-            name: studentRow.student_center_name,
-            address: studentRow.student_center_address,
-            is_external: true,
-        };
+      center = {
+        name: studentRow.student_center_name,
+        address: studentRow.student_center_address,
+        is_external: true,
+      };
     } else if (studentRow.college_center_id) {
-        center = {
-            name: studentRow.college_center_name,
-            address: studentRow.college_center_address,
-            is_external: true,
-        };
+      center = {
+        name: studentRow.college_center_name,
+        address: studentRow.college_center_address,
+        is_external: true,
+      };
     } else {
-        center = {
-            name: studentRow.collageName,
-            address: studentRow.home_college_address,
-            is_external: false,
-        };
+      center = {
+        name: studentRow.collageName,
+        address: studentRow.home_college_address,
+        is_external: false,
+      };
     }
 
     // 2. Fetch registered exams for this specific series
@@ -4448,7 +4448,8 @@ const getResultSheetData = async (req, res) => {
         m.id as mark_id,
         COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) as internal_marks,
         COALESCE(m.external_marks, 0) as external_marks,
-        (COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) + COALESCE(m.external_marks, 0)) as total_marks,
+        COALESCE(m.grace_marks, 0) as grace_marks,
+        (COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) + COALESCE(m.external_marks, 0) + COALESCE(m.grace_marks, 0)) as total_marks,
         m.status as result_status,
         e.name as exam_name,
         e.id as exam_id,
