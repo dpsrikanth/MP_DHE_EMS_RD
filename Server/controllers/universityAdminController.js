@@ -219,30 +219,33 @@ exports.getResultHubData = async (req, res) => {
                     COALESCE(m.status, 'Not Entered') as marks_status,
                     COALESCE(cim.total_internal, m.internal_marks, ri.total_raw, 0) as internal_marks, 
                     COALESCE(m.external_marks, 0) as external_marks,
-                    COALESCE(m.grace_marks, 0) as grace_marks,
-                    (COALESCE(cim.total_internal, m.internal_marks, ri.total_raw, 0) + COALESCE(m.external_marks, 0) + COALESCE(m.grace_marks, 0)) as total_marks,
+                    -- Pass Threshold for calculations
+                    COALESCE(gc.pass_threshold, 40) as pass_threshold,
+                    -- Policy settings
+                    (gc.grace_policy->>'is_enabled')::boolean as is_grace_enabled,
+                    (gc.grace_policy->>'max_per_subject_grace')::numeric as max_grace,
+                    -- Raw total before grace
+                    (COALESCE(cim.total_internal, m.internal_marks, ri.total_raw, 0) + COALESCE(m.external_marks, 0)) as raw_total,
                     s.rollnumber, CONCAT(s.first_name, ' ', s.last_name) as student_name,
                     s."collageName" as college_name, s."programName" as program_name,
                     e.name as exam_name,
                     e.exam_type,
                     e.results_published,
                     sub.name as subject_name, sub.id as subject_id,
-                    sub.credit as credits
+                    sub.credit as credits,
+                    gc.grade_scale
                 FROM exams e
                 JOIN master_programs mp ON e.program_id = mp.id
                 JOIN master_semesters ms ON e.semester_id = ms.id
                 JOIN students s ON TRIM(s."programName") ILIKE TRIM(mp.name)
                     AND (
                         (e.exam_type = 1 AND TRIM(s.semister) ILIKE TRIM(ms.semester_name))
-                        OR (e.exam_type = 2) -- External exams driven by registration
+                        OR (e.exam_type = 2) 
                     )
                 JOIN master_subjects sub ON e.subject_id = sub.id
                 LEFT JOIN exam_registrations er ON er.student_id = s.id AND er.exam_id = e.id
-                -- Join Colleges to get ID and link with Workflow Status
                 LEFT JOIN colleges c ON TRIM(s."collageName") ILIKE TRIM(c.name)
-                -- For INTERNAL exams: only show marks that have been officially 'Locked'/'Approved'.
-                -- For EXTERNAL exams (exam_type=2): no internal workflow exists — marks go through
-                --   the 'marks' table submitted by external faculty, so LEFT JOIN and skip filter.
+                LEFT JOIN grading_configs gc ON gc.university_id = COALESCE(e.university_id, c.university_id)
                 LEFT JOIN marks_workflow_status mws ON mws.college_id = c.id 
                     AND mws.subject_id = sub.id 
                     AND (mws.section = s.section OR s.section IS NULL OR s.section = '')
@@ -252,17 +255,66 @@ exports.getResultHubData = async (req, res) => {
                     AND cim.college_id = c.id
                 LEFT JOIN raw_internal ri ON ri.student_id = s.id AND ri.subject_id = sub.id
                 ${whereClause}
-                -- For internal exams: require a locked/approved workflow. External exams bypass this.
                 AND (
                     e.exam_type = 2
                     OR mws.status IN ('Locked', 'Approved', 'Finalized', 'Submitted')
                 )
+            ),
+            marks_with_grace AS (
+                SELECT 
+                    mb.*,
+                    CASE 
+                        WHEN mb.is_grace_enabled = true 
+                             AND mb.raw_total < mb.pass_threshold 
+                             AND (mb.pass_threshold - mb.raw_total) <= mb.max_grace
+                        THEN (mb.pass_threshold - mb.raw_total)
+                        ELSE 0
+                    END as grace_marks
+                FROM marks_base mb
             )
-            SELECT * FROM marks_base
-            ORDER BY subject_name ASC, rollnumber ASC
+            SELECT 
+                mwg.mark_id, mwg.student_id, mwg.exam_id, mwg.marks_status, 
+                mwg.internal_marks, mwg.external_marks, mwg.raw_total, mwg.grace_marks,
+                mwg.rollnumber, mwg.student_name, mwg.college_name, mwg.program_name,
+                mwg.exam_name, mwg.exam_type, mwg.results_published,
+                mwg.subject_name, mwg.subject_id, mwg.credits,
+                mwg.pass_threshold, mwg.grade_scale, mwg.is_grace_enabled,
+                (mwg.raw_total + mwg.grace_marks) as total_marks,
+                CASE 
+                    WHEN (mwg.raw_total + mwg.grace_marks) >= mwg.pass_threshold THEN 'Pass'
+                    ELSE 'Fail'
+                END as result_status
+            FROM marks_with_grace mwg
+            ORDER BY subject_name ASC, mwg.rollnumber ASC
         `;
         const result = await db.query(query, params);
-        const rows = result.rows;
+        let rows = result.rows;
+
+        // Calculate Grade and Grade Points for each row based on the scale
+        rows = rows.map(row => {
+            let grade = 'F';
+            let gradePoint = 0;
+            // Use the final total_marks (Raw + Grace)
+            const total = Number(row.total_marks);
+            const scale = typeof row.grade_scale === 'string' ? JSON.parse(row.grade_scale) : (row.grade_scale || []);
+            
+            // Assuming scale is sorted descending by min marks
+            const sortedScale = [...scale].sort((a, b) => b.min - a.min);
+            for (const s of sortedScale) {
+                if (total >= s.min) {
+                    grade = s.grade;
+                    gradePoint = s.point;
+                    break;
+                }
+            }
+
+            return {
+                ...row,
+                grade,
+                grade_point: gradePoint,
+                credit_points: (Number(row.credits) || 0) * gradePoint
+            };
+        });
 
         // Compute summary
         const totalStudents = new Set(rows.map(r => r.student_id)).size;
@@ -311,7 +363,8 @@ exports.getResultHubData = async (req, res) => {
                 totalRecords: totalWithMarks.length,
                 resultsPublished,
                 examType,
-                canPublish
+                canPublish,
+                isGraceEnabled: rows.length > 0 ? rows[0].is_grace_enabled : false
             }
         });
     } catch (error) {

@@ -177,16 +177,23 @@ const UniversityMarksView = () => {
       if (!acc[curr.subject_name]) acc[curr.subject_name] = [];
       const internal = Number(curr.internal_marks || 0);
       const external = Number(curr.external_marks || 0);
-      const totalMarks = isInternalOnly ? internal : (internal + external);
-      
-      const { grade, gradePoint } = getGradeAndPoints(totalMarks, gradingConfig.grade_scale);
-      const subjectIsPass = isPass(totalMarks, gradingConfig.pass_threshold);
+      // Use backend calculated values to respect grace marks
+      const totalMarks = curr.total_marks !== undefined ? Number(curr.total_marks) : (isInternalOnly ? internal : (internal + external));
+      const grade = curr.grade || getGradeAndPoints(totalMarks, gradingConfig.grade_scale).grade;
+      const gradePoint = curr.grade_point !== undefined ? Number(curr.grade_point) : getGradeAndPoints(totalMarks, gradingConfig.grade_scale).gradePoint;
+      const subjectIsPass = curr.result_status ? (curr.result_status === 'Pass') : isPass(totalMarks, gradingConfig.pass_threshold);
+
       const subjectId = curr.subject_id || curr.id;
       const overrideCredits = gradingConfig.subject_credits?.[subjectId];
       const credits = overrideCredits !== undefined ? Number(overrideCredits) : Number(curr.credits || 0);
+      
       acc[curr.subject_name].push({
-        ...curr, total_marks: totalMarks, grade, grade_point: gradePoint,
-        credits, credit_points: gradePoint * credits,
+        ...curr, 
+        total_marks: totalMarks, 
+        grade, 
+        grade_point: gradePoint,
+        credits, 
+        credit_points: curr.credit_points !== undefined ? Number(curr.credit_points) : (gradePoint * credits),
         result_status: subjectIsPass ? 'Pass' : 'Fail'
       });
       return acc;
@@ -208,16 +215,24 @@ const UniversityMarksView = () => {
       }
       const internal = Number(curr.internal_marks || 0);
       const external = Number(curr.external_marks || 0);
-      const totalMarks = isInternalOnly ? internal : (internal + external);
-      
-      const { grade, gradePoint } = getGradeAndPoints(totalMarks, gradingConfig.grade_scale);
+      // Use backend calculated values to respect grace marks
+      const totalMarks = curr.total_marks !== undefined ? Number(curr.total_marks) : (isInternalOnly ? internal : (internal + external));
+      const grade = curr.grade || getGradeAndPoints(totalMarks, gradingConfig.grade_scale).grade;
+      const gradePoint = curr.grade_point !== undefined ? Number(curr.grade_point) : getGradeAndPoints(totalMarks, gradingConfig.grade_scale).gradePoint;
+      const subjectIsPass = curr.result_status ? (curr.result_status === 'Pass') : isPass(totalMarks, gradingConfig.pass_threshold);
+
       const subjectId = curr.subject_id || curr.id;
       const overrideCredits = gradingConfig.subject_credits?.[subjectId];
       const credits = overrideCredits !== undefined ? Number(overrideCredits) : Number(curr.credits || 0);
+
       acc[curr.student_id].subjects.push({
-        ...curr, total_marks: totalMarks, grade, grade_point: gradePoint,
-        credits, credit_points: gradePoint * credits,
-        result_status: isPass(totalMarks, gradingConfig.pass_threshold) ? 'Pass' : 'Fail'
+        ...curr, 
+        total_marks: totalMarks, 
+        grade, 
+        grade_point: gradePoint,
+        credits, 
+        credit_points: curr.credit_points !== undefined ? Number(curr.credit_points) : (gradePoint * credits),
+        result_status: subjectIsPass ? 'Pass' : 'Fail'
       });
       return acc;
     }, {});
@@ -484,7 +499,9 @@ const UniversityMarksView = () => {
                           <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Ext</th>
                         )}
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Total</th>
-                        <th className="px-8 py-5 text-[10px] font-black text-indigo-500 uppercase tracking-widest text-center">Grace</th>
+                        {summary?.isGraceEnabled && (
+                          <th className="px-8 py-5 text-[10px] font-black text-indigo-500 uppercase tracking-widest text-center">Grace</th>
+                        )}
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Grade</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">GP</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Credits</th>
@@ -516,11 +533,13 @@ const UniversityMarksView = () => {
                             <td className="px-8 py-5 text-center">
                               <span className="text-lg font-black text-slate-900">{item.total_marks || 0}</span>
                             </td>
-                            <td className="px-8 py-5 text-center">
-                              <span className={`text-xs font-black ${Number(item.grace_marks) > 0 ? 'text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md' : 'text-slate-300 opacity-30'}`}>
-                                {item.grace_marks > 0 ? `+${item.grace_marks}` : '—'}
-                              </span>
-                            </td>
+                            {summary?.isGraceEnabled && (
+                              <td className="px-8 py-5 text-center">
+                                <span className={`text-xs font-black ${Number(item.grace_marks) > 0 ? 'text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md' : 'text-slate-300 opacity-30'}`}>
+                                  {item.grace_marks > 0 ? `+${item.grace_marks}` : '—'}
+                                </span>
+                              </td>
+                            )}
                             <td className="px-8 py-5 text-center font-black text-slate-700">{item.grade}</td>
                             <td className="px-8 py-5 text-center font-bold text-slate-500 text-xs italic">{item.grade_point}</td>
                             <td className="px-8 py-5 text-center font-bold text-slate-600">{item.credits || 0}</td>

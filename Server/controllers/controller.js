@@ -2359,7 +2359,7 @@ const getStudentResults = async (req, res) => {
           FROM ia_summary i
           FULL OUTER JOIN other_summary o ON i.student_id = o.student_id AND i.subject_id = o.subject_id
           JOIN students s2 ON COALESCE(i.student_id, o.student_id) = s2.id
-          JOIN colleges c2 ON s2."collageName" = c2.name
+          JOIN colleges c2 ON LOWER(s2."collageName") = LOWER(c2.name)
           JOIN master_semesters sem2 ON s2.semister = sem2.semester_name
           LEFT JOIN marks_workflow_status mws2 ON COALESCE(i.subject_id, o.subject_id) = mws2.subject_id 
               AND mws2.college_id = c2.id 
@@ -2391,7 +2391,7 @@ const getStudentResults = async (req, res) => {
         raw_internal.components as assessment_components
       FROM students s
       JOIN master_programs p ON s."programName" = p.name
-      LEFT JOIN colleges c ON c.name = s."collageName"
+      LEFT JOIN colleges c ON LOWER(c.name) = LOWER(s."collageName")
       JOIN exams e ON e.program_id = p.id 
           AND (e.college_id = c.id OR (e.college_id IS NULL AND e.exam_type = 2))
       JOIN master_semesters sem ON e.semester_id = sem.id
@@ -2410,6 +2410,7 @@ const getStudentResults = async (req, res) => {
         1 as exam_type,
         raw_internal.total_raw as internal_marks,
         0 as external_marks,
+        0 as grace_marks,
         raw_internal.total_raw as total_marks,
         raw_internal.batch_status as result_status,
         sem.semester_name || ' Internal Assessments' as exam_name,

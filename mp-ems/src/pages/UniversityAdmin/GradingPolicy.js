@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { 
-  ShieldCheck, Save, Plus, Trash2, Info, 
-  Settings, BarChart3, ChevronRight, AlertTriangle
+import {
+    ShieldCheck, Save, Plus, Trash2, Info,
+    Settings, BarChart3, ChevronRight, AlertTriangle
 } from "lucide-react";
 import { toast } from 'react-toastify';
 
@@ -96,9 +96,13 @@ const GradingPolicy = () => {
                 const data = await res.json();
                 // Ensure grade_scale is an array and sorted
                 const scale = Array.isArray(data.grade_scale) ? data.grade_scale : [];
+                const rawPolicy = data.grace_policy;
+                const parsedPolicy = typeof rawPolicy === 'string' ? JSON.parse(rawPolicy) : rawPolicy;
+
                 setConfig({
                     ...data,
-                    grade_scale: scale.sort((a, b) => b.min - a.min)
+                    grade_scale: scale.sort((a, b) => b.min - a.min),
+                    grace_policy: parsedPolicy || { is_enabled: false, max_total_grace: 0, max_per_subject_grace: 0 }
                 });
             } else {
                 toast.error("Failed to load grading configuration");
@@ -135,7 +139,7 @@ const GradingPolicy = () => {
         if (config.grade_scale.length === 0) {
             return toast.warning("Grade scale cannot be empty");
         }
-        
+
         const hasEmpty = config.grade_scale.some(r => !r.grade || r.min === undefined);
         if (hasEmpty) {
             return toast.warning("Please fill all grade details");
@@ -146,9 +150,9 @@ const GradingPolicy = () => {
             const token = localStorage.getItem('token');
             const res = await fetch('http://localhost:8080/api/grading/config', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}` 
+                    Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     ...config,
@@ -157,8 +161,22 @@ const GradingPolicy = () => {
             });
 
             if (res.ok) {
+                const result = await res.json();
                 toast.success("Grading policy updated successfully");
-                fetchConfig();
+                // Immediately update state with the returned config to ensure UI stays synced
+                if (result.config) {
+                    const scale = Array.isArray(result.config.grade_scale) ? result.config.grade_scale : [];
+                    const rawPolicy = result.config.grace_policy;
+                    const parsedPolicy = typeof rawPolicy === 'string' ? JSON.parse(rawPolicy) : rawPolicy;
+
+                    setConfig({
+                        ...result.config,
+                        grade_scale: scale.sort((a, b) => b.min - a.min),
+                        grace_policy: parsedPolicy || { is_enabled: false, max_total_grace: 0, max_per_subject_grace: 0 }
+                    });
+                } else {
+                    fetchConfig();
+                }
             } else {
                 const data = await res.json();
                 toast.error(data.message || "Failed to update configuration");
@@ -193,14 +211,14 @@ const GradingPolicy = () => {
                         <p className="text-slate-500 font-medium">Configure how grades, points, and SGPA are calculated.</p>
                     </div>
                 </div>
-                
+
                 <div className="flex items-center gap-4">
                     {(isSuperOrAdmin || isUniversityAdmin) && universities.length > 0 && (
                         <div className="flex flex-col">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
                                 {isSuperOrAdmin ? 'Select University' : 'University'}
                             </label>
-                            <select 
+                            <select
                                 value={selectedUni}
                                 onChange={(e) => isSuperOrAdmin && setSelectedUni(e.target.value)}
                                 disabled={!isSuperOrAdmin}
@@ -213,7 +231,7 @@ const GradingPolicy = () => {
                             </select>
                         </div>
                     )}
-                    <button 
+                    <button
                         onClick={handleSave}
                         disabled={saving}
                         className="inline-flex items-center gap-2 px-8 py-4 bg-sky-600 hover:bg-sky-700 text-white font-black rounded-2xl shadow-xl shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 mt-auto"
@@ -233,7 +251,7 @@ const GradingPolicy = () => {
                                 <BarChart3 size={16} />
                                 Grade Scale Definitions
                             </h3>
-                            <button 
+                            <button
                                 onClick={handleAddRow}
                                 className="inline-flex items-center gap-2 text-xs font-black text-sky-600 bg-sky-50 hover:bg-sky-100 px-4 py-2 rounded-xl transition-colors border border-sky-100"
                             >
@@ -255,33 +273,33 @@ const GradingPolicy = () => {
                                     {config.grade_scale.map((row, index) => (
                                         <tr key={index} className="hover:bg-slate-50/50 transition-colors group">
                                             <td className="px-8 py-4">
-                                                <input 
-                                                    type="number" 
-                                                    value={row.min} 
+                                                <input
+                                                    type="number"
+                                                    value={row.min}
                                                     onChange={(e) => handleScaleChange(index, 'min', e.target.value)}
                                                     className="w-24 h-10 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-black text-slate-700 focus:bg-white focus:border-sky-500 outline-none transition-all"
                                                 />
                                             </td>
                                             <td className="px-8 py-4">
-                                                <input 
-                                                    type="text" 
-                                                    value={row.grade} 
+                                                <input
+                                                    type="text"
+                                                    value={row.grade}
                                                     onChange={(e) => handleScaleChange(index, 'grade', e.target.value)}
                                                     placeholder="A+, O, F etc."
                                                     className="w-24 h-10 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-black text-slate-700 focus:bg-white focus:border-sky-500 outline-none transition-all uppercase"
                                                 />
                                             </td>
                                             <td className="px-8 py-4">
-                                                <input 
-                                                    type="number" 
+                                                <input
+                                                    type="number"
                                                     step="0.1"
-                                                    value={row.points} 
+                                                    value={row.points}
                                                     onChange={(e) => handleScaleChange(index, 'points', e.target.value)}
                                                     className="w-24 h-10 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-black text-slate-700 focus:bg-white focus:border-sky-500 outline-none transition-all"
                                                 />
                                             </td>
                                             <td className="px-8 py-4 text-center">
-                                                <button 
+                                                <button
                                                     onClick={() => handleRemoveRow(index)}
                                                     className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
                                                 >
@@ -304,12 +322,12 @@ const GradingPolicy = () => {
                                 <Settings size={16} />
                                 Result Parameters
                             </h3>
-                            
+
                             <div className="space-y-3 font-semibold">
                                 <label className="text-sm text-slate-700 ml-1">Overall Pass Threshold (%)</label>
                                 <div className="relative">
-                                    <input 
-                                        type="number" 
+                                    <input
+                                        type="number"
                                         value={config.pass_threshold}
                                         onChange={(e) => setConfig({ ...config, pass_threshold: Number(e.target.value) })}
                                         className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl px-5 text-lg font-black text-sky-600 outline-none focus:bg-white focus:border-sky-500 transition-all font-mono"
@@ -326,7 +344,7 @@ const GradingPolicy = () => {
                                     <h4 className="text-sm font-bold text-slate-900">Exclude Fails from SGPA</h4>
                                     <p className="text-[10px] text-slate-500 font-medium">Calculate SGPA only using earned credits (Pass subjects).</p>
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => setConfig({ ...config, calculate_sgpa_on_earned_only: !config.calculate_sgpa_on_earned_only })}
                                     className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${config.calculate_sgpa_on_earned_only ? 'bg-sky-500' : 'bg-slate-200'}`}
                                 >
@@ -347,13 +365,13 @@ const GradingPolicy = () => {
                                     <h4 className="text-sm font-bold text-slate-900">Enable Grace Marks</h4>
                                     <p className="text-[10px] text-slate-500 font-medium tracking-tight uppercase">Automatically apply grace marks on publication.</p>
                                 </div>
-                                <button 
-                                    onClick={() => setConfig({ 
-                                        ...config, 
-                                        grace_policy: { 
-                                            ...config.grace_policy, 
-                                            is_enabled: !config.grace_policy?.is_enabled 
-                                        } 
+                                <button
+                                    onClick={() => setConfig({
+                                        ...config,
+                                        grace_policy: {
+                                            ...config.grace_policy,
+                                            is_enabled: !config.grace_policy?.is_enabled
+                                        }
                                     })}
                                     className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${config.grace_policy?.is_enabled ? 'bg-sky-500' : 'bg-slate-200'}`}
                                 >
@@ -365,31 +383,36 @@ const GradingPolicy = () => {
                                 <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-4 duration-300">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Max Total</label>
-                                        <input 
-                                            type="number" 
+                                        <input
+                                            type="number"
                                             value={config.grace_policy?.max_total_grace || 0}
-                                            onChange={(e) => setConfig({ 
-                                                ...config, 
-                                                grace_policy: { 
-                                                    ...config.grace_policy, 
-                                                    max_total_grace: Number(e.target.value) 
-                                                } 
+                                            onChange={(e) => setConfig({
+                                                ...config,
+                                                grace_policy: {
+                                                    ...config.grace_policy,
+                                                    max_total_grace: Number(e.target.value)
+                                                }
                                             })}
                                             className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-black text-slate-700 outline-none focus:bg-white focus:border-sky-500 transition-all"
                                         />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Per Subject</label>
-                                        <input 
-                                            type="number" 
+                                        <input
+                                            type="number"
+                                            max="5"
                                             value={config.grace_policy?.max_per_subject_grace || 0}
-                                            onChange={(e) => setConfig({ 
-                                                ...config, 
-                                                grace_policy: { 
-                                                    ...config.grace_policy, 
-                                                    max_per_subject_grace: Number(e.target.value) 
-                                                } 
-                                            })}
+                                            onChange={(e) => {
+                                                let val = Number(e.target.value);
+                                                if (val > 5) val = 5;
+                                                setConfig({
+                                                    ...config,
+                                                    grace_policy: {
+                                                        ...config.grace_policy,
+                                                        max_per_subject_grace: val
+                                                    }
+                                                });
+                                            }}
                                             className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-black text-slate-700 outline-none focus:bg-white focus:border-sky-500 transition-all"
                                         />
                                     </div>
@@ -409,11 +432,11 @@ const GradingPolicy = () => {
                     </div>
 
                     <div className="bg-sky-900 rounded-[2rem] p-8 text-white space-y-4 shadow-xl shadow-sky-900/20">
-                         <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3">
                             <Info size={20} className="text-sky-400" />
                             <h4 className="font-black text-sm uppercase tracking-widest">Logic Guide</h4>
-                         </div>
-                         <div className="space-y-4">
+                        </div>
+                        <div className="space-y-4">
                             <div className="flex gap-4 group">
                                 <div className="w-8 h-8 rounded-full bg-sky-800 flex items-center justify-center text-xs font-black text-sky-400 group-hover:bg-sky-500 group-hover:text-white transition-colors">1</div>
                                 <p className="text-[10px] font-medium leading-relaxed opacity-80 flex-1">
@@ -426,7 +449,7 @@ const GradingPolicy = () => {
                                     Grade points are used in the calculation of SGPA: Total (Points × Credits) / Total Credits.
                                 </p>
                             </div>
-                         </div>
+                        </div>
                     </div>
                 </div>
             </div>

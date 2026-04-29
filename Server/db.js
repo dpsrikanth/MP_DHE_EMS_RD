@@ -8,7 +8,7 @@ const pool = new Pool({
   port: 5432, // Default port
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000,
 });
 
 pool.on('connect', () => {

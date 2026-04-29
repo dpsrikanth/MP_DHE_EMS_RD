@@ -66,7 +66,14 @@ exports.getGradingConfig = async (req, res) => {
 exports.updateGradingConfig = async (req, res) => {
     try {
         let universityId = req.user.university_id || req.user.college_id;
-        const { grade_scale, pass_threshold, calculate_sgpa_on_earned_only, subject_credits, targetUniversityId } = req.body;
+        const { 
+            grade_scale, 
+            pass_threshold, 
+            calculate_sgpa_on_earned_only, 
+            subject_credits, 
+            grace_policy,
+            targetUniversityId 
+        } = req.body;
 
         // SuperAdmin/admin/university_admin can override universityId via body
         const isHighLevel = req.user.role === 'superadmin' || req.user.role === 'superAdmin' || req.user.role === 'admin' || req.user.role === 'university_admin';
@@ -90,7 +97,7 @@ exports.updateGradingConfig = async (req, res) => {
                 grace_policy = EXCLUDED.grace_policy,
                 updated_at = CURRENT_TIMESTAMP
             RETURNING *
-        `, [universityId, JSON.stringify(grade_scale), pass_threshold, calculate_sgpa_on_earned_only, JSON.stringify(subject_credits || {}), JSON.stringify(req.body.grace_policy || DEFAULT_CONFIG.grace_policy)]);
+        `, [universityId, JSON.stringify(grade_scale), pass_threshold, calculate_sgpa_on_earned_only, JSON.stringify(subject_credits || {}), JSON.stringify(grace_policy || DEFAULT_CONFIG.grace_policy)]);
 
         res.status(200).json({
             message: "Grading configuration updated successfully",
