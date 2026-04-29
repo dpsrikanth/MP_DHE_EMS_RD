@@ -7,6 +7,35 @@ import {
 } from "lucide-react";
 import '../styles/FormPage.css';
 
+
+// Field helpers moved outside to prevent re-mounting and losing focus
+const F = ({ label, name: n, type = 'text', icon: Icon, placeholder, req, err, form, onChange, errors }) => (
+  <div className="form-field">
+    <label className={`form-label ${req ? 'form-label--required' : ''}`}>{label}</label>
+    <div className="form-input-wrap">
+      {Icon && <Icon size={16} className="form-input-wrap__icon" />}
+      <input name={n} type={type} value={form[n] || ''} onChange={onChange} placeholder={placeholder}
+        className={`form-input ${Icon ? 'form-input--with-icon' : ''} ${(err || errors[n]) ? 'form-input--error' : ''}`} />
+    </div>
+    {errors[n] && <p className="form-field-error">{errors[n]}</p>}
+  </div>
+);
+
+const Sel = ({ label, name: n, options, icon: Icon, req, disabled, placeholder, form, onChange, errors }) => (
+  <div className="form-field">
+    <label className={`form-label ${req ? 'form-label--required' : ''}`}>{label}</label>
+    <div className="form-input-wrap">
+      {Icon && <Icon size={16} className="form-input-wrap__icon" />}
+      <select name={n} value={form[n] || ''} onChange={onChange} disabled={disabled}
+        className={`form-select ${Icon ? 'form-select--with-icon' : ''} ${errors[n] ? 'form-input--error' : ''}`}>
+        <option value="">{placeholder || `-- Select --`}</option>
+        {options.map((opt, i) => <option key={i} value={opt.value}>{opt.label}</option>)}
+      </select>
+    </div>
+    {errors[n] && <p className="form-field-error">{errors[n]}</p>}
+  </div>
+);
+
 const StudentsForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -204,33 +233,7 @@ const StudentsForm = () => {
     } catch (err) { setErrorString(err.message); toast.error(err.message); } finally { setLoading(false); }
   };
 
-  // Field helper to reduce repetition
-  const F = ({ label, name: n, type = 'text', icon: Icon, placeholder, req, err }) => (
-    <div className="form-field">
-      <label className={`form-label ${req ? 'form-label--required' : ''}`}>{label}</label>
-      <div className="form-input-wrap">
-        {Icon && <Icon size={16} className="form-input-wrap__icon" />}
-        <input name={n} type={type} value={form[n] || ''} onChange={handleChange} placeholder={placeholder}
-          className={`form-input ${Icon ? 'form-input--with-icon' : ''} ${(err || errors[n]) ? 'form-input--error' : ''}`} />
-      </div>
-      {errors[n] && <p className="form-field-error">{errors[n]}</p>}
-    </div>
-  );
-
-  const Sel = ({ label, name: n, options, icon: Icon, req, disabled, placeholder }) => (
-    <div className="form-field">
-      <label className={`form-label ${req ? 'form-label--required' : ''}`}>{label}</label>
-      <div className="form-input-wrap">
-        {Icon && <Icon size={16} className="form-input-wrap__icon" />}
-        <select name={n} value={form[n] || ''} onChange={handleChange} disabled={disabled}
-          className={`form-select ${Icon ? 'form-select--with-icon' : ''} ${errors[n] ? 'form-input--error' : ''}`}>
-          <option value="">{placeholder || `-- Select --`}</option>
-          {options.map((opt, i) => <option key={i} value={opt.value}>{opt.label}</option>)}
-        </select>
-      </div>
-      {errors[n] && <p className="form-field-error">{errors[n]}</p>}
-    </div>
-  );
+  // Field helpers have been moved outside
 
   if (fetchingUser || dropdownLoading) return (
     <div className="form-loading"><div className="form-loading__spinner"></div><p className="form-loading__text">Loading Student Profile...</p></div>
@@ -275,51 +278,51 @@ const StudentsForm = () => {
                 <div className="form-section">
                   <div className="form-section__title"><span>Primary Identity</span></div>
                   <div className="form-grid form-grid--2">
-                    <F label="First Name" name="first_name" icon={User} placeholder="e.g. Sriram" req />
-                    <F label="Last Name" name="last_name" icon={User} placeholder="e.g. Kumar" />
+                    <F form={form} onChange={handleChange} errors={errors} label="First Name" name="first_name" icon={User} placeholder="e.g. Sriram" req />
+                    <F form={form} onChange={handleChange} errors={errors} label="Last Name" name="last_name" icon={User} placeholder="e.g. Kumar" />
                     <div className="form-field form-grid__full">
                       <label className="form-label">Full Name (Legacy System)</label>
                       <div className="form-input-wrap"><User size={16} className="form-input-wrap__icon" />
                         <input name="name" value={form.name || ''} onChange={handleChange} placeholder="e.g. Sriram Kumar" className="form-input form-input--with-icon" />
                       </div>
                     </div>
-                    <F label="Middle Name" name="middle_name" icon={User} placeholder="e.g. Singh" />
-                    <F label="Date of Birth" name="date_of_birth" type="date" icon={Calendar} />
-                    <Sel label="Gender" name="gender" icon={User} options={[{value: 'Male', label: 'Male'}, {value: 'Female', label: 'Female'}, {value: 'Other', label: 'Other'}]} placeholder="Select Gender" />
-                    <Sel label="Blood Group" name="bloodgroup" icon={Droplet} options={bloodGroups.map(b => ({ value: b, label: b }))} placeholder="Select Group" />
+                    <F form={form} onChange={handleChange} errors={errors} label="Middle Name" name="middle_name" icon={User} placeholder="e.g. Singh" />
+                    <F form={form} onChange={handleChange} errors={errors} label="Date of Birth" name="date_of_birth" type="date" icon={Calendar} />
+                    <Sel form={form} onChange={handleChange} errors={errors} label="Gender" name="gender" icon={User} options={[{value: 'Male', label: 'Male'}, {value: 'Female', label: 'Female'}, {value: 'Other', label: 'Other'}]} placeholder="Select Gender" />
+                    <Sel form={form} onChange={handleChange} errors={errors} label="Blood Group" name="bloodgroup" icon={Droplet} options={bloodGroups.map(b => ({ value: b, label: b }))} placeholder="Select Group" />
                   </div>
                 </div>
 
                 <div className="form-section">
                   <div className="form-section__title"><span>Academic Placement</span></div>
                   <div className="form-grid form-grid--2">
-                    <F label="Admission No" name="admission_no" icon={Hash} placeholder="e.g. 25C00713" req />
-                    <F label="Roll Number" name="rollnumber" icon={Hash} placeholder="e.g. 101" />
-                    <Sel label="Institutional Context" name="collageName" icon={Building2} 
+                    <F form={form} onChange={handleChange} errors={errors} label="Admission No" name="admission_no" icon={Hash} placeholder="e.g. 25C00713" req />
+                    <F form={form} onChange={handleChange} errors={errors} label="Roll Number" name="rollnumber" icon={Hash} placeholder="e.g. 101" />
+                    <Sel form={form} onChange={handleChange} errors={errors} label="Institutional Context" name="collageName" icon={Building2} 
                       options={colleges.map(c => ({ value: c.college_name || c.name, label: c.college_name || c.name }))} placeholder="Select College" />
-                    <Sel label="Governing Policy" name="policies" icon={FileText} req disabled={!form.collageName}
+                    <Sel form={form} onChange={handleChange} errors={errors} label="Governing Policy" name="policies" icon={FileText} req disabled={!form.collageName}
                       options={collegePolicies.map(p => ({ value: p.name, label: p.name }))} placeholder={form.collageName ? 'Select Policy' : 'Select College First'} />
-                    <Sel label="Academic Program" name="programName" icon={BookOpen} req disabled={!form.collageName}
+                    <Sel form={form} onChange={handleChange} errors={errors} label="Academic Program" name="programName" icon={BookOpen} req disabled={!form.collageName}
                       options={programs.map(p => ({ value: p.name, label: p.name }))} placeholder={form.collageName ? 'Select Program' : 'Select College First'} />
-                    <Sel label="Department" name="department" icon={Building2} req
+                    <Sel form={form} onChange={handleChange} errors={errors} label="Department" name="department" icon={Building2} req
                       options={departments.map(d => ({ value: d.department_name, label: d.department_name }))} placeholder="Select Department" />
-                    <Sel label="Admission Cycle" name="admission_year" icon={Calendar} req disabled={!form.collageName}
+                    <Sel form={form} onChange={handleChange} errors={errors} label="Admission Cycle" name="admission_year" icon={Calendar} req disabled={!form.collageName}
                       options={collegeAcademicYears.map(y => ({ value: y.year_name, label: y.year_name }))} placeholder={form.collageName ? 'Select Year' : 'Select College First'} />
-                    <Sel label="Current Semester" name="semister" icon={Layers} req disabled={!form.collageName}
+                    <Sel form={form} onChange={handleChange} errors={errors} label="Current Semester" name="semister" icon={Layers} req disabled={!form.collageName}
                       options={collegeSemesters.map(s => ({ value: s.semester_name, label: s.semester_name }))} placeholder={form.collageName ? 'Select Semester' : 'Select College First'} />
-                    <Sel label="Academic Batches" name="batch" icon={Layers} req disabled={!form.programName}
+                    <Sel form={form} onChange={handleChange} errors={errors} label="Academic Batches" name="batch" icon={Layers} req disabled={!form.programName}
                       options={batches.filter(b => !b.program_name || b.program_name === form.programName).map(b => ({ value: b.batch_name, label: `${b.batch_name} ${b.academic_year ? '('+b.academic_year+')' : ''}` }))} placeholder={form.programName ? 'Select Batch' : 'Select Program First'} />
-                    <F label="Section" name="section" icon={BookOpen} placeholder="e.g. Economics" />
+                    <F form={form} onChange={handleChange} errors={errors} label="Section" name="section" icon={BookOpen} placeholder="e.g. Economics" />
                   </div>
                 </div>
 
                 <div className="form-section">
                   <div className="form-section__title"><span>National Registry & Demographics</span></div>
                   <div className="form-grid form-grid--2">
-                    <F label="Aadhar ID" name="adharnumber" icon={IdCard} placeholder="e.g. 1234-5678-9012" />
-                    <F label="Birth Place" name="birth_place" icon={MapPin} placeholder="e.g. Bhopal" />
-                    <F label="Native Language" name="language" icon={FileText} placeholder="e.g. Hindi" />
-                    <F label="RTE Status" name="rte" icon={Shield} placeholder="e.g. Yes/No" />
+                    <F form={form} onChange={handleChange} errors={errors} label="Aadhar ID" name="adharnumber" icon={IdCard} placeholder="e.g. 1234-5678-9012" />
+                    <F form={form} onChange={handleChange} errors={errors} label="Birth Place" name="birth_place" icon={MapPin} placeholder="e.g. Bhopal" />
+                    <F form={form} onChange={handleChange} errors={errors} label="Native Language" name="language" icon={FileText} placeholder="e.g. Hindi" />
+                    <F form={form} onChange={handleChange} errors={errors} label="RTE Status" name="rte" icon={Shield} placeholder="e.g. Yes/No" />
                   </div>
                 </div>
 
@@ -331,20 +334,20 @@ const StudentsForm = () => {
                 <div className="form-section">
                   <div className="form-section__title"><span>Communication Identity</span></div>
                   <div className="form-grid form-grid--2">
-                    <F label="Primary Email" name="email" type="email" icon={Mail} placeholder="e.g. student@example.com" />
-                    <F label="Primary Contact" name="contactNumber" icon={Phone} placeholder="e.g. 9876543210" />
-                    <F label="Alternate Phone" name="phone" icon={Phone} placeholder="e.g. 9876543210" />
-                    <Sel label="SMS Notifications" name="sms_enabled" icon={Mail} options={[{value: 'Yes', label: 'Enabled'}, {value: 'No', label: 'Disabled'}]} />
+                    <F form={form} onChange={handleChange} errors={errors} label="Primary Email" name="email" type="email" icon={Mail} placeholder="e.g. student@example.com" />
+                    <F form={form} onChange={handleChange} errors={errors} label="Primary Contact" name="contactNumber" icon={Phone} placeholder="e.g. 9876543210" />
+                    <F form={form} onChange={handleChange} errors={errors} label="Alternate Phone" name="phone" icon={Phone} placeholder="e.g. 9876543210" />
+                    <Sel form={form} onChange={handleChange} errors={errors} label="SMS Notifications" name="sms_enabled" icon={Mail} options={[{value: 'Yes', label: 'Enabled'}, {value: 'No', label: 'Disabled'}]} />
                   </div>
                 </div>
 
                 <div className="form-section">
                   <div className="form-section__title"><span>Geographic Profile</span></div>
                   <div className="form-grid form-grid--2">
-                    <F label="Building/Street" name="address_line_1" icon={MapPin} placeholder="e.g. 123 Main St" />
-                    <F label="City" name="city" icon={MapPin} placeholder="e.g. Bhopal" />
-                    <F label="State/Province" name="state" icon={MapPin} placeholder="e.g. Madhya Pradesh" />
-                    <F label="Postal Code" name="pin_code" icon={Hash} placeholder="e.g. 462001" />
+                    <F form={form} onChange={handleChange} errors={errors} label="Building/Street" name="address_line_1" icon={MapPin} placeholder="e.g. 123 Main St" />
+                    <F form={form} onChange={handleChange} errors={errors} label="City" name="city" icon={MapPin} placeholder="e.g. Bhopal" />
+                    <F form={form} onChange={handleChange} errors={errors} label="State/Province" name="state" icon={MapPin} placeholder="e.g. Madhya Pradesh" />
+                    <F form={form} onChange={handleChange} errors={errors} label="Postal Code" name="pin_code" icon={Hash} placeholder="e.g. 462001" />
                     <div className="form-field form-grid__full">
                       <label className="form-label">Extended Address Description</label>
                       <textarea name="address" value={form.address || ''} onChange={handleChange} placeholder="Physical mailing address details..." rows={3} className="form-textarea" />
@@ -356,19 +359,19 @@ const StudentsForm = () => {
                   <div className="form-section__title"><span>Parental Registry</span></div>
                   <div className="form-grid form-grid--2">
                     <div className="form-field form-grid__full">
-                      <F label="Father's Legal Name" name="fatherName" icon={User} placeholder="Full Name" />
+                      <F form={form} onChange={handleChange} errors={errors} label="Father's Legal Name" name="fatherName" icon={User} placeholder="Full Name" />
                     </div>
-                    <F label="Father Mobile" name="father_mobile_phone" icon={Phone} />
-                    <F label="Mother Legal Name" name="mother_first_name" icon={User} placeholder="Full Name" />
-                    <F label="Mother Mobile" name="mother_mobile_phone" icon={Phone} />
+                    <F form={form} onChange={handleChange} errors={errors} label="Father Mobile" name="father_mobile_phone" icon={Phone} />
+                    <F form={form} onChange={handleChange} errors={errors} label="Mother Legal Name" name="mother_first_name" icon={User} placeholder="Full Name" />
+                    <F form={form} onChange={handleChange} errors={errors} label="Mother Mobile" name="mother_mobile_phone" icon={Phone} />
                   </div>
                 </div>
 
                 <div className="form-section">
                   <div className="form-section__title"><span>Operational Status</span></div>
                   <div className="form-grid form-grid--2">
-                    <Sel label="Academic Status" name="student_status" icon={Activity} options={[{value: 'Active', label: 'Active'}, {value: 'Inactive', label: 'Inactive'}]} />
-                    <Sel label="Residancy Type" name="hostel_or_day_scholar" icon={Building2} options={[{value: 'Day Scholar', label: 'Day Scholar'}, {value: 'Hosteller', label: 'Hosteller'}]} />
+                    <Sel form={form} onChange={handleChange} errors={errors} label="Academic Status" name="student_status" icon={Activity} options={[{value: 'Active', label: 'Active'}, {value: 'Inactive', label: 'Inactive'}]} />
+                    <Sel form={form} onChange={handleChange} errors={errors} label="Residancy Type" name="hostel_or_day_scholar" icon={Building2} options={[{value: 'Day Scholar', label: 'Day Scholar'}, {value: 'Hosteller', label: 'Hosteller'}]} />
                   </div>
                 </div>
 
