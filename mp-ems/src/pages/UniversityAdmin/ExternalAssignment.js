@@ -5,6 +5,7 @@ import {
   Building, Calendar, Info, ShieldCheck, Hash
 } from "lucide-react";
 import { toast } from 'react-toastify';
+import { getApiUrl } from '../../config';
 
 const ExternalAssignment = () => {
   const [faculties, setFaculties] = useState([]);
@@ -28,9 +29,9 @@ const ExternalAssignment = () => {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [facultyRes, pendingRes, assignmentRes] = await Promise.all([
-        fetch('http://localhost:8080/api/university-admin/external-faculties', { headers }),
-        fetch('http://localhost:8080/api/university-admin/pending-external-assignments', { headers }),
-        fetch('http://localhost:8080/api/university-admin/external-assignments', { headers })
+        fetch(getApiUrl('/university-admin/external-faculties'), { headers }),
+        fetch(getApiUrl('/university-admin/pending-external-assignments'), { headers }),
+        fetch(getApiUrl('/university-admin/external-assignments'), { headers })
       ]);
 
       if (facultyRes.ok) setFaculties(await facultyRes.json());
@@ -68,7 +69,7 @@ const ExternalAssignment = () => {
       // Current API handles multiple subjects for one exam. We'll send multiple requests or update API.
       // Let's send one by one for now for simplicity as per current API structure.
       for (const examId of selectedExams) {
-        const res = await fetch('http://localhost:8080/api/university-admin/assign-external-faculty', {
+        const res = await fetch(getApiUrl('/university-admin/assign-external-faculty'), {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',

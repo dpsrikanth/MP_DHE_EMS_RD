@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import Select, { components } from 'react-select';
 import { GraduationCap, ArrowLeft, Check, Search, ChevronDown, MapPin, Map, X } from "lucide-react";
 import '../styles/FormPage.css';
+import { getApiUrl } from '../config';
 
 const CheckboxOption = (props) => (
   <components.Option {...props}>
@@ -42,7 +43,7 @@ const CollegesForm = () => {
   const fetchMasters = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/masters', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(getApiUrl('/masters'), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) setMasterData(await res.json());
     } catch (err) { console.error('Error fetching masters:', err); }
   };
@@ -50,7 +51,7 @@ const CollegesForm = () => {
   const fetchUniversities = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/universities', { headers: { Authorization: `Bearer ${token}` } });
+      const response = await fetch(getApiUrl('/universities'), { headers: { Authorization: `Bearer ${token}` } });
       if (response.ok) {
         const data = await response.json();
         setUniversities((data || []).filter(u => u.status === true || u.status === 1 || u.status === '1' || u.status === 'true'));
@@ -61,7 +62,7 @@ const CollegesForm = () => {
   const loadCollege = async (collegeId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/colleges', { headers: { Authorization: `Bearer ${token}` } });
+      const response = await fetch(getApiUrl('/colleges'), { headers: { Authorization: `Bearer ${token}` } });
       if (!response.ok) throw new Error('Failed to fetch colleges');
       const data = await response.json();
       const college = data.find(c => c.id.toString() === collegeId);
@@ -77,7 +78,7 @@ const CollegesForm = () => {
     try {
       setIsConfigLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/universities/${uId}/config`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(getApiUrl(`/universities/${uId}/config`), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) setUniversityConfig(await res.json());
     } catch (err) { console.error('Error fetching university config:', err); } finally { setIsConfigLoading(false); }
   };
@@ -85,7 +86,7 @@ const CollegesForm = () => {
   const fetchCollegeConfig = async (cId) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/colleges/${cId}/config`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(getApiUrl(`/colleges/${cId}/config`), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
         setSelectedConfig({ policies: data.policies || [], programs: data.programs || [], academicYears: data.academicYears || [], semesters: data.semesters || [] });
@@ -127,13 +128,13 @@ const CollegesForm = () => {
       setSavingConfig(true);
       const token = localStorage.getItem('token');
       if (!form.name || !form.university_id) { setSavingConfig(false); return toast.warning('College name and university are required'); }
-      const url = isEditing ? `http://localhost:8080/api/colleges/${id}` : 'http://localhost:8080/api/colleges';
+      const url = isEditing ? getApiUrl(`/colleges/${id}`) : getApiUrl('/colleges');
       const method = isEditing ? 'PUT' : 'POST';
       const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(form) });
       if (!response.ok) throw new Error('Failed to save');
       const savedCollege = await response.json();
       const collegeId = isEditing ? id : savedCollege.id;
-      await fetch(`http://localhost:8080/api/colleges/${collegeId}/config`, {
+      await fetch(getApiUrl(`/colleges/${collegeId}/config`), {
         method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(selectedConfig)
       });
       toast.success(savedCollege.message || (isEditing ? 'College updated successfully!' : 'College added successfully!'));

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../../utils/dateUtils';
+import { getApiUrl } from '../../config';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ const Dashboard = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/college-admin/dashboard-stats`, {
+      const response = await fetch(getApiUrl('/college-admin/dashboard-stats'), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -55,7 +56,7 @@ const Dashboard = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/college-admin/notifications`, {
+      const response = await fetch(getApiUrl('/college-admin/notifications'), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -71,7 +72,7 @@ const Dashboard = () => {
 
   const markAsRead = async (id) => {
     try {
-      const response = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/college-admin/notifications/${id}/read`, {
+      const response = await fetch(getApiUrl(`/college-admin/notifications/${id}/read`), {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { getApiUrl } from '../config';
 
 const SessionMonitor = ({ children }) => {
   const [showWarning, setShowWarning] = useState(false);
@@ -80,10 +81,10 @@ const SessionMonitor = ({ children }) => {
   const handleExtendSession = async () => {
     try {
       // Background request to refresh token using the HttpOnly cookie
-      const response = await fetch('http://localhost:8080/api/refresh-token', {
+      const response = await fetch(getApiUrl('/refresh-token'), {
         method: 'POST',
         // Important: we need to send credentials to ensure the HttpOnly cookie is included
-        credentials: 'dummy_or_include_based_on_cors' 
+        credentials: 'include' 
       });
 
       // Actually, since axios or fetch requires specific cors config for credentials, we must add credentials: 'include'.
@@ -93,7 +94,7 @@ const SessionMonitor = ({ children }) => {
 
   const handleExtend = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/refresh-token', {
+      const response = await fetch(getApiUrl('/refresh-token'), {
         method: 'POST',
         credentials: 'include' // sends HttpOnly cookies
       });

@@ -11,6 +11,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { getApiUrl } from '../config';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -81,7 +82,7 @@ const Register = () => {
   const sendOtp = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8080/api/register', {
+      const response = await fetch(getApiUrl('/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email })
@@ -118,7 +119,7 @@ const Register = () => {
       }
       setLoading(true);
       try {
-        const response = await fetch('http://localhost:8080/api/verify-otp', {
+        const response = await fetch(getApiUrl('/verify-otp'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: formData.email, otp: otp })
@@ -145,7 +146,7 @@ const Register = () => {
       if (!validateForm()) return;
       setLoading(true);
       try {
-        const response = await fetch('http://localhost:8080/api/set-password', {
+        const response = await fetch(getApiUrl('/set-password'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: formData.email, password: formData.password })

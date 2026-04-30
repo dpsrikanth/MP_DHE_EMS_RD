@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import { BookOpen, CheckCircle, Clock, ShieldAlert, ChevronRight, User, Search, X } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { TableSearch } from '../../components/TableControls';
+import { getApiUrl } from '../../config';
 
 const FacultyDashboard = () => {
     const [assignedSubjects, setAssignedSubjects] = useState([]);
@@ -25,7 +26,7 @@ const FacultyDashboard = () => {
             const collegeId = user ? user.college_id : 1;
 
             // 1. Fetch Assigned Subjects
-            const subRes = await fetch(`http://localhost:8080/api/faculty-marks/assigned-subjects/${teacherId}`, {
+            const subRes = await fetch(getApiUrl(`/faculty-marks/assigned-subjects/${teacherId}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -34,7 +35,7 @@ const FacultyDashboard = () => {
                 setAssignedSubjects(subjects || []);
 
                 // 2. Fetch Workflow Status for overall tracking
-                const statusRes = await fetch(`http://localhost:8080/api/college-admin/marks-tracking?college_id=${collegeId}`, {
+                const statusRes = await fetch(getApiUrl(`/college-admin/marks-tracking?college_id=${collegeId}`), {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 if (statusRes.ok) {

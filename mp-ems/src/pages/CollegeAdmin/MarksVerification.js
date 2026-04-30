@@ -4,6 +4,7 @@ import { CheckCircle, Clock, ShieldAlert, FileText, ChevronRight, Lock, Building
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
+import { getApiUrl } from '../../config';
 
 const MarksVerification = () => {
     const [trackingData, setTrackingData] = useState([]);
@@ -34,7 +35,7 @@ const MarksVerification = () => {
             const user = userStr ? JSON.parse(userStr) : {};
             const collegeId = user.college_id;
 
-            let url = `http://localhost:8080/api/college-admin/marks-tracking?exclude_pending=true`;
+            let url = getApiUrl('/college-admin/marks-tracking?exclude_pending=true');
             if (collegeId) {
                 url += `&college_id=${collegeId}`;
             }
@@ -80,7 +81,7 @@ const MarksVerification = () => {
         setIsUnlocking(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/college-admin/unlock-marks`, {
+            const res = await fetch(getApiUrl('/college-admin/unlock-marks'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
@@ -111,7 +112,7 @@ const MarksVerification = () => {
         setIsUnlocking(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/college-admin/send-back-correction`, {
+            const res = await fetch(getApiUrl('/college-admin/send-back-correction'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
@@ -143,7 +144,7 @@ const MarksVerification = () => {
         setLoadingLogs(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/college-admin/marks-audit-log?subject_id=${item.subject_id}&workflow_id=${item.id}`, {
+            const res = await fetch(getApiUrl(`/college-admin/marks-audit-log?subject_id=${item.subject_id}&workflow_id=${item.id}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {

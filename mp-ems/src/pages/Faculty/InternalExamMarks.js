@@ -16,6 +16,7 @@ import {
     AlertCircle
 } from "lucide-react";
 import { TableSearch } from '../../components/TableControls';
+import { API_ENDPOINTS, getApiUrl } from '../../config';
 
 const InternalExamMarks = () => {
     // Context States
@@ -52,23 +53,23 @@ const InternalExamMarks = () => {
             const headers = { Authorization: `Bearer ${token}` };
 
             // Fetch Years
-            const yearsRes = await fetch('http://localhost:8080/api/academic-years', { headers });
+            const yearsRes = await fetch(API_ENDPOINTS.ACADEMIC_YEARS, { headers });
             if (yearsRes.ok) setAcademicYears(await yearsRes.json());
 
             // Fetch Semesters
-            const semRes = await fetch('http://localhost:8080/api/semesters', { headers });
+            const semRes = await fetch(API_ENDPOINTS.SEMESTERS, { headers });
             if (semRes.ok) setSemesters(await semRes.json());
 
             // Fetch Rounds
-            const roundsRes = await fetch(`http://localhost:8080/api/faculty-marks/exam-rounds?teacher_id=${teacherId}`, { headers });
+            const roundsRes = await fetch(getApiUrl(`/faculty-marks/exam-rounds?teacher_id=${teacherId}`), { headers });
             if (roundsRes.ok) setRounds(await roundsRes.json());
 
             // Fetch Assigned Subjects
-            const subjectsRes = await fetch(`http://localhost:8080/api/faculty-marks/assigned-subjects/${teacherId}`, { headers });
+            const subjectsRes = await fetch(getApiUrl(`/faculty-marks/assigned-subjects/${teacherId}`), { headers });
             if (subjectsRes.ok) setAssignedSubjects(await subjectsRes.json());
 
             // Fetch schedules for context awareness
-            const schedulesRes = await fetch('http://localhost:8080/api/internal-exams/schedules', { headers });
+            const schedulesRes = await fetch(API_ENDPOINTS.INTERNAL_EXAM_SCHEDULES, { headers });
             if (schedulesRes.ok) setSchedules(await schedulesRes.json());
 
         } catch (err) {
@@ -93,7 +94,7 @@ const InternalExamMarks = () => {
         
         try {
             const token = localStorage.getItem('token');
-            const url = `http://localhost:8080/api/faculty-marks/students-for-round?subject_id=${subject.subject_id}&round_name=${selectedRound.value}&college_id=${subject.college_id}&semester_id=${selectedSem.value}&academic_year_id=${selectedYear.value}&section=${encodeURIComponent(subject.section)}`;
+            const url = getApiUrl(`/faculty-marks/students-for-round?subject_id=${subject.subject_id}&round_name=${selectedRound.value}&college_id=${subject.college_id}&semester_id=${selectedSem.value}&academic_year_id=${selectedYear.value}&section=${encodeURIComponent(subject.section)}`);
             
             const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
             if (res.ok) {
@@ -148,7 +149,7 @@ const InternalExamMarks = () => {
                 is_absent: data.isAbsent
             }));
 
-            const res = await fetch('http://localhost:8080/api/faculty-marks/enter-marks', {
+            const res = await fetch(API_ENDPOINTS.FACULTY_MARKS_ENTER, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
@@ -190,7 +191,7 @@ const InternalExamMarks = () => {
         setIsSaving(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/faculty-marks/submit-marks', {
+            const res = await fetch(getApiUrl('/faculty-marks/submit-marks'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({

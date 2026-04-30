@@ -15,6 +15,7 @@ import {
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import { getApiUrl } from '../config';
 
 const Departments = () => {
   const navigate = useNavigate();
@@ -62,7 +63,7 @@ const Departments = () => {
     try {
       const token = localStorage.getItem('token');
       // Fetch departments
-      const response = await fetch('http://localhost:8080/api/master-departments', {
+      const response = await fetch(getApiUrl('/master-departments'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) {
@@ -73,7 +74,7 @@ const Departments = () => {
       setData(result || []);
 
       // Fetch colleges for dropdown
-      const collegeResponse = await fetch('http://localhost:8080/api/colleges', {
+      const collegeResponse = await fetch(getApiUrl('/colleges'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (collegeResponse.ok) {
@@ -97,7 +98,8 @@ const Departments = () => {
     if (!deleteTarget) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/master-departments/${deleteTarget.id}`, {
+      const url = getApiUrl(`/master-departments/${deleteTarget.id}`);
+      const res = await fetch(url, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

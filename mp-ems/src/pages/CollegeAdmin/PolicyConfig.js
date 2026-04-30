@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import Select from 'react-select';
 import { ShieldCheck, Save, Pencil, Trash2, X, Search } from "lucide-react";
 import { TableSearch } from '../../components/TableControls';
+import { getApiUrl } from '../../config';
 
 const PolicyConfig = () => {
     const [policies, setPolicies] = useState([]);
@@ -86,7 +87,7 @@ const PolicyConfig = () => {
     const fetchSavedMappings = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/college-admin/policy-mappings', {
+            const res = await fetch(getApiUrl('/college-admin/policy-mappings'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -103,7 +104,7 @@ const PolicyConfig = () => {
             setLoading(true);
             const token = localStorage.getItem('token');
             // For a real app, you would fetch these from specific endpoints or a master endpoint
-            const res = await fetch('http://localhost:8080/api/masters', {
+            const res = await fetch(getApiUrl('/masters'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -131,7 +132,7 @@ const PolicyConfig = () => {
             const collegeId = localStorage.getItem('collegeId');
 
             // 1. Map Program & Semester to Policy
-            await fetch('http://localhost:8080/api/college-admin/map-policy', {
+            await fetch(getApiUrl('/college-admin/map-policy'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
@@ -146,7 +147,7 @@ const PolicyConfig = () => {
             // 2. Map Subjects
             if (selectedSubjects.length > 0) {
                 for (let subject of selectedSubjects) {
-                    await fetch('http://localhost:8080/api/college-admin/map-subject', {
+                    await fetch(getApiUrl('/college-admin/map-subject'), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                         body: JSON.stringify({
@@ -179,7 +180,7 @@ const PolicyConfig = () => {
         if (!deleteTarget) return;
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/college-admin/policy-mappings/${deleteTarget.id}`, {
+            const res = await fetch(getApiUrl(`/college-admin/policy-mappings/${deleteTarget.id}`), {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -208,7 +209,7 @@ const PolicyConfig = () => {
         }
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/college-admin/policy-mappings/${editingMapping.id}`, {
+            const res = await fetch(getApiUrl(`/college-admin/policy-mappings/${editingMapping.id}`), {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify(editingMapping)

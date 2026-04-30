@@ -4,6 +4,7 @@ import {
     Settings, BarChart3, ChevronRight, AlertTriangle
 } from "lucide-react";
 import { toast } from 'react-toastify';
+import { getApiUrl } from '../../config';
 
 const GradingPolicy = () => {
     const [config, setConfig] = useState({
@@ -33,7 +34,7 @@ const GradingPolicy = () => {
     const fetchUniversities = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/universities', {
+            const res = await fetch(getApiUrl('/universities'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -52,7 +53,7 @@ const GradingPolicy = () => {
         try {
             const token = localStorage.getItem('token');
             const uniId = localStorage.getItem('universityId') || user.university_id;
-            const res = await fetch('http://localhost:8080/api/universities', {
+            const res = await fetch(getApiUrl('/universities'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -81,7 +82,7 @@ const GradingPolicy = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            let url = 'http://localhost:8080/api/grading/config';
+            let url = getApiUrl('/grading/config');
             if ((isSuperOrAdmin || isUniversityAdmin) && selectedUni) {
                 url += `?targetUniversityId=${selectedUni}`;
             }
@@ -140,7 +141,7 @@ const GradingPolicy = () => {
         setSaving(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/grading/config', {
+            const res = await fetch(getApiUrl('/grading/config'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

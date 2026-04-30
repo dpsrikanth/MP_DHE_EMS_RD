@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { API_ENDPOINTS } from '../config';
 
 const ChangePasswordModal = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/change-password', {
+      const response = await fetch(API_ENDPOINTS.CHANGE_PASSWORD, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

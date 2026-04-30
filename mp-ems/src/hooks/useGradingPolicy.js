@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getApiUrl } from '../config';
 
 /**
  * Custom hook to fetch the grading configuration for the current university.
@@ -17,7 +18,7 @@ export const useGradingPolicy = () => {
                     return;
                 }
 
-                const res = await fetch('http://localhost:8080/api/grading/config', {
+                const res = await fetch(getApiUrl('/grading/config'), {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 

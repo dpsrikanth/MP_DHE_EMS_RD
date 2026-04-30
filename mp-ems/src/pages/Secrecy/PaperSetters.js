@@ -3,6 +3,7 @@ import { Users, Eye, Edit3, X, UserPlus, FileText, Smartphone, HardDrive, Gradua
 import authUtils from '../../utils/authUtils';
 import { toast } from 'react-toastify';
 import { TableSearch } from '../../components/TableControls';
+import { getApiUrl } from '../../config';
 
 const SecrecyPaperSetters = () => {
   const [paperSetters, setPaperSetters] = useState([]);
@@ -42,7 +43,7 @@ const SecrecyPaperSetters = () => {
 
     const fetchDepartments = async () => {
       try {
-        const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/master-departments`, {
+        const res = await fetch(getApiUrl('/master-departments'), {
           headers: authUtils.getAuthHeader()
         });
         if (res.ok) setDepartments(await res.json());
@@ -51,7 +52,7 @@ const SecrecyPaperSetters = () => {
 
     const fetchDesignations = async () => {
       try {
-        const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/master-designations`, {
+        const res = await fetch(getApiUrl('/master-designations'), {
           headers: authUtils.getAuthHeader()
         });
         if (res.ok) setDesignations(await res.json());
@@ -60,7 +61,7 @@ const SecrecyPaperSetters = () => {
 
     const fetchAvailableSubjects = async () => {
       try {
-        const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/master-subjects`, {
+        const res = await fetch(getApiUrl('/master-subjects'), {
           headers: authUtils.getAuthHeader()
         });
         if (res.ok) setAvailableSubjects(await res.json());
@@ -72,7 +73,7 @@ const SecrecyPaperSetters = () => {
 
   const fetchSetters = async () => {
     try {
-      const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/secrecy/setters`, {
+      const res = await fetch(getApiUrl('/secrecy/setters'), {
         headers: authUtils.getAuthHeader()
       });
       if (res.ok) setPaperSetters(await res.json());
@@ -120,7 +121,7 @@ const SecrecyPaperSetters = () => {
       return;
     }
     try {
-      const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/secrecy/setters/new`, {
+      const res = await fetch(getApiUrl('/secrecy/setters/new'), {
         method: 'POST',
         headers: { ...authUtils.getAuthHeader(), 'Content-Type': 'application/json' },
         body: JSON.stringify(newSetterForm)
@@ -142,7 +143,7 @@ const SecrecyPaperSetters = () => {
 
   const handleEditSave = async () => {
     try {
-      const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/secrecy/setters/${selectedSetter.id}`, {
+      const res = await fetch(getApiUrl(`/secrecy/setters/${selectedSetter.id}`), {
         method: 'PUT',
         headers: { ...authUtils.getAuthHeader(), 'Content-Type': 'application/json' },
         body: JSON.stringify(editSetterForm)

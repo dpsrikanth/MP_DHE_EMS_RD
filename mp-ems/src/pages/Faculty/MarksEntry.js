@@ -4,6 +4,7 @@ import Select from 'react-select';
 import { BookOpen, Users, Save, CheckCircle, ShieldAlert, Search, X } from "lucide-react";
 import { useLocation } from 'react-router-dom';
 import { TableSearch } from '../../components/TableControls';
+import { API_ENDPOINTS, getApiUrl } from '../../config';
 
 const MarksEntry = () => {
     const location = useLocation();
@@ -45,8 +46,7 @@ const MarksEntry = () => {
             const token = localStorage.getItem('token');
             const userStr = localStorage.getItem('user');
             const teacherId = userStr ? JSON.parse(userStr).teacher_id : 1;
-
-            const res = await fetch(`http://localhost:8080/api/faculty-marks/assigned-subjects/${teacherId}`, {
+            const res = await fetch(getApiUrl(`/faculty-marks/assigned-subjects/${teacherId}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -67,7 +67,7 @@ const MarksEntry = () => {
             const token = localStorage.getItem('token');
 
             // 1. Fetch Marks Structure for this subject
-            const structureRes = await fetch(`http://localhost:8080/api/college-admin/marks-structure/${assignment.subject_id}`, {
+            const structureRes = await fetch(getApiUrl(`/college-admin/marks-structure/${assignment.subject_id}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             let structureData = [];
@@ -75,7 +75,7 @@ const MarksEntry = () => {
             setMarksStructure(structureData);
 
             // 2. Fetch Students for this subject
-            const studentsRes = await fetch(`http://localhost:8080/api/faculty-marks/students?college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&program_id=${assignment.program_id}`, {
+            const studentsRes = await fetch(getApiUrl(`/faculty-marks/students?college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&program_id=${assignment.program_id}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             let studentsData = [];
@@ -83,7 +83,7 @@ const MarksEntry = () => {
             setStudents(studentsData);
 
             // 3. Fetch already entered marks and status
-            const marksRes = await fetch(`http://localhost:8080/api/faculty-marks/entered-marks?subject_id=${assignment.subject_id}&section=${assignment.section}&college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&academic_year_id=${assignment.academic_year_id}`, {
+            const marksRes = await fetch(getApiUrl(`/faculty-marks/entered-marks?subject_id=${assignment.subject_id}&section=${assignment.section}&college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&academic_year_id=${assignment.academic_year_id}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             let existingMarks = [];
@@ -100,7 +100,7 @@ const MarksEntry = () => {
             setReviews(reviewsData);
 
             // 4. Fetch Internal Schedules for this subject & college
-            const internalRes = await fetch(`http://localhost:8080/api/internal-exams/schedules?program_id=${assignment.program_id}&semester_id=${assignment.semester_id}&academic_year_id=${assignment.academic_year_id}`, {
+            const internalRes = await fetch(getApiUrl(`/internal-exams/schedules?program_id=${assignment.program_id}&semester_id=${assignment.semester_id}&academic_year_id=${assignment.academic_year_id}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (internalRes.ok) {
@@ -313,9 +313,12 @@ const MarksEntry = () => {
                 return;
             }
 
-            const res = await fetch('http://localhost:8080/api/faculty-marks/enter-marks', {
+            const response = await fetch(API_ENDPOINTS.FACULTY_MARKS_ENTER, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     marksData: payload,
                     faculty_id: teacherId,
@@ -326,9 +329,9 @@ const MarksEntry = () => {
                 })
             });
 
-            const responseData = await res.json();
+            const responseData = await response.json();
 
-            if (res.ok) {
+            if (response.ok) {
                 toast.success("Marks saved successfully!");
                 fetchSubjectDetails(assignmentStr);
             } else {
@@ -379,7 +382,7 @@ const MarksEntry = () => {
             // Even if payload is empty, we proceed to submit if some marks exist in DB, 
             // but usually we want to save current state.
             if (payload.length > 0) {
-                const saveRes = await fetch('http://localhost:8080/api/faculty-marks/enter-marks', {
+                const saveRes = await fetch(API_ENDPOINTS.FACULTY_MARKS_ENTER, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                     body: JSON.stringify({
@@ -398,7 +401,7 @@ const MarksEntry = () => {
             }
 
             // 2. Then Submit
-            const res = await fetch('http://localhost:8080/api/faculty-marks/submit-marks', {
+            const res = await fetch(API_ENDPOINTS.FACULTY_MARKS_SUBMIT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
@@ -435,7 +438,7 @@ const MarksEntry = () => {
         setIsSaving(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/faculty-marks/request-unlock', {
+            const res = await fetch(getApiUrl('/faculty-marks/request-unlock'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({

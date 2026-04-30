@@ -16,6 +16,7 @@ import { MdDelete } from "react-icons/md";
 import { formatDate } from '../utils/dateUtils';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader } from '../components/TableControls';
+import { getApiUrl } from '../config';
 
 const MilestoneManagement = () => {
   const navigate = useNavigate();
@@ -89,7 +90,7 @@ const MilestoneManagement = () => {
   const fetchValidationSetting = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/settings/roadmap_validation', {
+      const response = await fetch(getApiUrl('/settings/roadmap_validation'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -105,7 +106,7 @@ const MilestoneManagement = () => {
     try {
       setUpdatingSettings(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/settings/roadmap_validation', {
+      const response = await fetch(getApiUrl('/settings/roadmap_validation'), {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -131,12 +132,11 @@ const MilestoneManagement = () => {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-      const API_URL = 'http://localhost:8080/api';
 
       const [yearsRes, programsRes, semestersRes] = await Promise.all([
-        fetch(`${API_URL}/academic-years`, { headers }),
-        fetch(`${API_URL}/programs`, { headers }),
-        fetch(`${API_URL}/semesters`, { headers })
+        fetch(getApiUrl('/academic-years'), { headers }),
+        fetch(getApiUrl('/programs'), { headers }),
+        fetch(getApiUrl('/semesters'), { headers })
       ]);
 
       setMetadata({
@@ -158,7 +158,7 @@ const MilestoneManagement = () => {
       if (filters.program_id) queryParams.append('program_id', filters.program_id);
       if (filters.semester_id) queryParams.append('semester_id', filters.semester_id);
       
-      const response = await fetch(`http://localhost:8080/api/milestones?${queryParams.toString()}`, {
+      const response = await fetch(getApiUrl(`/milestones?${queryParams.toString()}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -237,8 +237,8 @@ const MilestoneManagement = () => {
       const token = localStorage.getItem('token');
       const method = formData.id ? 'PUT' : 'POST';
       const url = formData.id 
-        ? `http://localhost:8080/api/milestones/${formData.id}` 
-        : 'http://localhost:8080/api/milestones';
+        ? getApiUrl(`/milestones/${formData.id}`) 
+        : getApiUrl('/milestones');
 
       const response = await fetch(url, {
         method,
@@ -259,7 +259,7 @@ const MilestoneManagement = () => {
   const confirmDelete = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/milestones/${deleteTarget.id}`, {
+      const response = await fetch(getApiUrl(`/milestones/${deleteTarget.id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import { useNavigate, useParams } from 'react-router-dom';
 import Select from 'react-select';
 import { Users, Save, ArrowLeft } from "lucide-react";
+import { getApiUrl } from '../../config';
 
 const FacultyAssignmentForm = () => {
     const navigate = useNavigate();
@@ -38,7 +39,7 @@ const FacultyAssignmentForm = () => {
     const fetchMasterData = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/masters', {
+            const res = await fetch(getApiUrl('/masters'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             let masterData = {};
@@ -51,7 +52,7 @@ const FacultyAssignmentForm = () => {
             }
 
             // Fetch Teachers
-            const teacherRes = await fetch('http://localhost:8080/api/master-teachers', {
+            const teacherRes = await fetch(getApiUrl('/master-teachers'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (teacherRes.ok) {
@@ -70,7 +71,7 @@ const FacultyAssignmentForm = () => {
         try {
             const token = localStorage.getItem('token');
             const collegeId = localStorage.getItem('collegeId');
-            const res = await fetch(`http://localhost:8080/api/college-admin/faculty-assignments/${collegeId}`, {
+            const res = await fetch(getApiUrl(`/college-admin/faculty-assignments/${collegeId}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -105,7 +106,7 @@ const FacultyAssignmentForm = () => {
         try {
             const token = localStorage.getItem('token');
             const collegeId = localStorage.getItem('collegeId');
-            const response = await fetch('http://localhost:8080/api/college-admin/assign-faculty', {
+            const response = await fetch(getApiUrl('/college-admin/assign-faculty'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
@@ -138,7 +139,7 @@ const FacultyAssignmentForm = () => {
         setSaving(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/college-admin/faculty-assignments/${editingAssignment.id}`, {
+            const res = await fetch(getApiUrl(`/college-admin/faculty-assignments/${editingAssignment.id}`), {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify(editingAssignment)

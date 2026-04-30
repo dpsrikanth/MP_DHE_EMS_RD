@@ -12,6 +12,7 @@ import {
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import { getApiUrl } from '../config';
 
 const CheckboxOption = (props) => {
   return (
@@ -92,7 +93,7 @@ const Universities = () => {
       const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
       // Fetch Masters
-      const masterRes = await fetch('http://localhost:8080/api/masters', { headers });
+      const masterRes = await fetch(getApiUrl('/masters'), { headers });
       if (!masterRes.ok) throw new Error('Failed to fetch master data');
       const masterData = await masterRes.json();
       
@@ -113,7 +114,7 @@ const Universities = () => {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/universities', {
+      const response = await fetch(getApiUrl('/universities'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) {
@@ -139,7 +140,7 @@ const Universities = () => {
     if (!deleteTarget) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/universities/${deleteTarget.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(getApiUrl(`/universities/${deleteTarget.id}`), { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) { const t = await res.text(); throw new Error(t || 'Delete failed'); }
       setShowDeleteModal(false);
       setDeleteTarget(null);
@@ -153,9 +154,9 @@ const Universities = () => {
     try {
       const token = localStorage.getItem('token');
       let url = '';
-      if (type === 'colleges') url = 'http://localhost:8080/api/colleges';
-      else if (type === 'programs') url = 'http://localhost:8080/api/programs';
-      else if (type === 'academic_years') url = 'http://localhost:8080/api/academic-years';
+      if (type === 'colleges') url = getApiUrl('/colleges');
+      else if (type === 'programs') url = getApiUrl('/programs');
+      else if (type === 'academic_years') url = getApiUrl('/academic-years');
       
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) {

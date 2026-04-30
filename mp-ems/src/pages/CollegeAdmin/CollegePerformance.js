@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, CheckCircle2, XCircle, FileText, Filter, LayoutDashboard } from 'lucide-react';
+import { getApiUrl } from '../../config';
 
 const CollegePerformance = () => {
   const [data, setData] = useState([]);
@@ -11,7 +12,7 @@ const CollegePerformance = () => {
 
   const fetchPerformance = async () => {
     try {
-      const response = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/reports/college-performance`, {
+      const response = await fetch(getApiUrl('/reports/college-performance'), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

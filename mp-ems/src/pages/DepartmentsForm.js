@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { Building, ArrowLeft, Check, Hash, Activity, ShieldCheck, ShieldAlert } from "lucide-react";
 import '../styles/FormPage.css';
+import { getApiUrl } from '../config';
 
 const DepartmentsForm = () => {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ const DepartmentsForm = () => {
   const fetchColleges = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/colleges', {
+      const res = await fetch(getApiUrl('/colleges'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) setColleges(await res.json());
@@ -40,7 +41,7 @@ const DepartmentsForm = () => {
   const loadDepartment = async (deptId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/master-departments', {
+      const response = await fetch(getApiUrl('/master-departments'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch departments');
@@ -74,8 +75,8 @@ const DepartmentsForm = () => {
       setSaving(true);
       const token = localStorage.getItem('token');
       const url = isEditing 
-        ? `http://localhost:8080/api/master-departments/${id}` 
-        : 'http://localhost:8080/api/master-departments';
+        ? getApiUrl(`/master-departments/${id}`)
+        : getApiUrl('/master-departments');
       const method = isEditing ? 'PUT' : 'POST';
 
       const res = await fetch(url, {

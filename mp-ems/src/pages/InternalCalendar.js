@@ -16,6 +16,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import authUtils from '../utils/authUtils';
 import { formatDate } from '../utils/dateUtils';
+import { getApiUrl } from '../config';
 
 const InternalCalendar = () => {
   const navigate = useNavigate();
@@ -36,9 +37,9 @@ const InternalCalendar = () => {
       const headers = { Authorization: `Bearer ${token}` };
       
       const [examsRes, milestonesRes, internalRes] = await Promise.all([
-        fetch('http://localhost:8080/api/exams', { headers }),
-        fetch('http://localhost:8080/api/milestones', { headers }),
-        fetch('http://localhost:8080/api/internal-exams/schedules', { headers })
+        fetch(getApiUrl('/exams'), { headers }),
+        fetch(getApiUrl('/milestones'), { headers }),
+        fetch(getApiUrl('/internal-exams/schedules'), { headers })
       ]);
 
       if (examsRes.ok) {

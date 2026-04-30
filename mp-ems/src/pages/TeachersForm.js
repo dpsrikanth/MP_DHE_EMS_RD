@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getApiUrl } from '../config';
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { User, Check, Mail, Building, Briefcase, ShieldCheck, ShieldAlert, ArrowLeft, Hash, Phone, Calendar, MapPin, FileText } from "lucide-react";
@@ -67,9 +68,9 @@ const TeachersForm = () => {
   const fetchDropdownOptions = async () => {
     try {
       const [designResp, deptResp, collegeResp] = await Promise.all([
-        fetch('http://localhost:8080/api/master-designations', { headers: authUtils.getAuthHeader() }),
-        fetch('http://localhost:8080/api/master-departments', { headers: authUtils.getAuthHeader() }),
-        fetch('http://localhost:8080/api/colleges', { headers: authUtils.getAuthHeader() })
+        fetch(getApiUrl('/master-designations'), { headers: authUtils.getAuthHeader() }),
+        fetch(getApiUrl('/master-departments'), { headers: authUtils.getAuthHeader() }),
+        fetch(getApiUrl('/colleges'), { headers: authUtils.getAuthHeader() })
       ]);
       if (designResp.ok) setDesignationOptions((await designResp.json()).map(d => ({ id: d.id, name: d.designation_name })));
       if (deptResp.ok) setDepartmentOptions((await deptResp.json()).map(d => ({ id: d.id, name: d.department_name })));
@@ -79,7 +80,7 @@ const TeachersForm = () => {
 
   const loadTeacher = async (teacherId) => {
     try {
-      const resp = await fetch(`http://localhost:8080/api/master-teachers/${teacherId}`, { headers: authUtils.getAuthHeader() });
+      const resp = await fetch(getApiUrl(`/master-teachers/${teacherId}`), { headers: authUtils.getAuthHeader() });
       if (!resp.ok) throw new Error('Failed to fetch teacher details');
       const td = await resp.json();
       const fmt = (d) => d ? d.toString().slice(0, 10) : '';
@@ -143,7 +144,7 @@ const TeachersForm = () => {
     setSaving(true); setErrorString('');
     try {
       const payload = { ...form, college_id: form.college_id ? parseInt(form.college_id) : null, designation_id: form.designation_id ? parseInt(form.designation_id) : null, department_id: form.department_id ? parseInt(form.department_id) : null, experience: form.experience ? parseInt(form.experience) : 0, status: form.status ? 'Active' : 'Inactive' };
-      const url = isEditing ? `http://localhost:8080/api/master-teachers/${id}` : 'http://localhost:8080/api/master-teachers';
+      const url = isEditing ? getApiUrl(`/master-teachers/${id}`) : getApiUrl('/master-teachers');
       const method = isEditing ? 'PUT' : 'POST';
       const resp = await fetch(url, { method, headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() }, body: JSON.stringify(payload) });
       if (!resp.ok) throw new Error('Failed to save teacher record');

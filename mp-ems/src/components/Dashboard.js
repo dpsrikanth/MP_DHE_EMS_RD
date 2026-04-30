@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import authUtils from "../utils/authUtils";
+import { getApiUrl } from "../config";
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -46,8 +47,7 @@ const Dashboard = () => {
         const token = localStorage.getItem("token");
         const authHeader = { headers: { Authorization: `Bearer ${token}` } };
         
-        const apiBase = window.config?.api_base_url || "http://localhost:8080/api";
-        const response = await fetch(`${apiBase}/dashboard/stats`, authHeader);
+        const response = await fetch(getApiUrl('/dashboard/stats'), authHeader);
         if (!response.ok) throw new Error("Failed to fetch dashboard stats");
         const data = await response.json();
 
@@ -69,10 +69,10 @@ const Dashboard = () => {
         setTeachersCount(data.totalTeachers || 0);
 
         const [tRes, sRes, cRes, uRes] = await Promise.all([
-          fetch(`${apiBase}/master-teachers`, authHeader),
-          fetch(`${apiBase}/students`, authHeader),
-          fetch(`${apiBase}/colleges`, authHeader),
-          fetch(`${apiBase}/universities`, authHeader)
+          fetch(getApiUrl('/master-teachers'), authHeader),
+          fetch(getApiUrl('/students'), authHeader),
+          fetch(getApiUrl('/colleges'), authHeader),
+          fetch(getApiUrl('/universities'), authHeader)
         ]);
 
         if (tRes.ok) setTeachers(await tRes.json());

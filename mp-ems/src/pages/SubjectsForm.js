@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getApiUrl } from '../config';
 import Select from "react-select";
 import { toast } from 'react-toastify';
 import { useNavigate, useParams } from "react-router-dom";
@@ -48,10 +49,10 @@ const SubjectsForm = () => {
       const token = localStorage.getItem('token');
       const h = { Authorization: `Bearer ${token}` };
       const [progRes, semRes, teaRes, depRes] = await Promise.all([
-        fetch('http://localhost:8080/api/master-programs', { headers: h }),
-        fetch('http://localhost:8080/api/master-semesters', { headers: h }),
-        fetch('http://localhost:8080/api/master-teachers', { headers: h }),
-        fetch('http://localhost:8080/api/master-departments', { headers: h })
+        fetch(getApiUrl('/master-programs'), { headers: h }),
+        fetch(getApiUrl('/master-semesters'), { headers: h }),
+        fetch(getApiUrl('/master-teachers'), { headers: h }),
+        fetch(getApiUrl('/master-departments'), { headers: h })
       ]);
 
       let depsData = [], progsData = [], semsData = [], teasData = [];
@@ -76,7 +77,7 @@ const SubjectsForm = () => {
   const loadSubject = async (subjectId, masters) => {
     try {
       const token = localStorage.getItem('token');
-      const resp = await fetch(`http://localhost:8080/api/master-subjects/${subjectId}`, {
+      const resp = await fetch(getApiUrl(`/master-subjects/${subjectId}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!resp.ok) throw new Error('Failed to fetch subject details');
@@ -124,7 +125,7 @@ const SubjectsForm = () => {
         credit: form.credit
       };
       
-      const url = isEditing ? `http://localhost:8080/api/master-subjects/${id}` : 'http://localhost:8080/api/master-subjects';
+      const url = isEditing ? getApiUrl(`/master-subjects/${id}`) : getApiUrl('/master-subjects');
       const method = isEditing ? 'PUT' : 'POST';
 
       const res = await fetch(url, {

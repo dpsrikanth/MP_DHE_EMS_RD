@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getApiUrl } from '../config';
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
 import Select, { components } from "react-select";
@@ -41,7 +42,7 @@ const ProgramsForm = () => {
   const fetchDepartments = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/master-departments', {
+      const res = await fetch(getApiUrl('/master-departments'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -59,7 +60,7 @@ const ProgramsForm = () => {
   const loadProgram = async (progId, currentDepartments) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/master-programs', {
+      const response = await fetch(getApiUrl('/master-programs'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch programs');
@@ -95,8 +96,8 @@ const ProgramsForm = () => {
       setSaving(true);
       const token = localStorage.getItem('token');
       const url = isEditing 
-        ? `http://localhost:8080/api/master-programs/${id}` 
-        : 'http://localhost:8080/api/master-programs';
+        ? getApiUrl(`/master-programs/${id}`) 
+        : getApiUrl('/master-programs');
       const method = isEditing ? 'PUT' : 'POST';
 
       const res = await fetch(url, {

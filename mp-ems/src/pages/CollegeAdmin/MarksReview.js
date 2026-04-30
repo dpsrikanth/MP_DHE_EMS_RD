@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { CheckCircle, ArrowLeft, ShieldCheck, AlertCircle, MessageSquare, X, Send, Lock } from 'lucide-react';
+import { getApiUrl } from '../../config';
 
 const MarksReview = () => {
     const { subjectId, section } = useParams();
@@ -47,7 +48,7 @@ const MarksReview = () => {
             const collegeId = user.college_id;
 
             // 1. Fetch Marks Structure 
-            const structureRes = await fetch(`http://localhost:8080/api/college-admin/marks-structure/${subjectId}`, {
+            const structureRes = await fetch(getApiUrl(`/college-admin/marks-structure/${subjectId}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             let structData = [];
@@ -55,7 +56,7 @@ const MarksReview = () => {
             setMarksStructure(structData);
 
             // 2. Fetch Review Marks (Raw data grouped by student)
-            const reviewRes = await fetch(`http://localhost:8080/api/college-admin/review-marks?subject_id=${subjectId}&section=${section}&college_id=${collegeId}&semester_id=${semesterId}&academic_year_id=${academicYearId}`, {
+            const reviewRes = await fetch(getApiUrl(`/college-admin/review-marks?subject_id=${subjectId}&section=${section}&college_id=${collegeId}&semester_id=${semesterId}&academic_year_id=${academicYearId}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -68,7 +69,7 @@ const MarksReview = () => {
             setSubjectMeta({ id: subjectId, section: section, collegeId, status: '' });
 
             // 4. Fetch status
-            const workflowRes = await fetch(`http://localhost:8080/api/college-admin/workflow-status?college_id=${collegeId}&semester_id=${semesterId}`, {
+            const workflowRes = await fetch(getApiUrl(`/college-admin/workflow-status?college_id=${collegeId}&semester_id=${semesterId}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (workflowRes.ok) {
@@ -92,7 +93,7 @@ const MarksReview = () => {
         setIsLocking(true); // Reusing isLocking for loading state
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/college-admin/workflow-status`, {
+            const res = await fetch(getApiUrl(`/college-admin/workflow-status`), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
@@ -129,7 +130,7 @@ const MarksReview = () => {
         setIsLocking(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/college-admin/lock-marks`, {
+            const res = await fetch(getApiUrl(`/college-admin/lock-marks`), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
@@ -165,7 +166,7 @@ const MarksReview = () => {
         setIsRejecting(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/college-admin/reject-workflow-section`, {
+            const res = await fetch(getApiUrl(`/college-admin/reject-workflow-section`), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
@@ -195,7 +196,7 @@ const MarksReview = () => {
         setIsRejecting(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/college-admin/send-back-correction`, {
+            const res = await fetch(getApiUrl(`/college-admin/send-back-correction`), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
@@ -249,7 +250,7 @@ const MarksReview = () => {
         setIsSavingReview(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/college-admin/save-student-review`, {
+            const res = await fetch(getApiUrl(`/college-admin/save-student-review`), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getApiUrl } from '../config';
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -81,13 +82,13 @@ const StudentsForm = () => {
     try {
       const token = localStorage.getItem('token');
       const [yearRes, policyRes, programRes, semesterRes, collegeRes, batchRes, deptRes] = await Promise.all([
-        fetch('http://localhost:8080/api/academic-years', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:8080/api/master-policies', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:8080/api/master-programs', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:8080/api/master-semesters', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:8080/api/colleges', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:8080/api/master-batches', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:8080/api/master-departments', { headers: { Authorization: `Bearer ${token}` } })
+        fetch(getApiUrl('/academic-years'), { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(getApiUrl('/master-policies'), { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(getApiUrl('/master-programs'), { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(getApiUrl('/master-semesters'), { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(getApiUrl('/colleges'), { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(getApiUrl('/master-batches'), { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(getApiUrl('/master-departments'), { headers: { Authorization: `Bearer ${token}` } })
       ]);
       let loadedColleges = [];
       if (yearRes.ok) setAcademicYears(await yearRes.json() || []);
@@ -108,10 +109,10 @@ const StudentsForm = () => {
       setCascadingLoading(true);
       const token = localStorage.getItem('token');
       const [semesterRes, programRes, policyRes, yearRes] = await Promise.all([
-        fetch(`http://localhost:8080/api/colleges/${collegeId}/semesters`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`http://localhost:8080/api/colleges/${collegeId}/programs`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`http://localhost:8080/api/colleges/${collegeId}/policies`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`http://localhost:8080/api/colleges/${collegeId}/academic-years`, { headers: { Authorization: `Bearer ${token}` } })
+        fetch(getApiUrl(`/colleges/${collegeId}/semesters`), { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(getApiUrl(`/colleges/${collegeId}/programs`), { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(getApiUrl(`/colleges/${collegeId}/policies`), { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(getApiUrl(`/colleges/${collegeId}/academic-years`), { headers: { Authorization: `Bearer ${token}` } })
       ]);
       if (semesterRes.ok) setCollegeSemesters(await semesterRes.json() || []);
       if (programRes.ok) setCollegePrograms(await programRes.json() || []);
@@ -124,7 +125,7 @@ const StudentsForm = () => {
   const fetchStudentData = async (colls) => {
     try {
       const token = localStorage.getItem('token');
-      const resp = await fetch(`http://localhost:8080/api/students`, { headers: { Authorization: `Bearer ${token}` } });
+      const resp = await fetch(getApiUrl(`/students`), { headers: { Authorization: `Bearer ${token}` } });
       if (resp.ok) {
         const dataList = await resp.json();
         const student = dataList.find(s => s.id.toString() === id.toString());
@@ -200,7 +201,7 @@ const StudentsForm = () => {
       const encodedYear = encodeURIComponent(yearStr);
       const encodedDept = encodeURIComponent(deptName);
       
-      const resp = await fetch(`http://localhost:8080/api/students/next-serial/${encodedYear}/${encodedDept}`, {
+      const resp = await fetch(getApiUrl(`/students/next-serial/${encodedYear}/${encodedDept}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -223,7 +224,7 @@ const StudentsForm = () => {
     setLoading(true); setErrorString('');
     const token = localStorage.getItem('token');
     try {
-      const url = isEditing ? `http://localhost:8080/api/students/${id}` : 'http://localhost:8080/api/students';
+      const url = isEditing ? getApiUrl(`/students/${id}`) : getApiUrl('/students');
       const method = isEditing ? 'PUT' : 'POST';
       const resp = await fetch(url, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(form) });
       const text = await resp.text(); let respData = {}; try { respData = JSON.parse(text); } catch (e) { }

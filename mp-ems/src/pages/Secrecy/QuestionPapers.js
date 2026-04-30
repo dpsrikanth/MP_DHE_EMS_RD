@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Eye, Download, X, Search } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
 import { toast } from 'react-toastify';
-import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
+import { getApiUrl } from '../../config';
+import { formatDate } from '../../utils/dateUtils';
 
 const SecrecyQuestionPapers = () => {
   const [questionPapers, setQuestionPapers] = useState([]);
@@ -21,7 +22,7 @@ const SecrecyQuestionPapers = () => {
   const fetchPapers = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/secrecy/papers`, {
+      const res = await fetch(getApiUrl('/secrecy/papers'), {
         headers: authUtils.getAuthHeader()
       });
       if (res.ok) setQuestionPapers(await res.json());
@@ -35,7 +36,7 @@ const SecrecyQuestionPapers = () => {
 
   const handleUpdateStatus = async (assignment_id, status, feedback = '') => {
     try {
-      const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/secrecy/papers/status`, {
+      const res = await fetch(getApiUrl('/secrecy/papers/status'), {
         method: 'POST',
         headers: { ...authUtils.getAuthHeader(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ assignment_id, status, feedback })
@@ -52,7 +53,7 @@ const SecrecyQuestionPapers = () => {
   const handleDownload = async (paper_id, viewOnly = false) => {
     if (!paper_id) return;
     try {
-      const response = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/paper-setter/download/${paper_id}`, {
+      const response = await fetch(getApiUrl(`/paper-setter/download/${paper_id}`), {
         headers: authUtils.getAuthHeader()
       });
       if (!response.ok) throw new Error('Download failed');
@@ -99,7 +100,7 @@ const SecrecyQuestionPapers = () => {
     try {
       setLoading(true);
       for (const assignment_id of selectedSets) {
-        await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/secrecy/papers/status`, {
+        await fetch(getApiUrl('/secrecy/papers/status'), {
           method: 'POST',
           headers: { ...authUtils.getAuthHeader(), 'Content-Type': 'application/json' },
           body: JSON.stringify({ assignment_id, status: 'Printed', feedback: 'Approved for Printing' })

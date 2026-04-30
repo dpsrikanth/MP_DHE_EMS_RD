@@ -4,6 +4,7 @@ import { Calendar, Clock, BookOpen, CreditCard, CheckCircle, AlertCircle, Printe
 import authUtils from '../../utils/authUtils';
 import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
+import { getApiUrl } from '../../config';
 
 const StudentExams = () => {
   const [exams, setExams] = useState([]);
@@ -16,8 +17,7 @@ const StudentExams = () => {
 
   const fetchExams = async () => {
     try {
-      const apiBase = window.config?.api_base_url || window.config?.login_url?.replace('/login', '') || 'http://localhost:8080/api';
-      const response = await fetch(`${apiBase}/student/exams`, {
+      const response = await fetch(getApiUrl('/student/exams'), {
         headers: {
           ...authUtils.getAuthHeader()
         }
@@ -38,8 +38,7 @@ const StudentExams = () => {
 
   const handleRegister = async (examIds) => {
     try {
-      const apiBase = window.config?.api_base_url || window.config?.login_url?.replace('/login', '') || 'http://localhost:8080/api';
-      const response = await fetch(`${apiBase}/student/exams/register`, {
+      const response = await fetch(getApiUrl('/student/exams/register'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

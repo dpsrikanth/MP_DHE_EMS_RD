@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getApiUrl } from '../config';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Select, { components } from 'react-select';
@@ -43,7 +44,7 @@ const UniversitiesForm = () => {
     try {
       const token = localStorage.getItem('token');
       const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-      const masterRes = await fetch('http://localhost:8080/api/masters', { headers });
+      const masterRes = await fetch(getApiUrl('/masters'), { headers });
       if (!masterRes.ok) throw new Error('Failed to fetch master data');
       const masterData = await masterRes.json();
       
@@ -59,7 +60,7 @@ const UniversitiesForm = () => {
   const loadUniversity = async (univId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/universities', { headers: { Authorization: `Bearer ${token}` } });
+      const response = await fetch(getApiUrl('/universities'), { headers: { Authorization: `Bearer ${token}` } });
       if (!response.ok) throw new Error('Failed to fetch universities');
       const data = await response.json();
       const university = data.find(u => u.id.toString() === univId);
@@ -79,7 +80,7 @@ const UniversitiesForm = () => {
     try {
       setConfigLoading(true);
       const token = localStorage.getItem('token');
-      const configRes = await fetch(`http://localhost:8080/api/universities/${universityId}/config`, { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } });
+      const configRes = await fetch(getApiUrl(`/universities/${universityId}/config`), { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } });
       if (!configRes.ok) throw new Error('Failed to fetch university config');
       const configData = await configRes.json();
       setSelectedPolicies((pOpts || policyOptions).filter(opt => configData.policies.includes(opt.value)));
@@ -96,7 +97,7 @@ const UniversitiesForm = () => {
       policies: selectedPolicies.map(p => p.value), programs: selectedPrograms.map(p => p.value),
       academicYears: selectedAcademicYears.map(a => a.value), semesters: selectedSemesters.map(s => s.value)
     };
-    const res = await fetch(`http://localhost:8080/api/universities/${univId}/config`, {
+    const res = await fetch(getApiUrl(`/universities/${univId}/config`), {
       method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error('Failed to update config');
@@ -109,14 +110,14 @@ const UniversitiesForm = () => {
       if (!form.name) { setSavingConfig(false); return toast.warning('Name is required'); }
       let finalUniversityId = null, toastMessage = '';
       if (isEditing) {
-        const res = await fetch(`http://localhost:8080/api/universities/${id}`, {
+        const res = await fetch(getApiUrl(`/universities/${id}`), {
           method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(form)
         });
         if (!res.ok) { const t = await res.text(); throw new Error(t || 'Update failed'); }
         const updatedUniv = await res.json();
         toastMessage = updatedUniv.message || 'University updated successfully!'; finalUniversityId = id;
       } else {
-        const res = await fetch('http://localhost:8080/api/universities', {
+        const res = await fetch(getApiUrl('/universities'), {
           method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(form)
         });
         if (!res.ok) { const t = await res.text(); throw new Error(t || 'Create failed'); }

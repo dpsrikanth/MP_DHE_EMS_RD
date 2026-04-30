@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Calendar, Save, Clock, Search, BookOpen, GraduationCap, Flag } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
+import { getApiUrl } from '../../config';
 const ExamScheduling = () => {
     const [rounds, setRounds] = useState([]);
     const [programs, setPrograms] = useState([]);
@@ -29,8 +30,6 @@ const ExamScheduling = () => {
         contexts: false
     });
 
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
-
     useEffect(() => {
         fetchInitialData();
         fetchValidationSetting();
@@ -39,7 +38,7 @@ const ExamScheduling = () => {
     const fetchValidationSetting = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/settings/roadmap_validation`, {
+            const response = await fetch(getApiUrl('/settings/roadmap_validation'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.ok) {
@@ -66,10 +65,10 @@ const ExamScheduling = () => {
             const headers = { Authorization: `Bearer ${token}` };
 
             const [roundsRes, programsRes, semestersRes, yearsRes] = await Promise.all([
-                fetch(`${API_URL}/internal-exams/rounds`, { headers }),
-                fetch(`${API_URL}/programs`, { headers }),
-                fetch(`${API_URL}/semesters`, { headers }),
-                fetch(`${API_URL}/academic-years`, { headers })
+                fetch(getApiUrl('/internal-exams/rounds'), { headers }),
+                fetch(getApiUrl('/programs'), { headers }),
+                fetch(getApiUrl('/semesters'), { headers }),
+                fetch(getApiUrl('/academic-years'), { headers })
             ]);
 
             const roundsData = await roundsRes.json();
@@ -106,7 +105,7 @@ const ExamScheduling = () => {
             const token = localStorage.getItem('token');
             const headers = { Authorization: `Bearer ${token}` };
 
-            const res = await fetch(`${API_URL}/internal-exams/available-contexts?round_id=${roundId}`, { headers });
+            const res = await fetch(getApiUrl(`/internal-exams/available-contexts?round_id=${roundId}`), { headers });
             const data = await res.json();
 
             // Assuming data is { programs: [id...], semesters: [id...], mapping: [{program_id, semester_id}...] }
@@ -152,9 +151,9 @@ const ExamScheduling = () => {
 
             // Fetch subjects, existing schedules, and milestones
             const [subjectsRes, schedulesRes, milestonesRes] = await Promise.all([
-                fetch(`${API_URL}/subjects?program_id=${filters.program_id}&semester_id=${filters.semester_id}`, { headers }),
-                fetch(`${API_URL}/internal-exams/schedules?round_id=${filters.round_id}&program_id=${filters.program_id}&semester_id=${filters.semester_id}&academic_year_id=${filters.academic_year_id}`, { headers }),
-                fetch(`${API_URL}/milestones?semester_id=${filters.semester_id}&program_id=${filters.program_id}&academic_year_id=${filters.academic_year_id}&college_id=${localStorage.getItem('collegeId')}`, { headers })
+                fetch(getApiUrl(`/subjects?program_id=${filters.program_id}&semester_id=${filters.semester_id}`), { headers }),
+                fetch(getApiUrl(`/internal-exams/schedules?round_id=${filters.round_id}&program_id=${filters.program_id}&semester_id=${filters.semester_id}&academic_year_id=${filters.academic_year_id}`), { headers }),
+                fetch(getApiUrl(`/milestones?semester_id=${filters.semester_id}&program_id=${filters.program_id}&academic_year_id=${filters.academic_year_id}&college_id=${localStorage.getItem('collegeId')}`), { headers })
             ]);
 
             const subjectsData = await subjectsRes.json();
@@ -334,7 +333,7 @@ const ExamScheduling = () => {
         try {
             setLoading(prev => ({ ...prev, saving: true }));
             const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/internal-exams/schedules`, {
+            const response = await fetch(getApiUrl('/internal-exams/schedules'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

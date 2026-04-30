@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { formatDate } from '../../utils/dateUtils';
+import { getApiUrl } from '../../config';
 
 const AttendanceDetail = ({ subjectId, dateFilter }) => {
     const [details, setDetails] = useState([]);
@@ -16,7 +17,7 @@ const AttendanceDetail = ({ subjectId, dateFilter }) => {
         const fetchDetails = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await fetch(`http://localhost:8080/api/student/attendance-detail/${subjectId}`, {
+                const res = await fetch(getApiUrl(`/student/attendance-detail/${subjectId}`), {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 if (res.ok) {
@@ -106,7 +107,7 @@ const CombinedHistory = ({ dateFilter }) => {
         const fetchHistory = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await fetch('http://localhost:8080/api/student/attendance-history', {
+                const res = await fetch(getApiUrl('/student/attendance-history'), {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 if (res.ok) {
@@ -224,7 +225,7 @@ const StudentAttendance = () => {
     const fetchAttendance = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/student/attendance', {
+            const res = await fetch(getApiUrl('/student/attendance'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {

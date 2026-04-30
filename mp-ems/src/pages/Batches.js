@@ -21,6 +21,7 @@ import { formatDate } from '../utils/dateUtils';
 import Select, { components } from "react-select";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import { getApiUrl } from '../config';
 
 const InfoItem = ({ label, value, isMono = false, className = "" }) => (
   <div className={`space-y-1.5 ${className}`}>
@@ -92,7 +93,7 @@ const Batches = () => {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/master-batches', {
+      const response = await fetch(getApiUrl('/master-batches'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) {
@@ -121,7 +122,7 @@ const Batches = () => {
     if (!deleteTarget) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/master-batches/${deleteTarget.id}`, {
+      const res = await fetch(getApiUrl(`/master-batches/${deleteTarget.id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

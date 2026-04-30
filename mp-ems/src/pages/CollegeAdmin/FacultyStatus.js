@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserCheck, Clock, CheckCircle2, AlertCircle, Calendar, Filter } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
+import { getApiUrl } from '../../config';
 
 const FacultyStatus = () => {
   const [data, setData] = useState([]);
@@ -15,7 +16,7 @@ const FacultyStatus = () => {
 
   const fetchSemesters = async () => {
     try {
-      const response = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/semesters`, {
+      const response = await fetch(getApiUrl('/semesters'), {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const result = await response.json();
@@ -28,10 +29,8 @@ const FacultyStatus = () => {
   const fetchFacultyStatus = async () => {
     setLoading(true);
     try {
-      let url = `${window.config?.api_base_url || 'http://localhost:8080/api'}/reports/faculty-grading-status`;
-      if (selectedSemester) url += `?semester_id=${selectedSemester}`;
-      
-      const response = await fetch(url, {
+      const queryParams = selectedSemester ? `?semester_id=${selectedSemester}` : '';
+      const response = await fetch(getApiUrl(`/reports/faculty-grading-status${queryParams}`), {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const result = await response.json();

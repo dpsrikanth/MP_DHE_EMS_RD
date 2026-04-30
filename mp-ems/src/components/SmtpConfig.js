@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Server, Hash, Mail, Lock, User, Eye, EyeOff, Save, CheckCircle2, AlertCircle } from "lucide-react";
 import authUtils from "../utils/authUtils";
+import { getApiUrl } from "../config";
 
 const SmtpConfig = () => {
   const [formData, setFormData] = useState({
@@ -17,7 +18,7 @@ const SmtpConfig = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [status, setStatus] = useState({ type: null, message: "" });
 
-  const apiBaseUrl = window["config"]?.api_base_url || 'http://localhost:8080/api';
+
 
   useEffect(() => {
     fetchConfig();
@@ -26,7 +27,7 @@ const SmtpConfig = () => {
   const fetchConfig = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${apiBaseUrl}/config/smtp`, {
+      const response = await fetch(getApiUrl('/config/smtp'), {
         headers: authUtils.getAuthHeader()
       });
       if (response.ok) {
@@ -55,7 +56,7 @@ const SmtpConfig = () => {
     setStatus({ type: null, message: "" });
 
     try {
-      const response = await fetch(`${apiBaseUrl}/config/smtp`, {
+      const response = await fetch(getApiUrl('/config/smtp'), {
         method: "POST",
         headers: {
           ...authUtils.getAuthHeader(),

@@ -4,6 +4,7 @@ import Select from 'react-select';
 import { FileText, CheckCircle2, XCircle, Search, Lock, Eye, X } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { TableSearch } from '../../components/TableControls';
+import { getApiUrl } from '../../config';
 
 const MarksApproval = () => {
     const [workflows, setWorkflows] = useState([]);
@@ -26,7 +27,7 @@ const MarksApproval = () => {
     const fetchSemesters = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/masters', {
+            const res = await fetch(getApiUrl('/masters'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -44,10 +45,10 @@ const MarksApproval = () => {
             const token = localStorage.getItem('token');
             const collegeId = user.college_id;
 
-            let url = `http://localhost:8080/api/college-admin/workflow-status?college_id=${collegeId}`;
-            if (semesterId) url += `&semester_id=${semesterId}`;
+            const queryParams = new URLSearchParams({ college_id: collegeId });
+            if (semesterId) queryParams.append('semester_id', semesterId);
 
-            const res = await fetch(url, {
+            const res = await fetch(getApiUrl(`/college-admin/workflow-status?${queryParams.toString()}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -100,7 +101,7 @@ const MarksApproval = () => {
             const workflow = workflows.find(w => w.id === workflowId);
             if (!workflow) return;
 
-            await fetch('http://localhost:8080/api/college-admin/workflow-status', {
+            await fetch(getApiUrl('/college-admin/workflow-status'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({

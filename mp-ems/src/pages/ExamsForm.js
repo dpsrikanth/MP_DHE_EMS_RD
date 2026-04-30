@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import authUtils from "../utils/authUtils";
 import { FileText, Plus, X, Check, Calendar, Book, Layers, Hash, AlertCircle, Globe, Users, BookOpen, Clock, ArrowLeft } from "lucide-react";
 import '../styles/FormPage.css';
+import { getApiUrl } from '../config';
 
 const ExamsForm = () => {
   const navigate = useNavigate();
@@ -39,11 +40,11 @@ const ExamsForm = () => {
     try {
       const token = localStorage.getItem('token'); const headers = { Authorization: `Bearer ${token}` };
       const [colRes, uniRes, semRes, typeRes, depRes, progRes, yearRes, subRes, mapRes] = await Promise.all([
-        fetch('http://localhost:8080/api/colleges', { headers }), fetch('http://localhost:8080/api/universities', { headers }),
-        fetch('http://localhost:8080/api/master-semesters', { headers }), fetch('http://localhost:8080/api/exam-types', { headers }),
-        fetch('http://localhost:8080/api/master-departments', { headers }), fetch('http://localhost:8080/api/master-programs', { headers }),
-        fetch('http://localhost:8080/api/academic-years', { headers }), fetch('http://localhost:8080/api/master-subjects', { headers }),
-        fetch('http://localhost:8080/api/subject-mappings', { headers })
+        fetch(getApiUrl('/colleges'), { headers }), fetch(getApiUrl('/universities'), { headers }),
+        fetch(getApiUrl('/master-semesters'), { headers }), fetch(getApiUrl('/exam-types'), { headers }),
+        fetch(getApiUrl('/master-departments'), { headers }), fetch(getApiUrl('/master-programs'), { headers }),
+        fetch(getApiUrl('/academic-years'), { headers }), fetch(getApiUrl('/master-subjects'), { headers }),
+        fetch(getApiUrl('/subject-mappings'), { headers })
       ]);
       if (colRes.ok) setColleges(await colRes.json()); if (uniRes.ok) setUniversities(await uniRes.json());
       if (semRes.ok) setSemesters(await semRes.json()); if (typeRes.ok) setExamTypes(await typeRes.json());
@@ -56,7 +57,7 @@ const ExamsForm = () => {
   const fetchExamDataToEdit = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/exams', { headers: { Authorization: `Bearer ${token}` } });
+      const response = await fetch(getApiUrl('/exams'), { headers: { Authorization: `Bearer ${token}` } });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       const exam = data.find(e => e.id === editingId);
@@ -77,7 +78,7 @@ const ExamsForm = () => {
     try {
       const token = localStorage.getItem('token');
       const query = new URLSearchParams({ college_id, department_id, program_id, semester_id, subject_id }).toString();
-      const res = await fetch(`http://localhost:8080/api/college-admin/get-components?${query}`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(getApiUrl(`/college-admin/get-components?${query}`), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) { const components = await res.json(); setAvailableComponents(components); if (components.length === 1 && !formData.name) setFormData(prev => ({ ...prev, name: components[0] })); }
       else setAvailableComponents([]);
     } catch (err) { setAvailableComponents([]); }
@@ -113,7 +114,7 @@ const ExamsForm = () => {
     e.preventDefault(); setSubmitLoading(true); setError(null);
     try {
       const token = localStorage.getItem('token');
-      const url = editingId ? `http://localhost:8080/api/exams/${editingId}` : 'http://localhost:8080/api/exams';
+      const url = editingId ? getApiUrl(`/exams/${editingId}`) : getApiUrl('/exams');
       const method = editingId ? 'PUT' : 'POST';
       const normalizedFormData = { ...formData, college_id: formData.college_id === 'university_wide' ? '' : formData.college_id };
       const payload = editingId ? { ...normalizedFormData } : { ...normalizedFormData, subjects: normalizedFormData.subjects };

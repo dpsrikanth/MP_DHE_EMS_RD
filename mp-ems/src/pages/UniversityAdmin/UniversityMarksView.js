@@ -8,8 +8,7 @@ import {
 import { toast } from 'react-toastify';
 import { useGradingPolicy } from "../../hooks/useGradingPolicy";
 import { getGradeAndPoints, isPass, calculateSGPA } from "../../utils/gradingUtils";
-
-const API = window.config?.api_base_url || 'http://localhost:8080/api';
+import { API_ENDPOINTS, getApiUrl } from "../../config";
 
 const UniversityMarksView = () => {
   // Data
@@ -41,9 +40,9 @@ const UniversityMarksView = () => {
         const token = localStorage.getItem('token');
         const headers = { Authorization: `Bearer ${token}` };
         const [exRes, colRes, progRes] = await Promise.all([
-          fetch(`${API}/exams`, { headers }),
-          fetch(`${API}/colleges`, { headers }),
-          fetch(`${API}/master-programs`, { headers })
+          fetch(getApiUrl('/exams'), { headers }),
+          fetch(getApiUrl('/colleges'), { headers }),
+          fetch(getApiUrl('/master-programs'), { headers })
         ]);
         if (exRes.ok) setExams(await exRes.json());
         if (colRes.ok) setColleges(await colRes.json());
@@ -79,7 +78,7 @@ const UniversityMarksView = () => {
       if (selectedCollege) params.append('college_id', selectedCollege);
       if (selectedProgram) params.append('program_id', selectedProgram);
 
-      const res = await fetch(`${API}/university-admin/result-hub-data?${params}`, {
+      const res = await fetch(getApiUrl(`/university-admin/result-hub-data?${params}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -111,7 +110,7 @@ const UniversityMarksView = () => {
 
       // Update all IDs in the series
       await Promise.all(ids.map(id =>
-        fetch(`${API}/exams/${id}/publish-results`, {
+        fetch(getApiUrl(`/exams/${id}/publish-results`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ results_published: newState })

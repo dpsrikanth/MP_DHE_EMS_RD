@@ -1,6 +1,4 @@
-const config={
-    api_url: "http://localhost:5000/api/register",
-    login_url: "http://localhost:8080/api/login",
-    api_base_url: "http://localhost:8080/api"
-}
- window["config"]=config;
+window.EMS_CONFIG = {
+    // Modify this URL after deployment to point to your Dev, UAT, or Prod backend
+    API_BASE_URL: "http://localhost:8080/api"
+};

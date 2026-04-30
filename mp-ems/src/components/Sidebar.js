@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import authUtils from "../utils/authUtils";
+import { getApiUrl } from "../config";
 import {
   LayoutDashboard,
   School,
@@ -50,7 +51,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   useEffect(() => {
     const roleName = localStorage.getItem('roleName');
     if (['Faculty', 'Teacher', 'External Faculty'].includes(roleName)) {
-      fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/paper-setter/faculty/check-assigned`, {
+      fetch(getApiUrl('/paper-setter/faculty/check-assigned'), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }

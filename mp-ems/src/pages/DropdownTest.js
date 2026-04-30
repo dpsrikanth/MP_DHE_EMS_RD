@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import '../styles/DataTable.css';
+import { getApiUrl } from '../config';
 
 const DropdownTest = () => {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ const DropdownTest = () => {
       const token = localStorage.getItem('token');
       console.log("Fetching dropdown options with token:", token ? "Present" : "Missing");
       
-      const response = await fetch('http://localhost:8080/api/masterDetails', {
+      const response = await fetch(getApiUrl('/masterDetails'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       

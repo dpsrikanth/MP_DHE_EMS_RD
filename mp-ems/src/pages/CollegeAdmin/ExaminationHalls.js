@@ -5,6 +5,7 @@ import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js';
 import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
+import { getApiUrl } from '../../config';
 
 ChartJS.register(ArcElement, Tooltip);
 
@@ -33,7 +34,7 @@ const ExaminationHalls = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
 
-    const apiBase = 'http://localhost:8080/api/examination-halls';
+    const apiBase = getApiUrl('/examination-halls');
 
     const filteredHalls = useMemo(() => {
         if (!searchQuery.trim()) return halls;
@@ -86,7 +87,7 @@ const ExaminationHalls = () => {
     const fetchExams = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/exams', {
+            const res = await fetch(getApiUrl('/exams'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -134,7 +135,7 @@ const ExaminationHalls = () => {
     const fetchShortageRequests = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/examination-halls/shortage', {
+            const res = await fetch(getApiUrl('/examination-halls/shortage'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -149,7 +150,7 @@ const ExaminationHalls = () => {
     const fetchTotalRooms = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/college-admin/total-rooms', {
+            const res = await fetch(getApiUrl('/college-admin/total-rooms'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -165,7 +166,7 @@ const ExaminationHalls = () => {
         setIsEditingRooms(false);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/college-admin/total-rooms', {
+            const res = await fetch(getApiUrl('/college-admin/total-rooms'), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

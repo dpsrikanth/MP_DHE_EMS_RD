@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Mail, ArrowRight, ArrowLeft, School, CheckCircle2 } from "lucide-react";
+import { getApiUrl } from '../config';
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -17,9 +18,7 @@ const ForgotPassword = () => {
     setMessage(null);
 
     try {
-      // Assuming backend runs on the same host or proxy is set. If not, window["config"].api_url can be used.
-      const baseUrl = window["config"]?.login_url?.replace('/login', '') || 'http://localhost:8080/api';
-      const response = await fetch(`${baseUrl}/forgot-password`, {
+      const response = await fetch(getApiUrl('/forgot-password'), {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

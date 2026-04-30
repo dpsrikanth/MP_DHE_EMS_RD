@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate, useParams } from "react-router-dom";
 import { ShieldCheck, ArrowLeft, Check } from "lucide-react";
+import { getApiUrl } from '../config';
 import '../styles/FormPage.css';
 
 const RolesForm = () => {
@@ -22,7 +23,7 @@ const RolesForm = () => {
   const fetchRoleData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/roles', {
+      const response = await fetch(getApiUrl('/roles'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch roles');
@@ -54,8 +55,8 @@ const RolesForm = () => {
       const token = localStorage.getItem('token');
       const method = isEditing ? 'PUT' : 'POST';
       const url = isEditing 
-        ? `http://localhost:8080/api/roles/${id}` 
-        : 'http://localhost:8080/api/roles';
+        ? getApiUrl(`/roles/${id}`) 
+        : getApiUrl('/roles');
 
       const res = await fetch(url, {
         method,

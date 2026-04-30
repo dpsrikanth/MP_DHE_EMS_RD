@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getApiUrl } from '../config';
 
 const QuickActions = ({ stats }) => {
   const [expandedAction, setExpandedAction] = useState(null);
@@ -70,7 +71,7 @@ const QuickActions = ({ stats }) => {
 
     setLoadingAction(action.id);
     try {
-      const response = await fetch(`http://localhost:8080${action.endpoint}`,
+      const response = await fetch(getApiUrl(action.endpoint),
         {
           method: 'GET',
           headers: {

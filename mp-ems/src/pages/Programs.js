@@ -22,6 +22,7 @@ import Select, { components } from "react-select";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 import authUtils from "../utils/authUtils";
+import { getApiUrl } from '../config';
 
 const Option = (props) => {
   return (
@@ -111,7 +112,7 @@ const Programs = () => {
   const fetchAvailableMasters = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/masters', {
+      const res = await fetch(getApiUrl('/masters'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -126,7 +127,7 @@ const Programs = () => {
   const fetchDepartments = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/master-departments', {
+      const res = await fetch(getApiUrl('/master-departments'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -141,7 +142,7 @@ const Programs = () => {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/master-programs', {
+      const response = await fetch(getApiUrl('/master-programs'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) {
@@ -163,7 +164,7 @@ const Programs = () => {
     if (!mappingSelection) return toast.warning('Please select a program');
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/master-programs/map', {
+      const res = await fetch(getApiUrl('/master-programs/map'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ program_id: mappingSelection.value })
@@ -181,7 +182,7 @@ const Programs = () => {
   const handleUnmap = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/master-programs/unmap/${id}`, {
+      const res = await fetch(getApiUrl(`/master-programs/unmap/${id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -204,7 +205,7 @@ const Programs = () => {
     if (!deleteTarget) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/master-programs/${deleteTarget.id}`, {
+      const res = await fetch(getApiUrl(`/master-programs/${deleteTarget.id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

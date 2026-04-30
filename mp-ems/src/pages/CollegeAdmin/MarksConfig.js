@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import Select from 'react-select';
 import { BookOpenCheck, Save, Plus, Trash2, Pencil, X, BarChart3, Search } from "lucide-react";
 import { TableSearch } from '../../components/TableControls';
+import { getApiUrl } from '../../config';
 
 const MarksConfig = () => {
     const [policies, setPolicies] = useState([]);
@@ -105,7 +106,7 @@ const MarksConfig = () => {
     const fetchSavedStructures = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/college-admin/all-marks-structures', {
+            const res = await fetch(getApiUrl('/college-admin/all-marks-structures'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -121,7 +122,7 @@ const MarksConfig = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/masters', {
+            const res = await fetch(getApiUrl('/masters'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -169,7 +170,7 @@ const MarksConfig = () => {
             const collegeId = localStorage.getItem('collegeId');
 
             for (let comp of components) {
-                await fetch('http://localhost:8080/api/college-admin/marks-structure', {
+                await fetch(getApiUrl('/college-admin/marks-structure'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                     body: JSON.stringify({
@@ -204,7 +205,7 @@ const MarksConfig = () => {
         if (!deleteTarget) return;
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/college-admin/marks-structure/${deleteTarget.id}`, {
+            const res = await fetch(getApiUrl(`/college-admin/marks-structure/${deleteTarget.id}`), {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -233,7 +234,7 @@ const MarksConfig = () => {
         }
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/college-admin/marks-structure/${editingStructure.id}`, {
+            const res = await fetch(getApiUrl(`/college-admin/marks-structure/${editingStructure.id}`), {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify(editingStructure)

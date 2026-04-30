@@ -4,6 +4,7 @@ import { Printer, Download, ChevronLeft, GraduationCap, Calendar, Clock, MapPin,
 import { toast } from 'react-toastify';
 import { formatDate } from '../../utils/dateUtils';
 import authUtils from '../../utils/authUtils';
+import { getApiUrl } from '../../config';
 
 const HallTicket = () => {
   const { examName, semesterId } = useParams();
@@ -17,8 +18,7 @@ const HallTicket = () => {
 
   const fetchHallTicketData = async () => {
     try {
-      const apiBase = window.config?.api_base_url || window.config?.login_url?.replace('/login', '') || 'http://localhost:8080/api';
-      const response = await fetch(`${apiBase}/student/hall-ticket/${examName}/${semesterId}`, {
+      const response = await fetch(getApiUrl(`/student/hall-ticket/${examName}/${semesterId}`), {
         headers: {
           ...authUtils.getAuthHeader()
         }

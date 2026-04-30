@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import { formatDate } from '../utils/dateUtils';
+import { getApiUrl } from '../config';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 import Select from "react-select";
@@ -67,7 +68,7 @@ const Policies = () => {
   const fetchAvailableMasters = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/masters', {
+      const res = await fetch(getApiUrl('/masters'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -82,7 +83,7 @@ const Policies = () => {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/master-policies', {
+      const response = await fetch(getApiUrl('/master-policies'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) {
@@ -106,7 +107,7 @@ const Policies = () => {
     if (!mappingSelection) return toast.warning('Please select a policy');
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/master-policies/map', {
+      const res = await fetch(getApiUrl('/master-policies/map'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ policy_id: mappingSelection.value })
@@ -124,7 +125,7 @@ const Policies = () => {
   const handleUnmap = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/master-policies/unmap/${id}`, {
+      const res = await fetch(getApiUrl(`/master-policies/unmap/${id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -145,7 +146,7 @@ const Policies = () => {
     if (!deleteTarget) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/master-policies/${deleteTarget.id}`, {
+      const res = await fetch(getApiUrl(`/master-policies/${deleteTarget.id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

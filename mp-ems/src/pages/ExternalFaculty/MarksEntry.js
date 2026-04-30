@@ -6,6 +6,7 @@ import {
   UserCircle, ClipboardCheck, Unlock
 } from "lucide-react";
 import { toast } from 'react-toastify';
+import { getApiUrl } from '../../config';
 
 const ExternalMarksEntry = () => {
   const [assignments, setAssignments] = useState([]);
@@ -22,7 +23,7 @@ const ExternalMarksEntry = () => {
     if (!silent) setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/external-faculty/assignments', {
+      const res = await fetch(getApiUrl('/external-faculty/assignments'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -68,7 +69,7 @@ const ExternalMarksEntry = () => {
     setSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/external-faculty/save-marks', {
+      const res = await fetch(getApiUrl('/external-faculty/save-marks'), {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -110,7 +111,7 @@ const ExternalMarksEntry = () => {
         };
       });
 
-      const saveRes = await fetch('http://localhost:8080/api/external-faculty/save-marks', {
+      const saveRes = await fetch(getApiUrl('/external-faculty/save-marks'), {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -127,7 +128,7 @@ const ExternalMarksEntry = () => {
       const uniqueExamIds = [...new Set(subjectGroup.students.map(s => s.exam_id))];
 
       // 2. Then Finalize
-      const res = await fetch('http://localhost:8080/api/external-faculty/finalize-marks', {
+      const res = await fetch(getApiUrl('/external-faculty/finalize-marks'), {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -161,7 +162,7 @@ const ExternalMarksEntry = () => {
       const token = localStorage.getItem('token');
       const uniqueExamIds = [...new Set(subjectGroup.students.map(s => s.exam_id))];
 
-      const res = await fetch('http://localhost:8080/api/external-faculty/unlock-subject', {
+      const res = await fetch(getApiUrl('/external-faculty/unlock-subject'), {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

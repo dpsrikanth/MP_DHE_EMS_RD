@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getApiUrl } from '../../config';
 import { toast } from 'react-toastify';
 import { Users, Building2, AlertTriangle, ArrowRight, ShieldCheck, UserCheck, Info } from "lucide-react";
 import authUtils from "../../utils/authUtils";
@@ -29,7 +30,7 @@ const StudentCenterAllocations = () => {
     const fetchExams = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/exams`, {
+            const res = await fetch(getApiUrl('/exams'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -45,7 +46,7 @@ const StudentCenterAllocations = () => {
         try {
             setLoadingColleges(true);
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/colleges', {
+            const res = await fetch(getApiUrl('/colleges'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -65,10 +66,11 @@ const StudentCenterAllocations = () => {
         try {
             setLoadingStudents(true);
             const token = localStorage.getItem('token');
-            const url = new URL(`http://localhost:8080/api/university-admin/students-for-allocation/${collegeId}`);
-            if (examId) url.searchParams.append('exam_id', examId);
+            const url = getApiUrl(`/university-admin/students-for-allocation/${collegeId}`);
+            const urlObj = new URL(url);
+            if (examId) urlObj.searchParams.append('exam_id', examId);
 
-            const res = await fetch(url.toString(), {
+            const res = await fetch(urlObj.toString(), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -137,15 +139,16 @@ const StudentCenterAllocations = () => {
         setAllocating(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/university-admin/allocate-students-center`, {
+            const res = await fetch(getApiUrl('/university-admin/allocate-students'), {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}` 
                 },
                 body: JSON.stringify({
-                    studentIds: Array.from(selectedStudentIds),
-                    targetCenterId: targetCenterId === 'HOME_COLLEGE' ? null : targetCenterId
+                    student_ids: Array.from(selectedStudentIds),
+                    exam_id: selectedExamId,
+                    center_id: targetCenterId === 'HOME_COLLEGE' ? null : targetCenterId
                 })
             });
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Building2, CheckCircle2, XCircle, Clock, MapPin, Search, AlertTriangle, ArrowRight, X, Users, Info, Zap, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
+import { getApiUrl } from '../../config';
 
 const HallApprovals = () => {
     const [halls, setHalls] = useState([]);
@@ -24,13 +25,13 @@ const HallApprovals = () => {
             setLoading(true);
             const token = localStorage.getItem('token');
             const [hallsRes, shortagesRes, collegesRes] = await Promise.all([
-                fetch('http://localhost:8080/api/examination-halls/pending', {
+                fetch(getApiUrl('/examination-halls/pending'), {
                     headers: { Authorization: `Bearer ${token}` }
                 }),
-                fetch('http://localhost:8080/api/examination-halls/shortage-requests', {
+                fetch(getApiUrl('/examination-halls/shortage-requests'), {
                     headers: { Authorization: `Bearer ${token}` }
                 }),
-                fetch('http://localhost:8080/api/colleges', {
+                fetch(getApiUrl('/colleges'), {
                     headers: { Authorization: `Bearer ${token}` }
                 })
             ]);
@@ -65,7 +66,7 @@ const HallApprovals = () => {
     const handleAction = async (hallId, actionStatus) => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/examination-halls/${hallId}/approve-reject`, {
+            const res = await fetch(getApiUrl(`/examination-halls/${hallId}/approve-reject`), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -109,7 +110,7 @@ const HallApprovals = () => {
         setAllocating(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/examination-halls/shortage-requests/${selectedRequest.id}/allocate`, {
+            const res = await fetch(getApiUrl(`/examination-halls/shortage-requests/${selectedRequest.id}/allocate`), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

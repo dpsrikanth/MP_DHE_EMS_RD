@@ -14,6 +14,7 @@ import {
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import { getApiUrl } from '../config';
 import authUtils from '../utils/authUtils';
 
 const CheckboxOption = (props) => {
@@ -92,7 +93,7 @@ const Colleges = () => {
   const fetchMasters = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/masters', {
+      const res = await fetch(getApiUrl('/masters'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -112,7 +113,7 @@ const Colleges = () => {
     try {
       setIsConfigLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/universities/${uId}/config`, {
+      const res = await fetch(getApiUrl(`/universities/${uId}/config`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -129,7 +130,7 @@ const Colleges = () => {
   const fetchCollegeConfig = async (cId) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/colleges/${cId}/config`, {
+      const res = await fetch(getApiUrl(`/colleges/${cId}/config`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -158,7 +159,7 @@ const Colleges = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/colleges', {
+      const response = await fetch(getApiUrl('/colleges'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -175,7 +176,7 @@ const Colleges = () => {
   const fetchUniversities = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/universities', {
+      const response = await fetch(getApiUrl('/universities'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -197,7 +198,7 @@ const Colleges = () => {
     if (!deleteTarget) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/colleges/${deleteTarget.id}`, {
+      const response = await fetch(getApiUrl(`/colleges/${deleteTarget.id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

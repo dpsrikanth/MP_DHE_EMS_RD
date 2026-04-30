@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import { useNavigate, useParams } from 'react-router-dom';
 import Select from 'react-select';
 import { BookOpenCheck, Save, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { getApiUrl } from '../../config';
 
 const MarksConfigForm = () => {
     const navigate = useNavigate();
@@ -43,7 +44,7 @@ const MarksConfigForm = () => {
     const fetchMasterData = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/masters', {
+            const res = await fetch(getApiUrl('/masters'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -64,7 +65,7 @@ const MarksConfigForm = () => {
     const fetchStructureDataEdit = async (masterData) => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/college-admin/all-marks-structures', {
+            const res = await fetch(getApiUrl('/college-admin/all-marks-structures'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -148,7 +149,7 @@ const MarksConfigForm = () => {
             const collegeId = localStorage.getItem('collegeId');
 
             for (let comp of components) {
-                await fetch('http://localhost:8080/api/college-admin/marks-structure', {
+                await fetch(getApiUrl('/college-admin/marks-structure'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                     body: JSON.stringify({
@@ -181,7 +182,7 @@ const MarksConfigForm = () => {
         setSaving(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/college-admin/marks-structure/${editingStructure.id}`, {
+            const res = await fetch(getApiUrl(`/college-admin/marks-structure/${editingStructure.id}`), {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify(editingStructure)

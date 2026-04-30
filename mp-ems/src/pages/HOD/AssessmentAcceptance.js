@@ -8,6 +8,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
+import { getApiUrl } from '../../config';
 
 const AssessmentAcceptance = () => {
     const [assessments, setAssessments] = useState([]);
@@ -26,7 +27,7 @@ const AssessmentAcceptance = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/college-admin/pending-component-approvals`, {
+            const res = await fetch(getApiUrl('/college-admin/pending-component-approvals'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -79,7 +80,7 @@ const AssessmentAcceptance = () => {
         
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/college-admin/accept-component`, {
+            const res = await fetch(getApiUrl('/college-admin/accept-component'), {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',

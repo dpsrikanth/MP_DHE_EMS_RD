@@ -10,6 +10,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import authUtils from "../utils/authUtils";
+import { getApiUrl } from "../config";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ const Login = () => {
         return;
       }
 
-      const response = await fetch(window["config"].login_url, {
+      const response = await fetch(getApiUrl('/login'), {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

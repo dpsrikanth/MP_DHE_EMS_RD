@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Layers, Plus, CheckCircle2, AlertCircle } from 'lucide-react';
+import { getApiUrl } from '../../config';
 
 const RoundManagement = () => {
     const [rounds, setRounds] = useState([]);
     const [loading, setLoading] = useState(true);
     const [newRoundName, setNewRoundName] = useState('');
     const [saving, setSaving] = useState(false);
-
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
     useEffect(() => {
         fetchRounds();
@@ -18,7 +17,7 @@ const RoundManagement = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/internal-exams/rounds`, {
+            const response = await fetch(getApiUrl('/internal-exams/rounds'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (!response.ok) throw new Error('Failed to fetch');
@@ -39,7 +38,7 @@ const RoundManagement = () => {
         try {
             setSaving(true);
             const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/internal-exams/rounds`, {
+            const response = await fetch(getApiUrl('/internal-exams/rounds'), {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',

@@ -4,6 +4,7 @@ import {
   Search, BookOpen, GraduationCap, AlertTriangle
 } from "lucide-react";
 import { toast } from 'react-toastify';
+import { getApiUrl } from '../../config';
 
 const ManageCredits = () => {
     const [config, setConfig] = useState({
@@ -36,7 +37,7 @@ const ManageCredits = () => {
     const fetchUniversities = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/universities', {
+            const res = await fetch(getApiUrl('/universities'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -56,7 +57,7 @@ const ManageCredits = () => {
             const token = localStorage.getItem('token');
             const uniId = localStorage.getItem('universityId') || user.university_id;
             // Fetch all universities and filter to this admin's university
-            const res = await fetch('http://localhost:8080/api/universities', {
+            const res = await fetch(getApiUrl('/universities'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -90,7 +91,7 @@ const ManageCredits = () => {
     const fetchSubjects = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/grading/subjects', {
+            const res = await fetch(getApiUrl('/grading/subjects'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -105,7 +106,7 @@ const ManageCredits = () => {
     const fetchConfig = async () => {
         try {
             const token = localStorage.getItem('token');
-            let url = 'http://localhost:8080/api/grading/config';
+            let url = getApiUrl('/grading/config');
             if ((isSuperOrAdmin || isUniversityAdmin) && selectedUni) {
                 url += `?targetUniversityId=${selectedUni}`;
             }
@@ -135,7 +136,7 @@ const ManageCredits = () => {
         setSaving(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/grading/config', {
+            const res = await fetch(getApiUrl('/grading/config'), {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',

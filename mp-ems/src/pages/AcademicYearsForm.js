@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getApiUrl } from '../config';
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { Calendar, ArrowLeft, Check, Hash } from "lucide-react";
@@ -20,7 +21,7 @@ const AcademicYearsForm = () => {
   const fetchAcademicYear = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/academic-years', {
+      const response = await fetch(getApiUrl('/academic-years'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch academic years');
@@ -48,8 +49,8 @@ const AcademicYearsForm = () => {
       setSaving(true);
       const token = localStorage.getItem('token');
       const url = isEditing 
-        ? `http://localhost:8080/api/academic-years/${id}`
-        : 'http://localhost:8080/api/academic-years';
+        ? getApiUrl(`/academic-years/${id}`)
+        : getApiUrl('/academic-years');
       const method = isEditing ? 'PUT' : 'POST';
 
       const response = await fetch(url, {

@@ -7,6 +7,7 @@ import { useGradingPolicy } from '../../hooks/useGradingPolicy';
 import { getGradeAndPoints, isPass, calculateSGPA } from '../../utils/gradingUtils';
 import { toast } from 'react-toastify';
 import { TableSearch } from '../../components/TableControls';
+import { getApiUrl } from '../../config';
 
 const StudentResults = () => {
   const [results, setResults] = useState([]);
@@ -25,7 +26,7 @@ const StudentResults = () => {
   const fetchResults = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/student/results', {
+      const response = await fetch(getApiUrl('/student/results'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch results');

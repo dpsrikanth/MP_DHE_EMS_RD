@@ -10,6 +10,7 @@ import { TableSearch, TablePagination, ColumnVisibilitySelector } from '../compo
 import authUtils from "../utils/authUtils";
 import { toast } from 'react-toastify';
 import { formatDate } from '../utils/dateUtils';
+import { getApiUrl } from '../config';
 
 const Exams = () => {
   const navigate = useNavigate();
@@ -266,15 +267,15 @@ const Exams = () => {
       const headers = { Authorization: `Bearer ${token}` };
       
       const [colRes, uniRes, semRes, typeRes, depRes, progRes, yearRes, subRes, mapRes] = await Promise.all([
-        fetch('http://localhost:8080/api/colleges', { headers }),
-        fetch('http://localhost:8080/api/universities', { headers }),
-        fetch('http://localhost:8080/api/master-semesters', { headers }),
-        fetch('http://localhost:8080/api/exam-types', { headers }),
-        fetch('http://localhost:8080/api/master-departments', { headers }),
-        fetch('http://localhost:8080/api/master-programs', { headers }),
-        fetch('http://localhost:8080/api/academic-years', { headers }),
-        fetch('http://localhost:8080/api/master-subjects', { headers }),
-        fetch('http://localhost:8080/api/subject-mappings', { headers })
+        fetch(getApiUrl('/colleges'), { headers }),
+        fetch(getApiUrl('/universities'), { headers }),
+        fetch(getApiUrl('/master-semesters'), { headers }),
+        fetch(getApiUrl('/exam-types'), { headers }),
+        fetch(getApiUrl('/master-departments'), { headers }),
+        fetch(getApiUrl('/master-programs'), { headers }),
+        fetch(getApiUrl('/academic-years'), { headers }),
+        fetch(getApiUrl('/master-subjects'), { headers }),
+        fetch(getApiUrl('/subject-mappings'), { headers })
       ]);
 
       if (colRes.ok) setColleges(await colRes.json());
@@ -296,7 +297,7 @@ const Exams = () => {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/exams', {
+      const response = await fetch(getApiUrl('/exams'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -334,7 +335,7 @@ const Exams = () => {
       const newStatus = !series.subjects[0].is_published;
       
       const promises = series.subjects.map(s => 
-        fetch(`http://localhost:8080/api/exams/${s.id}/publish`, {
+        fetch(getApiUrl(`/exams/${s.id}/publish`), {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',
@@ -361,7 +362,7 @@ const Exams = () => {
 
       // For internal exams: fire ONE request first — backend checks ALL subjects in the series.
       // If that passes, fire the rest. This prevents partial publish.
-      const firstResponse = await fetch(`http://localhost:8080/api/exams/${series.subjects[0].id}/publish-results`, {
+      const firstResponse = await fetch(getApiUrl(`/exams/${series.subjects[0].id}/publish-results`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ results_published: newStatus })
@@ -378,7 +379,7 @@ const Exams = () => {
         const rest = series.subjects.slice(1);
         const responses = await Promise.all(
           rest.map(s =>
-            fetch(`http://localhost:8080/api/exams/${s.id}/publish-results`, {
+            fetch(getApiUrl(`/exams/${s.id}/publish-results`), {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
               body: JSON.stringify({ results_published: newStatus })
@@ -413,7 +414,7 @@ const Exams = () => {
       const newStatus = !series.subjects[0].student_application_open;
 
       const promises = series.subjects.map(s => 
-        fetch(`http://localhost:8080/api/exams/${s.id}/toggle-applications`, {
+        fetch(getApiUrl(`/exams/${s.id}/toggle-applications`), {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',
@@ -440,7 +441,7 @@ const Exams = () => {
       
       // Delete all subjects in parallel
       const deletePromises = series.subjects.map(s => 
-        fetch(`http://localhost:8080/api/exams/${s.id}`, {
+        fetch(getApiUrl(`/exams/${s.id}`), {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` }
         })
@@ -464,7 +465,7 @@ const Exams = () => {
     setShortageLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/examination-halls/shortage-request', {
+      const res = await fetch(getApiUrl('/examination-halls/shortage-request'), {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

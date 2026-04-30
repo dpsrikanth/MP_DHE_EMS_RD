@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { Layers, ArrowLeft, Check, Hash, Activity } from "lucide-react";
+import { getApiUrl } from '../config';
 import '../styles/FormPage.css';
 
 const SemestersForm = () => {
@@ -20,7 +21,7 @@ const SemestersForm = () => {
   const loadSemester = async (semesterId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/master-semesters', {
+      const response = await fetch(getApiUrl('/master-semesters'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch semesters');
@@ -48,8 +49,8 @@ const SemestersForm = () => {
       setSaving(true);
       const token = localStorage.getItem('token');
       const url = isEditing 
-        ? `http://localhost:8080/api/master-semesters/${id}` 
-        : 'http://localhost:8080/api/master-semesters';
+        ? getApiUrl(`/master-semesters/${id}`)
+        : getApiUrl('/master-semesters');
       const method = isEditing ? 'PUT' : 'POST';
 
       const res = await fetch(url, {

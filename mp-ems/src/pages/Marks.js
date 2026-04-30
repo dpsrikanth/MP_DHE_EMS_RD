@@ -17,6 +17,7 @@ import { toast } from 'react-toastify';
 import authUtils from '../utils/authUtils';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import { getApiUrl } from '../config';
 
 /**
  * Modern Marks Management component with Tailwind CSS styling.
@@ -110,7 +111,7 @@ const Marks = () => {
         }))
       };
 
-      const res = await fetch('http://localhost:8080/api/marks/teacher-save', {
+      const res = await fetch(getApiUrl('/marks/teacher-save'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,7 +134,7 @@ const Marks = () => {
   const handleHodAction = async (mark_id, action) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/marks/approve-reject', {
+      const res = await fetch(getApiUrl('/marks/approve-reject'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -161,13 +162,13 @@ const Marks = () => {
 
       // Example calls - mapping to the actual API endpoints
       const [colRes, deptRes, progRes, yrRes, semRes, subRes, exRes] = await Promise.all([
-        fetch('http://localhost:8080/api/colleges', { headers }),
-        fetch('http://localhost:8080/api/master-departments', { headers }),
-        fetch('http://localhost:8080/api/master-programs', { headers }),
-        fetch('http://localhost:8080/api/academic-years', { headers }),
-        fetch('http://localhost:8080/api/master-semesters', { headers }),
-        fetch('http://localhost:8080/api/master-subjects', { headers }),
-        fetch('http://localhost:8080/api/exams', { headers })
+        fetch(getApiUrl('/colleges'), { headers }),
+        fetch(getApiUrl('/master-departments'), { headers }),
+        fetch(getApiUrl('/master-programs'), { headers }),
+        fetch(getApiUrl('/academic-years'), { headers }),
+        fetch(getApiUrl('/master-semesters'), { headers }),
+        fetch(getApiUrl('/master-subjects'), { headers }),
+        fetch(getApiUrl('/exams'), { headers })
       ]);
 
       if (colRes.ok) setColleges(await colRes.json());
@@ -246,14 +247,14 @@ const Marks = () => {
         if (selectedSubject) params.append('subject_id', selectedSubject);
         if (selectedExam) params.append('exam_id', selectedExam);
 
-        const response = await fetch(`http://localhost:8080/api/marks/students?${params}`, {
+        const response = await fetch(getApiUrl(`/marks/students?${params}`), {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
         const data = await response.json();
         setData(data || []);
       } else {
-        const response = await fetch(`http://localhost:8080/api/marks/approvals?${params}`, {
+        const response = await fetch(getApiUrl(`/marks/approvals?${params}`), {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);

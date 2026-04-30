@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Users as UsersIcon, ArrowLeft, Check, ShieldCheck, ShieldAlert } from "lucide-react";
 import '../styles/FormPage.css';
+import { API_ENDPOINTS, getApiUrl } from '../config';
 
 const UsersForm = () => {
   const navigate = useNavigate();
@@ -26,9 +27,9 @@ const UsersForm = () => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       const [rRes, uRes, cRes] = await Promise.all([
-        fetch('http://localhost:8080/api/roles', { headers }),
-        fetch('http://localhost:8080/api/universities', { headers }),
-        fetch('http://localhost:8080/api/colleges', { headers })
+        fetch(API_ENDPOINTS.ROLES, { headers }),
+        fetch(API_ENDPOINTS.UNIVERSITIES, { headers }),
+        fetch(API_ENDPOINTS.COLLEGES, { headers })
       ]);
       if (rRes.ok) setRoles(await rRes.json());
       if (uRes.ok) setUniversities(await uRes.json());
@@ -41,7 +42,7 @@ const UsersForm = () => {
   const fetchUser = useCallback(async (userId) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/users`, {
+      const res = await fetch(getApiUrl('/users'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to fetch user data');
@@ -81,8 +82,8 @@ const UsersForm = () => {
 
       const method = isEditing ? 'PUT' : 'POST';
       const url = isEditing 
-        ? `http://localhost:8080/api/users/${id}` 
-        : 'http://localhost:8080/api/users';
+        ? getApiUrl(`/users/${id}`) 
+        : getApiUrl('/users');
 
       const res = await fetch(url, {
         method,

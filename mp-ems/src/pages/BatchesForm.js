@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getApiUrl } from '../config';
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
 import Select from "react-select";
@@ -41,8 +42,8 @@ const BatchesForm = () => {
     try {
       const token = localStorage.getItem('token');
       const [progRes, polRes] = await Promise.all([
-        fetch('http://localhost:8080/api/master-programs', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:8080/api/master-policies', { headers: { Authorization: `Bearer ${token}` } })
+        fetch(getApiUrl('/master-programs'), { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(getApiUrl('/master-policies'), { headers: { Authorization: `Bearer ${token}` } })
       ]);
       
       let progsData = [], polsData = [];
@@ -68,7 +69,7 @@ const BatchesForm = () => {
   const loadBatch = async (batchId, loadedPrograms, loadedPolicies) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/master-batches', {
+      const response = await fetch(getApiUrl('/master-batches'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch batches');
@@ -108,8 +109,8 @@ const BatchesForm = () => {
       setSaving(true);
       const token = localStorage.getItem('token');
       const url = isEditing 
-        ? `http://localhost:8080/api/master-batches/${id}` 
-        : 'http://localhost:8080/api/master-batches';
+        ? getApiUrl(`/master-batches/${id}`) 
+        : getApiUrl('/master-batches');
       const method = isEditing ? 'PUT' : 'POST';
 
       const res = await fetch(url, {

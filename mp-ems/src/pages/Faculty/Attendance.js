@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useLocation } from 'react-router-dom';
 import { TableSearch } from '../../components/TableControls';
+import { getApiUrl } from '../../config';
 
 const Attendance = () => {
     const location = useLocation();
@@ -62,8 +63,7 @@ const Attendance = () => {
             const token = localStorage.getItem('token');
             const userStr = localStorage.getItem('user');
             const teacherId = userStr ? JSON.parse(userStr).teacher_id : 1;
-
-            const res = await fetch(`http://localhost:8080/api/faculty-marks/assigned-subjects/${teacherId}`, {
+            const res = await fetch(getApiUrl(`/faculty-marks/assigned-subjects/${teacherId}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -81,17 +81,16 @@ const Attendance = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-
-            const studentsRes = await fetch(`http://localhost:8080/api/faculty-marks/students?college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&program_id=${assignment.program_id}`, {
+            const studentsRes = await fetch(getApiUrl(`/faculty-marks/students?college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&program_id=${assignment.program_id}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             let studentsData = [];
             if (studentsRes.ok) {
                 studentsData = await studentsRes.json();
             }
-            setStudents(studentsData);
+            setAttendanceDraft(draft);
 
-            const attRes = await fetch(`http://localhost:8080/api/faculty-marks/attendance?subject_id=${assignment.subject_id}&section=${assignment.section}&college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&academic_year_id=${assignment.academic_year_id}&attendance_date=${dateStr}&period_number=${periodNum}`, {
+            const attRes = await fetch(getApiUrl(`/faculty-marks/attendance?subject_id=${assignment.subject_id}&section=${assignment.section}&college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&academic_year_id=${assignment.academic_year_id}&attendance_date=${dateStr}&period_number=${periodNum}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             let existingAtt = [];
@@ -100,7 +99,7 @@ const Attendance = () => {
             }
 
             // Fetch overall summary for comparison in entry view
-            const summaryRes = await fetch(`http://localhost:8080/api/faculty-marks/attendance-summary?subject_id=${assignment.subject_id}&section=${assignment.section}&college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&academic_year_id=${assignment.academic_year_id}`, {
+            const summaryRes = await fetch(getApiUrl(`/faculty-marks/attendance-summary?subject_id=${assignment.subject_id}&section=${assignment.section}&college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&academic_year_id=${assignment.academic_year_id}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (summaryRes.ok) {
@@ -156,7 +155,7 @@ const Attendance = () => {
                 query.append('endDate', endDate);
             }
 
-            const summaryRes = await fetch(`http://localhost:8080/api/faculty-marks/attendance-summary?${query.toString()}`, {
+            const summaryRes = await fetch(getApiUrl(`/faculty-marks/attendance-summary?${query.toString()}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (summaryRes.ok) {
@@ -168,7 +167,7 @@ const Attendance = () => {
 
             // Also fetch student list if not loaded
             if (students.length === 0) {
-                const studentsRes = await fetch(`http://localhost:8080/api/faculty-marks/students?college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&program_id=${assignment.program_id}`, {
+                const studentsRes = await fetch(getApiUrl(`/faculty-marks/students?college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&program_id=${assignment.program_id}`), {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 if (studentsRes.ok) {
@@ -194,7 +193,7 @@ const Attendance = () => {
                 student_id: parseInt(studentId),
                 status
             }));
-            const res = await fetch('http://localhost:8080/api/faculty-marks/attendance', {
+            const res = await fetch(getApiUrl('/faculty-marks/attendance'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({

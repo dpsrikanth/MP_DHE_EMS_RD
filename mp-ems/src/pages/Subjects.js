@@ -21,6 +21,7 @@ import {
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import { getApiUrl } from '../config';
 
 const Subjects = () => {
   const [data, setData] = useState([]);
@@ -116,10 +117,10 @@ const Subjects = () => {
       const h = { Authorization: `Bearer ${token}` };
       
       const [progRes, semRes, teaRes, depRes] = await Promise.all([
-        fetch('http://localhost:8080/api/master-programs', { headers: h }),
-        fetch('http://localhost:8080/api/master-semesters', { headers: h }),
-        fetch('http://localhost:8080/api/master-teachers', { headers: h }),
-        fetch('http://localhost:8080/api/master-departments', { headers: h })
+        fetch(getApiUrl('/master-programs'), { headers: h }),
+        fetch(getApiUrl('/master-semesters'), { headers: h }),
+        fetch(getApiUrl('/master-teachers'), { headers: h }),
+        fetch(getApiUrl('/master-departments'), { headers: h })
       ]);
 
       if (progRes.ok) setPrograms((await progRes.json()).map(p => ({ value: p.id, label: p.name })));
@@ -135,7 +136,7 @@ const Subjects = () => {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/master-subjects', {
+      const response = await fetch(getApiUrl('/master-subjects'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch subjects');
@@ -168,7 +169,7 @@ const Subjects = () => {
     if (!deleteTarget) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/master-subjects/${deleteTarget.id}`, {
+      const res = await fetch(getApiUrl(`/master-subjects/${deleteTarget.id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

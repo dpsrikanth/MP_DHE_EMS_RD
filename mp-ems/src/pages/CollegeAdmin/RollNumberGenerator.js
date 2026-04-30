@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { KeyRound, Users, GraduationCap, CheckCircle2, Search, ArrowRight, ShieldCheck, RefreshCw, AlertTriangle, UserCheck } from "lucide-react";
+import { getApiUrl } from '../../config';
 
 const RollNumberGenerator = () => {
     const [programs, setPrograms] = useState([]);
@@ -26,7 +27,7 @@ const RollNumberGenerator = () => {
         try {
             setFetchingPrograms(true);
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/masters', {
+            const res = await fetch(getApiUrl('/masters'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -53,12 +54,14 @@ const RollNumberGenerator = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const url = new URL('http://localhost:8080/api/college-admin/students-for-roll-generation');
-            url.searchParams.append('programName', selectedProgram);
-            url.searchParams.append('semister', selectedSemester);
-            url.searchParams.append('admission_year', selectedAdmissionYear);
+            
+            const queryParams = new URLSearchParams({
+                programName: selectedProgram,
+                semister: selectedSemester,
+                admission_year: selectedAdmissionYear
+            });
 
-            const res = await fetch(url, {
+            const res = await fetch(getApiUrl(`/college-admin/students-for-roll-generation?${queryParams.toString()}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -108,7 +111,7 @@ const RollNumberGenerator = () => {
                 rollnumber: s.proposed_rollnumber
             }));
 
-            const res = await fetch('http://localhost:8080/api/college-admin/generate-roll-numbers', {
+            const res = await fetch(getApiUrl('/college-admin/generate-roll-numbers'), {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Users, TrendingUp, AlertTriangle, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
+import { getApiUrl } from '../../config';
 
 const InfrastructureAnalytics = () => {
   const [data, setData] = useState([]);
@@ -25,7 +26,7 @@ const InfrastructureAnalytics = () => {
 
   const fetchExams = async () => {
     try {
-      const response = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/exams`, {
+      const response = await fetch(getApiUrl('/exams'), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -37,10 +38,11 @@ const InfrastructureAnalytics = () => {
     }
   };
 
-  const fetchInfrastructureData = async (examId = '') => {
+  const fetchInfrastructureData = async (examId) => {
     setLoading(true);
     try {
-      const url = new URL(`${window.config?.api_base_url || 'http://localhost:8080/api'}/reports/infrastructure-analytics`);
+      const urlStr = getApiUrl('/reports/infrastructure-analytics');
+      const url = new URL(urlStr);
       if (examId) url.searchParams.append('exam_id', examId);
 
       const response = await fetch(url.toString(), {

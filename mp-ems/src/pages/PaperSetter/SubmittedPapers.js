@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import authUtils from '../../utils/authUtils';
 import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
+import { getApiUrl } from '../../config';
 
 const SubmittedPapers = () => {
   const [loading, setLoading] = useState(true);
@@ -17,7 +18,7 @@ const SubmittedPapers = () => {
   const fetchDashData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/paper-setter/faculty/dash-data`, {
+      const res = await fetch(getApiUrl('/paper-setter/faculty/dash-data'), {
         headers: authUtils.getAuthHeader()
       });
       if (res.ok) {
@@ -59,7 +60,7 @@ const SubmittedPapers = () => {
     
     const loadingToast = toast.loading(`${actionName === 'view' ? 'Opening' : 'Downloading'} secure paper...`);
     try {
-      const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/paper-setter/download/${paperId}`, {
+      const res = await fetch(getApiUrl(`/paper-setter/download/${paperId}`), {
         headers: authUtils.getAuthHeader()
       });
       

@@ -6,6 +6,7 @@ import { formatDate } from '../../utils/dateUtils';
 import authUtils from '../../utils/authUtils';
 import { useGradingPolicy } from '../../hooks/useGradingPolicy';
 import { getGradeAndPoints, isPass, calculateSGPA } from '../../utils/gradingUtils';
+import { getApiUrl } from '../../config';
 
 const ResultSheet = () => {
   const { examName } = useParams();
@@ -20,8 +21,7 @@ const ResultSheet = () => {
 
   const fetchResultData = async () => {
     try {
-      const apiBase = window.config?.api_base_url || window.config?.login_url?.replace('/login', '') || 'http://localhost:8080/api';
-      const response = await fetch(`${apiBase}/student/result-sheet/${encodeURIComponent(examName)}`, {
+      const response = await fetch(getApiUrl(`/student/result-sheet/${encodeURIComponent(examName)}`), {
         headers: {
           ...authUtils.getAuthHeader()
         }

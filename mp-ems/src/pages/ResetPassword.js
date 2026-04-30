@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Lock, Eye, EyeOff, ArrowRight, School, CheckCircle2 } from "lucide-react";
+import { getApiUrl } from "../config";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -24,8 +25,7 @@ const ResetPassword = () => {
     setMessage(null);
 
     try {
-      const baseUrl = window["config"]?.login_url?.replace('/login', '') || 'http://localhost:8080/api';
-      const response = await fetch(`${baseUrl}/reset-password`, {
+      const response = await fetch(getApiUrl('/reset-password'), {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

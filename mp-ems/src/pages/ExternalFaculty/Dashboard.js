@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { TableSearch } from "../../components/TableControls";
+import { getApiUrl } from "../../config";
 
 const ExternalFacultyDashboard = () => {
   const [stats, setStats] = useState({
@@ -26,7 +27,7 @@ const ExternalFacultyDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/external-faculty/assignments', {
+      const res = await fetch(getApiUrl('/external-faculty/assignments'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {

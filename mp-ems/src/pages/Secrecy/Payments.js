@@ -3,6 +3,7 @@ import { CreditCard, Search } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
 import { toast } from 'react-toastify';
 import { TableSearch } from '../../components/TableControls';
+import { getApiUrl } from '../../config';
 
 const SecrecyPayments = () => {
   const [payments, setPayments] = useState([]);
@@ -16,7 +17,7 @@ const SecrecyPayments = () => {
   const fetchPayments = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/secrecy/payments`, {
+      const res = await fetch(getApiUrl('/secrecy/payments'), {
         headers: authUtils.getAuthHeader()
       });
       if (res.ok) setPayments(await res.json());
@@ -30,7 +31,7 @@ const SecrecyPayments = () => {
 
   const handleProcessPayment = async (payment_id) => {
     try {
-      const res = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/secrecy/payments/process`, {
+      const res = await fetch(getApiUrl('/secrecy/payments/process'), {
         method: 'POST',
         headers: { ...authUtils.getAuthHeader(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ payment_id, status: 'Paid' })

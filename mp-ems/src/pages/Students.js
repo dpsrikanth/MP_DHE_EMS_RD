@@ -21,6 +21,7 @@ import Papa from 'papaparse';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 import BulkImportModal from '../components/BulkImportModal';
+import { getApiUrl } from '../config';
 
 const Students = () => {
   const navigate = useNavigate();
@@ -80,7 +81,7 @@ const Students = () => {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/students', {
+      const response = await fetch(getApiUrl('/students'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) {
@@ -177,7 +178,7 @@ const Students = () => {
     setDeleteError('');
     try {
       const token = localStorage.getItem('token');
-      const resp = await fetch(`http://localhost:8080/api/students/${studentToDelete.id}`, {
+      const resp = await fetch(getApiUrl(`/students/${studentToDelete.id}`), {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`
@@ -493,7 +494,7 @@ const Students = () => {
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         onUploadSuccess={fetchData}
-        endpoint="http://localhost:8080/api/students/bulk-upload"
+        endpoint={getApiUrl("/students/bulk-upload")}
         entityName="students"
         expectedColumns={{
           name: 'Name',

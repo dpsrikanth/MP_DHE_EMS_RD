@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { toast } from 'react-toastify';
 import { useNavigate, useParams } from "react-router-dom";
 import { ShieldCheck, Check, Hash, FileText, ArrowLeft } from "lucide-react";
+import { getApiUrl } from '../config';
 import '../styles/FormPage.css';
 
 const PoliciesForm = () => {
@@ -21,7 +22,7 @@ const PoliciesForm = () => {
   const fetchPolicyData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/master-policies', {
+      const response = await fetch(getApiUrl('/master-policies'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -50,8 +51,8 @@ const PoliciesForm = () => {
       const token = localStorage.getItem('token');
       const method = isEditing ? 'PUT' : 'POST';
       const url = isEditing 
-        ? `http://localhost:8080/api/master-policies/${editingId}`
-        : 'http://localhost:8080/api/master-policies';
+        ? getApiUrl(`/master-policies/${editingId}`)
+        : getApiUrl('/master-policies');
         
       const res = await fetch(url, {
         method,

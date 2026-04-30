@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { FileDown, Printer, Filter, Search, BookOpen, GraduationCap } from "lucide-react";
 import Select from 'react-select';
+import { getApiUrl } from '../../config';
 
 const MarksReports = () => {
     const [reportData, setReportData] = useState([]);
@@ -18,7 +19,7 @@ const MarksReports = () => {
     const fetchMetadata = async () => {
         try {
             const token = localStorage.getItem('token');
-            const semRes = await fetch('http://localhost:8080/api/semesters', {
+            const semRes = await fetch(getApiUrl('/semesters'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (semRes.ok) {
@@ -26,7 +27,7 @@ const MarksReports = () => {
                 setSemesters(data.map(s => ({ value: s.id, label: s.semester_name })));
             }
 
-            const subRes = await fetch('http://localhost:8080/api/subjects', {
+            const subRes = await fetch(getApiUrl('/subjects'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (subRes.ok) {
@@ -49,7 +50,7 @@ const MarksReports = () => {
             const userStr = localStorage.getItem('user');
             const collegeId = userStr ? JSON.parse(userStr).college_id : 1;
 
-            let url = `http://localhost:8080/api/college-admin/marks-report?college_id=${collegeId}&semester_id=${selectedSemester.value}`;
+            let url = getApiUrl(`/college-admin/marks-report?college_id=${collegeId}&semester_id=${selectedSemester.value}`);
             if (selectedSubject) url += `&subject_id=${selectedSubject.value}`;
 
             const res = await fetch(url, {

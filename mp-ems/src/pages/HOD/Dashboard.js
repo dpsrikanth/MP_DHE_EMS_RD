@@ -13,6 +13,7 @@ import {
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import authUtils from "../../utils/authUtils";
+import { getApiUrl } from "../../config";
 
 const HODDashboard = () => {
     const navigate = useNavigate();
@@ -38,21 +39,21 @@ const HODDashboard = () => {
 
                 // Fetch stats (Mocked for now or using existing APIs with filters)
                 // In a real scenario, we'd have a specific HOD stats endpoint
-                const response = await fetch(`http://localhost:8080/api/marks/approvals?college_id=${collegeId}&department_id=${departmentId}`, authHeader);
+                const response = await fetch(getApiUrl(`/marks/approvals?college_id=${collegeId}&department_id=${departmentId}`), authHeader);
                 if (response.ok) {
                     const approvals = await response.json();
                     setStats(prev => ({ ...prev, pendingApprovals: approvals.length }));
                 }
 
                 // Fetch Department Teacher Count
-                const tResponse = await fetch(`http://localhost:8080/api/teachers?college_id=${collegeId}&department_id=${departmentId}`, authHeader);
+                const tResponse = await fetch(getApiUrl(`/teachers?college_id=${collegeId}&department_id=${departmentId}`), authHeader);
                 if (tResponse.ok) {
                     const teachers = await tResponse.json();
                     setStats(prev => ({ ...prev, totalFaculty: teachers.length }));
                 }
 
                 // Fetch Department Student Count
-                const sResponse = await fetch(`http://localhost:8080/api/students?college_id=${collegeId}&department_id=${departmentId}`, authHeader);
+                const sResponse = await fetch(getApiUrl(`/students?college_id=${collegeId}&department_id=${departmentId}`), authHeader);
                 if (sResponse.ok) {
                     const students = await sResponse.json();
                     setStats(prev => ({ ...prev, totalStudents: students.length }));

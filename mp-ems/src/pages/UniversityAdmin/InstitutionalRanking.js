@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, Star, Percent, BarChart3, Search } from 'lucide-react';
+import { getApiUrl } from '../../config';
 
 const InstitutionalRanking = () => {
   const [ranking, setRanking] = useState([]);
@@ -12,7 +13,7 @@ const InstitutionalRanking = () => {
 
   const fetchRanking = async () => {
     try {
-      const response = await fetch(`${window.config?.api_base_url || 'http://localhost:8080/api'}/reports/institutional-ranking`, {
+      const response = await fetch(getApiUrl('/reports/institutional-ranking'), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

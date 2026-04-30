@@ -34,6 +34,7 @@ import Papa from 'papaparse';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 import BulkImportModal from '../components/BulkImportModal';
+import { getApiUrl } from '../config';
 
 
 const InfoItem = ({ label, value, isMono = false, className = "" }) => (
@@ -128,13 +129,13 @@ const Teachers = () => {
   const fetchDropdownOptions = async () => {
     try {
       const [designResp, deptResp, collegeResp] = await Promise.all([
-        fetch('http://localhost:8080/api/master-designations', {
+        fetch(getApiUrl('/master-designations'), {
           headers: authUtils.getAuthHeader()
         }),
-        fetch('http://localhost:8080/api/master-departments', {
+        fetch(getApiUrl('/master-departments'), {
           headers: authUtils.getAuthHeader()
         }),
-        fetch('http://localhost:8080/api/colleges', {
+        fetch(getApiUrl('/colleges'), {
           headers: authUtils.getAuthHeader()
         })
       ]);
@@ -217,7 +218,7 @@ const Teachers = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      const resp = await fetch('http://localhost:8080/api/master-teachers', {
+      const resp = await fetch(getApiUrl('/master-teachers'), {
         headers: authUtils.getAuthHeader()
       });
       if (!resp.ok) throw new Error('Failed to fetch teachers');
@@ -318,7 +319,7 @@ const Teachers = () => {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     try {
-      const resp = await fetch(`http://localhost:8080/api/master-teachers/${deleteTarget.id}`, {
+      const resp = await fetch(getApiUrl(`/master-teachers/${deleteTarget.id}`), {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() }
       });
@@ -862,7 +863,7 @@ const Teachers = () => {
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         onUploadSuccess={fetchData}
-        endpoint="http://localhost:8080/api/teachers/bulk-upload"
+        endpoint={getApiUrl("/teachers/bulk-upload")}
         entityName="teachers"
         expectedColumns={{
           name: 'Name',

@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import { Users, Layout, Trash2, Play, Search, Building2, ChevronRight, Download, Info, CheckCircle2, AlertCircle } from "lucide-react";
 import { TableSearch } from '../../components/TableControls';
 import { formatDate } from '../../utils/dateUtils';
+import { getApiUrl } from '../../config';
 
 const SeatingArrangement = () => {
     const [arrangements, setArrangements] = useState([]);
@@ -16,7 +17,7 @@ const SeatingArrangement = () => {
     const [isLocked, setIsLocked] = useState(false);
 
 
-    const apiBase = 'http://localhost:8080/api/college-admin';
+    const apiBase = getApiUrl('/college-admin');
 
     useEffect(() => {
         fetchExams();
@@ -40,7 +41,7 @@ const SeatingArrangement = () => {
     const fetchExams = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/exams', {
+            const res = await fetch(getApiUrl('/exams'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -56,11 +57,11 @@ const SeatingArrangement = () => {
         try {
             const token = localStorage.getItem('token');
             // Fetch total capacity
-            const hallRes = await fetch(`http://localhost:8080/api/examination-halls${examId ? `?exam_id=${examId}` : ''}`, {
+            const hallRes = await fetch(getApiUrl(`/examination-halls${examId ? `?exam_id=${examId}` : ''}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Fetch student requirement
-            const reqRes = await fetch(`http://localhost:8080/api/examination-halls/seating-requirement${examId ? `?exam_id=${examId}` : ''}`, {
+            const reqRes = await fetch(getApiUrl(`/examination-halls/seating-requirement${examId ? `?exam_id=${examId}` : ''}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
 

@@ -16,6 +16,7 @@ import { MdDelete } from "react-icons/md";
 import { formatDate } from '../utils/dateUtils';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import { getApiUrl } from '../config';
 import Select from "react-select";
 import authUtils from "../utils/authUtils";
 
@@ -68,7 +69,7 @@ const Semesters = () => {
   const fetchAvailableMasters = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/masters', {
+      const res = await fetch(getApiUrl('/masters'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -83,7 +84,7 @@ const Semesters = () => {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/master-semesters', {
+      const response = await fetch(getApiUrl('/master-semesters'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) {
@@ -107,7 +108,7 @@ const Semesters = () => {
     if (!mappingSelection) return toast.warning('Please select a semester');
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/master-semesters/map', {
+      const res = await fetch(getApiUrl('/master-semesters/map'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ semester_id: mappingSelection.value })
@@ -125,7 +126,7 @@ const Semesters = () => {
   const handleUnmap = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/master-semesters/unmap/${id}`, {
+      const res = await fetch(getApiUrl(`/master-semesters/unmap/${id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -148,7 +149,7 @@ const Semesters = () => {
     if (!deleteTarget) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/master-semesters/${deleteTarget.id}`, {
+      const res = await fetch(getApiUrl(`/master-semesters/${deleteTarget.id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

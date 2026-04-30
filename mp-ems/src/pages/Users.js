@@ -13,6 +13,7 @@ import {
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader } from '../components/TableControls';
+import { API_ENDPOINTS, getApiUrl } from '../config';
 
 const Users = () => {
   const navigate = useNavigate();
@@ -66,9 +67,9 @@ const Users = () => {
       const headers = { Authorization: `Bearer ${token}` };
       
       const [rRes, uRes, cRes] = await Promise.all([
-        fetch('http://localhost:8080/api/roles', { headers }),
-        fetch('http://localhost:8080/api/universities', { headers }),
-        fetch('http://localhost:8080/api/colleges', { headers })
+        fetch(API_ENDPOINTS.ROLES, { headers }),
+        fetch(API_ENDPOINTS.UNIVERSITIES, { headers }),
+        fetch(API_ENDPOINTS.COLLEGES, { headers })
       ]);
 
       if (rRes.ok) setRoles(await rRes.json());
@@ -82,7 +83,7 @@ const Users = () => {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/users', {
+      const response = await fetch(getApiUrl('/users'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch users');
@@ -100,7 +101,7 @@ const Users = () => {
     if (!deleteTarget) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/users/${deleteTarget.id}`, { 
+      const res = await fetch(getApiUrl(`/users/${deleteTarget.id}`), { 
         method: 'DELETE', 
         headers: { Authorization: `Bearer ${token}` } 
       });

@@ -13,6 +13,7 @@ import {
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader } from '../components/TableControls';
+import { getApiUrl } from '../config';
 
 const Roles = () => {
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ const Roles = () => {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/roles', {
+      const response = await fetch(getApiUrl('/roles'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch roles');
@@ -73,7 +74,7 @@ const Roles = () => {
     if (!deleteTarget) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/roles/${deleteTarget.id}`, { 
+      const res = await fetch(getApiUrl(`/roles/${deleteTarget.id}`), { 
         method: 'DELETE', 
         headers: { Authorization: `Bearer ${token}` } 
       });
