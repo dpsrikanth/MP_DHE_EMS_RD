@@ -1,4 +1,4 @@
-const API_BASE_URL = window.EMS_CONFIG?.API_BASE_URL || 'http://localhost:8080/api';
+const API_BASE_URL = window.EMS_CONFIG?.API_BASE_URL;
 
 export const getApiUrl = (path) => `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
 

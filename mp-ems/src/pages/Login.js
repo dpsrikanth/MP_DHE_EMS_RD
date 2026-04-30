@@ -33,7 +33,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      if (!window["config"] || !window["config"].login_url) {
+      if (!window.EMS_CONFIG || !window.EMS_CONFIG.API_BASE_URL) {
         setError("Configuration error: Application config not found. Please refresh the page.");
         setLoading(false);
         return;
