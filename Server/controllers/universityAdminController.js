@@ -374,23 +374,42 @@ exports.getResultHubData = async (req, res) => {
         // Validation for "canPublish" button in UI
         let workflowReady = true;
         if (exam_name) {
-            const workflowCheck = await db.query(`
-                SELECT COUNT(*) as total, 
-                       COUNT(*) FILTER (WHERE mws.status IN ('Locked', 'Finalized')) as locked
-                FROM marks_workflow_status mws
-                JOIN master_subjects sub ON mws.subject_id = sub.id
-                WHERE (mws.college_id = $1 OR $1 IS NULL)
-                  AND sub.id IN (
-                      SELECT subject_id FROM exams WHERE TRIM(name) ILIKE TRIM($2)
-                      UNION
-                      SELECT subject_id FROM internal_exam_schedules WHERE TRIM(round_id) ILIKE TRIM($2)
-                  )
-            `, [college_id || null, exam_name || null]);
+            const currentExamType = rows.length > 0 ? rows[0].exam_type : null;
 
-            const stats = workflowCheck.rows[0];
-            // If we have subjects, all must be locked. If we have NO subjects in workflow table, it's NOT ready.
-            if (parseInt(stats.total) === 0 || parseInt(stats.locked) < parseInt(stats.total)) {
-                workflowReady = false;
+            if (currentExamType === 2) {
+                // External Exams (Type 2): Check if external faculty marks are submitted for all subjects in the series
+                const externalCheck = await db.query(`
+                    SELECT COUNT(DISTINCT e.subject_id) as total_subjects,
+                           COUNT(DISTINCT efa.subject_id) FILTER (WHERE efa.status IN ('Submitted', 'Approved', 'Finalized')) as submitted_count
+                    FROM exams e
+                    LEFT JOIN external_faculty_assignments efa ON efa.exam_id = e.id 
+                      AND (efa.subject_id = e.subject_id OR efa.subject_id IS NULL)
+                    WHERE TRIM(e.name) ILIKE TRIM($1)
+                `, [exam_name]);
+
+                const stats = externalCheck.rows[0];
+                if (parseInt(stats.total_subjects) === 0 || parseInt(stats.submitted_count) < parseInt(stats.total_subjects)) {
+                    workflowReady = false;
+                }
+            } else {
+                // Internal Exams (Type 1): Check if all subjects are locked in marks_workflow_status
+                const workflowCheck = await db.query(`
+                    SELECT COUNT(*) as total, 
+                           COUNT(*) FILTER (WHERE mws.status IN ('Locked', 'Finalized')) as locked
+                    FROM marks_workflow_status mws
+                    JOIN master_subjects sub ON mws.subject_id = sub.id
+                    WHERE (mws.college_id = $1 OR $1 IS NULL)
+                      AND sub.id IN (
+                          SELECT subject_id FROM exams WHERE TRIM(name) ILIKE TRIM($2)
+                          UNION
+                          SELECT subject_id FROM internal_exam_schedules WHERE TRIM(round_id) ILIKE TRIM($2)
+                      )
+                `, [college_id || null, exam_name || null]);
+
+                const stats = workflowCheck.rows[0];
+                if (parseInt(stats.total) === 0 || parseInt(stats.locked) < parseInt(stats.total)) {
+                    workflowReady = false;
+                }
             }
         }
         const canPublish = rows.length > 0 && workflowReady;

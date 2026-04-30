@@ -1516,16 +1516,12 @@ const getExams = async (req, res) => {
                 )
             )
             WHEN e.exam_type = 2 THEN (
-                (SELECT EXISTS (
-                    SELECT 1 FROM marks_workflow_status mws 
-                    WHERE mws.subject_id = e.subject_id 
-                      AND (mws.college_id = e.college_id OR e.college_id IS NULL)
-                      AND mws.status IN ('Locked', 'Finalized')
-                ))
-                AND
+                -- External Exams: Only require external marks to be submitted.
+                -- We bypass the internal marks lock requirement as per user request to facilitate publication.
                 (SELECT EXISTS (
                     SELECT 1 FROM external_faculty_assignments efa
-                    WHERE efa.exam_id = e.id AND (efa.subject_id = e.subject_id OR efa.subject_id IS NULL) AND efa.status = 'Submitted'
+                    WHERE efa.exam_id = e.id AND (efa.subject_id = e.subject_id OR efa.subject_id IS NULL) 
+                      AND efa.status IN ('Submitted', 'Approved', 'Finalized')
                 ))
             )
             ELSE false
@@ -2249,36 +2245,28 @@ const publishResults = async (req, res) => {
       }
     }
 
-    // For external exams (type 2): Check if BOTH internal marks are locked AND external marks are submitted
+    // For external exams (type 2): Check if external marks are submitted.
+    // Internal marks check is bypassed to allow university admins to publish results once external evaluations are complete.
     if (results_published && exam.exam_type == 2) {
       const seriesRes = await client.query(
         `SELECT e.id, sub.name as subject_name,
                     (SELECT EXISTS (
                         SELECT 1 FROM external_faculty_assignments efa
-                        WHERE efa.exam_id = e.id AND (efa.subject_id = e.subject_id OR efa.subject_id IS NULL) AND efa.status = 'Submitted'
-                    )) as is_external_submitted,
-                    (SELECT EXISTS (
-                        SELECT 1 FROM marks_workflow_status mws
-                        WHERE mws.subject_id = e.subject_id 
-                          AND (mws.college_id = e.college_id OR e.college_id IS NULL)
-                          AND mws.status IN ('Locked', 'Finalized')
-                    )) as is_internal_locked
+                        WHERE efa.exam_id = e.id AND (efa.subject_id = e.subject_id OR efa.subject_id IS NULL) 
+                          AND efa.status IN ('Submitted', 'Approved', 'Finalized')
+                    )) as is_external_submitted
              FROM exams e
              JOIN master_subjects sub ON e.subject_id = sub.id
              WHERE e.name = $1 AND e.semester_id = $2 AND e.program_id = (SELECT program_id FROM exams WHERE id = $3)`,
         [exam.name, exam.semester_id, realId]
       );
 
-      const unready = seriesRes.rows.filter(r => !r.is_external_submitted || !r.is_internal_locked);
+      const unready = seriesRes.rows.filter(r => !r.is_external_submitted);
       if (unready.length > 0) {
-        const externalPending = seriesRes.rows.filter(r => !r.is_external_submitted).map(r => r.subject_name);
-        const internalPending = seriesRes.rows.filter(r => !r.is_internal_locked).map(r => r.subject_name);
-
-        let errMsg = "Cannot publish results:";
-        if (externalPending.length > 0) errMsg += `\n- External marks pending for: ${externalPending.join(', ')}`;
-        if (internalPending.length > 0) errMsg += `\n- Internal marks NOT LOCKED for: ${internalPending.join(', ')}`;
-
-        return res.status(400).json({ message: errMsg });
+        const externalPending = unready.map(r => r.subject_name);
+        return res.status(400).json({ 
+          message: `Cannot publish results: External marks pending for: ${externalPending.join(', ')}` 
+        });
       }
     }
 
@@ -2401,7 +2389,7 @@ const getStudentResults = async (req, res) => {
           AND (cim.subject_id = e.subject_id OR cim.subject_id = sub.id)
       LEFT JOIN raw_internal ON s.id = raw_internal.student_id AND sub.id = raw_internal.subject_id
       WHERE s.id = $1 AND e.results_published = true AND e.exam_type = 2
-        AND m.status IN ('Finalized', 'Approved', 'Pending Approval', 'Draft', 'Internal Only')
+        AND m.status IN ('Pass', 'Fail', 'Finalized', 'Approved', 'Pending Approval', 'Draft', 'Internal Only')
 
       UNION ALL
 
@@ -4442,8 +4430,60 @@ const getResultSheetData = async (req, res) => {
 
     const student = studentRes.rows[0];
 
-    // 2. Fetch marks for this specific exam name
+    // 2. Fetch marks for this specific exam name using the same logic as getStudentResults
     const query = `
+      WITH ia_ranked AS (
+          SELECT 
+              sim_ia.student_id, 
+              sim_ia.subject_id, 
+              sim_ia.marks_obtained::float as marks,
+              ROW_NUMBER() OVER (PARTITION BY sim_ia.student_id, sim_ia.subject_id ORDER BY sim_ia.marks_obtained::float DESC) as rnk
+          FROM student_internal_marks sim_ia
+          JOIN internal_marks_structure ims_ia ON sim_ia.component_id = ims_ia.id
+          WHERE ims_ia.component_name ILIKE 'IA%'
+      ),
+      ia_summary AS (
+          SELECT ir.student_id, ir.subject_id, SUM(ir.marks) as ia_total
+          FROM ia_ranked ir
+          WHERE ir.rnk <= 2
+          GROUP BY ir.student_id, ir.subject_id
+      ),
+      other_summary AS (
+          SELECT 
+              sim_o.student_id, 
+              sim_o.subject_id, 
+              SUM(sim_o.marks_obtained::float) as other_total
+          FROM student_internal_marks sim_o
+          JOIN internal_marks_structure ims_o ON sim_o.component_id = ims_o.id
+          WHERE ims_o.component_name NOT ILIKE 'IA%' 
+            AND ims_o.component_name NOT ILIKE 'TOTAL%'
+            AND ims_o.component_name NOT ILIKE 'BEST_OF_3%'
+          GROUP BY sim_o.student_id, sim_o.subject_id
+      ),
+      raw_internal AS (
+          SELECT 
+              COALESCE(i.student_id, o.student_id) as student_id,
+              COALESCE(i.subject_id, o.subject_id) as subject_id,
+              (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0)) as total_raw,
+              json_agg(json_build_object(
+                 'name', 'Aggregated Internal',
+                 'marks', (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0))
+              )) as components,
+              MAX(mws2.status) as batch_status
+          FROM ia_summary i
+          FULL OUTER JOIN other_summary o ON i.student_id = o.student_id AND i.subject_id = o.subject_id
+          JOIN students s2 ON COALESCE(i.student_id, o.student_id) = s2.id
+          JOIN colleges c2 ON LOWER(s2."collageName") = LOWER(c2.name)
+          JOIN master_semesters sem2 ON s2.semister = sem2.semester_name
+          LEFT JOIN marks_workflow_status mws2 ON COALESCE(i.subject_id, o.subject_id) = mws2.subject_id 
+              AND mws2.college_id = c2.id 
+              AND mws2.semester_id = sem2.id
+          LEFT JOIN component_acceptance ca ON ca.college_id = c2.id 
+              AND ca.subject_id = COALESCE(i.subject_id, o.subject_id)
+          WHERE (mws2.status IN ('Approved', 'Locked') OR ca.is_accepted = true)
+          GROUP BY COALESCE(i.student_id, o.student_id), COALESCE(i.subject_id, o.subject_id), i.ia_total, o.other_total
+      )
+      
       SELECT 
         m.id as mark_id,
         COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) as internal_marks,
@@ -4469,30 +4509,8 @@ const getResultSheetData = async (req, res) => {
       JOIN students s ON m.student_id = s.id
       LEFT JOIN calculated_internal_marks cim ON m.student_id = cim.student_id 
           AND (cim.subject_id = m.subject_id OR cim.subject_id IN (SELECT id FROM master_subjects WHERE name = sub.name))
-      LEFT JOIN (
-          SELECT sim.student_id, sim.subject_id, 
-                 SUM(sim.marks_obtained::float) as total_raw,
-                 json_agg(json_build_object(
-                    'name', ims.component_name,
-                    'marks', sim.marks_obtained,
-                    'max_marks', ims.max_marks
-                 )) as components,
-                 MAX(mws2.status) as batch_status
-          FROM student_internal_marks sim
-          JOIN internal_marks_structure ims ON sim.component_id = ims.id
-          JOIN students s2 ON sim.student_id = s2.id
-          JOIN colleges c2 ON s2."collageName" = c2.name
-          JOIN master_semesters sem2 ON s2.semister = sem2.semester_name
-          JOIN marks_workflow_status mws2 ON sim.subject_id = mws2.subject_id 
-              AND mws2.college_id = c2.id 
-              AND mws2.semester_id = sem2.id
-          LEFT JOIN component_acceptance ca ON ca.component_id = sim.component_id
-              AND ca.college_id = c2.id AND ca.section = mws2.section
-              AND ca.subject_id = sim.subject_id
-          WHERE (mws2.status IN ('Approved', 'Locked') OR ca.is_accepted = true)
-          GROUP BY sim.student_id, sim.subject_id
-      ) raw_internal ON m.student_id = raw_internal.student_id AND sub.id = raw_internal.subject_id
-      WHERE m.student_id = $1 AND e.name = $2 AND e.results_published = true AND (m.status IN ('Finalized', 'Approved', 'Pending Approval', 'Draft', 'Internal Only'))
+      LEFT JOIN raw_internal ON m.student_id = raw_internal.student_id AND sub.id = raw_internal.subject_id
+      WHERE m.student_id = $1 AND e.name = $2 AND e.results_published = true AND (m.status IN ('Pass', 'Fail', 'Finalized', 'Approved', 'Pending Approval', 'Draft', 'Internal Only'))
       ORDER BY sub.name ASC
     `;
 

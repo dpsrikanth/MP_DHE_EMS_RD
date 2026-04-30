@@ -100,12 +100,19 @@ const StudentResults = () => {
                String(sub.gradePoint).includes(query);
       }) : allSubjects;
 
-      return {
-        ...group,
-        subjects: filteredSubjects,
-        hasMatches: filteredSubjects.length > 0,
-        sgpa: group.totalCreditsAssigned > 0 ? (group.totalCiGi / group.totalCreditsAssigned).toFixed(2) : '0.00'
-      };
+        const hasGrace = allSubjects.some(s => parseFloat(s.grace_marks || 0) > 0);
+        const hasFail = allSubjects.some(s => !s.isPass);
+        let overallStatus = 'PASS';
+        if (hasFail) overallStatus = 'FAIL';
+        else if (hasGrace) overallStatus = 'PASS (GRACE)';
+
+        return {
+          ...group,
+          subjects: filteredSubjects,
+          hasMatches: filteredSubjects.length > 0,
+          sgpa: group.totalCreditsAssigned > 0 ? (group.totalCiGi / group.totalCreditsAssigned).toFixed(2) : '0.00',
+          overallStatus
+        };
     }).filter(group => group.hasMatches); // Hide groups with no matching subjects
   }, [results, gradingConfig, searchQuery]);
 
@@ -357,7 +364,9 @@ const StudentResults = () => {
                         <td className="px-4 py-4 text-xs font-bold text-slate-700">{sub.subject_name}</td>
                         <td className="px-4 py-4 text-center font-black text-slate-600 text-xs">{sub.creditsAssigned}</td>
                         <td className="px-4 py-4 text-center font-black text-emerald-600 text-xs">{sub.creditsEarned}</td>
-                        <td className="px-4 py-4 text-center font-black text-slate-900 text-sm italic">{sub.total_marks}</td>
+                        <td className="px-4 py-4 text-center font-black text-slate-900 text-sm italic">
+                          {sub.total_marks}{parseFloat(sub.grace_marks || 0) > 0 ? '*' : ''}
+                        </td>
                         <td className="px-4 py-4 text-center">
                            <span className={`px-2 py-0.5 rounded text-[10px] font-black ${sub.isPass ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100' : 'bg-red-50 text-red-600 ring-1 ring-red-100'} uppercase tracking-tight`}>
                              {sub.grade}
@@ -372,7 +381,7 @@ const StudentResults = () => {
 
               {/* Physical Marksheet Summary Footer */}
               <div className="p-8 bg-slate-50/30 border-t border-slate-200">
-                 <div className="grid grid-cols-2 md:grid-cols-6 border border-slate-300 rounded-xl overflow-hidden shadow-lg shadow-slate-200/20">
+                 <div className="grid grid-cols-2 md:grid-cols-7 border border-slate-300 rounded-xl overflow-hidden shadow-lg shadow-slate-200/20">
                     <div className="p-4 border-r border-b border-slate-200 bg-white text-center">
                        <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Credits Reg.</p>
                        <p className="text-xl font-black text-slate-900 tracking-tight">{series.totalCreditsAssigned}</p>
@@ -393,9 +402,17 @@ const StudentResults = () => {
                        <p className="text-[9px] font-black opacity-60 uppercase mb-2 italic">Semester SGPA</p>
                        <p className="text-2xl font-black text-emerald-400 tracking-tight">{series.sgpa}</p>
                     </div>
-                    <div className="p-4 border-b border-slate-200 bg-slate-900 text-white text-center">
+                    <div className="p-4 border-r border-b border-slate-200 bg-slate-900 text-white text-center">
                        <p className="text-[9px] font-black opacity-60 uppercase mb-2 italic tracking-widest">CGPA</p>
                        <p className="text-2xl font-black text-slate-500 tracking-tight">N/A</p>
+                    </div>
+                    <div className={`p-4 border-b border-slate-200 text-center col-span-2 md:col-span-1 ${
+                      series.overallStatus === 'FAIL' ? 'bg-red-600 text-white' : 
+                      series.overallStatus === 'PASS (GRACE)' ? 'bg-amber-500 text-white' : 
+                      'bg-emerald-600 text-white'
+                    }`}>
+                       <p className="text-[9px] font-black opacity-80 uppercase mb-2">Final Result</p>
+                       <p className="text-xl font-black tracking-tight uppercase">{series.overallStatus}</p>
                     </div>
                  </div>
 
@@ -403,6 +420,7 @@ const StudentResults = () => {
                     <div className="max-w-md">
                        <p className="text-[10px] text-slate-400 font-medium italic leading-relaxed">
                           Note: This Performance Statement is for informational purposes only. Official Degree Certificates are issued upon successful completion of the academic program. 
+                          An asterisk (*) indicates that the subject marks include grace marks to reach the passing threshold.
                           Σ(Ci x Gi) indicates Sum of (Credits Assigned x Grade Points Secured).
                        </p>
                     </div>

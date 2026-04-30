@@ -75,7 +75,8 @@ const Exams = () => {
         is_published: item.is_published,
         results_published: item.results_published,
         student_application_open: item.student_application_open,
-        has_marks_structure: item.has_marks_structure
+        has_marks_structure: item.has_marks_structure,
+        marks_submitted: item.marks_submitted
       });
     });
     // Sort groups by ID (highest/latest first)

@@ -23,7 +23,7 @@ const authLimiter = rateLimit({
 
 // Login Validation Middleware
 const validateLogin = [
-  body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
+  body('email').isEmail().withMessage('Valid email is required').trim(),
   body('password').notEmpty().withMessage('Password is required'),
   (req, res, next) => {
     const errors = validationResult(req);

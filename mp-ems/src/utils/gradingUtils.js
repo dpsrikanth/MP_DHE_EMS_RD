@@ -49,7 +49,7 @@ export const calculateSGPA = (subjects, config) => {
     let totalCredits = 0;
 
     subjects.forEach(subject => {
-        const marks = Number(subject.external_marks || 0) + Number(subject.internal_marks || 0);
+        const marks = subject.total_marks !== undefined ? Number(subject.total_marks) : (Number(subject.external_marks || 0) + Number(subject.internal_marks || 0) + Number(subject.grace_marks || 0));
         const { gradePoint } = getGradeAndPoints(marks, grade_scale);
         
         // Use university-specific credit override if available

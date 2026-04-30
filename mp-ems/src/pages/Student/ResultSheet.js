@@ -74,12 +74,19 @@ const ResultSheet = () => {
 
     const sgpa = calculateSGPA(data.results, gradingConfig);
 
+    const hasGrace = subjects.some(s => parseFloat(s.grace_marks || 0) > 0);
+    const hasFail = subjects.some(s => !s.isPass);
+    let overallStatus = 'PASS';
+    if (hasFail) overallStatus = 'FAIL';
+    else if (hasGrace) overallStatus = 'PASS (GRACE)';
+
     return {
       subjects,
       totalCiGi,
       totalCreditsAssigned,
       totalCreditsEarned,
-      sgpa
+      sgpa,
+      overallStatus
     };
   }, [data, gradingConfig]);
 
@@ -108,7 +115,7 @@ const ResultSheet = () => {
   }
 
   const { student, university } = data;
-  const { subjects, totalCiGi, totalCreditsAssigned, totalCreditsEarned, sgpa } = processedResults;
+  const { subjects, totalCiGi, totalCreditsAssigned, totalCreditsEarned, sgpa, overallStatus } = processedResults;
 
   return (
     <div className="min-h-screen bg-slate-100 py-12 px-4 sm:px-6">
@@ -215,10 +222,9 @@ const ResultSheet = () => {
                     <p className="text-xs font-black text-slate-700 leading-tight">{sub.subject_name}</p>
                   </td>
                   <td className="px-4 py-4 text-center">
-                    {sub.batch_status === 'Locked' || sub.batch_status === 'Approved' ? (
+                    {sub.total_marks !== undefined && sub.total_marks !== null ? (
                       <span className="font-black text-slate-900 text-sm">
-                        {sub.total_marks}
-                        {Number(sub.grace_marks) > 0 && <span className="text-[10px] text-emerald-500 ml-1 font-black" title={`Grace Marks: ${sub.grace_marks}`}> (G)</span>}
+                        {sub.total_marks}{parseFloat(sub.grace_marks || 0) > 0 ? '*' : ''}
                       </span>
                     ) : (
                       <div className="flex flex-col items-center gap-1">
@@ -256,13 +262,21 @@ const ResultSheet = () => {
 
         {/* Summary Block */}
         <div className="p-8 sm:p-12 bg-slate-900 text-white">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
                 <SummaryItem label="Total Credits Assigned" value={totalCreditsAssigned} />
                 <SummaryItem label="Total Credits Earned" value={totalCreditsEarned} />
                 <SummaryItem label="Σ(Credits x Grade Points)" value={totalCiGi} />
-                <div className="flex flex-col items-center justify-center p-6 bg-emerald-500 rounded-[1.5rem] shadow-xl shadow-emerald-500/20">
+                <div className="flex flex-col items-center justify-center p-6 bg-slate-800 rounded-[1.5rem] border border-white/10">
                     <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Semester SGPA</p>
-                    <p className="text-4xl font-black tracking-tight">{sgpa}</p>
+                    <p className="text-4xl font-black tracking-tight text-emerald-400">{sgpa}</p>
+                </div>
+                <div className={`flex flex-col items-center justify-center p-6 rounded-[1.5rem] shadow-xl ${
+                  overallStatus === 'FAIL' ? 'bg-red-600 shadow-red-600/20' : 
+                  overallStatus === 'PASS (GRACE)' ? 'bg-amber-500 shadow-amber-500/20' : 
+                  'bg-emerald-500 shadow-emerald-500/20'
+                }`}>
+                    <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Final Result</p>
+                    <p className="text-2xl font-black tracking-tight uppercase whitespace-nowrap">{overallStatus}</p>
                 </div>
             </div>
         </div>
@@ -288,6 +302,8 @@ const ResultSheet = () => {
 
             <div className="mt-12 pt-8 border-t border-slate-50 italic text-[9px] text-slate-400 leading-relaxed text-center uppercase tracking-widest font-black">
                 Classification of Grades: {gradingConfig?.grade_scale?.map(g => `${g.grade} ≥ ${g.min}%`).join(', ')}.
+                <br/>
+                An asterisk (*) indicates that the subject marks include grace marks to reach the passing threshold.
             </div>
         </div>
 
