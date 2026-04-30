@@ -118,7 +118,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           children: [
             { id: 4, name: 'Exams', path: '/exams', icon: <FileText size={18} /> },
             { id: 8, name: 'Exam Halls', path: '/college-admin/examination-halls', icon: <Building2 size={18} /> },
-            { id: 10, name: 'Roll Generator', path: '/college-admin/generate-roll-numbers', icon: <Hash size={18} /> },
             { id: 11, name: 'Seat Allocation', path: '/college-admin/seating-arrangement', icon: <Monitor size={18} /> },
             { id: 50, name: 'Internal Schedule', path: '/college-admin/internal-exams/schedules', icon: <Calendar size={18} /> },
           ]

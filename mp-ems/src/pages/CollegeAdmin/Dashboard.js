@@ -124,7 +124,6 @@ const Dashboard = () => {
     { name: 'Verify & Lock Marks', path: '/college-admin/marks-approval', icon: <FileCheck size={20} /> },
     { name: 'Seating Arrangement', path: '/college-admin/seating-arrangement', icon: <LayoutDashboard size={20} /> },
     { name: 'Performance Reports', path: '/college-admin/performance', icon: <TrendingUp size={20} /> },
-    { name: 'Roll Generator', path: '/college-admin/generate-roll-numbers', icon: <CheckCircle2 size={20} /> },
   ];
 
   return (

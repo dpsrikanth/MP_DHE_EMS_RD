@@ -42,7 +42,6 @@ import InternalExamMarks from "./pages/Faculty/InternalExamMarks";
 import Attendance from "./pages/Faculty/Attendance";
 import MarksVerification from "./pages/CollegeAdmin/MarksVerification";
 import MarksReview from "./pages/CollegeAdmin/MarksReview";
-import RollNumberGenerator from './pages/CollegeAdmin/RollNumberGenerator';
 import MarksReports from "./pages/CollegeAdmin/MarksReports";
 import CollegeAdminDashboard from "./pages/CollegeAdmin/Dashboard";
 import StudentDashboard from "./pages/Student/Dashboard";
@@ -173,8 +172,6 @@ const AppRoutes = () => {
       <Route path="/college-admin/faculty-status" element={<Layout><ProtectedRoute element={<FacultyStatus />} /></Layout>} />
       <Route path="/college-admin/performance" element={<Layout><ProtectedRoute element={<CollegePerformance />} /></Layout>} />
       <Route path="/college-admin/seating-arrangement" element={<Layout><ProtectedRoute element={<SeatingArrangement />} /></Layout>} />
-      <Route path="/college-admin/generate-roll-numbers" element={<Layout><ProtectedRoute element={<RollNumberGenerator />} /></Layout>} />
-      
       {/* Internal Exam Routes */}
       <Route path="/college-admin/internal-exams/rounds" element={<Layout><ProtectedRoute element={<RoundManagement />} /></Layout>} />
       <Route path="/college-admin/internal-exams/schedules" element={<Layout><ProtectedRoute element={<ExamScheduling />} /></Layout>} />
