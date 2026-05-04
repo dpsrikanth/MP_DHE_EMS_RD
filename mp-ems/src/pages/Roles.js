@@ -13,7 +13,7 @@ import {
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader } from '../components/TableControls';
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 
 const Roles = () => {
   const navigate = useNavigate();
@@ -54,16 +54,11 @@ const Roles = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/roles'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to fetch roles');
-      const result = await response.json();
+      const result = await masterDataApi.getRoles();
       setData(result);
       setLoading(false);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
       setLoading(false);
     }
   };
@@ -73,18 +68,13 @@ const Roles = () => {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl(`/roles/${deleteTarget.id}`), { 
-        method: 'DELETE', 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
-      if (!res.ok) throw new Error('Delete failed');
+      await masterDataApi.deleteRole(deleteTarget.id);
       toast.success('Role deleted');
       setShowDeleteModal(false);
       setDeleteTarget(null);
       fetchData();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err.response?.data?.message || err.message);
     }
   };
 

@@ -7,7 +7,7 @@ import { useGradingPolicy } from '../../hooks/useGradingPolicy';
 import { getGradeAndPoints, isPass, calculateSGPA } from '../../utils/gradingUtils';
 import { toast } from 'react-toastify';
 import { TableSearch } from '../../components/TableControls';
-import { getApiUrl } from '../../config';
+import { studentApi } from '../../api/studentApi';
 
 const StudentResults = () => {
   const [results, setResults] = useState([]);
@@ -25,16 +25,11 @@ const StudentResults = () => {
 
   const fetchResults = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/student/results'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to fetch results');
-      const data = await response.json();
+      const data = await studentApi.getResults();
       setResults(data);
     } catch (err) {
-      setError(err.message);
-      toast.error(err.message);
+      setError(err.response?.data?.message || err.response?.data?.error || err.message);
+      toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
     } finally {
       setLoading(false);
     }

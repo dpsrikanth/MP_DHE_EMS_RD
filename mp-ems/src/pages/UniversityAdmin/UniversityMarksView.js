@@ -6,9 +6,10 @@ import {
   BarChart3
 } from "lucide-react";
 import { toast } from 'react-toastify';
-import { useGradingPolicy } from "../../hooks/useGradingPolicy";
 import { getGradeAndPoints, isPass, calculateSGPA } from "../../utils/gradingUtils";
-import { API_ENDPOINTS, getApiUrl } from "../../config";
+import { universityAdminApi } from "../../api/universityAdminApi";
+import { masterDataApi } from "../../api/masterDataApi";
+import { useGradingPolicy } from "../../hooks/useGradingPolicy";
 
 const UniversityMarksView = () => {
   // Data
@@ -37,16 +38,14 @@ const UniversityMarksView = () => {
   useEffect(() => {
     const fetchFilters = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const headers = { Authorization: `Bearer ${token}` };
         const [exRes, colRes, progRes] = await Promise.all([
-          fetch(getApiUrl('/exams'), { headers }),
-          fetch(getApiUrl('/colleges'), { headers }),
-          fetch(getApiUrl('/master-programs'), { headers })
+          masterDataApi.getExams(),
+          masterDataApi.getColleges(),
+          masterDataApi.getPrograms()
         ]);
-        if (exRes.ok) setExams(await exRes.json());
-        if (colRes.ok) setColleges(await colRes.json());
-        if (progRes.ok) setPrograms(await progRes.json());
+        if (exRes) setExams(exRes);
+        if (colRes) setColleges(colRes);
+        if (progRes) setPrograms(progRes);
       } catch (err) {
         console.error("Failed to load filters:", err);
       }
@@ -72,17 +71,14 @@ const UniversityMarksView = () => {
     }
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const params = new URLSearchParams();
-      if (selectedExam) params.append('exam_name', selectedExam);
-      if (selectedCollege) params.append('college_id', selectedCollege);
-      if (selectedProgram) params.append('program_id', selectedProgram);
+      const params = {
+        ...(selectedExam && { exam_name: selectedExam }),
+        ...(selectedCollege && { college_id: selectedCollege }),
+        ...(selectedProgram && { program_id: selectedProgram })
+      };
 
-      const res = await fetch(getApiUrl(`/university-admin/result-hub-data?${params}`), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await universityAdminApi.getResultHubData(params);
+      if (data) {
         setMarks(data.marks || []);
         setSummary(data.summary || null);
         if (data.marks?.length > 0 && !activeSubject) {
@@ -104,17 +100,12 @@ const UniversityMarksView = () => {
     if (!selectedExam) return;
     setPublishing(true);
     try {
-      const token = localStorage.getItem('token');
       const newState = !summary?.resultsPublished;
       const ids = uniqueExams.get(selectedExam) || [];
 
       // Update all IDs in the series
       await Promise.all(ids.map(id =>
-        fetch(getApiUrl(`/exams/${id}/publish-results`), {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ results_published: newState })
-        })
+        universityAdminApi.publishResults(id, { results_published: newState })
       ));
 
       toast.success(`Results ${newState ? 'published' : 'unpublished'} successfully for the entire series!`);

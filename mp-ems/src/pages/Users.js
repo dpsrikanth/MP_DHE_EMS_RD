@@ -13,7 +13,7 @@ import {
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader } from '../components/TableControls';
-import { API_ENDPOINTS, getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 
 const Users = () => {
   const navigate = useNavigate();
@@ -63,18 +63,15 @@ const Users = () => {
 
   const fetchMasterData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-      
       const [rRes, uRes, cRes] = await Promise.all([
-        fetch(API_ENDPOINTS.ROLES, { headers }),
-        fetch(API_ENDPOINTS.UNIVERSITIES, { headers }),
-        fetch(API_ENDPOINTS.COLLEGES, { headers })
+        masterDataApi.getRoles(),
+        masterDataApi.getUniversities(),
+        masterDataApi.getColleges()
       ]);
 
-      if (rRes.ok) setRoles(await rRes.json());
-      if (uRes.ok) setUniversities(await uRes.json());
-      if (cRes.ok) setColleges(await cRes.json());
+      if (rRes) setRoles(rRes);
+      if (uRes) setUniversities(uRes);
+      if (cRes) setColleges(cRes);
     } catch (err) {
       console.error("Error fetching masters:", err);
     }
@@ -82,12 +79,7 @@ const Users = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/users'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to fetch users');
-      const result = await response.json();
+      const result = await masterDataApi.getUsers();
       setData(result);
       setLoading(false);
     } catch (err) {
@@ -100,12 +92,7 @@ const Users = () => {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl(`/users/${deleteTarget.id}`), { 
-        method: 'DELETE', 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
-      if (!res.ok) throw new Error('Delete failed');
+      await masterDataApi.deleteUser(deleteTarget.id);
       toast.success('User removed');
       setShowDeleteModal(false);
       setDeleteTarget(null);

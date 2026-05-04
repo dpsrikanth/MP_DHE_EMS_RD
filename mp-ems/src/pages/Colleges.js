@@ -14,7 +14,7 @@ import {
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 import authUtils from '../utils/authUtils';
 
 const CheckboxOption = (props) => {
@@ -92,14 +92,8 @@ const Colleges = () => {
 
   const fetchMasters = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/masters'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setMasterData(data);
-      }
+      const data = await masterDataApi.getMasters();
+      setMasterData(data);
     } catch (err) {
       console.error('Error fetching masters:', err);
     }
@@ -112,14 +106,8 @@ const Colleges = () => {
     }
     try {
       setIsConfigLoading(true);
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl(`/universities/${uId}/config`), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUniversityConfig(data);
-      }
+      const data = await masterDataApi.getUniversityConfig(uId);
+      setUniversityConfig(data);
     } catch (err) {
       console.error('Error fetching university config:', err);
     } finally {
@@ -129,19 +117,13 @@ const Colleges = () => {
 
   const fetchCollegeConfig = async (cId) => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl(`/colleges/${cId}/config`), {
-        headers: { Authorization: `Bearer ${token}` }
+      const data = await masterDataApi.getCollegeConfig(cId);
+      setSelectedConfig({
+        policies: data.policies || [],
+        programs: data.programs || [],
+        academicYears: data.academicYears || [],
+        semesters: data.semesters || []
       });
-      if (res.ok) {
-        const data = await res.json();
-        setSelectedConfig({
-          policies: data.policies || [],
-          programs: data.programs || [],
-          academicYears: data.academicYears || [],
-          semesters: data.semesters || []
-        });
-      }
     } catch (err) {
       console.error('Error fetching college config:', err);
     }
@@ -158,16 +140,11 @@ const Colleges = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/colleges'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
+      const data = await masterDataApi.getColleges();
       const activeData = (data || []).filter(item => item.status === true || item.status === 1 || item.status === '1' || item.status === 'true');
       setData(activeData);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }
@@ -175,15 +152,9 @@ const Colleges = () => {
 
   const fetchUniversities = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/universities'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        const activeUniversities = (data || []).filter(u => u.status === true || u.status === 1 || u.status === '1' || u.status === 'true');
-        setUniversities(activeUniversities);
-      }
+      const data = await masterDataApi.getUniversities();
+      const activeUniversities = (data || []).filter(u => u.status === true || u.status === 1 || u.status === '1' || u.status === 'true');
+      setUniversities(activeUniversities);
     } catch (err) {
       console.error('Error fetching universities:', err);
     }
@@ -197,18 +168,12 @@ const Colleges = () => {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl(`/colleges/${deleteTarget.id}`), {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Delete failed');
+      await masterDataApi.deleteCollege(deleteTarget.id);
       setShowDeleteModal(false);
       setDeleteTarget(null);
       fetchData();
-      fetchData();
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
   };
 

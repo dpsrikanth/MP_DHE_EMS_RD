@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { Calendar, ArrowLeft, Check, Hash } from "lucide-react";
@@ -20,12 +20,7 @@ const AcademicYearsForm = () => {
 
   const fetchAcademicYear = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/academic-years'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to fetch academic years');
-      const data = await response.json();
+      const data = await masterDataApi.getAcademicYears();
       const item = data.find(y => y.id.toString() === id);
       
       if (item) {
@@ -47,28 +42,17 @@ const AcademicYearsForm = () => {
     
     try {
       setSaving(true);
-      const token = localStorage.getItem('token');
-      const url = isEditing 
-        ? getApiUrl(`/academic-years/${id}`)
-        : getApiUrl('/academic-years');
-      const method = isEditing ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ year_name: formData.year_name })
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || 'Submit failed');
+      let result;
+      if (isEditing) {
+        result = await masterDataApi.updateAcademicYear(id, { year_name: formData.year_name });
+      } else {
+        result = await masterDataApi.createAcademicYear({ year_name: formData.year_name });
       }
       
-      const result = await response.json();
       toast.success(result.message || (isEditing ? 'Academic year updated successfully!' : 'Academic year added successfully!'));
       navigate('/academic-years');
     } catch (err) {
-      toast.error(`Error: ${err.message}`);
+      toast.error(err.response?.data?.message || err.message || 'An error occurred');
     } finally {
       setSaving(false);
     }

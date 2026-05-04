@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getApiUrl } from '../config';
+import { marksApi } from '../api/marksApi';
 
 /**
  * Custom hook to fetch the grading configuration for the current university.
@@ -12,18 +12,9 @@ export const useGradingPolicy = () => {
     useEffect(() => {
         const fetchConfig = async () => {
             try {
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    setLoading(false);
-                    return;
-                }
+                const data = await marksApi.getGradingConfig();
 
-                const res = await fetch(getApiUrl('/grading/config'), {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
+                if (data) {
                     // Ensure grade_scale is sorted descending
                     if (data.grade_scale && Array.isArray(data.grade_scale)) {
                         data.grade_scale.sort((a, b) => b.min - a.min);
@@ -33,7 +24,7 @@ export const useGradingPolicy = () => {
                     setError("Failed to fetch grading policy");
                 }
             } catch (err) {
-                setError(err.message);
+                setError(err.response?.data?.message || err.response?.data?.error || err.message);
             } finally {
                 setLoading(false);
             }

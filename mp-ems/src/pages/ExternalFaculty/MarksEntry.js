@@ -6,7 +6,7 @@ import {
   UserCircle, ClipboardCheck, Unlock
 } from "lucide-react";
 import { toast } from 'react-toastify';
-import { getApiUrl } from '../../config';
+import { marksApi } from '../../api/marksApi';
 
 const ExternalMarksEntry = () => {
   const [assignments, setAssignments] = useState([]);
@@ -22,12 +22,8 @@ const ExternalMarksEntry = () => {
   const fetchAssignments = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/external-faculty/assignments'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await marksApi.getExternalAssignments();
+      if (data) {
         setAssignments(data);
         
         // Populate initial marks
@@ -40,7 +36,7 @@ const ExternalMarksEntry = () => {
       }
     } catch (error) {
       console.error("Failed to fetch assignments:", error);
-      if (!silent) toast.error("Failed to load assignments");
+      if (!silent) toast.error(error.response?.data?.message || error.response?.data?.error || "Failed to load assignments");
     } finally {
       if (!silent) setLoading(false);
     }
@@ -68,25 +64,12 @@ const ExternalMarksEntry = () => {
 
     setSubmitting(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/external-faculty/save-marks'), {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ marksData: marksToSave })
-      });
+      await marksApi.saveExternalMarks({ marksData: marksToSave });
 
-      if (res.ok) {
-        toast.success(`Draft saved for ${subjectGroup.subject_name}`);
-        fetchAssignments(true); // Silent refresh
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Failed to save marks");
-      }
+      toast.success(`Draft saved for ${subjectGroup.subject_name}`);
+      fetchAssignments(true); // Silent refresh
     } catch (error) {
-      toast.error("An error occurred during saving");
+      toast.error(error.response?.data?.message || error.response?.data?.error || "An error occurred during saving");
     } finally {
       setSubmitting(false);
     }
@@ -97,8 +80,6 @@ const ExternalMarksEntry = () => {
 
     setSubmitting(true);
     try {
-      const token = localStorage.getItem('token');
-      
       // 1. First Save the current marks as draft
       const marksToSave = subjectGroup.students.map(s => {
         const key = `${s.student_id}_${s.subject_id}_${s.exam_id}`;
@@ -111,44 +92,20 @@ const ExternalMarksEntry = () => {
         };
       });
 
-      const saveRes = await fetch(getApiUrl('/external-faculty/save-marks'), {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ marksData: marksToSave })
-      });
-
-      if (!saveRes.ok) {
-        const saveData = await saveRes.json();
-        throw new Error(saveData.error || "Failed to save marks before finalization");
-      }
+      await marksApi.saveExternalMarks({ marksData: marksToSave });
 
       const uniqueExamIds = [...new Set(subjectGroup.students.map(s => s.exam_id))];
 
       // 2. Then Finalize
-      const res = await fetch(getApiUrl('/external-faculty/finalize-marks'), {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ 
+      await marksApi.finalizeExternalMarks({ 
           exam_ids: uniqueExamIds,
           subject_ids: [subjectGroup.subject_id] 
-        })
       });
 
-      if (res.ok) {
-        toast.success(`Marks for ${subjectGroup.subject_name} submitted successfully`);
-        fetchAssignments(true); // Silent refresh
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Failed to finalize marks");
-      }
+      toast.success(`Marks for ${subjectGroup.subject_name} submitted successfully`);
+      fetchAssignments(true); // Silent refresh
     } catch (error) {
-      toast.error(error.message || "An error occurred during finalization");
+      toast.error(error.response?.data?.message || error.response?.data?.error || error.message || "An error occurred during finalization");
     } finally {
       setSubmitting(false);
     }
@@ -159,30 +116,17 @@ const ExternalMarksEntry = () => {
 
     setSubmitting(true);
     try {
-      const token = localStorage.getItem('token');
       const uniqueExamIds = [...new Set(subjectGroup.students.map(s => s.exam_id))];
 
-      const res = await fetch(getApiUrl('/external-faculty/unlock-subject'), {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ 
+      await marksApi.unlockExternalSubject({ 
           exam_ids: uniqueExamIds,
           subject_ids: [subjectGroup.subject_id] 
-        })
       });
 
-      if (res.ok) {
-        toast.success(`Subject ${subjectGroup.subject_name} is now enabled for editing`);
-        fetchAssignments(true); // Silent refresh
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Failed to unlock subject");
-      }
+      toast.success(`Subject ${subjectGroup.subject_name} is now enabled for editing`);
+      fetchAssignments(true); // Silent refresh
     } catch (error) {
-      toast.error("An error occurred during unlock");
+      toast.error(error.response?.data?.message || error.response?.data?.error || "An error occurred during unlock");
     } finally {
       setSubmitting(false);
     }

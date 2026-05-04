@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -80,24 +80,23 @@ const StudentsForm = () => {
 
   const fetchDropdownData = async () => {
     try {
-      const token = localStorage.getItem('token');
       const [yearRes, policyRes, programRes, semesterRes, collegeRes, batchRes, deptRes] = await Promise.all([
-        fetch(getApiUrl('/academic-years'), { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(getApiUrl('/master-policies'), { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(getApiUrl('/master-programs'), { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(getApiUrl('/master-semesters'), { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(getApiUrl('/colleges'), { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(getApiUrl('/master-batches'), { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(getApiUrl('/master-departments'), { headers: { Authorization: `Bearer ${token}` } })
+        masterDataApi.getAcademicYears(),
+        masterDataApi.getPolicies(),
+        masterDataApi.getPrograms(),
+        masterDataApi.getSemesters(),
+        masterDataApi.getColleges(),
+        masterDataApi.getBatches(),
+        masterDataApi.getDepartments()
       ]);
       let loadedColleges = [];
-      if (yearRes.ok) setAcademicYears(await yearRes.json() || []);
-      if (policyRes.ok) setPolicies(await policyRes.json() || []);
-      if (programRes.ok) setPrograms(await programRes.json() || []);
-      if (semesterRes.ok) setSemesters(await semesterRes.json() || []);
-      if (batchRes.ok) setBatches(await batchRes.json() || []);
-      if (deptRes.ok) setDepartments(await deptRes.json() || []);
-      if (collegeRes.ok) { loadedColleges = await collegeRes.json() || []; setColleges(loadedColleges); }
+      if (yearRes) setAcademicYears(yearRes || []);
+      if (policyRes) setPolicies(policyRes || []);
+      if (programRes) setPrograms(programRes || []);
+      if (semesterRes) setSemesters(semesterRes || []);
+      if (batchRes) setBatches(batchRes || []);
+      if (deptRes) setDepartments(deptRes || []);
+      if (collegeRes) { loadedColleges = collegeRes || []; setColleges(loadedColleges); }
       return loadedColleges;
     } catch (err) { console.error('Error fetching dropdown data:', err); return []; }
     finally { setDropdownLoading(false); }
@@ -107,27 +106,24 @@ const StudentsForm = () => {
     try {
       if (!collegeId) { setCollegeSemesters([]); setCollegePrograms([]); setCollegePolicies([]); setCollegeAcademicYears([]); return; }
       setCascadingLoading(true);
-      const token = localStorage.getItem('token');
       const [semesterRes, programRes, policyRes, yearRes] = await Promise.all([
-        fetch(getApiUrl(`/colleges/${collegeId}/semesters`), { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(getApiUrl(`/colleges/${collegeId}/programs`), { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(getApiUrl(`/colleges/${collegeId}/policies`), { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(getApiUrl(`/colleges/${collegeId}/academic-years`), { headers: { Authorization: `Bearer ${token}` } })
+        masterDataApi.getCollegeSemesters(collegeId),
+        masterDataApi.getCollegePrograms(collegeId),
+        masterDataApi.getCollegePolicies(collegeId),
+        masterDataApi.getCollegeAcademicYears(collegeId)
       ]);
-      if (semesterRes.ok) setCollegeSemesters(await semesterRes.json() || []);
-      if (programRes.ok) setCollegePrograms(await programRes.json() || []);
-      if (policyRes.ok) setCollegePolicies(await policyRes.json() || []);
-      if (yearRes.ok) setCollegeAcademicYears(await yearRes.json() || []);
+      if (semesterRes) setCollegeSemesters(semesterRes || []);
+      if (programRes) setCollegePrograms(programRes || []);
+      if (policyRes) setCollegePolicies(policyRes || []);
+      if (yearRes) setCollegeAcademicYears(yearRes || []);
     } catch (err) { console.error('Error fetching college data:', err); }
     finally { setCascadingLoading(false); }
   };
 
   const fetchStudentData = async (colls) => {
     try {
-      const token = localStorage.getItem('token');
-      const resp = await fetch(getApiUrl(`/students`), { headers: { Authorization: `Bearer ${token}` } });
-      if (resp.ok) {
-        const dataList = await resp.json();
+      const dataList = await masterDataApi.getStudents();
+      if (dataList) {
         const student = dataList.find(s => s.id.toString() === id.toString());
         if (student) {
           if(student.admission_date) student.admission_date = new Date(student.admission_date).toISOString().split('T')[0];
@@ -195,19 +191,11 @@ const StudentsForm = () => {
       if (!deptObj) return;
       
       const deptCode = deptObj.department_code || deptName.substring(0, 3).toUpperCase();
-      const token = localStorage.getItem('token');
       
-      // Use encoded full string to match the DB value exactly
-      const encodedYear = encodeURIComponent(yearStr);
-      const encodedDept = encodeURIComponent(deptName);
+      const response = await masterDataApi.getNextStudentSerial(yearStr, deptName);
       
-      const resp = await fetch(getApiUrl(`/students/next-serial/${encodedYear}/${encodedDept}`), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      if (resp.ok) {
-        const { nextSerial } = await resp.json();
-        const paddedSerial = nextSerial.toString().padStart(3, '0');
+      if (response && response.nextSerial) {
+        const paddedSerial = response.nextSerial.toString().padStart(3, '0');
         const newAdmissionNo = `${yearPrefix}${deptCode}${paddedSerial}`;
         setForm(prev => ({ ...prev, admission_no: newAdmissionNo }));
         toast.info(`Generated Admission No: ${newAdmissionNo}`);
@@ -222,16 +210,16 @@ const StudentsForm = () => {
     const errs = validate(form);
     if (Object.keys(errs).length > 0) { setErrors(errs); setErrorString("Validation failed. Check required fields."); toast.error("Please fill all required fields correctly."); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     setLoading(true); setErrorString('');
-    const token = localStorage.getItem('token');
     try {
-      const url = isEditing ? getApiUrl(`/students/${id}`) : getApiUrl('/students');
-      const method = isEditing ? 'PUT' : 'POST';
-      const resp = await fetch(url, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(form) });
-      const text = await resp.text(); let respData = {}; try { respData = JSON.parse(text); } catch (e) { }
-      if (!resp.ok) throw new Error(respData.message || text || `Failed to ${isEditing ? 'update' : 'enroll'}`);
-      toast.success(respData.message || `Student ${isEditing ? 'updated' : 'enrolled'} successfully!`);
+      let respData;
+      if (isEditing) {
+        respData = await masterDataApi.updateStudent(id, form);
+      } else {
+        respData = await masterDataApi.createStudent(form);
+      }
+      toast.success(respData?.message || `Student ${isEditing ? 'updated' : 'enrolled'} successfully!`);
       navigate('/students');
-    } catch (err) { setErrorString(err.message); toast.error(err.message); } finally { setLoading(false); }
+    } catch (err) { setErrorString(err.response?.data?.message || err.message); toast.error(err.response?.data?.message || err.message); } finally { setLoading(false); }
   };
 
   // Field helpers have been moved outside

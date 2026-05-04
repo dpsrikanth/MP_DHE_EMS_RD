@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { Layers, ArrowLeft, Check, Hash, Activity } from "lucide-react";
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 import '../styles/FormPage.css';
 
 const SemestersForm = () => {
@@ -20,12 +20,7 @@ const SemestersForm = () => {
 
   const loadSemester = async (semesterId) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/master-semesters'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to fetch semesters');
-      const data = await response.json();
+      const data = await masterDataApi.getSemesters();
       const item = data.find(p => p.id.toString() === semesterId);
       
       if (item) {
@@ -47,28 +42,18 @@ const SemestersForm = () => {
     
     try {
       setSaving(true);
-      const token = localStorage.getItem('token');
-      const url = isEditing 
-        ? getApiUrl(`/master-semesters/${id}`)
-        : getApiUrl('/master-semesters');
-      const method = isEditing ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
-      });
-      
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || 'Operation failed');
+      setSaving(true);
+      let result;
+      if (isEditing) {
+        result = await masterDataApi.updateSemester(id, form);
+      } else {
+        result = await masterDataApi.createSemester(form);
       }
       
-      const result = await res.json();
       toast.success(result.message || (isEditing ? 'Semester updated successfully!' : 'Semester added successfully!'));
       navigate('/semesters');
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     } finally {
       setSaving(false);
     }

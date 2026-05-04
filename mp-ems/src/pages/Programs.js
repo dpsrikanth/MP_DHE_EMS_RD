@@ -22,7 +22,7 @@ import Select, { components } from "react-select";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 import authUtils from "../utils/authUtils";
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 
 const Option = (props) => {
   return (
@@ -111,13 +111,9 @@ const Programs = () => {
 
   const fetchAvailableMasters = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/masters'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const result = await res.json();
-        setAvailableMasters(result.programs.map(p => ({ value: p.id, label: p.name })));
+      const data = await masterDataApi.getMasters();
+      if (data && data.programs) {
+        setAvailableMasters(data.programs.map(p => ({ value: p.id, label: p.name })));
       }
     } catch (err) {
       console.error(err);
@@ -126,12 +122,8 @@ const Programs = () => {
 
   const fetchDepartments = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/master-departments'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const result = await res.json();
+      const result = await masterDataApi.getDepartments();
+      if (result) {
         setDepartments(result.map(d => ({ value: d.id, label: d.department_name })));
       }
     } catch (err) {
@@ -141,18 +133,10 @@ const Programs = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/master-programs'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`HTTP ${response.status}: ${text}`);
-      }
-      const result = await response.json();
+      const result = await masterDataApi.getPrograms();
       setData(result || []);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }
@@ -163,34 +147,23 @@ const Programs = () => {
   const handleMap = async () => {
     if (!mappingSelection) return toast.warning('Please select a program');
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/master-programs/map'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ program_id: mappingSelection.value })
-      });
-      if (!res.ok) throw new Error('Mapping failed');
+      await masterDataApi.mapProgram({ program_id: mappingSelection.value });
       toast.success('Program assigned successfully');
       setShowAssignModal(false);
       setMappingSelection(null);
       fetchData();
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
   };
 
   const handleUnmap = async (id) => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl(`/master-programs/unmap/${id}`), {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Unmapping failed');
+      await masterDataApi.unmapProgram(id);
       toast.success('Program removed from your university');
       fetchData();
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -204,17 +177,12 @@ const Programs = () => {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl(`/master-programs/${deleteTarget.id}`), {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Delete failed');
+      await masterDataApi.deleteProgram(deleteTarget.id);
       setShowDeleteModal(false);
       setDeleteTarget(null);
       fetchData();
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
   };
 

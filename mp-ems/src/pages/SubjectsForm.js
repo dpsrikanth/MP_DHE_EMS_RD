@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 import Select from "react-select";
 import { toast } from 'react-toastify';
 import { useNavigate, useParams } from "react-router-dom";
@@ -46,20 +46,18 @@ const SubjectsForm = () => {
 
   const fetchFormData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const h = { Authorization: `Bearer ${token}` };
       const [progRes, semRes, teaRes, depRes] = await Promise.all([
-        fetch(getApiUrl('/master-programs'), { headers: h }),
-        fetch(getApiUrl('/master-semesters'), { headers: h }),
-        fetch(getApiUrl('/master-teachers'), { headers: h }),
-        fetch(getApiUrl('/master-departments'), { headers: h })
+        masterDataApi.getPrograms(),
+        masterDataApi.getSemesters(),
+        masterDataApi.getTeachers(),
+        masterDataApi.getDepartments()
       ]);
 
       let depsData = [], progsData = [], semsData = [], teasData = [];
-      if (progRes.ok) progsData = (await progRes.json()).map(p => ({ value: p.id, label: p.name }));
-      if (semRes.ok) semsData = (await semRes.json()).map(s => ({ value: s.id, label: s.semester_name }));
-      if (teaRes.ok) teasData = (await teaRes.json()).map(t => ({ value: t.id, label: t.name }));
-      if (depRes.ok) depsData = (await depRes.json()).map(d => ({ value: d.id, label: d.department_name }));
+      if (progRes) progsData = progRes.map(p => ({ value: p.id, label: p.name }));
+      if (semRes) semsData = semRes.map(s => ({ value: s.id, label: s.semester_name }));
+      if (teaRes) teasData = teaRes.map(t => ({ value: t.id, label: t.name }));
+      if (depRes) depsData = depRes.map(d => ({ value: d.id, label: d.department_name }));
 
       setPrograms(progsData); setSemesters(semsData); setTeachers(teasData); setDepartments(depsData);
 
@@ -76,12 +74,7 @@ const SubjectsForm = () => {
 
   const loadSubject = async (subjectId, masters) => {
     try {
-      const token = localStorage.getItem('token');
-      const resp = await fetch(getApiUrl(`/master-subjects/${subjectId}`), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!resp.ok) throw new Error('Failed to fetch subject details');
-      const item = await resp.json();
+      const item = await masterDataApi.getSubjectById(subjectId);
       
       setForm({
         name: item.name, subject_code: item.subject_code,
@@ -113,7 +106,6 @@ const SubjectsForm = () => {
 
     setSaving(true); setErrorString('');
     try {
-      const token = localStorage.getItem('token');
       const payload = {
         ...form,
         department_ids: form.department_ids?.map(d => d.value) || [],
@@ -125,21 +117,17 @@ const SubjectsForm = () => {
         credit: form.credit
       };
       
-      const url = isEditing ? getApiUrl(`/master-subjects/${id}`) : getApiUrl('/master-subjects');
-      const method = isEditing ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(payload)
-      });
+      if (isEditing) {
+        await masterDataApi.updateSubject(id, payload);
+      } else {
+        await masterDataApi.createSubject(payload);
+      }
       
-      if (!res.ok) throw new Error(isEditing ? 'Update failed' : 'Save failed');
       toast.success(isEditing ? 'Subject updated successfully!' : 'Subject added successfully!');
       navigate('/subjects');
     } catch (err) {
-      setErrorString(err.message);
-      toast.error(err.message);
+      setErrorString(err.response?.data?.message || err.message);
+      toast.error(err.response?.data?.message || err.message);
     } finally {
       setSaving(false);
     }

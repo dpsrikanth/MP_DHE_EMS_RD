@@ -6,6 +6,7 @@ import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js';
 import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
 import { getApiUrl } from '../../config';
+import { examApi } from '../../api/examApi';
 
 ChartJS.register(ArcElement, Tooltip);
 
@@ -86,12 +87,8 @@ const ExaminationHalls = () => {
 
     const fetchExams = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/exams'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await examApi.getExams();
+            if (data) {
                 const published = data.filter(e => e.status === true || e.is_published === true);
                 // Deduplicate by program + semester + exam name to avoid repeated entries
                 const seen = new Set();
@@ -114,15 +111,8 @@ const ExaminationHalls = () => {
 
     const fetchStudentCount = async (examId = null) => {
         try {
-            const token = localStorage.getItem('token');
-            const url = examId
-                ? `${apiBase}/seating-requirement?exam_id=${examId}`
-                : `${apiBase}/seating-requirement`;
-            const res = await fetch(url, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await examApi.getSeatingRequirement(examId);
+            if (data) {
                 setTotalStudents(parseInt(data.total_required) || 0);
                 setHostingSources(data.hosting_sources || []);
                 setExamBreakdown(data.exam_breakdown || []);
@@ -134,12 +124,8 @@ const ExaminationHalls = () => {
 
     const fetchShortageRequests = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/examination-halls/shortage'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await examApi.getShortages();
+            if (data) {
                 setShortageRequests(data);
             }
         } catch (err) {
@@ -149,12 +135,8 @@ const ExaminationHalls = () => {
 
     const fetchTotalRooms = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/college-admin/total-rooms'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await examApi.getTotalRooms();
+            if (data) {
                 setTotalRooms(data.total_rooms || 0);
             }
         } catch (err) {
@@ -165,42 +147,23 @@ const ExaminationHalls = () => {
     const handleUpdateTotalRooms = async () => {
         setIsEditingRooms(false);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/college-admin/total-rooms'), {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ total_rooms: totalRooms })
-            });
-
-            if (res.ok) {
-                toast.success("Total college rooms updated");
-            } else {
-                toast.error("Failed to update total rooms");
-                fetchTotalRooms(); // revert
-            }
+            await examApi.updateTotalRooms({ total_rooms: totalRooms });
+            toast.success("Total college rooms updated");
         } catch (err) {
-            toast.error("An error occurred");
+            toast.error(err.response?.data?.message || "Failed to update total rooms");
+            fetchTotalRooms(); // revert
         }
     };
 
     const fetchHalls = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const res = await fetch(apiBase, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await examApi.getHalls();
+            if (data) {
                 setHalls(data);
-            } else {
-                toast.error('Failed to fetch examination halls');
             }
         } catch (err) {
-            toast.error('An error occurred while fetching halls');
+            toast.error(err.response?.data?.message || 'An error occurred while fetching halls');
         } finally {
             setLoading(false);
         }
@@ -213,26 +176,12 @@ const ExaminationHalls = () => {
         }
 
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(apiBase, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify(newHall)
-            });
-
-            const data = await res.json();
-            if (res.ok) {
-                toast.success("Examination hall added as Draft");
-                setNewHall({ hall_code: '', rows: '', seats_per_row: '', exam_id: '' });
-                fetchHalls();
-            } else {
-                toast.error(data.error || "Failed to add hall");
-            }
+            await examApi.createHallMapping(newHall);
+            toast.success("Examination hall added as Draft");
+            setNewHall({ hall_code: '', rows: '', seats_per_row: '', exam_id: '' });
+            fetchHalls();
         } catch (err) {
-            toast.error("An error occurred");
+            toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to add hall");
         }
     };
 
@@ -242,98 +191,52 @@ const ExaminationHalls = () => {
         }
 
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${apiBase}/${editingHall.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify(editingHall)
-            });
-
-            if (res.ok) {
-                toast.success("Hall updated successfully");
-                setShowEditModal(false);
-                fetchHalls();
-            } else {
-                const data = await res.json();
-                toast.error(data.error || "Failed to update hall");
-            }
+            await examApi.updateHallMapping(editingHall.id, editingHall);
+            toast.success("Hall updated successfully");
+            setShowEditModal(false);
+            fetchHalls();
         } catch (err) {
-            toast.error("An error occurred");
+            toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to update hall");
         }
     };
 
     const handleSubmitHall = async (hallId) => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${apiBase}/${hallId}/submit`, {
-                method: 'PUT',
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            if (res.ok) {
-                toast.success("Hall submitted for approval");
-                fetchHalls();
-            } else {
-                const data = await res.json();
-                toast.error(data.error || "Failed to submit hall");
-            }
+            await examApi.submitHallMapping(hallId);
+            toast.success("Hall submitted for approval");
+            fetchHalls();
         } catch (err) {
-            toast.error("An error occurred during submission");
+            toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to submit hall");
         }
     };
 
     const handleReportShortage = async () => {
         try {
-            const token = localStorage.getItem('token');
             const shortage = totalStudents - capacityStats.approved;
             if (shortage <= 0) return toast.info("No shortage to report");
 
-            const res = await fetch(`${apiBase}/shortage-request`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    student_count: totalStudents,
-                    available_capacity: capacityStats.approved,
-                    shortage: shortage
-                })
+            await examApi.requestShortage({
+                student_count: totalStudents,
+                available_capacity: capacityStats.approved,
+                shortage: shortage
             });
 
-            if (res.ok) {
-                toast.success("Shortage report sent to University Admin. Awaiting external center allotment.");
-                // Refresh shortage request state so card updates immediately
-                fetchShortageRequests();
-            } else {
-                const data = await res.json();
-                toast.error(data.error || "Failed to send shortage report");
-            }
+            toast.success("Shortage report sent to University Admin. Awaiting external center allotment.");
+            // Refresh shortage request state so card updates immediately
+            fetchShortageRequests();
         } catch (err) {
-            toast.error("An error occurred while reporting shortage");
+            toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to send shortage report");
         }
     };
 
     const handleDeleteConfirm = async () => {
         if (!deleteTarget) return;
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${apiBase}/${deleteTarget.id}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                toast.success("Hall deleted successfully");
-                fetchHalls();
-            } else {
-                const data = await res.json();
-                toast.error(data.error || "Failed to delete hall");
-            }
+            await examApi.deleteHallMapping(deleteTarget.id);
+            toast.success("Hall deleted successfully");
+            fetchHalls();
         } catch (err) {
-            toast.error("An error occurred");
+            toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to delete hall");
         } finally {
             setShowDeleteModal(false);
             setDeleteTarget(null);

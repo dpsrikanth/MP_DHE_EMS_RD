@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Users, TrendingUp, AlertTriangle, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
-import { getApiUrl } from '../../config';
+import { masterDataApi } from '../../api/masterDataApi';
+import { universityAdminApi } from '../../api/universityAdminApi';
 
 const InfrastructureAnalytics = () => {
   const [data, setData] = useState([]);
@@ -26,13 +27,10 @@ const InfrastructureAnalytics = () => {
 
   const fetchExams = async () => {
     try {
-      const response = await fetch(getApiUrl('/exams'), {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const result = await response.json();
-      setExams(Array.isArray(result) ? result : []);
+      const data = await masterDataApi.getExams();
+      if (data) {
+        setExams(data);
+      }
     } catch (error) {
       console.error('Error fetching exams:', error);
     }
@@ -41,24 +39,17 @@ const InfrastructureAnalytics = () => {
   const fetchInfrastructureData = async (examId) => {
     setLoading(true);
     try {
-      const urlStr = getApiUrl('/reports/infrastructure-analytics');
-      const url = new URL(urlStr);
-      if (examId) url.searchParams.append('exam_id', examId);
+      const result = await universityAdminApi.getInfrastructureAnalytics(examId);
+      if (result) {
+        setData(Array.isArray(result) ? result : []);
 
-      const response = await fetch(url.toString(), {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        // Calculate global summary stats
+        if (Array.isArray(result)) {
+          const totalSeats = result.reduce((acc, curr) => acc + (parseInt(curr.approved_capacity) || 0), 0);
+          const totalStudents = result.reduce((acc, curr) => acc + (parseInt(curr.total_students) || 0), 0);
+          const shortages = result.reduce((acc, curr) => acc + Math.max(0, (parseInt(curr.total_students) || 0) - (parseInt(curr.approved_capacity) || 0)), 0);
+          setStats({ totalSeats, totalStudents, shortages });
         }
-      });
-      const result = await response.json();
-      setData(Array.isArray(result) ? result : []);
-
-      // Calculate global summary stats
-      if (Array.isArray(result)) {
-        const totalSeats = result.reduce((acc, curr) => acc + (parseInt(curr.approved_capacity) || 0), 0);
-        const totalStudents = result.reduce((acc, curr) => acc + (parseInt(curr.total_students) || 0), 0);
-        const shortages = result.reduce((acc, curr) => acc + Math.max(0, (parseInt(curr.total_students) || 0) - (parseInt(curr.approved_capacity) || 0)), 0);
-        setStats({ totalSeats, totalStudents, shortages });
       }
 
       setLoading(false);

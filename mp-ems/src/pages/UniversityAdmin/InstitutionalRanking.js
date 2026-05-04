@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, Star, Percent, BarChart3, Search } from 'lucide-react';
-import { getApiUrl } from '../../config';
+import { universityAdminApi } from '../../api/universityAdminApi';
 
 const InstitutionalRanking = () => {
   const [ranking, setRanking] = useState([]);
@@ -13,13 +13,10 @@ const InstitutionalRanking = () => {
 
   const fetchRanking = async () => {
     try {
-      const response = await fetch(getApiUrl('/reports/institutional-ranking'), {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const result = await response.json();
-      setRanking(Array.isArray(result) ? result : []);
+      const data = await universityAdminApi.getInstitutionalRanking();
+      if (data) {
+        setRanking(Array.isArray(data) ? data : []);
+      }
       setLoading(false);
     } catch (error) {
       console.error('Error fetching ranking:', error);

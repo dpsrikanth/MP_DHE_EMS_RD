@@ -15,7 +15,7 @@ import {
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 
 const Departments = () => {
   const navigate = useNavigate();
@@ -61,26 +61,11 @@ const Departments = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      // Fetch departments
-      const response = await fetch(getApiUrl('/master-departments'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`HTTP ${response.status}: ${text}`);
-      }
-      const result = await response.json();
+      const result = await masterDataApi.getDepartments();
       setData(result || []);
 
-      // Fetch colleges for dropdown
-      const collegeResponse = await fetch(getApiUrl('/colleges'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (collegeResponse.ok) {
-        const collegeResult = await collegeResponse.json();
-        setColleges(collegeResult || []);
-      }
+      const collegeResult = await masterDataApi.getColleges();
+      setColleges(collegeResult || []);
       
     } catch (err) {
       setError(err.message);
@@ -97,19 +82,13 @@ const Departments = () => {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     try {
-      const token = localStorage.getItem('token');
-      const url = getApiUrl(`/master-departments/${deleteTarget.id}`);
-      const res = await fetch(url, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Delete failed');
+      await masterDataApi.deleteDepartment(deleteTarget.id);
       toast.success('Department deleted successfully!');
       setShowDeleteModal(false);
       setDeleteTarget(null);
       fetchData();
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
   };
 

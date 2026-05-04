@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { Building, ArrowLeft, Check, Hash, Activity, ShieldCheck, ShieldAlert } from "lucide-react";
 import '../styles/FormPage.css';
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 
 const DepartmentsForm = () => {
   const navigate = useNavigate();
@@ -28,11 +28,8 @@ const DepartmentsForm = () => {
 
   const fetchColleges = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/colleges'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) setColleges(await res.json());
+      const res = await masterDataApi.getColleges();
+      if (res) setColleges(res);
     } catch (err) {
       console.error('Error fetching colleges:', err);
     }
@@ -40,12 +37,7 @@ const DepartmentsForm = () => {
 
   const loadDepartment = async (deptId) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/master-departments'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to fetch departments');
-      const data = await response.json();
+      const data = await masterDataApi.getDepartments();
       const dept = data.find(d => d.id.toString() === deptId);
       
       if (dept) {
@@ -73,28 +65,18 @@ const DepartmentsForm = () => {
 
     try {
       setSaving(true);
-      const token = localStorage.getItem('token');
-      const url = isEditing 
-        ? getApiUrl(`/master-departments/${id}`)
-        : getApiUrl('/master-departments');
-      const method = isEditing ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
-      });
       
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || 'Operation failed');
+      let result;
+      if (isEditing) {
+        result = await masterDataApi.updateDepartment(id, form);
+      } else {
+        result = await masterDataApi.createDepartment(form);
       }
       
-      const result = await res.json();
-      toast.success(result.message || (isEditing ? 'Department updated successfully!' : 'Department added successfully!'));
+      toast.success(result?.message || (isEditing ? 'Department updated successfully!' : 'Department added successfully!'));
       navigate('/departments');
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     } finally {
       setSaving(false);
     }

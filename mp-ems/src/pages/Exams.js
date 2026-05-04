@@ -10,8 +10,8 @@ import { TableSearch, TablePagination, ColumnVisibilitySelector } from '../compo
 import authUtils from "../utils/authUtils";
 import { toast } from 'react-toastify';
 import { formatDate } from '../utils/dateUtils';
-import { getApiUrl } from '../config';
-
+import { masterDataApi } from '../api/masterDataApi';
+import { examApi } from '../api/examApi';
 const Exams = () => {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
@@ -263,30 +263,27 @@ const Exams = () => {
 
   const fetchDropdownData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-      
       const [colRes, uniRes, semRes, typeRes, depRes, progRes, yearRes, subRes, mapRes] = await Promise.all([
-        fetch(getApiUrl('/colleges'), { headers }),
-        fetch(getApiUrl('/universities'), { headers }),
-        fetch(getApiUrl('/master-semesters'), { headers }),
-        fetch(getApiUrl('/exam-types'), { headers }),
-        fetch(getApiUrl('/master-departments'), { headers }),
-        fetch(getApiUrl('/master-programs'), { headers }),
-        fetch(getApiUrl('/academic-years'), { headers }),
-        fetch(getApiUrl('/master-subjects'), { headers }),
-        fetch(getApiUrl('/subject-mappings'), { headers })
+        masterDataApi.getColleges(),
+        masterDataApi.getUniversities(),
+        masterDataApi.getSemesters(),
+        examApi.getExamTypes(),
+        masterDataApi.getDepartments(),
+        masterDataApi.getPrograms(),
+        masterDataApi.getAcademicYears(),
+        masterDataApi.getSubjects(),
+        masterDataApi.getSubjectMappings()
       ]);
 
-      if (colRes.ok) setColleges(await colRes.json());
-      if (uniRes.ok) setUniversities(await uniRes.json());
-      if (semRes.ok) setSemesters(await semRes.json());
-      if (typeRes.ok) setExamTypes(await typeRes.json());
-      if (depRes.ok) setDepartments(await depRes.json());
-      if (progRes.ok) setPrograms(await progRes.json());
-      if (yearRes.ok) setAcademicYears(await yearRes.json());
-      if (subRes.ok) setSubjects(await subRes.json());
-      if (mapRes.ok) setSubjectMappings(await mapRes.json());
+      if (colRes) setColleges(colRes);
+      if (uniRes) setUniversities(uniRes);
+      if (semRes) setSemesters(semRes);
+      if (typeRes) setExamTypes(typeRes);
+      if (depRes) setDepartments(depRes);
+      if (progRes) setPrograms(progRes);
+      if (yearRes) setAcademicYears(yearRes);
+      if (subRes) setSubjects(subRes);
+      if (mapRes) setSubjectMappings(mapRes);
     } catch (err) {
       console.error("Failed to fetch dropdown data:", err);
     }
@@ -296,30 +293,11 @@ const Exams = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/exams'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`HTTP ${response.status}: ${text || 'Unknown Error'}`);
-      }
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error("Non-JSON response from /api/exams:", text);
-        throw new Error("Server returned an invalid response format (Expected JSON)");
-      }
-
-      const jsonData = await response.json();
+      const jsonData = await examApi.getExams();
       setData(Array.isArray(jsonData) ? jsonData : []);
     } catch (err) {
       console.error("Fetch exams error:", err);
-      setError(err.message === "Unexpected end of JSON input" 
-        ? "Server returned an empty response. This might be a server-side error." 
-        : err.message);
+      setError(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }
@@ -329,20 +307,11 @@ const Exams = () => {
 
   const handleTogglePublish = async (series) => {
     try {
-      const token = localStorage.getItem('token');
       setLoading(true);
-      // Determine new status (toggle based on the first item in series for consistency)
       const newStatus = !series.subjects[0].is_published;
       
       const promises = series.subjects.map(s => 
-        fetch(getApiUrl(`/exams/${s.id}/publish`), {
-          method: 'PUT',
-          headers: { 
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}` 
-          },
-          body: JSON.stringify({ is_published: newStatus })
-        })
+        examApi.publishExam(s.id, { is_published: newStatus })
       );
       
       await Promise.all(promises);
@@ -356,41 +325,29 @@ const Exams = () => {
 
   const handleToggleResultsPublish = async (series) => {
     try {
-      const token = localStorage.getItem('token');
       setLoading(true);
       const newStatus = !series.subjects[0].results_published;
 
       // For internal exams: fire ONE request first — backend checks ALL subjects in the series.
       // If that passes, fire the rest. This prevents partial publish.
-      const firstResponse = await fetch(getApiUrl(`/exams/${series.subjects[0].id}/publish-results`), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ results_published: newStatus })
-      });
-
-      if (!firstResponse.ok) {
-        const err = await firstResponse.json();
-        toast.error(err.message || 'Failed to publish results');
+      let firstResponse;
+      try {
+        firstResponse = await examApi.publishResults(series.subjects[0].id, { results_published: newStatus });
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Failed to publish results');
         return; // Abort — don't publish any remaining subjects
       }
 
-      // First subject passed — now publish the rest in parallel
       if (series.subjects.length > 1) {
         const rest = series.subjects.slice(1);
-        const responses = await Promise.all(
-          rest.map(s =>
-            fetch(getApiUrl(`/exams/${s.id}/publish-results`), {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-              body: JSON.stringify({ results_published: newStatus })
-            })
-          )
-        );
-        const failures = await Promise.all(
-          responses.filter(r => !r.ok).map(r => r.json())
-        );
-        if (failures.length > 0) {
-          toast.error(failures[0]?.message || 'Some subjects failed to publish');
+        try {
+          await Promise.all(
+            rest.map(s =>
+              examApi.publishResults(s.id, { results_published: newStatus })
+            )
+          );
+        } catch (err) {
+          toast.error(err.response?.data?.message || 'Some subjects failed to publish');
           fetchData();
           return;
         }
@@ -409,19 +366,11 @@ const Exams = () => {
 
   const handleToggleApplications = async (series) => {
     try {
-      const token = localStorage.getItem('token');
       setLoading(true);
       const newStatus = !series.subjects[0].student_application_open;
 
       const promises = series.subjects.map(s => 
-        fetch(getApiUrl(`/exams/${s.id}/toggle-applications`), {
-          method: 'PUT',
-          headers: { 
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}` 
-          },
-          body: JSON.stringify({ open: newStatus })
-        })
+        examApi.toggleApplications(s.id, { open: newStatus })
       );
       
       await Promise.all(promises);
@@ -436,16 +385,9 @@ const Exams = () => {
   const handleDelete = async (series) => {
     toast.info(`Deleting exam series (${series.subjects.length} subjects)...`);
     try {
-      const token = localStorage.getItem('token');
       setLoading(true);
       
-      // Delete all subjects in parallel
-      const deletePromises = series.subjects.map(s => 
-        fetch(getApiUrl(`/exams/${s.id}`), {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      );
+      const deletePromises = series.subjects.map(s => examApi.deleteExam(s.id));
       
       await Promise.all(deletePromises);
       toast.success('Exam series deleted successfully!');
@@ -464,25 +406,15 @@ const Exams = () => {
   const handleSendShortageRequest = async () => {
     setShortageLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/examination-halls/shortage-request'), {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({
-          college_id: shortageData.college_id,
-          program_id: shortageData.program_id,
-          semester_id: shortageData.semester_id,
-          student_count: shortageData.studentCount,
-          available_capacity: shortageData.totalCapacity,
-          shortage: shortageData.shortage
-        })
+      await examApi.requestShortage({
+        college_id: shortageData.college_id,
+        program_id: shortageData.program_id,
+        semester_id: shortageData.semester_id,
+        student_count: shortageData.studentCount,
+        available_capacity: shortageData.totalCapacity,
+        shortage: shortageData.shortage
       });
 
-      if (!res.ok) throw new Error("Failed to send request");
-      
       toast.success('Shortage request sent to University Admin successfully.');
       setIsShortageModalOpen(false);
       setShortageData(null);

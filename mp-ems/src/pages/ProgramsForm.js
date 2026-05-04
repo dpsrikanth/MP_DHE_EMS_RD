@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
 import Select, { components } from "react-select";
@@ -41,12 +41,8 @@ const ProgramsForm = () => {
 
   const fetchDepartments = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/master-departments'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const result = await res.json();
+      const result = await masterDataApi.getDepartments();
+      if (result) {
         const deptOptions = result.map(d => ({ value: d.id, label: d.department_name }));
         setDepartments(deptOptions);
         if (isEditing) loadProgram(id, deptOptions);
@@ -59,12 +55,7 @@ const ProgramsForm = () => {
 
   const loadProgram = async (progId, currentDepartments) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/master-programs'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to fetch programs');
-      const data = await response.json();
+      const data = await masterDataApi.getPrograms();
       const item = data.find(p => p.id.toString() === progId);
       
       if (item) {
@@ -94,34 +85,25 @@ const ProgramsForm = () => {
     
     try {
       setSaving(true);
-      const token = localStorage.getItem('token');
-      const url = isEditing 
-        ? getApiUrl(`/master-programs/${id}`) 
-        : getApiUrl('/master-programs');
-      const method = isEditing ? 'PUT' : 'POST';
+      const payload = { 
+        name: form.name, duration_years: parseInt(form.duration_years),
+        department_ids: form.department_ids.map(d => d.value),
+        section_name: form.section_name, code: form.code,
+        grading_system_type: form.grading_system_type,
+        enable_elective_subjects_selection: form.enable_elective_subjects_selection
+      };
 
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ 
-          name: form.name, duration_years: parseInt(form.duration_years),
-          department_ids: form.department_ids.map(d => d.value),
-          section_name: form.section_name, code: form.code,
-          grading_system_type: form.grading_system_type,
-          enable_elective_subjects_selection: form.enable_elective_subjects_selection
-        })
-      });
-      
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || 'Operation failed');
+      let result;
+      if (isEditing) {
+        result = await masterDataApi.updateProgram(id, payload);
+      } else {
+        result = await masterDataApi.createProgram(payload);
       }
       
-      const result = await res.json();
       toast.success(result.message || (isEditing ? 'Program updated successfully!' : 'Program added successfully!'));
       navigate('/programs');
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     } finally {
       setSaving(false);
     }

@@ -21,7 +21,7 @@ import { formatDate } from '../utils/dateUtils';
 import Select, { components } from "react-select";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 
 const InfoItem = ({ label, value, isMono = false, className = "" }) => (
   <div className={`space-y-1.5 ${className}`}>
@@ -92,18 +92,10 @@ const Batches = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/master-batches'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`HTTP ${response.status}: ${text}`);
-      }
-      const result = await response.json();
+      const result = await masterDataApi.getBatches();
       setData(result || []);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }
@@ -121,18 +113,13 @@ const Batches = () => {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl(`/master-batches/${deleteTarget.id}`), {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Delete failed');
+      await masterDataApi.deleteBatch(deleteTarget.id);
       setShowDeleteModal(false);
       setDeleteTarget(null);
       fetchData();
       toast.success('Batch deleted successfully');
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
   };
 

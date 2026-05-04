@@ -17,7 +17,9 @@ import { toast } from 'react-toastify';
 import authUtils from '../utils/authUtils';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
-import { getApiUrl } from '../config';
+import { marksApi } from '../api/marksApi';
+import { masterDataApi } from '../api/masterDataApi';
+import { examApi } from '../api/examApi';
 
 /**
  * Modern Marks Management component with Tailwind CSS styling.
@@ -98,7 +100,6 @@ const Marks = () => {
 
     setSaving(true);
     try {
-      const token = localStorage.getItem('token');
       const payload = {
         subject_id: selectedSubject,
         exam_id: selectedExam,
@@ -111,21 +112,12 @@ const Marks = () => {
         }))
       };
 
-      const res = await fetch(getApiUrl('/marks/teacher-save'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      await marksApi.saveInternalMarks(payload);
 
-      if (!res.ok) throw new Error('Failed to save marks');
-
-      alert(status === 'Draft' ? 'Drafts saved successfully' : 'Submitted for approval successfully');
+      toast.success(status === 'Draft' ? 'Drafts saved successfully' : 'Submitted for approval successfully');
       fetchData(); // reload
     } catch (err) {
-      alert(err.message);
+      toast.error(err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to save marks');
     } finally {
       setSaving(false);
     }
@@ -133,51 +125,37 @@ const Marks = () => {
 
   const handleHodAction = async (mark_id, action) => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/marks/approve-reject'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          mark_ids: [mark_id],
-          action: action
-        })
+      await marksApi.approveRejectMarks({
+        mark_ids: [mark_id],
+        action: action
       });
 
-      if (!res.ok) throw new Error(`Failed to ${action} mark`);
-
-      alert(`Mark ${action}d successfully`);
+      toast.success(`Mark ${action}d successfully`);
       fetchData();
     } catch (err) {
-      alert(err.message);
+      toast.error(err.response?.data?.message || err.response?.data?.error || err.message || `Failed to ${action} mark`);
     }
   };
 
   const fetchFilterData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
-      // Example calls - mapping to the actual API endpoints
       const [colRes, deptRes, progRes, yrRes, semRes, subRes, exRes] = await Promise.all([
-        fetch(getApiUrl('/colleges'), { headers }),
-        fetch(getApiUrl('/master-departments'), { headers }),
-        fetch(getApiUrl('/master-programs'), { headers }),
-        fetch(getApiUrl('/academic-years'), { headers }),
-        fetch(getApiUrl('/master-semesters'), { headers }),
-        fetch(getApiUrl('/master-subjects'), { headers }),
-        fetch(getApiUrl('/exams'), { headers })
+        masterDataApi.getColleges(),
+        masterDataApi.getDepartments(),
+        masterDataApi.getPrograms(),
+        masterDataApi.getAcademicYears(),
+        masterDataApi.getSemesters(),
+        masterDataApi.getSubjects(),
+        examApi.getExams()
       ]);
 
-      if (colRes.ok) setColleges(await colRes.json());
-      if (deptRes.ok) setDepartments(await deptRes.json());
-      if (progRes.ok) setPrograms(await progRes.json());
-      if (yrRes.ok) setAcademicYears(await yrRes.json());
-      if (semRes.ok) setSemesters(await semRes.json());
-      if (subRes.ok) setSubjects(await subRes.json());
-      if (exRes.ok) setExams(await exRes.json());
+      if (colRes) setColleges(colRes);
+      if (deptRes) setDepartments(deptRes);
+      if (progRes) setPrograms(progRes);
+      if (yrRes) setAcademicYears(yrRes);
+      if (semRes) setSemesters(semRes);
+      if (subRes) setSubjects(subRes);
+      if (exRes) setExams(exRes);
     } catch (err) {
       console.error("Error fetching filters", err);
     }
@@ -235,34 +213,26 @@ const Marks = () => {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('token');
-      const params = new URLSearchParams();
-      if (selectedCollege) params.append('college_id', selectedCollege);
-      if (selectedDepartment) params.append('department_id', selectedDepartment);
+      const params = {};
+      if (selectedCollege) params.college_id = selectedCollege;
+      if (selectedDepartment) params.department_id = selectedDepartment;
 
       if (activeTab === 'teacher') {
-        if (selectedProgram) params.append('program_id', selectedProgram);
-        if (selectedAcademicYear) params.append('academic_year_id', selectedAcademicYear);
-        if (selectedSemester) params.append('semester_id', selectedSemester);
-        if (selectedSubject) params.append('subject_id', selectedSubject);
-        if (selectedExam) params.append('exam_id', selectedExam);
+        if (selectedProgram) params.program_id = selectedProgram;
+        if (selectedAcademicYear) params.academic_year_id = selectedAcademicYear;
+        if (selectedSemester) params.semester_id = selectedSemester;
+        if (selectedSubject) params.subject_id = selectedSubject;
+        if (selectedExam) params.exam_id = selectedExam;
 
-        const response = await fetch(getApiUrl(`/marks/students?${params}`), {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-        const data = await response.json();
+        const data = await marksApi.getStudentsForMarks(params);
         setData(data || []);
       } else {
-        const response = await fetch(getApiUrl(`/marks/approvals?${params}`), {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-        const data = await response.json();
+        const data = await marksApi.getApprovals(params);
         setData(data || []);
       }
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.response?.data?.error || err.message);
+      toast.error('Failed to sync records');
     } finally {
       setLoading(false);
     }

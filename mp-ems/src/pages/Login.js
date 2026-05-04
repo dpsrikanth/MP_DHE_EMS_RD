@@ -10,7 +10,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import authUtils from "../utils/authUtils";
-import { getApiUrl } from "../config";
+import { authApi } from "../api/authApi";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -39,18 +39,9 @@ const Login = () => {
         return;
       }
 
-      const response = await fetch(getApiUrl('/login'), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        credentials: "include",
-        body: JSON.stringify(formData)
-      });
+      const data = await authApi.login(formData);
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (data && data.token) {
         authUtils.setAuth(
           data.token,
           data.user.role || "",
@@ -96,7 +87,11 @@ const Login = () => {
       }
     } catch (error) {
       console.error("Login error:", error);
-      setError("Network error. Please try again.");
+      if (error.response && error.response.data && error.response.data.message) {
+        setError(error.response.data.message);
+      } else {
+        setError("Network error. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Building2, CheckCircle2, XCircle, Clock, MapPin, Search, AlertTriangle, ArrowRight, X, Users, Info, Zap, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
-import { getApiUrl } from '../../config';
+import { masterDataApi } from '../../api/masterDataApi';
+import { universityAdminApi } from '../../api/universityAdminApi';
 
 const HallApprovals = () => {
     const [halls, setHalls] = useState([]);
@@ -23,34 +24,24 @@ const HallApprovals = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const [hallsRes, shortagesRes, collegesRes] = await Promise.all([
-                fetch(getApiUrl('/examination-halls/pending'), {
-                    headers: { Authorization: `Bearer ${token}` }
-                }),
-                fetch(getApiUrl('/examination-halls/shortage-requests'), {
-                    headers: { Authorization: `Bearer ${token}` }
-                }),
-                fetch(getApiUrl('/colleges'), {
-                    headers: { Authorization: `Bearer ${token}` }
-                })
+            const [hallsData, shortagesData, collegesData] = await Promise.all([
+                universityAdminApi.getPendingHallApprovals(),
+                universityAdminApi.getShortageRequests(),
+                masterDataApi.getColleges()
             ]);
 
-            if (hallsRes.ok) {
-                const data = await hallsRes.json();
-                setHalls(data);
+            if (hallsData) {
+                setHalls(hallsData);
             } else {
                 toast.error("Failed to fetch hall requests");
             }
 
-            if (shortagesRes.ok) {
-                const sData = await shortagesRes.json();
-                setShortageRequests(sData);
+            if (shortagesData) {
+                setShortageRequests(shortagesData);
             }
 
-            if (collegesRes.ok) {
-                const cData = await collegesRes.json();
-                setColleges(cData);
+            if (collegesData) {
+                setColleges(collegesData);
             }
         } catch (error) {
             toast.error("Network error");
@@ -65,17 +56,8 @@ const HallApprovals = () => {
 
     const handleAction = async (hallId, actionStatus) => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl(`/examination-halls/${hallId}/approve-reject`), {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ status: actionStatus, comment: 'Reviewed by University' })
-            });
-
-            if (res.ok) {
+            const data = await universityAdminApi.approveRejectHall(hallId, { status: actionStatus, comment: 'Reviewed by University' });
+            if (data) {
                 toast.success(`Hall ${actionStatus} successfully`);
                 fetchData();
             } else {
@@ -109,28 +91,19 @@ const HallApprovals = () => {
 
         setAllocating(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl(`/examination-halls/shortage-requests/${selectedRequest.id}/allocate`), {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ allocated_college_id: targetCollegeId })
-            });
+            const data = await universityAdminApi.allocateShortageRequest(selectedRequest.id, { allocated_college_id: targetCollegeId });
 
-            if (res.ok) {
+            if (data) {
                 toast.success("External center allocated successfully");
                 setShowAllocateModal(false);
                 setSelectedRequest(null);
                 setTargetCollegeId('');
                 fetchData();
             } else {
-                const data = await res.json();
-                toast.error(data.error || "Failed to allocate center");
+                toast.error("Failed to allocate center");
             }
         } catch (err) {
-            toast.error("An error occurred during allocation");
+            toast.error(err.response?.data?.error || "An error occurred during allocation");
         } finally {
             setAllocating(false);
         }

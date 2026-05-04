@@ -4,7 +4,7 @@ import { Printer, Download, ChevronLeft, GraduationCap, Calendar, Clock, MapPin,
 import { toast } from 'react-toastify';
 import { formatDate } from '../../utils/dateUtils';
 import authUtils from '../../utils/authUtils';
-import { getApiUrl } from '../../config';
+import { studentApi } from '../../api/studentApi';
 
 const HallTicket = () => {
   const { examName, semesterId } = useParams();
@@ -18,21 +18,15 @@ const HallTicket = () => {
 
   const fetchHallTicketData = async () => {
     try {
-      const response = await fetch(getApiUrl(`/student/hall-ticket/${examName}/${semesterId}`), {
-        headers: {
-          ...authUtils.getAuthHeader()
-        }
-      });
-      if (response.ok) {
-        const result = await response.json();
+      const result = await studentApi.getHallTicket(examName, semesterId);
+      if (result) {
         setData(result);
       } else {
-        const error = await response.json();
-        toast.error(error.message || 'Failed to fetch Hall Ticket');
+        toast.error('Failed to fetch Hall Ticket');
       }
     } catch (error) {
       console.error('Error fetching hall ticket:', error);
-      toast.error('Network error');
+      toast.error(error.response?.data?.message || error.response?.data?.error || 'Network error');
     } finally {
       setLoading(false);
     }

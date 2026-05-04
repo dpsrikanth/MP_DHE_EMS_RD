@@ -5,7 +5,7 @@ import {
   Building, Calendar, Info, ShieldCheck, Hash
 } from "lucide-react";
 import { toast } from 'react-toastify';
-import { getApiUrl } from '../../config';
+import { universityAdminApi } from '../../api/universityAdminApi';
 
 const ExternalAssignment = () => {
   const [faculties, setFaculties] = useState([]);
@@ -25,18 +25,15 @@ const ExternalAssignment = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
-      const [facultyRes, pendingRes, assignmentRes] = await Promise.all([
-        fetch(getApiUrl('/university-admin/external-faculties'), { headers }),
-        fetch(getApiUrl('/university-admin/pending-external-assignments'), { headers }),
-        fetch(getApiUrl('/university-admin/external-assignments'), { headers })
+      const [facultyData, pendingData, assignmentData] = await Promise.all([
+        universityAdminApi.getExternalFaculties(),
+        universityAdminApi.getPendingExternalAssignments(),
+        universityAdminApi.getExternalAssignments()
       ]);
 
-      if (facultyRes.ok) setFaculties(await facultyRes.json());
-      if (pendingRes.ok) setPendingExams(await pendingRes.json());
-      if (assignmentRes.ok) setAssignments(await assignmentRes.json());
+      if (facultyData) setFaculties(facultyData);
+      if (pendingData) setPendingExams(pendingData);
+      if (assignmentData) setAssignments(assignmentData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
       toast.error("Failed to load assignment data");
@@ -63,29 +60,12 @@ const ExternalAssignment = () => {
 
     setSubmitting(true);
     try {
-      const token = localStorage.getItem('token');
-      
-      // Assign to each selected exam one by one (or update API to handle multiple exams)
-      // Current API handles multiple subjects for one exam. We'll send multiple requests or update API.
-      // Let's send one by one for now for simplicity as per current API structure.
       for (const examId of selectedExams) {
-        const res = await fetch(getApiUrl('/university-admin/assign-external-faculty'), {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}` 
-          },
-          body: JSON.stringify({
-            faculty_user_id: selectedFaculty,
-            exam_id: examId,
-            subject_ids: [] // Empty means Exam-level assignment
-          })
+        await universityAdminApi.assignExternalFaculty({
+          faculty_user_id: selectedFaculty,
+          exam_id: examId,
+          subject_ids: [] // Empty means Exam-level assignment
         });
-
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || "Failed to assign faculty");
-        }
       }
 
       toast.success("External faculty assigned to exams successfully");

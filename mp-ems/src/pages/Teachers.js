@@ -34,6 +34,7 @@ import Papa from 'papaparse';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 import BulkImportModal from '../components/BulkImportModal';
+import { masterDataApi } from '../api/masterDataApi';
 import { getApiUrl } from '../config';
 
 
@@ -129,38 +130,28 @@ const Teachers = () => {
   const fetchDropdownOptions = async () => {
     try {
       const [designResp, deptResp, collegeResp] = await Promise.all([
-        fetch(getApiUrl('/master-designations'), {
-          headers: authUtils.getAuthHeader()
-        }),
-        fetch(getApiUrl('/master-departments'), {
-          headers: authUtils.getAuthHeader()
-        }),
-        fetch(getApiUrl('/colleges'), {
-          headers: authUtils.getAuthHeader()
-        })
+        masterDataApi.getDesignations(),
+        masterDataApi.getDepartments(),
+        masterDataApi.getColleges()
       ]);
 
-      if (designResp.ok) {
-        const designations = await designResp.json();
-        setDesignationOptions(designations.map(d => ({
+      if (designResp) {
+        setDesignationOptions(designResp.map(d => ({
           id: d.id,
           name: d.designation_name,
           type: d.designation_type
         })));
       }
 
-      if (deptResp.ok) {
-        const departments = await deptResp.json();
-        setDepartmentOptions(departments.map(d => ({
+      if (deptResp) {
+        setDepartmentOptions(deptResp.map(d => ({
           id: d.id,
           name: d.department_name
         })));
       }
 
-      if (collegeResp.ok) {
-        const colleges = await collegeResp.json();
-        console.log("college", colleges);
-        setCollegeOptions(colleges.map(c => ({
+      if (collegeResp) {
+        setCollegeOptions(collegeResp.map(c => ({
 
           id: c.id,
           name: c.college_name
@@ -218,14 +209,10 @@ const Teachers = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      const resp = await fetch(getApiUrl('/master-teachers'), {
-        headers: authUtils.getAuthHeader()
-      });
-      if (!resp.ok) throw new Error('Failed to fetch teachers');
-      const result = await resp.json();
+      const result = await masterDataApi.getTeachers();
       setData(result || []);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }
@@ -319,14 +306,7 @@ const Teachers = () => {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     try {
-      const resp = await fetch(getApiUrl(`/master-teachers/${deleteTarget.id}`), {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() }
-      });
-
-      if (!resp.ok) throw new Error('Failed to delete teacher');
-
-      const result = await resp.json();
+      await masterDataApi.deleteTeacher(deleteTarget.id);
 
       // Remove the record from the table
       setData(prevData => prevData.filter(t => t.id !== deleteTarget.id));
@@ -334,7 +314,7 @@ const Teachers = () => {
       setShowDeleteModal(false);
       setDeleteTarget(null);
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
       console.error('Delete error', err);
     }
   };

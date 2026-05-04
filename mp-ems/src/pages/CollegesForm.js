@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import Select, { components } from 'react-select';
 import { GraduationCap, ArrowLeft, Check, Search, ChevronDown, MapPin, Map, X } from "lucide-react";
 import '../styles/FormPage.css';
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 
 const CheckboxOption = (props) => (
   <components.Option {...props}>
@@ -42,18 +42,15 @@ const CollegesForm = () => {
 
   const fetchMasters = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/masters'), { headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) setMasterData(await res.json());
+      const data = await masterDataApi.getMasters();
+      if (data) setMasterData(data);
     } catch (err) { console.error('Error fetching masters:', err); }
   };
 
   const fetchUniversities = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/universities'), { headers: { Authorization: `Bearer ${token}` } });
-      if (response.ok) {
-        const data = await response.json();
+      const data = await masterDataApi.getUniversities();
+      if (data) {
         setUniversities((data || []).filter(u => u.status === true || u.status === 1 || u.status === '1' || u.status === 'true'));
       }
     } catch (err) { console.error('Error fetching universities:', err); }
@@ -61,10 +58,7 @@ const CollegesForm = () => {
 
   const loadCollege = async (collegeId) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/colleges'), { headers: { Authorization: `Bearer ${token}` } });
-      if (!response.ok) throw new Error('Failed to fetch colleges');
-      const data = await response.json();
+      const data = await masterDataApi.getColleges();
       const college = data.find(c => c.id.toString() === collegeId);
       if (college) {
         setForm({ name: college.college_name || college.name || '', college_code: college.college_code || '', address: college.address || '', university_id: college.university_id || '', latitude: college.latitude || '', longitude: college.longitude || '' });
@@ -77,18 +71,15 @@ const CollegesForm = () => {
     if (!uId) { setUniversityConfig({ policies: [], programs: [], academicYears: [], semesters: [] }); return; }
     try {
       setIsConfigLoading(true);
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl(`/universities/${uId}/config`), { headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) setUniversityConfig(await res.json());
+      const data = await masterDataApi.getUniversityConfig(uId);
+      if (data) setUniversityConfig(data);
     } catch (err) { console.error('Error fetching university config:', err); } finally { setIsConfigLoading(false); }
   };
 
   const fetchCollegeConfig = async (cId) => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl(`/colleges/${cId}/config`), { headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await masterDataApi.getCollegeConfig(cId);
+      if (data) {
         setSelectedConfig({ policies: data.policies || [], programs: data.programs || [], academicYears: data.academicYears || [], semesters: data.semesters || [] });
       }
     } catch (err) { console.error('Error fetching college config:', err); }
@@ -126,20 +117,23 @@ const CollegesForm = () => {
   const handleSave = async () => {
     try {
       setSavingConfig(true);
-      const token = localStorage.getItem('token');
       if (!form.name || !form.university_id) { setSavingConfig(false); return toast.warning('College name and university are required'); }
-      const url = isEditing ? getApiUrl(`/colleges/${id}`) : getApiUrl('/colleges');
-      const method = isEditing ? 'PUT' : 'POST';
-      const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(form) });
-      if (!response.ok) throw new Error('Failed to save');
-      const savedCollege = await response.json();
+      
+      let savedCollege;
+      if (isEditing) {
+        savedCollege = await masterDataApi.updateCollege(id, form);
+      } else {
+        savedCollege = await masterDataApi.createCollege(form);
+      }
+      
       const collegeId = isEditing ? id : savedCollege.id;
-      await fetch(getApiUrl(`/colleges/${collegeId}/config`), {
-        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(selectedConfig)
-      });
+      if (collegeId) {
+        await masterDataApi.updateCollegeConfig(collegeId, selectedConfig);
+      }
+      
       toast.success(savedCollege.message || (isEditing ? 'College updated successfully!' : 'College added successfully!'));
       navigate('/colleges');
-    } catch (err) { toast.error('Error: ' + err.message); } finally { setSavingConfig(false); }
+    } catch (err) { toast.error('Error: ' + (err.response?.data?.message || err.message)); } finally { setSavingConfig(false); }
   };
 
   if (loading) return (

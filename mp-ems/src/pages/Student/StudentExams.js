@@ -4,7 +4,7 @@ import { Calendar, Clock, BookOpen, CreditCard, CheckCircle, AlertCircle, Printe
 import authUtils from '../../utils/authUtils';
 import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
-import { getApiUrl } from '../../config';
+import { studentApi } from '../../api/studentApi';
 
 const StudentExams = () => {
   const [exams, setExams] = useState([]);
@@ -17,20 +17,11 @@ const StudentExams = () => {
 
   const fetchExams = async () => {
     try {
-      const response = await fetch(getApiUrl('/student/exams'), {
-        headers: {
-          ...authUtils.getAuthHeader()
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setExams(data);
-      } else {
-        toast.error('Failed to fetch exam schedule');
-      }
+      const data = await studentApi.getExams();
+      setExams(data);
     } catch (error) {
       console.error('Error fetching exams:', error);
-      toast.error('Network error');
+      toast.error(error.response?.data?.message || error.response?.data?.error || 'Failed to fetch exam schedule');
     } finally {
       setLoading(false);
     }
@@ -38,25 +29,13 @@ const StudentExams = () => {
 
   const handleRegister = async (examIds) => {
     try {
-      const response = await fetch(getApiUrl('/student/exams/register'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authUtils.getAuthHeader()
-        },
-        body: JSON.stringify({ exam_ids: examIds }) // Sending array of IDs
-      });
+      await studentApi.registerExams({ exam_ids: examIds });
 
-      if (response.ok) {
-        toast.success('Registration successful!');
-        fetchExams(); // Refresh list
-      } else {
-        const data = await response.json();
-        toast.error(data.message || 'Registration failed');
-      }
+      toast.success('Registration successful!');
+      fetchExams(); // Refresh list
     } catch (error) {
       console.error('Registration error:', error);
-      toast.error('Network error');
+      toast.error(error.response?.data?.message || error.response?.data?.error || 'Registration failed');
     }
   };
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getApiUrl } from '../../config';
+import { masterDataApi } from '../../api/masterDataApi';
+import { universityAdminApi } from '../../api/universityAdminApi';
 import { toast } from 'react-toastify';
 import { Users, Building2, AlertTriangle, ArrowRight, ShieldCheck, UserCheck, Info } from "lucide-react";
 import authUtils from "../../utils/authUtils";
@@ -29,12 +30,8 @@ const StudentCenterAllocations = () => {
 
     const fetchExams = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/exams'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await masterDataApi.getExams();
+            if (data) {
                 setExams(data);
             }
         } catch (error) {
@@ -45,12 +42,8 @@ const StudentCenterAllocations = () => {
     const fetchColleges = async () => {
         try {
             setLoadingColleges(true);
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/colleges'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await masterDataApi.getColleges();
+            if (data) {
                 setColleges(data);
             } else {
                 toast.error("Failed to fetch colleges");
@@ -65,16 +58,11 @@ const StudentCenterAllocations = () => {
     const fetchStudents = async (collegeId, examId = '') => {
         try {
             setLoadingStudents(true);
-            const token = localStorage.getItem('token');
-            const url = getApiUrl(`/university-admin/students-for-allocation/${collegeId}`);
-            const urlObj = new URL(url);
-            if (examId) urlObj.searchParams.append('exam_id', examId);
+            const params = {};
+            if (examId) params.exam_id = examId;
 
-            const res = await fetch(urlObj.toString(), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await universityAdminApi.getStudentsForAllocation(collegeId, params);
+            if (data) {
                 setStudents(data);
                 setSelectedStudentIds(new Set());
                 setTargetCenterId('');
@@ -138,31 +126,21 @@ const StudentCenterAllocations = () => {
 
         setAllocating(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/university-admin/allocate-students'), {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}` 
-                },
-                body: JSON.stringify({
-                    student_ids: Array.from(selectedStudentIds),
-                    exam_id: selectedExamId,
-                    center_id: targetCenterId === 'HOME_COLLEGE' ? null : targetCenterId
-                })
+            const data = await universityAdminApi.allocateStudents({
+                student_ids: Array.from(selectedStudentIds),
+                exam_id: selectedExamId,
+                center_id: targetCenterId === 'HOME_COLLEGE' ? null : targetCenterId
             });
 
-            if (res.ok) {
-                const data = await res.json();
+            if (data) {
                 toast.success(`${data.allocated_count} students successfully allocated to ${targetCenterId === 'HOME_COLLEGE' ? 'Home College' : targetCenterName}`);
                 // Refresh students
                 fetchStudents(selectedCollegeId);
             } else {
-                const error = await res.json();
-                toast.error(error.error || "Failed to allocate students");
+                toast.error("Failed to allocate students");
             }
         } catch (error) {
-            toast.error("An error occurred during allocation");
+            toast.error(error.response?.data?.error || "An error occurred during allocation");
         } finally {
             setAllocating(false);
         }

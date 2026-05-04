@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate, useParams } from "react-router-dom";
 import { ShieldCheck, ArrowLeft, Check } from "lucide-react";
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 import '../styles/FormPage.css';
 
 const RolesForm = () => {
@@ -22,12 +22,7 @@ const RolesForm = () => {
 
   const fetchRoleData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/roles'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to fetch roles');
-      const result = await response.json();
+      const result = await masterDataApi.getRoles();
       
       const role = result.find(r => r.id.toString() === id.toString());
       if (role) {
@@ -52,21 +47,10 @@ const RolesForm = () => {
 
     setSaving(true);
     try {
-      const token = localStorage.getItem('token');
-      const method = isEditing ? 'PUT' : 'POST';
-      const url = isEditing 
-        ? getApiUrl(`/roles/${id}`) 
-        : getApiUrl('/roles');
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
-      });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.message || 'Operation failed');
+      if (isEditing) {
+        await masterDataApi.updateRole(id, form);
+      } else {
+        await masterDataApi.createRole(form);
       }
 
       toast.success(isEditing ? 'Role updated successfully' : 'Role created successfully');

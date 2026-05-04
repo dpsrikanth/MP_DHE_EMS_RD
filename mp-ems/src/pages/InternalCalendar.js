@@ -16,7 +16,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import authUtils from '../utils/authUtils';
 import { formatDate } from '../utils/dateUtils';
-import { getApiUrl } from '../config';
+import { examApi } from '../api/examApi';
 
 const InternalCalendar = () => {
   const navigate = useNavigate();
@@ -33,28 +33,22 @@ const InternalCalendar = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-      
-      const [examsRes, milestonesRes, internalRes] = await Promise.all([
-        fetch(getApiUrl('/exams'), { headers }),
-        fetch(getApiUrl('/milestones'), { headers }),
-        fetch(getApiUrl('/internal-exams/schedules'), { headers })
+      const [examsData, milestonesData, internalData] = await Promise.all([
+        examApi.getExams(),
+        examApi.getMilestones(),
+        examApi.getInternalSchedules()
       ]);
 
-      if (examsRes.ok) {
-        const data = await examsRes.json();
-        setExams(Array.isArray(data) ? data.filter(e => e.exam_type === 1) : []);
+      if (examsData) {
+        setExams(Array.isArray(examsData) ? examsData.filter(e => e.exam_type === 1) : []);
       }
       
-      if (milestonesRes.ok) {
-        const data = await milestonesRes.json();
-        setMilestones(Array.isArray(data) ? data : []);
+      if (milestonesData) {
+        setMilestones(Array.isArray(milestonesData) ? milestonesData : []);
       }
 
-      if (internalRes.ok) {
-        const data = await internalRes.json();
-        setInternalSchedules(Array.isArray(data) ? data : []);
+      if (internalData) {
+        setInternalSchedules(Array.isArray(internalData) ? internalData : []);
       }
     } catch (err) {
       console.error("Failed to fetch data:", err);

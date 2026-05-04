@@ -21,6 +21,7 @@ import Papa from 'papaparse';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 import BulkImportModal from '../components/BulkImportModal';
+import { masterDataApi } from '../api/masterDataApi';
 import { getApiUrl } from '../config';
 
 const Students = () => {
@@ -80,15 +81,7 @@ const Students = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/students'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`HTTP ${response.status}: ${text}`);
-      }
-      const data = await response.json();
+      const data = await masterDataApi.getStudents();
       setData(data || []);
     } catch (err) {
       setError(err.message);
@@ -177,22 +170,12 @@ const Students = () => {
     setDeleteLoading(true);
     setDeleteError('');
     try {
-      const token = localStorage.getItem('token');
-      const resp = await fetch(getApiUrl(`/students/${studentToDelete.id}`), {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      if (!resp.ok) {
-        const text = await resp.text();
-        throw new Error(text || 'Failed to delete student');
-      }
+      await masterDataApi.deleteStudent(studentToDelete.id);
       await fetchData();
       setShowDeleteModal(false);
       setStudentToDelete(null);
     } catch (err) {
-      setDeleteError(err.message);
+      setDeleteError(err.response?.data?.message || err.message);
     } finally {
       setDeleteLoading(false);
     }

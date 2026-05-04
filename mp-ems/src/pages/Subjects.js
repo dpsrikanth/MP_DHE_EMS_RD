@@ -21,7 +21,7 @@ import {
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 
 const Subjects = () => {
   const [data, setData] = useState([]);
@@ -113,20 +113,17 @@ const Subjects = () => {
 
   const fetchMasters = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const h = { Authorization: `Bearer ${token}` };
-      
       const [progRes, semRes, teaRes, depRes] = await Promise.all([
-        fetch(getApiUrl('/master-programs'), { headers: h }),
-        fetch(getApiUrl('/master-semesters'), { headers: h }),
-        fetch(getApiUrl('/master-teachers'), { headers: h }),
-        fetch(getApiUrl('/master-departments'), { headers: h })
+        masterDataApi.getPrograms(),
+        masterDataApi.getSemesters(),
+        masterDataApi.getTeachers(),
+        masterDataApi.getDepartments()
       ]);
 
-      if (progRes.ok) setPrograms((await progRes.json()).map(p => ({ value: p.id, label: p.name })));
-      if (semRes.ok) setSemesters((await semRes.json()).map(s => ({ value: s.id, label: s.semester_name })));
-      if (teaRes.ok) setTeachers((await teaRes.json()).map(t => ({ value: t.id, label: t.name })));
-      if (depRes.ok) setDepartments((await depRes.json()).map(d => ({ value: d.id, label: d.department_name })));
+      if (progRes) setPrograms(progRes.map(p => ({ value: p.id, label: p.name })));
+      if (semRes) setSemesters(semRes.map(s => ({ value: s.id, label: s.semester_name })));
+      if (teaRes) setTeachers(teaRes.map(t => ({ value: t.id, label: t.name })));
+      if (depRes) setDepartments(depRes.map(d => ({ value: d.id, label: d.department_name })));
       
     } catch (err) {
       console.error('Error fetching masters:', err);
@@ -135,12 +132,7 @@ const Subjects = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/master-subjects'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to fetch subjects');
-      const result = await response.json();
+      const result = await masterDataApi.getSubjects();
       
       const processed = result.map(item => {
         const batchNum = item.semester_name?.match(/\d+/)?.[0] || item.semester_name?.match(/[IVXLCDM]+/)?.[0] || '';
@@ -168,17 +160,12 @@ const Subjects = () => {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl(`/master-subjects/${deleteTarget.id}`), {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Delete failed');
+      await masterDataApi.deleteSubject(deleteTarget.id);
       setShowDeleteModal(false);
       setDeleteTarget(null);
       fetchData();
     } catch (err) {
-      toast.error(err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
   };
 

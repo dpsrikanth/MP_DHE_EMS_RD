@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FileCheck, Users, CheckCircle, XCircle, BarChart2 } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
-import { getApiUrl } from '../../config';
+import { masterDataApi } from '../../api/masterDataApi';
+import { universityAdminApi } from '../../api/universityAdminApi';
 
 const ExamAnalytics = () => {
   const [stats, setStats] = useState(null);
@@ -19,13 +20,10 @@ const ExamAnalytics = () => {
 
   const fetchExams = async () => {
     try {
-      const response = await fetch(getApiUrl('/exams'), {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const result = await response.json();
-      setExams(Array.isArray(result) ? result : []);
+      const data = await masterDataApi.getExams();
+      if (data) {
+        setExams(data);
+      }
     } catch (error) {
       console.error('Error fetching exams:', error);
     }
@@ -34,17 +32,10 @@ const ExamAnalytics = () => {
   const fetchStats = async (examId = '') => {
     setLoading(true);
     try {
-      const urlStr = getApiUrl('/reports/global-exam-stats');
-      const url = new URL(urlStr);
-      if (examId) url.searchParams.append('exam_id', examId);
-      
-      const response = await fetch(url.toString(), {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const result = await response.json();
-      setStats(result);
+      const data = await universityAdminApi.getGlobalExamStats(examId);
+      if (data) {
+        setStats(data);
+      }
       setLoading(false);
     } catch (error) {
       console.error('Error fetching stats:', error);

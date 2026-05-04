@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Layers, Plus, CheckCircle2, AlertCircle } from 'lucide-react';
 import { getApiUrl } from '../../config';
+import { examApi } from '../../api/examApi';
 
 const RoundManagement = () => {
     const [rounds, setRounds] = useState([]);
@@ -16,13 +17,8 @@ const RoundManagement = () => {
     const fetchRounds = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const response = await fetch(getApiUrl('/internal-exams/rounds'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Failed to fetch');
-            const data = await response.json();
-            setRounds(data);
+            const data = await examApi.getInternalRounds();
+            if (data) setRounds(data);
         } catch (error) {
             console.error("Fetch rounds error:", error);
             toast.error("Failed to load exam rounds");
@@ -37,20 +33,7 @@ const RoundManagement = () => {
 
         try {
             setSaving(true);
-            const token = localStorage.getItem('token');
-            const response = await fetch(getApiUrl('/internal-exams/rounds'), {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}` 
-                },
-                body: JSON.stringify({ name: newRoundName })
-            });
-            
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error || "Failed to create round");
-            }
+            await examApi.createInternalRound({ name: newRoundName });
 
             toast.success("Exam round created successfully!");
             setNewRoundName('');

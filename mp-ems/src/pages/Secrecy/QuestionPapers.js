@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Eye, Download, X, Search } from 'lucide-react';
-import authUtils from '../../utils/authUtils';
 import { toast } from 'react-toastify';
 import { TableSearch } from '../../components/TableControls';
-import { getApiUrl } from '../../config';
+import { secrecyApi } from '../../api/secrecyApi';
 import { formatDate } from '../../utils/dateUtils';
 
 const SecrecyQuestionPapers = () => {
@@ -22,10 +21,8 @@ const SecrecyQuestionPapers = () => {
   const fetchPapers = async () => {
     setLoading(true);
     try {
-      const res = await fetch(getApiUrl('/secrecy/papers'), {
-        headers: authUtils.getAuthHeader()
-      });
-      if (res.ok) setQuestionPapers(await res.json());
+      const data = await secrecyApi.getPapers();
+      setQuestionPapers(data);
     } catch (e) { 
       console.error(e); 
       toast.error('Failed to fetch question papers');
@@ -36,29 +33,18 @@ const SecrecyQuestionPapers = () => {
 
   const handleUpdateStatus = async (assignment_id, status, feedback = '') => {
     try {
-      const res = await fetch(getApiUrl('/secrecy/papers/status'), {
-        method: 'POST',
-        headers: { ...authUtils.getAuthHeader(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignment_id, status, feedback })
-      });
-      if (res.ok) {
-        toast.success(`Status updated to ${status}`);
-        fetchPapers();
-      } else {
-        toast.error('Failed to update status');
-      }
-    } catch (e) { toast.error('Network error'); }
+      await secrecyApi.updatePaperStatus(assignment_id, status, feedback);
+      toast.success(`Status updated to ${status}`);
+      fetchPapers();
+    } catch (e) {
+      toast.error(e.response?.data?.message || e.response?.data?.error || 'Failed to update status');
+    }
   };
 
   const handleDownload = async (paper_id, viewOnly = false) => {
     if (!paper_id) return;
     try {
-      const response = await fetch(getApiUrl(`/paper-setter/download/${paper_id}`), {
-        headers: authUtils.getAuthHeader()
-      });
-      if (!response.ok) throw new Error('Download failed');
-      
-      const blob = await response.blob();
+      const { blob, headers } = await secrecyApi.downloadPaper(paper_id);
       const url = window.URL.createObjectURL(blob);
       
       if (viewOnly) {
@@ -67,7 +53,7 @@ const SecrecyQuestionPapers = () => {
         const a = document.createElement('a');
         a.href = url;
         // Try to get filename from content-disposition
-        const contentDisposition = response.headers.get('Content-Disposition');
+        const contentDisposition = headers['content-disposition'];
         let filename = 'question_paper.pdf';
         if (contentDisposition && contentDisposition.includes('filename=')) {
           filename = contentDisposition.split('filename=')[1].replace(/["']/g, '');
@@ -100,11 +86,7 @@ const SecrecyQuestionPapers = () => {
     try {
       setLoading(true);
       for (const assignment_id of selectedSets) {
-        await fetch(getApiUrl('/secrecy/papers/status'), {
-          method: 'POST',
-          headers: { ...authUtils.getAuthHeader(), 'Content-Type': 'application/json' },
-          body: JSON.stringify({ assignment_id, status: 'Printed', feedback: 'Approved for Printing' })
-        });
+        await secrecyApi.updatePaperStatus(assignment_id, 'Printed', 'Approved for Printing');
       }
       toast.success('Selected sets approved for printing');
       setShowSelectSetsModal(false);

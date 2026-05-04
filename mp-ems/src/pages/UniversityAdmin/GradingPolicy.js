@@ -4,7 +4,8 @@ import {
     Settings, BarChart3, ChevronRight, AlertTriangle
 } from "lucide-react";
 import { toast } from 'react-toastify';
-import { getApiUrl } from '../../config';
+import { masterDataApi } from '../../api/masterDataApi';
+import { marksApi } from '../../api/marksApi';
 
 const GradingPolicy = () => {
     const [config, setConfig] = useState({
@@ -33,12 +34,8 @@ const GradingPolicy = () => {
 
     const fetchUniversities = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/universities'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await masterDataApi.getUniversities();
+            if (data) {
                 setUniversities(data);
                 if (data.length > 0) {
                     setSelectedUni(data[0].id);
@@ -51,13 +48,9 @@ const GradingPolicy = () => {
 
     const fetchOwnUniversity = async () => {
         try {
-            const token = localStorage.getItem('token');
             const uniId = localStorage.getItem('universityId') || user.university_id;
-            const res = await fetch(getApiUrl('/universities'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await masterDataApi.getUniversities();
+            if (data) {
                 const myUni = uniId ? data.filter(u => String(u.id) === String(uniId)) : data.slice(0, 1);
                 setUniversities(myUni);
                 const resolvedId = uniId || (myUni.length > 0 ? String(myUni[0].id) : '');
@@ -81,16 +74,9 @@ const GradingPolicy = () => {
     const fetchConfig = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            let url = getApiUrl('/grading/config');
-            if ((isSuperOrAdmin || isUniversityAdmin) && selectedUni) {
-                url += `?targetUniversityId=${selectedUni}`;
-            }
-            const res = await fetch(url, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const targetUniversityId = (isSuperOrAdmin || isUniversityAdmin) && selectedUni ? selectedUni : undefined;
+            const data = await marksApi.getGradingConfig(targetUniversityId);
+            if (data) {
                 const scale = Array.isArray(data.grade_scale) ? data.grade_scale : [];
                 const rawPolicy = data.grace_policy;
                 const parsedPolicy = typeof rawPolicy === 'string' ? JSON.parse(rawPolicy) : rawPolicy;
@@ -140,20 +126,11 @@ const GradingPolicy = () => {
         }
         setSaving(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/grading/config'), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    ...config,
-                    targetUniversityId: (isSuperOrAdmin || isUniversityAdmin) ? selectedUni : undefined
-                })
+            const result = await marksApi.saveGradingConfig({
+                ...config,
+                targetUniversityId: (isSuperOrAdmin || isUniversityAdmin) ? selectedUni : undefined
             });
-            if (res.ok) {
-                const result = await res.json();
+            if (result) {
                 toast.success("Grading policy updated successfully");
                 if (result.config) {
                     const scale = Array.isArray(result.config.grade_scale) ? result.config.grade_scale : [];
@@ -168,12 +145,11 @@ const GradingPolicy = () => {
                     fetchConfig();
                 }
             } else {
-                const data = await res.json();
-                toast.error(data.message || "Failed to update configuration");
+                toast.error("Failed to update configuration");
             }
         } catch (error) {
             console.error("Save config error:", error);
-            toast.error("An error occurred during save");
+            toast.error(error.response?.data?.message || "An error occurred during save");
         } finally {
             setSaving(false);
         }

@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { formatDate } from '../../utils/dateUtils';
-import { getApiUrl } from '../../config';
+import { studentApi } from '../../api/studentApi';
 
 const AttendanceDetail = ({ subjectId, dateFilter }) => {
     const [details, setDetails] = useState([]);
@@ -16,12 +16,8 @@ const AttendanceDetail = ({ subjectId, dateFilter }) => {
     useEffect(() => {
         const fetchDetails = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(getApiUrl(`/student/attendance-detail/${subjectId}`), {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    const data = await res.json();
+                const data = await studentApi.getAttendanceDetail(subjectId);
+                if (data) {
                     setDetails(data);
                 }
             } catch (error) {
@@ -106,12 +102,8 @@ const CombinedHistory = ({ dateFilter }) => {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(getApiUrl('/student/attendance-history'), {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    const data = await res.json();
+                const data = await studentApi.getAttendanceHistory();
+                if (data) {
                     setHistory(data);
                 }
             } catch (error) {
@@ -224,18 +216,14 @@ const StudentAttendance = () => {
 
     const fetchAttendance = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/student/attendance'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await studentApi.getAttendanceSummary();
+            if (data) {
                 setAttendance(data);
             } else {
                 toast.error("Failed to fetch attendance records");
             }
         } catch (error) {
-            toast.error("Network error fetching attendance");
+            toast.error(error.response?.data?.message || error.response?.data?.error || "Network error fetching attendance");
         } finally {
             setLoading(false);
         }

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Users as UsersIcon, ArrowLeft, Check, ShieldCheck, ShieldAlert } from "lucide-react";
 import '../styles/FormPage.css';
-import { API_ENDPOINTS, getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 
 const UsersForm = () => {
   const navigate = useNavigate();
@@ -24,16 +24,14 @@ const UsersForm = () => {
 
   const fetchMasterData = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
       const [rRes, uRes, cRes] = await Promise.all([
-        fetch(API_ENDPOINTS.ROLES, { headers }),
-        fetch(API_ENDPOINTS.UNIVERSITIES, { headers }),
-        fetch(API_ENDPOINTS.COLLEGES, { headers })
+        masterDataApi.getRoles(),
+        masterDataApi.getUniversities(),
+        masterDataApi.getColleges()
       ]);
-      if (rRes.ok) setRoles(await rRes.json());
-      if (uRes.ok) setUniversities(await uRes.json());
-      if (cRes.ok) setColleges(await cRes.json());
+      if (rRes) setRoles(rRes);
+      if (uRes) setUniversities(uRes);
+      if (cRes) setColleges(cRes);
     } catch (err) {
       console.error("Error fetching masters:", err);
     }
@@ -41,12 +39,7 @@ const UsersForm = () => {
 
   const fetchUser = useCallback(async (userId) => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/users'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Failed to fetch user data');
-      const users = await res.json();
+      const users = await masterDataApi.getUsers();
       const user = users.find(u => u.id.toString() === userId);
       if (user) {
         setForm({ 
@@ -74,26 +67,15 @@ const UsersForm = () => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const token = localStorage.getItem('token');
       if (!form.name || !form.email || (!isEditing && !form.password) || !form.role_id) {
         setSaving(false);
         return toast.warning('Missing required fields');
       }
 
-      const method = isEditing ? 'PUT' : 'POST';
-      const url = isEditing 
-        ? getApiUrl(`/users/${id}`) 
-        : getApiUrl('/users');
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
-      });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.message || 'Operation failed');
+      if (isEditing) {
+        await masterDataApi.updateUser(id, form);
+      } else {
+        await masterDataApi.createUser(form);
       }
 
       toast.success(isEditing ? 'User updated successfully' : 'User created successfully');

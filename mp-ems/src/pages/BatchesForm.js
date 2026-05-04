@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
 import Select from "react-select";
@@ -40,22 +40,18 @@ const BatchesForm = () => {
 
   const fetchFormData = async () => {
     try {
-      const token = localStorage.getItem('token');
       const [progRes, polRes] = await Promise.all([
-        fetch(getApiUrl('/master-programs'), { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(getApiUrl('/master-policies'), { headers: { Authorization: `Bearer ${token}` } })
+        masterDataApi.getPrograms(),
+        masterDataApi.getPolicies()
       ]);
       
       let progsData = [], polsData = [];
-      if (progRes.ok) {
-        const result = await progRes.json();
-        // Include duration_years in the option so we can access it
-        progsData = result.map(p => ({ value: p.id, label: p.name, duration_years: p.duration_years }));
+      if (progRes) {
+        progsData = progRes.map(p => ({ value: p.id, label: p.name, duration_years: p.duration_years }));
         setPrograms(progsData);
       }
-      if (polRes.ok) {
-        const result = await polRes.json();
-        polsData = result.map(p => ({ value: p.id, label: p.name }));
+      if (polRes) {
+        polsData = polRes.map(p => ({ value: p.id, label: p.name }));
         setPolicies(polsData);
       }
       
@@ -68,12 +64,7 @@ const BatchesForm = () => {
 
   const loadBatch = async (batchId, loadedPrograms, loadedPolicies) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/master-batches'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to fetch batches');
-      const data = await response.json();
+      const data = await masterDataApi.getBatches();
       const item = data.find(p => p.id.toString() === batchId);
       
       if (item) {
@@ -107,34 +98,25 @@ const BatchesForm = () => {
     
     try {
       setSaving(true);
-      const token = localStorage.getItem('token');
-      const url = isEditing 
-        ? getApiUrl(`/master-batches/${id}`) 
-        : getApiUrl('/master-batches');
-      const method = isEditing ? 'PUT' : 'POST';
+      const payload = { 
+        ...form,
+        batch_name: form.batch_name,
+        program_id: form.program_id?.value,
+        policy_id: form.policy_id?.value,
+        academic_year: null
+      };
 
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ 
-          ...form,
-          batch_name: form.batch_name,
-          program_id: form.program_id?.value,
-          policy_id: form.policy_id?.value,
-          academic_year: null
-        })
-      });
-      
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || 'Operation failed');
+      let result;
+      if (isEditing) {
+        result = await masterDataApi.updateBatch(id, payload);
+      } else {
+        result = await masterDataApi.createBatch(payload);
       }
       
-      const result = await res.json();
       toast.success(result.message || (isEditing ? 'Batch updated successfully!' : 'Batch added successfully!'));
       navigate('/batches');
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     } finally {
       setSaving(false);
     }

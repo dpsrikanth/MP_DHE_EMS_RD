@@ -6,7 +6,7 @@ import { formatDate } from '../../utils/dateUtils';
 import authUtils from '../../utils/authUtils';
 import { useGradingPolicy } from '../../hooks/useGradingPolicy';
 import { getGradeAndPoints, isPass, calculateSGPA } from '../../utils/gradingUtils';
-import { getApiUrl } from '../../config';
+import { studentApi } from '../../api/studentApi';
 
 const ResultSheet = () => {
   const { examName } = useParams();
@@ -21,21 +21,15 @@ const ResultSheet = () => {
 
   const fetchResultData = async () => {
     try {
-      const response = await fetch(getApiUrl(`/student/result-sheet/${encodeURIComponent(examName)}`), {
-        headers: {
-          ...authUtils.getAuthHeader()
-        }
-      });
-      if (response.ok) {
-        const result = await response.json();
+      const result = await studentApi.getResultSheet(examName);
+      if (result) {
         setData(result);
       } else {
-        const error = await response.json();
-        toast.error(error.message || 'Failed to fetch Result Data');
+        toast.error('Failed to fetch Result Data');
       }
     } catch (error) {
       console.error('Error fetching result data:', error);
-      toast.error('Network error');
+      toast.error(error.response?.data?.message || error.response?.data?.error || 'Network error');
     } finally {
       setLoading(false);
     }

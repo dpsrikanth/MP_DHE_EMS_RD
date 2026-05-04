@@ -16,7 +16,7 @@ import { MdDelete } from "react-icons/md";
 import { formatDate } from '../utils/dateUtils';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 import Select from "react-select";
 import authUtils from "../utils/authUtils";
 
@@ -68,13 +68,9 @@ const Semesters = () => {
 
   const fetchAvailableMasters = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/masters'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const result = await res.json();
-        setAvailableMasters(result.semesters.map(s => ({ value: s.id, label: s.semester_name })));
+      const data = await masterDataApi.getMasters();
+      if (data && data.semesters) {
+        setAvailableMasters(data.semesters.map(s => ({ value: s.id, label: s.semester_name })));
       }
     } catch (err) {
       console.error(err);
@@ -83,18 +79,10 @@ const Semesters = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/master-semesters'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`HTTP ${response.status}: ${text}`);
-      }
-      const result = await response.json();
+      const result = await masterDataApi.getSemesters();
       setData(result || []);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }
@@ -107,34 +95,23 @@ const Semesters = () => {
   const handleMap = async () => {
     if (!mappingSelection) return toast.warning('Please select a semester');
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/master-semesters/map'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ semester_id: mappingSelection.value })
-      });
-      if (!res.ok) throw new Error('Mapping failed');
+      await masterDataApi.mapSemester({ semester_id: mappingSelection.value });
       toast.success('Semester assigned successfully');
       setShowAssignModal(false);
       setMappingSelection(null);
       fetchData();
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
   };
 
   const handleUnmap = async (id) => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl(`/master-semesters/unmap/${id}`), {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Unmapping failed');
+      await masterDataApi.unmapSemester(id);
       toast.success('Semester removed from your university');
       fetchData();
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -148,17 +125,12 @@ const Semesters = () => {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl(`/master-semesters/${deleteTarget.id}`), {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Delete failed');
+      await masterDataApi.deleteSemester(deleteTarget.id);
       setShowDeleteModal(false);
       setDeleteTarget(null);
       fetchData();
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
   };
 

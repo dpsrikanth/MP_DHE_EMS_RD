@@ -4,7 +4,8 @@ import {
   Search, BookOpen, GraduationCap, AlertTriangle
 } from "lucide-react";
 import { toast } from 'react-toastify';
-import { getApiUrl } from '../../config';
+import { masterDataApi } from '../../api/masterDataApi';
+import { marksApi } from '../../api/marksApi';
 
 const ManageCredits = () => {
     const [config, setConfig] = useState({
@@ -36,12 +37,8 @@ const ManageCredits = () => {
 
     const fetchUniversities = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/universities'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await masterDataApi.getUniversities();
+            if (data) {
                 setUniversities(data);
                 if (data.length > 0) {
                     setSelectedUni(data[0].id);
@@ -54,14 +51,10 @@ const ManageCredits = () => {
 
     const fetchOwnUniversity = async () => {
         try {
-            const token = localStorage.getItem('token');
             const uniId = localStorage.getItem('universityId') || user.university_id;
             // Fetch all universities and filter to this admin's university
-            const res = await fetch(getApiUrl('/universities'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await masterDataApi.getUniversities();
+            if (data) {
                 const myUni = uniId ? data.filter(u => String(u.id) === String(uniId)) : data.slice(0, 1);
                 setUniversities(myUni);
                 const resolvedId = uniId || (myUni.length > 0 ? String(myUni[0].id) : '');
@@ -90,12 +83,8 @@ const ManageCredits = () => {
 
     const fetchSubjects = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/grading/subjects'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await masterDataApi.getSubjects();
+            if (data) {
                 setSubjects(data);
             }
         } catch (error) {
@@ -105,16 +94,9 @@ const ManageCredits = () => {
 
     const fetchConfig = async () => {
         try {
-            const token = localStorage.getItem('token');
-            let url = getApiUrl('/grading/config');
-            if ((isSuperOrAdmin || isUniversityAdmin) && selectedUni) {
-                url += `?targetUniversityId=${selectedUni}`;
-            }
-            const res = await fetch(url, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const targetUniversityId = (isSuperOrAdmin || isUniversityAdmin) && selectedUni ? selectedUni : undefined;
+            const data = await marksApi.getGradingConfig(targetUniversityId);
+            if (data) {
                 setConfig(data);
             }
         } catch (error) {
@@ -135,29 +117,20 @@ const ManageCredits = () => {
     const handleSave = async () => {
         setSaving(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/grading/config'), {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}` 
-                },
-                body: JSON.stringify({
-                    ...config,
-                    targetUniversityId: (isSuperOrAdmin || isUniversityAdmin) ? selectedUni : undefined
-                })
+            const data = await marksApi.saveGradingConfig({
+                ...config,
+                targetUniversityId: (isSuperOrAdmin || isUniversityAdmin) ? selectedUni : undefined
             });
 
-            if (res.ok) {
+            if (data) {
                 toast.success("Subject credits updated successfully");
                 fetchConfig();
             } else {
-                const data = await res.json();
-                toast.error(data.message || "Failed to update configuration");
+                toast.error("Failed to update configuration");
             }
         } catch (error) {
             console.error("Save config error:", error);
-            toast.error("An error occurred during save");
+            toast.error(error.response?.data?.message || "An error occurred during save");
         } finally {
             setSaving(false);
         }

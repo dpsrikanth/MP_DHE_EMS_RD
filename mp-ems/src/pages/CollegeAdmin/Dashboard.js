@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../../utils/dateUtils';
-import { getApiUrl } from '../../config';
+import { collegeAdminApi } from '../../api/collegeAdminApi';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -38,15 +38,8 @@ const Dashboard = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await fetch(getApiUrl('/college-admin/dashboard-stats'), {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const result = await response.json();
-      if (response.ok) {
-        setStats(result);
-      }
+      const data = await collegeAdminApi.getDashboardStats();
+      setStats(data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
@@ -56,15 +49,8 @@ const Dashboard = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await fetch(getApiUrl('/college-admin/notifications'), {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data);
-      }
+      const data = await collegeAdminApi.getNotifications();
+      setNotifications(data);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
@@ -72,15 +58,8 @@ const Dashboard = () => {
 
   const markAsRead = async (id) => {
     try {
-      const response = await fetch(getApiUrl(`/college-admin/notifications/${id}/read`), {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (response.ok) {
-        setNotifications(prev => prev.filter(n => n.id !== id));
-      }
+      await collegeAdminApi.markNotificationAsRead(id);
+      setNotifications(prev => prev.filter(n => n.id !== id));
     } catch (error) {
       toast.error("Failed to dismiss notification");
     }
