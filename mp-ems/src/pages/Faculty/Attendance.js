@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import { useLocation } from 'react-router-dom';
 import { TableSearch } from '../../components/TableControls';
-import { getApiUrl } from '../../config';
+import { facultyApi } from '../../api/facultyApi';
+
 
 const Attendance = () => {
     const location = useLocation();
@@ -60,16 +61,10 @@ const Attendance = () => {
     const fetchAssignedSubjects = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
             const userStr = localStorage.getItem('user');
             const teacherId = userStr ? JSON.parse(userStr).teacher_id : 1;
-            const res = await fetch(getApiUrl(`/faculty-marks/assigned-subjects/${teacherId}`), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setAssignedSubjects(data || []);
-            }
+            const data = await facultyApi.getAssignedSubjects(teacherId);
+            setAssignedSubjects(data || []);
         } catch (err) {
             toast.error('Failed to load assigned subjects');
         } finally {
@@ -80,35 +75,40 @@ const Attendance = () => {
     const fetchSubjectDetails = async (assignment, dateStr, periodNum) => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const studentsRes = await fetch(getApiUrl(`/faculty-marks/students?college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&program_id=${assignment.program_id}`), {
-                headers: { Authorization: `Bearer ${token}` }
+            
+            // 1. Fetch Students
+            const studentsData = await facultyApi.getStudentsByAssignment({
+                college_id: assignment.college_id,
+                semester_id: assignment.semester_id,
+                program_id: assignment.program_id
             });
-            let studentsData = [];
-            if (studentsRes.ok) {
-                studentsData = await studentsRes.json();
-            }
-            setAttendanceDraft(draft);
+            setStudents(studentsData);
 
-            const attRes = await fetch(getApiUrl(`/faculty-marks/attendance?subject_id=${assignment.subject_id}&section=${assignment.section}&college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&academic_year_id=${assignment.academic_year_id}&attendance_date=${dateStr}&period_number=${periodNum}`), {
-                headers: { Authorization: `Bearer ${token}` }
+            // 2. Fetch Existing Attendance
+            const existingAtt = await facultyApi.getAttendance({
+                subject_id: assignment.subject_id,
+                section: assignment.section,
+                college_id: assignment.college_id,
+                semester_id: assignment.semester_id,
+                academic_year_id: assignment.academic_year_id,
+                attendance_date: dateStr,
+                period_number: periodNum
             });
-            let existingAtt = [];
-            if (attRes.ok) {
-                existingAtt = await attRes.json();
-            }
 
-            // Fetch overall summary for comparison in entry view
-            const summaryRes = await fetch(getApiUrl(`/faculty-marks/attendance-summary?subject_id=${assignment.subject_id}&section=${assignment.section}&college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&academic_year_id=${assignment.academic_year_id}`), {
-                headers: { Authorization: `Bearer ${token}` }
+            // 3. Fetch Overall Summary
+            const sData = await facultyApi.getAttendanceSummary({
+                subject_id: assignment.subject_id,
+                section: assignment.section,
+                college_id: assignment.college_id,
+                semester_id: assignment.semester_id,
+                academic_year_id: assignment.academic_year_id
             });
-            if (summaryRes.ok) {
-                const sData = await summaryRes.json();
-                const map = {};
-                sData.summary.forEach(s => map[s.student_id] = parseInt(s.present_count));
-                setSummaryStats({ totalSessions: sData.totalSessions, studentMap: map });
-            }
 
+            const map = {};
+            sData.summary.forEach(s => map[s.student_id] = parseInt(s.present_count));
+            setSummaryStats({ totalSessions: sData.totalSessions, studentMap: map });
+
+            // 4. Prepare Draft
             const draft = {};
             studentsData.forEach(st => {
                 const rec = existingAtt.find(e => e.student_id === st.id);
@@ -126,7 +126,6 @@ const Attendance = () => {
     const fetchAnalytics = async (assignment, filter) => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
             const now = new Date();
             let startDate = null;
             let endDate = now.toISOString().split('T')[0];
@@ -143,36 +142,31 @@ const Attendance = () => {
                 startDate = d.toISOString().split('T')[0];
             }
 
-            const query = new URLSearchParams({
+            const params = {
                 subject_id: assignment.subject_id,
                 section: assignment.section,
                 college_id: assignment.college_id,
                 semester_id: assignment.semester_id,
                 academic_year_id: assignment.academic_year_id,
-            });
+            };
             if (startDate) {
-                query.append('startDate', startDate);
-                query.append('endDate', endDate);
+                params.startDate = startDate;
+                params.endDate = endDate;
             }
 
-            const summaryRes = await fetch(getApiUrl(`/faculty-marks/attendance-summary?${query.toString()}`), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (summaryRes.ok) {
-                const sData = await summaryRes.json();
-                const map = {};
-                sData.summary.forEach(s => map[s.student_id] = parseInt(s.present_count));
-                setSummaryStats({ totalSessions: sData.totalSessions, studentMap: map });
-            }
+            const sData = await facultyApi.getAttendanceSummary(params);
+            const map = {};
+            sData.summary.forEach(s => map[s.student_id] = parseInt(s.present_count));
+            setSummaryStats({ totalSessions: sData.totalSessions, studentMap: map });
 
             // Also fetch student list if not loaded
             if (students.length === 0) {
-                const studentsRes = await fetch(getApiUrl(`/faculty-marks/students?college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&program_id=${assignment.program_id}`), {
-                    headers: { Authorization: `Bearer ${token}` }
+                const studentsData = await facultyApi.getStudentsByAssignment({
+                    college_id: assignment.college_id,
+                    semester_id: assignment.semester_id,
+                    program_id: assignment.program_id
                 });
-                if (studentsRes.ok) {
-                    setStudents(await studentsRes.json());
-                }
+                setStudents(studentsData);
             }
         } catch (err) {
             toast.error('Error fetching analytics');
@@ -186,34 +180,25 @@ const Attendance = () => {
         if (!assignment) return;
         setIsSaving(true);
         try {
-            const token = localStorage.getItem('token');
             const userStr = localStorage.getItem('user');
             const teacherId = userStr ? JSON.parse(userStr).teacher_id : 1;
             const payload = Object.entries(attendanceDraft).map(([studentId, status]) => ({
                 student_id: parseInt(studentId),
                 status
             }));
-            const res = await fetch(getApiUrl('/faculty-marks/attendance'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    attendanceData: payload,
-                    subject_id: assignment.subject_id,
-                    college_id: assignment.college_id,
-                    semester_id: assignment.semester_id,
-                    academic_year_id: assignment.academic_year_id,
-                    section: assignment.section,
-                    teacher_id: teacherId,
-                    attendance_date: attendanceDate,
-                    period_number: periodNumber
-                })
+            await facultyApi.saveAttendance({
+                attendanceData: payload,
+                subject_id: assignment.subject_id,
+                college_id: assignment.college_id,
+                semester_id: assignment.semester_id,
+                academic_year_id: assignment.academic_year_id,
+                section: assignment.section,
+                teacher_id: teacherId,
+                attendance_date: attendanceDate,
+                period_number: periodNumber
             });
-            if (res.ok) {
-                toast.success("Attendance saved!");
-                fetchSubjectDetails(assignment, attendanceDate, periodNumber);
-            } else {
-                toast.error("Failed to save.");
-            }
+            toast.success("Attendance saved!");
+            fetchSubjectDetails(assignment, attendanceDate, periodNumber);
         } catch (err) {
             toast.error("Error saving.");
         } finally {

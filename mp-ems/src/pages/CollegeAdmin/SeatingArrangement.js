@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import { Users, Layout, Trash2, Play, Search, Building2, ChevronRight, Download, Info, CheckCircle2, AlertCircle } from "lucide-react";
 import { TableSearch } from '../../components/TableControls';
 import { formatDate } from '../../utils/dateUtils';
-import { getApiUrl } from '../../config';
+import { collegeAdminApi } from '../../api/collegeAdminApi';
 
 const SeatingArrangement = () => {
     const [arrangements, setArrangements] = useState([]);
@@ -17,7 +17,7 @@ const SeatingArrangement = () => {
     const [isLocked, setIsLocked] = useState(false);
 
 
-    const apiBase = getApiUrl('/college-admin');
+
 
     useEffect(() => {
         fetchExams();
@@ -40,14 +40,8 @@ const SeatingArrangement = () => {
 
     const fetchExams = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/exams'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setExams(data.filter(e => e.status === true || e.is_published === true));
-            }
+            const data = await collegeAdminApi.getExams();
+            setExams(data.filter(e => e.status === true || e.is_published === true));
         } catch (err) {
             console.error("Failed to fetch exams", err);
         }
@@ -55,31 +49,19 @@ const SeatingArrangement = () => {
 
     const fetchStats = async (examId = '') => {
         try {
-            const token = localStorage.getItem('token');
             // Fetch total capacity
-            const hallRes = await fetch(getApiUrl(`/examination-halls${examId ? `?exam_id=${examId}` : ''}`), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const halls = await collegeAdminApi.getHalls();
             // Fetch student requirement
-            const reqRes = await fetch(getApiUrl(`/examination-halls/seating-requirement${examId ? `?exam_id=${examId}` : ''}`), {
-                headers: { Authorization: `Bearer ${token}` }
+            const req = await collegeAdminApi.getSeatingRequirement(examId);
+            
+            const approved = (halls || []).filter(h => h.status === 'Approved');
+            const approvedCap = approved.reduce((sum, h) => sum + (parseInt(h.total_capacity) || ((parseInt(h.rows)||0) * (parseInt(h.seats_per_row)||0))), 0);
+            
+            setApprovedHalls(approved);
+            setStats({
+                totalStudents: parseInt(req.total_required) || 0,
+                approvedCapacity: approvedCap
             });
-
-            if (hallRes.ok && reqRes.ok) {
-                const halls = await hallRes.json();
-                const req = await reqRes.json();
-                
-                const approved = halls.filter(h => h.status === 'Approved');
-                // Calculate capacity: If filtered by exam, use capacity of halls linked to that exam.
-                // Otherwise use total capacity of all approved halls.
-                const approvedCap = approved.reduce((sum, h) => sum + (parseInt(h.total_capacity) || ((parseInt(h.rows)||0) * (parseInt(h.seats_per_row)||0))), 0);
-                
-                setApprovedHalls(approved);
-                setStats({
-                    totalStudents: parseInt(req.total_required) || 0,
-                    approvedCapacity: approvedCap
-                });
-            }
         } catch (err) {
             console.error("Failed to fetch stats", err);
         }
@@ -88,19 +70,12 @@ const SeatingArrangement = () => {
     const fetchArrangements = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${apiBase}/seating-arrangements?exam_id=${selectedExam}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setArrangements(data);
-                // Also check lock status from the first item if available
-                if (data.length > 0 && data[0].seating_locked !== undefined) {
-                    setIsLocked(data[0].seating_locked);
-                }
+            const data = await collegeAdminApi.getSeatingArrangements({ exam_id: selectedExam });
+            setArrangements(data);
+            // Also check lock status from the first item if available
+            if (data.length > 0 && data[0].seating_locked !== undefined) {
+                setIsLocked(data[0].seating_locked);
             }
-
         } catch (err) {
             toast.error("Failed to fetch seating arrangements");
         } finally {
@@ -113,33 +88,20 @@ const SeatingArrangement = () => {
         
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${apiBase}/auto-allocate-seats`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ exam_id: selectedExam, pattern: seatingPattern })
-            });
+            const data = await collegeAdminApi.autoAllocateSeats({ exam_id: selectedExam, pattern: seatingPattern });
 
-            const data = await res.json();
-            if (res.ok) {
-                toast.success(data.message);
-                // Show warning if some students couldn't be seated (no external center)
-                if (data.warning) {
-                    setTimeout(() => toast.warning(data.warning, { autoClose: 8000 }), 800);
-                }
-                // If external students were allocated show info
-                if (data.externalAssigned > 0) {
-                    setTimeout(() => toast.info(`${data.externalAssigned} student(s) seated at external center: ${data.externalCollegeName}`, { autoClose: 6000 }), 500);
-                }
-                fetchArrangements();
-            } else {
-                toast.error(data.error || "Allocation failed");
+            toast.success(data.message);
+            // Show warning if some students couldn't be seated (no external center)
+            if (data.warning) {
+                setTimeout(() => toast.warning(data.warning, { autoClose: 8000 }), 800);
             }
+            // If external students were allocated show info
+            if (data.externalAssigned > 0) {
+                setTimeout(() => toast.info(`${data.externalAssigned} student(s) seated at external center: ${data.externalCollegeName}`, { autoClose: 6000 }), 500);
+            }
+            fetchArrangements();
         } catch (err) {
-            toast.error("An error occurred during allocation");
+            toast.error(err.response?.data?.error || "An error occurred during allocation");
         } finally {
             setLoading(false);
         }
@@ -157,27 +119,14 @@ const SeatingArrangement = () => {
 
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${apiBase}/lock-seating`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ exam_id: selectedExam, locked: !isLocked })
-            });
+            const data = await collegeAdminApi.lockSeating({ exam_id: selectedExam, locked: !isLocked });
 
-            const data = await res.json();
-            if (res.ok) {
-                toast.success(data.message);
-                setIsLocked(data.seating_locked);
-                // Update exams list to keep it in sync
-                setExams(prev => prev.map(e => e.id === parseInt(selectedExam) ? { ...e, seating_locked: data.seating_locked } : e));
-            } else {
-                toast.error(data.error || "Action failed");
-            }
+            toast.success(data.message);
+            setIsLocked(data.seating_locked);
+            // Update exams list to keep it in sync
+            setExams(prev => prev.map(e => e.id === parseInt(selectedExam) ? { ...e, seating_locked: data.seating_locked } : e));
         } catch (err) {
-            toast.error("An error occurred");
+            toast.error(err.response?.data?.error || "Action failed");
         } finally {
             setLoading(false);
         }
@@ -189,22 +138,9 @@ const SeatingArrangement = () => {
 
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${apiBase}/clear-seating-assignments`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ exam_id: selectedExam })
-            });
-
-            if (res.ok) {
-                toast.success("Assignments cleared");
-                fetchArrangements();
-            } else {
-                toast.error("Failed to clear assignments");
-            }
+            await collegeAdminApi.clearSeatingAssignments({ exam_id: selectedExam });
+            toast.success("Assignments cleared");
+            fetchArrangements();
         } catch (err) {
             toast.error("An error occurred");
         } finally {

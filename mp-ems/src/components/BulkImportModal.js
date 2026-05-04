@@ -3,6 +3,7 @@ import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { UploadCloud, X, FileText, CheckCircle2, ShieldAlert, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import apiClient from '../api/client';
 
 const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityName, expectedColumns, optionalColumns = [] }) => {
   const [file, setFile] = useState(null);
@@ -173,15 +174,7 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
       const payload = {};
       payload[entityName] = mappedData;
 
-      const token = localStorage.getItem('token');
-      return fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      return apiClient.post(endpoint, payload);
     };
 
     try {
@@ -218,26 +211,23 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
       }
 
       const response = await submitData(rows);
-      const data = await response.json();
+      const data = response.data;
 
-      if (response.ok) {
-        toast.success(data.message || 'Import successful!');
-        if (data.errors && data.errors.length > 0) {
-          setValidationErrors(data.errors);
-        } else {
-          handleReset();
-          onUploadSuccess();
-          onClose();
-        }
+      toast.success(data.message || 'Import successful!');
+      if (data.errors && data.errors.length > 0) {
+        setValidationErrors(data.errors);
       } else {
-        toast.error(data.message || 'Import failed.');
-        if (data.errors && data.errors.length > 0) {
-          setValidationErrors(data.errors);
-        }
+        handleReset();
+        onUploadSuccess();
+        onClose();
       }
     } catch (error) {
+      const data = error.response?.data || {};
+      toast.error(data.message || 'Import failed.');
+      if (data.errors && data.errors.length > 0) {
+        setValidationErrors(data.errors);
+      }
       console.error('Import error:', error);
-      toast.error('An error occurred during import.');
     } finally {
       setLoading(false);
     }

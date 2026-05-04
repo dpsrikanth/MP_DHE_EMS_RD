@@ -3,8 +3,8 @@ import { Upload, FileText, Calendar, Clock, Loader2, FileUp, BookOpen, X, Search
 import { toast } from 'react-toastify';
 import authUtils from '../../utils/authUtils';
 import { formatDate } from '../../utils/dateUtils';
+import { paperSetterApi } from '../../api/paperSetterApi';
 import { TableSearch } from '../../components/TableControls';
-import { getApiUrl } from '../../config';
 
 const PaperSetterDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -20,12 +20,8 @@ const PaperSetterDashboard = () => {
   const fetchDashData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(getApiUrl('/paper-setter/faculty/dash-data'), {
-        headers: authUtils.getAuthHeader()
-      });
-      if (res.ok) {
-        setDashData(await res.json());
-      }
+      const data = await paperSetterApi.getDashData();
+      setDashData(data);
     } catch (e) {
       toast.error('Failed to load dashboard data');
     } finally {
@@ -49,33 +45,23 @@ const PaperSetterDashboard = () => {
 
     setUploading(exam.subject_id);
     const formData = new FormData();
-    formData.append('paperFile', selectedFiles[exam.subject_id]);
+    formData.append('paperFile', file);
     formData.append('assignment_id', exam.assignment_id || 'null');
     formData.append('subject_id', exam.subject_id);
     formData.append('exam_id', exam.exam_id);
     formData.append('title', exam.subject_name + ' Question Paper');
 
     try {
-      const res = await fetch(getApiUrl('/paper-setter/faculty/upload'), {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${authUtils.getAuth().token}` },
-        body: formData
+      await paperSetterApi.uploadPaper(formData);
+      toast.success(`Successfully uploaded paper for ${exam.subject_name}`);
+      setSelectedFiles(prev => {
+        const newState = { ...prev };
+        delete newState[exam.subject_id];
+        return newState;
       });
-
-      if (res.ok) {
-        toast.success(`Successfully uploaded paper for ${exam.subject_name}`);
-        setSelectedFiles(prev => {
-          const newState = { ...prev };
-          delete newState[exam.subject_id];
-          return newState;
-        });
-        fetchDashData();
-      } else {
-        const err = await res.json();
-        toast.error(err.message || 'Upload failed');
-      }
+      fetchDashData();
     } catch (e) {
-      toast.error('Network error during upload');
+      toast.error(e.response?.data?.message || 'Upload failed');
     } finally {
       setUploading(null);
     }

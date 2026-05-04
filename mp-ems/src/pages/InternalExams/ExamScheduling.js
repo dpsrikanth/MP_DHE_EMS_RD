@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Calendar, Save, Clock, Search, BookOpen, GraduationCap, Flag } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
-import { getApiUrl } from '../../config';
+import { internalExamApi } from '../../api/internalExamApi';
+import { milestoneApi } from '../../api/milestoneApi';
+import { masterDataApi } from '../../api/masterDataApi';
 const ExamScheduling = () => {
     const [rounds, setRounds] = useState([]);
     const [programs, setPrograms] = useState([]);
@@ -37,14 +39,8 @@ const ExamScheduling = () => {
 
     const fetchValidationSetting = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(getApiUrl('/settings/roadmap_validation'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setIsValidationEnabled(data.enabled);
-            }
+            const data = await milestoneApi.getValidationSetting();
+            setIsValidationEnabled(data.enabled);
         } catch (err) {
             console.error("Failed to fetch validation setting", err);
         }
@@ -61,20 +57,12 @@ const ExamScheduling = () => {
 
     const fetchInitialData = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const headers = { Authorization: `Bearer ${token}` };
-
-            const [roundsRes, programsRes, semestersRes, yearsRes] = await Promise.all([
-                fetch(getApiUrl('/internal-exams/rounds'), { headers }),
-                fetch(getApiUrl('/programs'), { headers }),
-                fetch(getApiUrl('/semesters'), { headers }),
-                fetch(getApiUrl('/academic-years'), { headers })
+            const [roundsData, programsData, semestersData, yearsData] = await Promise.all([
+                internalExamApi.getRounds(),
+                masterDataApi.getPrograms(),
+                masterDataApi.getSemesters(),
+                masterDataApi.getAcademicYears()
             ]);
-
-            const roundsData = await roundsRes.json();
-            const programsData = await programsRes.json();
-            const semestersData = await semestersRes.json();
-            const yearsData = await yearsRes.json();
 
             setRounds(roundsData);
             setPrograms(programsData);
@@ -102,11 +90,7 @@ const ExamScheduling = () => {
     const fetchAvailableContexts = async (roundId) => {
         try {
             setLoading(prev => ({ ...prev, contexts: true }));
-            const token = localStorage.getItem('token');
-            const headers = { Authorization: `Bearer ${token}` };
-
-            const res = await fetch(getApiUrl(`/internal-exams/available-contexts?round_id=${roundId}`), { headers });
-            const data = await res.json();
+            const data = await internalExamApi.getAvailableContexts(roundId);
 
             // Assuming data is { programs: [id...], semesters: [id...], mapping: [{program_id, semester_id}...] }
             // If the backend doesn't return mapping yet, we'll just use the IDs for now as requested.
@@ -146,19 +130,23 @@ const ExamScheduling = () => {
 
         try {
             setLoading(prev => ({ ...prev, subjects: true }));
-            const token = localStorage.getItem('token');
-            const headers = { Authorization: `Bearer ${token}` };
-
+            
             // Fetch subjects, existing schedules, and milestones
-            const [subjectsRes, schedulesRes, milestonesRes] = await Promise.all([
-                fetch(getApiUrl(`/subjects?program_id=${filters.program_id}&semester_id=${filters.semester_id}`), { headers }),
-                fetch(getApiUrl(`/internal-exams/schedules?round_id=${filters.round_id}&program_id=${filters.program_id}&semester_id=${filters.semester_id}&academic_year_id=${filters.academic_year_id}`), { headers }),
-                fetch(getApiUrl(`/milestones?semester_id=${filters.semester_id}&program_id=${filters.program_id}&academic_year_id=${filters.academic_year_id}&college_id=${localStorage.getItem('collegeId')}`), { headers })
+            const [subjectsData, schedulesData, milestonesData] = await Promise.all([
+                masterDataApi.getSubjects({ program_id: filters.program_id, semester_id: filters.semester_id }),
+                internalExamApi.getSchedules({ 
+                    round_id: filters.round_id, 
+                    program_id: filters.program_id, 
+                    semester_id: filters.semester_id, 
+                    academic_year_id: filters.academic_year_id 
+                }),
+                milestoneApi.getMilestones({ 
+                    semester_id: filters.semester_id, 
+                    program_id: filters.program_id, 
+                    academic_year_id: filters.academic_year_id, 
+                    college_id: localStorage.getItem('collegeId') 
+                })
             ]);
-
-            const subjectsData = await subjectsRes.json();
-            const schedulesData = await schedulesRes.json();
-            const milestonesData = await milestonesRes.json();
 
             setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
             setMilestones(Array.isArray(milestonesData) ? milestonesData : []);
@@ -332,25 +320,15 @@ const ExamScheduling = () => {
 
         try {
             setLoading(prev => ({ ...prev, saving: true }));
-            const token = localStorage.getItem('token');
-            const response = await fetch(getApiUrl('/internal-exams/schedules'), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    ...filters,
-                    schedules: scheduleArray
-                })
+            await internalExamApi.saveSchedules({
+                ...filters,
+                schedules: scheduleArray
             });
-
-            if (!response.ok) throw new Error("Failed to save");
 
             toast.success("Schedules saved successfully!");
         } catch (error) {
             console.error("Save error:", error);
-            toast.error("Failed to save schedules");
+            toast.error(error.response?.data?.message || "Failed to save schedules");
         } finally {
             setLoading(prev => ({ ...prev, saving: false }));
         }

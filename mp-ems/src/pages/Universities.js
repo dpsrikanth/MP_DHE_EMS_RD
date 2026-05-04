@@ -12,7 +12,7 @@ import {
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
-import { getApiUrl } from '../config';
+import { masterDataApi } from '../api/masterDataApi';
 
 const CheckboxOption = (props) => {
   return (
@@ -89,13 +89,8 @@ const Universities = () => {
 
   const fetchMasterData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-
       // Fetch Masters
-      const masterRes = await fetch(getApiUrl('/masters'), { headers });
-      if (!masterRes.ok) throw new Error('Failed to fetch master data');
-      const masterData = await masterRes.json();
+      const masterData = await masterDataApi.getMasters();
       
       const pOptions = masterData.policies.map(p => ({ value: p.id, label: p.name }));
       const prgOptions = masterData.programs.map(p => ({ value: p.id, label: p.name }));
@@ -113,15 +108,7 @@ const Universities = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/universities'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`HTTP ${response.status}: ${text}`);
-      }
-      const data = await response.json();
+      const data = await masterDataApi.getUniversities();
       const activeData = (data || []).filter(item => item.status === true || item.status === 1 || item.status === '1' || item.status === 'true');
       setData(activeData);
       setLoading(false);
@@ -139,9 +126,7 @@ const Universities = () => {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl(`/universities/${deleteTarget.id}`), { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) { const t = await res.text(); throw new Error(t || 'Delete failed'); }
+      await masterDataApi.deleteUniversity(deleteTarget.id);
       setShowDeleteModal(false);
       setDeleteTarget(null);
       await fetchData();
@@ -152,28 +137,13 @@ const Universities = () => {
 
   const showDetails = async (university, type) => {
     try {
-      const token = localStorage.getItem('token');
-      let url = '';
-      if (type === 'colleges') url = getApiUrl('/colleges');
-      else if (type === 'programs') url = getApiUrl('/programs');
-      else if (type === 'academic_years') url = getApiUrl('/academic-years');
+      let allData = [];
+      if (type === 'colleges') allData = await masterDataApi.getColleges();
+      else if (type === 'programs') allData = await masterDataApi.getPrograms();
+      else if (type === 'academic_years') allData = await masterDataApi.getAcademicYears();
       
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`API Error: ${text}`);
-      }
-      const allData = await res.json();
-      console.log(`Fetched ${type}:`, allData);
-      console.log(`Filtering for university_id: ${university.id}`);
+      const filtered = allData.filter(item => item.university_id === university.id);
       
-      const filtered = allData.filter(item => {
-        const match = item.university_id === university.id;
-        console.log(`Item:`, item, `Match: ${match}`);
-        return match;
-      });
-      
-      console.log(`Filtered results:`, filtered);
       setDetailsList(filtered);
       setDetailsType(type);
       setDetailsModal(true);

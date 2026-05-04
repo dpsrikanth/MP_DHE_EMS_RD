@@ -4,7 +4,9 @@ import { toast } from 'react-toastify';
 import authUtils from "../utils/authUtils";
 import { FileText, Plus, X, Check, Calendar, Book, Layers, Hash, AlertCircle, Globe, Users, BookOpen, Clock, ArrowLeft } from "lucide-react";
 import '../styles/FormPage.css';
-import { getApiUrl } from '../config';
+import { examApi } from '../api/examApi';
+import { masterDataApi } from '../api/masterDataApi';
+
 
 const ExamsForm = () => {
   const navigate = useNavigate();
@@ -38,28 +40,32 @@ const ExamsForm = () => {
 
   const fetchDropdownData = async () => {
     try {
-      const token = localStorage.getItem('token'); const headers = { Authorization: `Bearer ${token}` };
-      const [colRes, uniRes, semRes, typeRes, depRes, progRes, yearRes, subRes, mapRes] = await Promise.all([
-        fetch(getApiUrl('/colleges'), { headers }), fetch(getApiUrl('/universities'), { headers }),
-        fetch(getApiUrl('/master-semesters'), { headers }), fetch(getApiUrl('/exam-types'), { headers }),
-        fetch(getApiUrl('/master-departments'), { headers }), fetch(getApiUrl('/master-programs'), { headers }),
-        fetch(getApiUrl('/academic-years'), { headers }), fetch(getApiUrl('/master-subjects'), { headers }),
-        fetch(getApiUrl('/subject-mappings'), { headers })
+      const [colData, uniData, semData, typeData, depData, progData, yearData, subData, mapData] = await Promise.all([
+        masterDataApi.getColleges(),
+        masterDataApi.getUniversities(),
+        masterDataApi.getSemesters(),
+        examApi.getExamTypes(),
+        masterDataApi.getDepartments(),
+        masterDataApi.getPrograms(),
+        masterDataApi.getAcademicYears(),
+        masterDataApi.getSubjects(),
+        masterDataApi.getSubjectMappings()
       ]);
-      if (colRes.ok) setColleges(await colRes.json()); if (uniRes.ok) setUniversities(await uniRes.json());
-      if (semRes.ok) setSemesters(await semRes.json()); if (typeRes.ok) setExamTypes(await typeRes.json());
-      if (depRes.ok) setDepartments(await depRes.json()); if (progRes.ok) setPrograms(await progRes.json());
-      if (yearRes.ok) setAcademicYears(await yearRes.json()); if (subRes.ok) setSubjects(await subRes.json());
-      if (mapRes.ok) setSubjectMappings(await mapRes.json());
+      setColleges(colData);
+      setUniversities(uniData);
+      setSemesters(semData);
+      setExamTypes(typeData);
+      setDepartments(depData);
+      setPrograms(progData);
+      setAcademicYears(yearData);
+      setSubjects(subData);
+      setSubjectMappings(mapData);
     } catch (err) { console.error("Failed to fetch dropdown data:", err); }
   };
 
   const fetchExamDataToEdit = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/exams'), { headers: { Authorization: `Bearer ${token}` } });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
+      const data = await examApi.getExams();
       const exam = data.find(e => e.id === editingId);
       if (!exam) throw new Error("Exam not found");
       const series = data.filter(item => item.exam_name === exam.exam_name && item.semester_id === exam.semester_id && (item.college_id === exam.college_id || (!item.college_id && !exam.college_id)) && item.exam_type === exam.exam_type && item.program_id === exam.program_id && item.academic_year_id === exam.academic_year_id);
@@ -76,11 +82,9 @@ const ExamsForm = () => {
     const { college_id, department_id, program_id, semester_id, subject_id } = context;
     if (!college_id || !department_id || !program_id || !semester_id || !subject_id) { setAvailableComponents([]); if (!editingId) setFormData(prev => ({ ...prev, name: '' })); return; }
     try {
-      const token = localStorage.getItem('token');
-      const query = new URLSearchParams({ college_id, department_id, program_id, semester_id, subject_id }).toString();
-      const res = await fetch(getApiUrl(`/college-admin/get-components?${query}`), { headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) { const components = await res.json(); setAvailableComponents(components); if (components.length === 1 && !formData.name) setFormData(prev => ({ ...prev, name: components[0] })); }
-      else setAvailableComponents([]);
+      const components = await examApi.getComponents({ college_id, department_id, program_id, semester_id, subject_id });
+      setAvailableComponents(components); 
+      if (components.length === 1 && !formData.name) setFormData(prev => ({ ...prev, name: components[0] }));
     } catch (err) { setAvailableComponents([]); }
   };
 
@@ -113,16 +117,18 @@ const ExamsForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault(); setSubmitLoading(true); setError(null);
     try {
-      const token = localStorage.getItem('token');
-      const url = editingId ? getApiUrl(`/exams/${editingId}`) : getApiUrl('/exams');
-      const method = editingId ? 'PUT' : 'POST';
       const normalizedFormData = { ...formData, college_id: formData.college_id === 'university_wide' ? '' : formData.college_id };
       const payload = editingId ? { ...normalizedFormData } : { ...normalizedFormData, subjects: normalizedFormData.subjects };
-      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(payload) });
-      if (!res.ok) { const errData = await res.json(); throw new Error(errData.message || "Operation failed"); }
+      
+      if (editingId) {
+        await examApi.updateExam(editingId, payload);
+      } else {
+        await examApi.createExam(payload);
+      }
+      
       toast.success(editingId ? "Assessment updated" : "Exam successfully scheduled");
       navigate('/exams');
-    } catch (err) { setError(err.message); } finally { setSubmitLoading(false); }
+    } catch (err) { setError(err.response?.data?.message || err.message); } finally { setSubmitLoading(false); }
   };
 
   if (loading) return (

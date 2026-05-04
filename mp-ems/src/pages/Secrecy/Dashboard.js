@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Users, FileText, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
-import { getApiUrl } from '../../config';
+import { secrecyApi } from '../../api/secrecyApi';
+
 
 const SecrecyDashboard = () => {
   const [stats, setStats] = useState({
@@ -27,19 +28,15 @@ const SecrecyDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch(getApiUrl('/secrecy/stats'), {
-        headers: authUtils.getAuthHeader()
-      });
-      if (res.ok) setStats(await res.json());
+      const data = await secrecyApi.getStats();
+      setStats(data);
     } catch (e) { console.error(e); }
   };
 
   const fetchActivity = async () => {
     try {
-      const res = await fetch(getApiUrl('/secrecy/activity'), {
-        headers: authUtils.getAuthHeader()
-      });
-      if (res.ok) setRecentActivity(await res.json());
+      const data = await secrecyApi.getActivity();
+      setRecentActivity(data);
     } catch (e) { console.error(e); }
   };
 

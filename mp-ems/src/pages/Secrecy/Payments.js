@@ -3,7 +3,8 @@ import { CreditCard, Search } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
 import { toast } from 'react-toastify';
 import { TableSearch } from '../../components/TableControls';
-import { getApiUrl } from '../../config';
+import { secrecyApi } from '../../api/secrecyApi';
+
 
 const SecrecyPayments = () => {
   const [payments, setPayments] = useState([]);
@@ -17,10 +18,8 @@ const SecrecyPayments = () => {
   const fetchPayments = async () => {
     setLoading(true);
     try {
-      const res = await fetch(getApiUrl('/secrecy/payments'), {
-        headers: authUtils.getAuthHeader()
-      });
-      if (res.ok) setPayments(await res.json());
+      const data = await secrecyApi.getPayments();
+      setPayments(data);
     } catch (e) { 
       console.error(e); 
       toast.error('Failed to fetch payments');
@@ -31,18 +30,12 @@ const SecrecyPayments = () => {
 
   const handleProcessPayment = async (payment_id) => {
     try {
-      const res = await fetch(getApiUrl('/secrecy/payments/process'), {
-        method: 'POST',
-        headers: { ...authUtils.getAuthHeader(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ payment_id, status: 'Paid' })
-      });
-      if (res.ok) {
-        toast.success('Payment processed successfully');
-        fetchPayments();
-      } else {
-        toast.error('Failed to process payment');
-      }
-    } catch (e) { toast.error('Network error'); }
+      await secrecyApi.processPayment({ payment_id, status: 'Paid' });
+      toast.success('Payment processed successfully');
+      fetchPayments();
+    } catch (e) { 
+      toast.error(e.response?.data?.message || 'Failed to process payment'); 
+    }
   };
 
   const filteredPayments = useMemo(() => {

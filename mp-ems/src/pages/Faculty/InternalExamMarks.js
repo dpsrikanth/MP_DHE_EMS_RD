@@ -16,7 +16,8 @@ import {
     AlertCircle
 } from "lucide-react";
 import { TableSearch } from '../../components/TableControls';
-import { API_ENDPOINTS, getApiUrl } from '../../config';
+import { facultyApi } from '../../api/facultyApi';
+import { masterDataApi } from '../../api/masterDataApi';
 
 const InternalExamMarks = () => {
     // Context States
@@ -49,28 +50,20 @@ const InternalExamMarks = () => {
 
     const fetchInitialData = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const headers = { Authorization: `Bearer ${token}` };
+            // Fetch Years, Semesters, Rounds, Subjects and Schedules in parallel
+            const [years, sems, roundsData, subjects, schedulesData] = await Promise.all([
+                masterDataApi.getAcademicYears(),
+                masterDataApi.getSemesters(),
+                facultyApi.getExamRounds(teacherId),
+                facultyApi.getAssignedSubjects(teacherId),
+                facultyApi.getInternalSchedules()
+            ]);
 
-            // Fetch Years
-            const yearsRes = await fetch(API_ENDPOINTS.ACADEMIC_YEARS, { headers });
-            if (yearsRes.ok) setAcademicYears(await yearsRes.json());
-
-            // Fetch Semesters
-            const semRes = await fetch(API_ENDPOINTS.SEMESTERS, { headers });
-            if (semRes.ok) setSemesters(await semRes.json());
-
-            // Fetch Rounds
-            const roundsRes = await fetch(getApiUrl(`/faculty-marks/exam-rounds?teacher_id=${teacherId}`), { headers });
-            if (roundsRes.ok) setRounds(await roundsRes.json());
-
-            // Fetch Assigned Subjects
-            const subjectsRes = await fetch(getApiUrl(`/faculty-marks/assigned-subjects/${teacherId}`), { headers });
-            if (subjectsRes.ok) setAssignedSubjects(await subjectsRes.json());
-
-            // Fetch schedules for context awareness
-            const schedulesRes = await fetch(API_ENDPOINTS.INTERNAL_EXAM_SCHEDULES, { headers });
-            if (schedulesRes.ok) setSchedules(await schedulesRes.json());
+            if (years) setAcademicYears(years);
+            if (sems) setSemesters(sems);
+            if (roundsData) setRounds(roundsData);
+            if (subjects) setAssignedSubjects(subjects);
+            if (schedulesData) setSchedules(schedulesData);
 
         } catch (err) {
             toast.error('Failed to load initial data');
@@ -93,12 +86,16 @@ const InternalExamMarks = () => {
         setSelectedSubject(null);
         
         try {
-            const token = localStorage.getItem('token');
-            const url = getApiUrl(`/faculty-marks/students-for-round?subject_id=${subject.subject_id}&round_name=${selectedRound.value}&college_id=${subject.college_id}&semester_id=${selectedSem.value}&academic_year_id=${selectedYear.value}&section=${encodeURIComponent(subject.section)}`);
+            const data = await facultyApi.getStudentsForRound({
+                subject_id: subject.subject_id,
+                round_name: selectedRound.label,
+                college_id: subject.college_id,
+                semester_id: selectedSem.value,
+                academic_year_id: selectedYear.value,
+                section: subject.section
+            });
             
-            const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-            if (res.ok) {
-                const data = await res.json();
+            if (data) {
                 setStudents(data.students || []);
                 setComponentInfo(data.structure);
 
@@ -115,8 +112,7 @@ const InternalExamMarks = () => {
                 setWorkflowStatus(data.workflowStatus || 'Pending');
                 setSelectedSubject(subject);
             } else {
-                const error = await res.json();
-                toast.error(error.error || 'Failed to load students');
+                toast.error('Failed to load students');
             }
         } catch (err) {
             toast.error('Error fetching marks data');
@@ -149,27 +145,17 @@ const InternalExamMarks = () => {
                 is_absent: data.isAbsent
             }));
 
-            const res = await fetch(API_ENDPOINTS.FACULTY_MARKS_ENTER, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    marksData: payload,
-                    faculty_id: teacherId,
-                    college_id: selectedSubject.college_id,
-                    semester_id: selectedSem.value,
-                    academic_year_id: selectedYear.value,
-                    section: selectedSubject.section
-                })
+            await facultyApi.saveMarks({
+                marksData: payload,
+                faculty_id: teacherId,
+                college_id: selectedSubject.college_id,
+                semester_id: selectedSem.value,
+                academic_year_id: selectedYear.value,
+                section: selectedSubject.section
             });
-
-            if (res.ok) {
-                if (!silent) toast.success('Marks updated successfully!');
-                return true;
-            } else {
-                const err = await res.json();
-                toast.error(err.error || 'Failed to save marks');
-                return false;
-            }
+            
+            if (!silent) toast.success('Marks updated successfully!');
+            return true;
         } catch (err) {
             toast.error('Saving failed');
             return false;
@@ -190,28 +176,18 @@ const InternalExamMarks = () => {
 
         setIsSaving(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/faculty-marks/submit-marks'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    subject_id: selectedSubject.subject_id,
-                    component_id: componentInfo.id,
-                    faculty_id: teacherId,
-                    college_id: selectedSubject.college_id,
-                    semester_id: selectedSem.value,
-                    academic_year_id: selectedYear.value,
-                    section: selectedSubject.section
-                })
+            await facultyApi.submitMarks({
+                subject_id: selectedSubject.subject_id,
+                component_id: componentInfo.id,
+                faculty_id: teacherId,
+                college_id: selectedSubject.college_id,
+                semester_id: selectedSem.value,
+                academic_year_id: selectedYear.value,
+                section: selectedSubject.section
             });
 
-            if (res.ok) {
-                toast.success('Marks submitted to HOD successfully!');
-                setWorkflowStatus('Submitted');
-            } else {
-                const err = await res.json();
-                toast.error(err.error || 'Failed to submit marks');
-            }
+            toast.success('Marks submitted to HOD successfully!');
+            setWorkflowStatus('Submitted');
         } catch (err) {
             toast.error('Submission failed');
         } finally {

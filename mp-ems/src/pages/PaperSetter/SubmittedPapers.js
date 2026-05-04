@@ -3,8 +3,9 @@ import { FileText, CheckCircle2, Clock, BookOpen, Download, AlertCircle, Shield,
 import { toast } from 'react-toastify';
 import authUtils from '../../utils/authUtils';
 import { formatDate } from '../../utils/dateUtils';
+import { paperSetterApi } from '../../api/paperSetterApi';
 import { TableSearch } from '../../components/TableControls';
-import { getApiUrl } from '../../config';
+
 
 const SubmittedPapers = () => {
   const [loading, setLoading] = useState(true);
@@ -18,13 +19,8 @@ const SubmittedPapers = () => {
   const fetchDashData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(getApiUrl('/paper-setter/faculty/dash-data'), {
-        headers: authUtils.getAuthHeader()
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSubmittedPapers(data.submittedPapers || []);
-      }
+      const data = await paperSetterApi.getDashData();
+      setSubmittedPapers(data.submittedPapers || []);
     } catch (e) {
       toast.error('Failed to load submitted papers data');
     } finally {
@@ -54,56 +50,44 @@ const SubmittedPapers = () => {
   const handleAction = async (paperId, actionName, fallbackTitle) => {
     let newWindow = null;
     if (actionName === 'view') {
-      // Open window immediately to bypass popup blockers
       newWindow = window.open('about:blank', '_blank');
     }
     
     const loadingToast = toast.loading(`${actionName === 'view' ? 'Opening' : 'Downloading'} secure paper...`);
     try {
-      const res = await fetch(getApiUrl(`/paper-setter/download/${paperId}`), {
-        headers: authUtils.getAuthHeader()
-      });
+      const response = await paperSetterApi.downloadPaper(paperId);
+      let blob = response.data;
       
-      if (res.ok) {
-        let blob = await res.blob();
-        
-        if (actionName === 'view') {
-          // Cast blob object to PDF so browsers render it inline instead of strictly downloading
-          blob = new Blob([blob], { type: 'application/pdf' });
-          const url = window.URL.createObjectURL(blob);
-          if (newWindow) {
-            newWindow.location.href = url;
-          } else {
-            window.open(url, '_blank');
-          }
+      if (actionName === 'view') {
+        blob = new Blob([blob], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        if (newWindow) {
+          newWindow.location.href = url;
         } else {
-          // download
-          if (newWindow) newWindow.close(); // just in case
-          const url = window.URL.createObjectURL(blob);
-          let filename = `${fallbackTitle}_Question_Paper`;
-          const disposition = res.headers.get('content-disposition');
-          if (disposition && disposition.indexOf('filename=') !== -1) {
-             const matches = /filename="([^"]*)"/.exec(disposition);
-             if (matches != null && matches[1]) filename = matches[1];
-          }
-          const a = document.createElement('a');
-          a.style.display = 'none';
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          a.remove();
+          window.open(url, '_blank');
         }
-        toast.update(loadingToast, { render: 'Success!', type: 'success', isLoading: false, autoClose: 2000 });
       } else {
         if (newWindow) newWindow.close();
-        const err = await res.json();
-        toast.update(loadingToast, { render: err.message || 'Failed to retrieve paper', type: 'error', isLoading: false, autoClose: 3000 });
+        const url = window.URL.createObjectURL(blob);
+        let filename = `${fallbackTitle}_Question_Paper`;
+        const disposition = response.headers['content-disposition'];
+        if (disposition && disposition.indexOf('filename=') !== -1) {
+           const matches = /filename="([^"]*)"/.exec(disposition);
+           if (matches != null && matches[1]) filename = matches[1];
+        }
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
       }
+      toast.update(loadingToast, { render: 'Success!', type: 'success', isLoading: false, autoClose: 2000 });
     } catch (e) {
       if (newWindow) newWindow.close();
-      toast.update(loadingToast, { render: 'Network error occurred', type: 'error', isLoading: false, autoClose: 3000 });
+      toast.update(loadingToast, { render: e.response?.data?.message || 'Failed to retrieve paper', type: 'error', isLoading: false, autoClose: 3000 });
     }
   };
 

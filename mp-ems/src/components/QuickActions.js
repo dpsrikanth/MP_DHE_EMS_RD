@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getApiUrl } from '../config';
+import apiClient from '../api/client';
 
 const QuickActions = ({ stats }) => {
   const [expandedAction, setExpandedAction] = useState(null);
@@ -71,23 +71,13 @@ const QuickActions = ({ stats }) => {
 
     setLoadingAction(action.id);
     try {
-      const response = await fetch(getApiUrl(action.endpoint),
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        }
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setExpandedData(prev => ({
-          ...prev,
-          [action.id]: data
-        }));
-        setExpandedAction(action.id);
-      }
+      const response = await apiClient.get(action.endpoint);
+      const data = response.data;
+      setExpandedData(prev => ({
+        ...prev,
+        [action.id]: data
+      }));
+      setExpandedAction(action.id);
     } catch (error) {
       console.error(`Error fetching ${action.id}:`, error);
     } finally {

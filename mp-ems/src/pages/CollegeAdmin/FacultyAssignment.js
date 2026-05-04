@@ -3,7 +3,8 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import { Users, Save, List, Pencil, Trash2, X } from "lucide-react";
-import { getApiUrl } from '../../config';
+import { collegeAdminApi } from '../../api/collegeAdminApi';
+import { masterDataApi } from '../../api/masterDataApi';
 
 const FacultyAssignment = () => {
     const navigate = useNavigate();
@@ -35,25 +36,14 @@ const FacultyAssignment = () => {
     const fetchMasterData = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/masters'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setSubjects(data.subjects || []);
-                setSemesters(data.semesters || []);
-                setAcademicYears(data.academicYears || []);
-            }
+            const data = await masterDataApi.getMasters();
+            setSubjects(data.subjects || []);
+            setSemesters(data.semesters || []);
+            setAcademicYears(data.academicYears || []);
 
             // Fetch Teachers
-            const teacherRes = await fetch(getApiUrl('/master-teachers'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (teacherRes.ok) {
-                const teacherData = await teacherRes.json();
-                setFaculties(teacherData || []);
-            }
+            const teacherData = await masterDataApi.getTeachers();
+            setFaculties(teacherData || []);
         } catch (err) {
             toast.error('Failed to load master data');
         } finally {
@@ -63,16 +53,9 @@ const FacultyAssignment = () => {
 
     const fetchAssignments = async () => {
         try {
-            const token = localStorage.getItem('token');
             const collegeId = localStorage.getItem('collegeId');
-
-            const res = await fetch(getApiUrl(`/college-admin/faculty-assignments/${collegeId}`), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setAssignments(data || []);
-            }
+            const data = await collegeAdminApi.getFacultyAssignments(collegeId);
+            setAssignments(data || []);
         } catch (err) {
             console.error('Failed to fetch assignments');
         }
@@ -84,31 +67,22 @@ const FacultyAssignment = () => {
         }
 
         try {
-            const token = localStorage.getItem('token');
             const collegeId = localStorage.getItem('collegeId');
 
-            const response = await fetch(getApiUrl('/college-admin/assign-faculty'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    college_id: collegeId,
-                    teacher_id: selectedFaculty.value,
-                    subject_id: selectedSubject.value,
-                    semester_id: selectedSemester.value,
-                    academic_year_id: selectedAcademicYear.value,
-                    section: section
-                })
+            await collegeAdminApi.assignFaculty({
+                college_id: collegeId,
+                teacher_id: selectedFaculty.value,
+                subject_id: selectedSubject.value,
+                semester_id: selectedSemester.value,
+                academic_year_id: selectedAcademicYear.value,
+                section: section
             });
 
-            if (response.ok) {
-                toast.success("Faculty assigned successfully!");
-                setSelectedFaculty(null);
-                setSelectedSubject(null);
-                setSection('');
-                fetchAssignments(); // Refresh list
-            } else {
-                toast.error("Failed to assign faculty");
-            }
+            toast.success("Faculty assigned successfully!");
+            setSelectedFaculty(null);
+            setSelectedSubject(null);
+            setSection('');
+            fetchAssignments(); // Refresh list
         } catch (err) {
             toast.error("Error assigning faculty");
         }
@@ -122,17 +96,9 @@ const FacultyAssignment = () => {
     const handleDeleteConfirm = async () => {
         if (!deleteTarget) return;
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl(`/college-admin/faculty-assignments/${deleteTarget.id}`), {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                toast.success("Faculty assignment deleted successfully");
-                fetchAssignments();
-            } else {
-                toast.error("Failed to delete assignment");
-            }
+            await collegeAdminApi.deleteFacultyAssignment(deleteTarget.id);
+            toast.success("Faculty assignment deleted successfully");
+            fetchAssignments();
         } catch (err) {
             toast.error("An error occurred while deleting");
         } finally {
@@ -160,19 +126,10 @@ const FacultyAssignment = () => {
             return toast.warning("Please fill in all assignment details");
         }
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl(`/college-admin/faculty-assignments/${editingAssignment.id}`), {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify(editingAssignment)
-            });
-            if (res.ok) {
-                toast.success("Faculty assignment updated successfully");
-                setShowEditModal(false);
-                fetchAssignments();
-            } else {
-                toast.error("Failed to update assignment");
-            }
+            await collegeAdminApi.updateFacultyAssignment(editingAssignment.id, editingAssignment);
+            toast.success("Faculty assignment updated successfully");
+            setShowEditModal(false);
+            fetchAssignments();
         } catch (err) {
             toast.error("An error occurred while updating");
         }

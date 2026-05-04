@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import authUtils from "../utils/authUtils";
-import { getApiUrl } from "../config";
+import { dashboardApi } from "../api/dashboardApi";
+import { masterDataApi } from "../api/masterDataApi";
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -44,12 +45,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const authHeader = { headers: { Authorization: `Bearer ${token}` } };
-        
-        const response = await fetch(getApiUrl('/dashboard/stats'), authHeader);
-        if (!response.ok) throw new Error("Failed to fetch dashboard stats");
-        const data = await response.json();
+        const data = await dashboardApi.getStats();
 
         setStats({
           totalTeachers: data.totalTeachers || 0,
@@ -68,23 +64,17 @@ const Dashboard = () => {
         setPoliciesCount(data.totalPolicies || 0);
         setTeachersCount(data.totalTeachers || 0);
 
-        const [tRes, sRes, cRes, uRes] = await Promise.all([
-          fetch(getApiUrl('/master-teachers'), authHeader),
-          fetch(getApiUrl('/students'), authHeader),
-          fetch(getApiUrl('/colleges'), authHeader),
-          fetch(getApiUrl('/universities'), authHeader)
+        const [tData, sData, cData, uData] = await Promise.all([
+          masterDataApi.getTeachers(),
+          masterDataApi.getStudents(),
+          masterDataApi.getColleges(),
+          masterDataApi.getUniversities()
         ]);
 
-        if (tRes.ok) setTeachers(await tRes.json());
-        if (sRes.ok) setStudents(await sRes.json());
-        if (cRes.ok) {
-          const cs = await cRes.json();
-          setCollegesCount(Array.isArray(cs) ? cs.length : 0);
-        }
-        if (uRes.ok) {
-          const us = await uRes.json();
-          setUniversitiesCount(Array.isArray(us) ? us.length : 0);
-        }
+        setTeachers(tData || []);
+        setStudents(sData || []);
+        setCollegesCount(Array.isArray(cData) ? cData.length : 0);
+        setUniversitiesCount(Array.isArray(uData) ? uData.length : 0);
 
       } catch (err) {
         setError(err.message);

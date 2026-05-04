@@ -3,7 +3,8 @@ import { toast } from 'react-toastify';
 import { useNavigate, useParams } from 'react-router-dom';
 import Select from 'react-select';
 import { ShieldCheck, Save, ArrowLeft } from "lucide-react";
-import { getApiUrl } from '../../config';
+import { collegeAdminApi } from '../../api/collegeAdminApi';
+import { masterDataApi } from '../../api/masterDataApi';
 
 const PolicyConfigForm = () => {
     const navigate = useNavigate();
@@ -39,19 +40,13 @@ const PolicyConfigForm = () => {
 
     const fetchMasterData = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/masters'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setPolicies(data.policies || []);
-                setPrograms(data.programs || []);
-                setSemesters(data.semesters || []);
-                setSubjects(data.subjects || []);
-                setDepartments(data.departments || []);
-                return data;
-            }
+            const data = await masterDataApi.getMasters();
+            setPolicies(data.policies || []);
+            setPrograms(data.programs || []);
+            setSemesters(data.semesters || []);
+            setSubjects(data.subjects || []);
+            setDepartments(data.departments || []);
+            return data;
         } catch (err) {
             toast.error('Failed to load master data');
         }
@@ -60,26 +55,20 @@ const PolicyConfigForm = () => {
 
     const fetchMappingDataEdit = async (masterData) => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/college-admin/policy-mappings'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                const mapping = data.find(m => m.id.toString() === id.toString());
-                if (mapping && masterData) {
-                    setEditingMapping({
-                        id: mapping.id,
-                        policy_id: masterData.policies.find(p => p.name === mapping.policy_name)?.id || '',
-                        department_id: masterData.departments.find(d => d.name === mapping.department_name)?.id || '',
-                        program_id: masterData.programs.find(p => p.name === mapping.program_name)?.id || '',
-                        semester_id: masterData.semesters.find(s => s.semester_name === mapping.semester_name)?.id || '',
-                        subject_id: masterData.subjects.find(s => s.subject_code === mapping.subject_code)?.id || ''
-                    });
-                } else {
-                    toast.error("Mapping not found");
-                    navigate('/college-admin/policy-config');
-                }
+            const data = await collegeAdminApi.getPolicyMappings();
+            const mapping = data.find(m => m.id.toString() === id.toString());
+            if (mapping && masterData) {
+                setEditingMapping({
+                    id: mapping.id,
+                    policy_id: masterData.policies.find(p => p.name === mapping.policy_name)?.id || '',
+                    department_id: masterData.departments.find(d => d.name === mapping.department_name)?.id || '',
+                    program_id: masterData.programs.find(p => p.name === mapping.program_name)?.id || '',
+                    semester_id: masterData.semesters.find(s => s.semester_name === mapping.semester_name)?.id || '',
+                    subject_id: masterData.subjects.find(s => s.subject_code === mapping.subject_code)?.id || ''
+                });
+            } else {
+                toast.error("Mapping not found");
+                navigate('/college-admin/policy-config');
             }
         } catch (err) {
             toast.error('Failed to load mapping. ' + err.message);
@@ -128,36 +117,27 @@ const PolicyConfigForm = () => {
         }
         setSaving(true);
         try {
-            const token = localStorage.getItem('token');
             const collegeId = localStorage.getItem('collegeId');
 
             // 1. Map Program & Semester to Policy
-            await fetch(getApiUrl('/college-admin/map-policy'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    policy_id: selectedPolicy.value,
-                    program_id: selectedProgram.value,
-                    semester_id: selectedSemester.value,
-                    department_id: selectedDepartment.value,
-                    college_id: collegeId
-                })
+            await collegeAdminApi.mapPolicy({
+                policy_id: selectedPolicy.value,
+                program_id: selectedProgram.value,
+                semester_id: selectedSemester.value,
+                department_id: selectedDepartment.value,
+                college_id: collegeId
             });
 
             // 2. Map Subjects
             if (selectedSubjects.length > 0) {
                 for (let subject of selectedSubjects) {
-                    await fetch(getApiUrl('/college-admin/map-subject'), {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                        body: JSON.stringify({
-                            policy_id: selectedPolicy.value,
-                            program_id: selectedProgram.value,
-                            semester_id: selectedSemester.value,
-                            department_id: selectedDepartment.value,
-                            subject_id: subject.value,
-                            college_id: collegeId
-                        })
+                    await collegeAdminApi.mapSubject({
+                        policy_id: selectedPolicy.value,
+                        program_id: selectedProgram.value,
+                        semester_id: selectedSemester.value,
+                        department_id: selectedDepartment.value,
+                        subject_id: subject.value,
+                        college_id: collegeId
                     });
                 }
             }
@@ -176,18 +156,9 @@ const PolicyConfigForm = () => {
         }
         setSaving(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl(`/college-admin/policy-mappings/${editingMapping.id}`), {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify(editingMapping)
-            });
-            if (res.ok) {
-                toast.success("Mapping updated successfully");
-                navigate('/college-admin/policy-config');
-            } else {
-                toast.error("Failed to update mapping");
-            }
+            await collegeAdminApi.updatePolicyMapping(editingMapping.id, editingMapping);
+            toast.success("Mapping updated successfully");
+            navigate('/college-admin/policy-config');
         } catch (err) {
             toast.error("An error occurred while updating");
         } finally {

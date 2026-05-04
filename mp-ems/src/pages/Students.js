@@ -22,7 +22,7 @@ import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 import BulkImportModal from '../components/BulkImportModal';
 import { masterDataApi } from '../api/masterDataApi';
-import { getApiUrl } from '../config';
+
 
 const Students = () => {
   const navigate = useNavigate();
@@ -477,7 +477,7 @@ const Students = () => {
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         onUploadSuccess={fetchData}
-        endpoint={getApiUrl("/students/bulk-upload")}
+        endpoint="/students/bulk-upload"
         entityName="students"
         expectedColumns={{
           name: 'Name',

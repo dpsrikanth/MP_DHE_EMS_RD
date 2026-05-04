@@ -2,8 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Users, Eye, Edit3, X, UserPlus, FileText, Smartphone, HardDrive, GraduationCap, Search } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
 import { toast } from 'react-toastify';
+import { secrecyApi } from '../../api/secrecyApi';
+import { masterDataApi } from '../../api/masterDataApi';
 import { TableSearch } from '../../components/TableControls';
-import { getApiUrl } from '../../config';
+
 
 const SecrecyPaperSetters = () => {
   const [paperSetters, setPaperSetters] = useState([]);
@@ -43,28 +45,22 @@ const SecrecyPaperSetters = () => {
 
     const fetchDepartments = async () => {
       try {
-        const res = await fetch(getApiUrl('/master-departments'), {
-          headers: authUtils.getAuthHeader()
-        });
-        if (res.ok) setDepartments(await res.json());
+        const data = await masterDataApi.getDepartments();
+        setDepartments(data);
       } catch (e) { console.error(e); }
     };
 
     const fetchDesignations = async () => {
       try {
-        const res = await fetch(getApiUrl('/master-designations'), {
-          headers: authUtils.getAuthHeader()
-        });
-        if (res.ok) setDesignations(await res.json());
+        const data = await masterDataApi.getDesignations();
+        setDesignations(data);
       } catch (e) { console.error(e); }
     };
 
     const fetchAvailableSubjects = async () => {
       try {
-        const res = await fetch(getApiUrl('/master-subjects'), {
-          headers: authUtils.getAuthHeader()
-        });
-        if (res.ok) setAvailableSubjects(await res.json());
+        const data = await masterDataApi.getSubjects();
+        setAvailableSubjects(data);
       } catch (e) { console.error(e); }
     };
 
@@ -73,10 +69,8 @@ const SecrecyPaperSetters = () => {
 
   const fetchSetters = async () => {
     try {
-      const res = await fetch(getApiUrl('/secrecy/setters'), {
-        headers: authUtils.getAuthHeader()
-      });
-      if (res.ok) setPaperSetters(await res.json());
+      const data = await secrecyApi.getPaperSetters();
+      setPaperSetters(data);
     } catch (e) { console.error(e); }
   };
 
@@ -121,42 +115,28 @@ const SecrecyPaperSetters = () => {
       return;
     }
     try {
-      const res = await fetch(getApiUrl('/secrecy/setters/new'), {
-        method: 'POST',
-        headers: { ...authUtils.getAuthHeader(), 'Content-Type': 'application/json' },
-        body: JSON.stringify(newSetterForm)
+      await secrecyApi.createPaperSetter(newSetterForm);
+      toast.success('New paper setter created');
+      setShowAddSetterModal(false);
+      setNewSetterForm({
+        name: '', email: '', phone: '', department: '',
+        designation: '', experience: '', qualification: '', subjects: []
       });
-      if (res.ok) {
-        toast.success('New paper setter created');
-        setShowAddSetterModal(false);
-        setNewSetterForm({
-          name: '', email: '', phone: '', department: '',
-          designation: '', experience: '', qualification: '', subjects: []
-        });
-        fetchSetters();
-      } else {
-        const err = await res.json();
-        toast.error(err.message || 'Failed to create setter');
-      }
-    } catch (e) { toast.error('Network error'); }
+      fetchSetters();
+    } catch (e) { 
+      toast.error(e.response?.data?.message || 'Failed to create setter'); 
+    }
   };
 
   const handleEditSave = async () => {
     try {
-      const res = await fetch(getApiUrl(`/secrecy/setters/${selectedSetter.id}`), {
-        method: 'PUT',
-        headers: { ...authUtils.getAuthHeader(), 'Content-Type': 'application/json' },
-        body: JSON.stringify(editSetterForm)
-      });
-      if (res.ok) {
-        toast.success('Paper setter updated');
-        setShowEditSetterModal(false);
-        fetchSetters();
-      } else {
-        const err = await res.json();
-        toast.error(err.message || 'Failed to update setter');
-      }
-    } catch (e) { toast.error('Network error'); }
+      await secrecyApi.updatePaperSetter(selectedSetter.id, editSetterForm);
+      toast.success('Paper setter updated');
+      setShowEditSetterModal(false);
+      fetchSetters();
+    } catch (e) { 
+      toast.error(e.response?.data?.message || 'Failed to update setter'); 
+    }
   };
 
   const filteredSetters = useMemo(() => {

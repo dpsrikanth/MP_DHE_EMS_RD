@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, CheckCircle2, XCircle, FileText, Filter, LayoutDashboard } from 'lucide-react';
-import { getApiUrl } from '../../config';
+import { collegeAdminApi } from '../../api/collegeAdminApi';
 
 const CollegePerformance = () => {
   const [data, setData] = useState([]);
@@ -12,13 +12,8 @@ const CollegePerformance = () => {
 
   const fetchPerformance = async () => {
     try {
-      const response = await fetch(getApiUrl('/reports/college-performance'), {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const result = await response.json();
-      setData(Array.isArray(result) ? result : []);
+      const data = await collegeAdminApi.getCollegePerformance();
+      setData(Array.isArray(data) ? data : []);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching performance:', error);

@@ -4,7 +4,7 @@ import { CheckCircle, Clock, ShieldAlert, FileText, ChevronRight, Lock, Building
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
-import { getApiUrl } from '../../config';
+import { collegeAdminApi } from '../../api/collegeAdminApi';
 
 const MarksVerification = () => {
     const [trackingData, setTrackingData] = useState([]);
@@ -30,24 +30,17 @@ const MarksVerification = () => {
     const fetchTrackingData = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
             const userStr = localStorage.getItem('user');
             const user = userStr ? JSON.parse(userStr) : {};
             const collegeId = user.college_id;
 
-            let url = getApiUrl('/college-admin/marks-tracking?exclude_pending=true');
+            const params = { exclude_pending: true };
             if (collegeId) {
-                url += `&college_id=${collegeId}`;
+                params.college_id = collegeId;
             }
 
-            const res = await fetch(url, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                setTrackingData(data);
-            }
+            const data = await collegeAdminApi.getMarksTracking(params);
+            setTrackingData(data);
         } catch (err) {
             toast.error("Failed to load tracking data");
         } finally {
@@ -80,28 +73,18 @@ const MarksVerification = () => {
 
         setIsUnlocking(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/college-admin/unlock-marks'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    subject_id: item.subject_id,
-                    section: item.section,
-                    college_id: item.college_id,
-                    semester_id: item.semester_id,
-                    academic_year_id: item.academic_year_id
-                })
+            await collegeAdminApi.unlockMarks({
+                subject_id: item.subject_id,
+                section: item.section,
+                college_id: item.college_id,
+                semester_id: item.semester_id,
+                academic_year_id: item.academic_year_id
             });
 
-            if (res.ok) {
-                toast.success("Marks successfully unlocked!");
-                fetchTrackingData(); // Refresh list
-            } else {
-                const err = await res.json();
-                toast.error(err.error || "Failed to unlock marks");
-            }
+            toast.success("Marks successfully unlocked!");
+            fetchTrackingData(); // Refresh list
         } catch (error) {
-            toast.error("Error unlocking marks");
+            toast.error(error.response?.data?.error || "Error unlocking marks");
         } finally {
             setIsUnlocking(false);
         }
@@ -111,27 +94,17 @@ const MarksVerification = () => {
         if (!window.confirm(`Send correction request for ${item.subject_name} (Section ${item.section}) back to College Admin for review?`)) return;
         setIsUnlocking(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/college-admin/send-back-correction'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    subject_id: item.subject_id,
-                    section: item.section,
-                    college_id: item.college_id,
-                    semester_id: item.semester_id,
-                    academic_year_id: item.academic_year_id
-                })
+            await collegeAdminApi.sendBackCorrection({
+                subject_id: item.subject_id,
+                section: item.section,
+                college_id: item.college_id,
+                semester_id: item.semester_id,
+                academic_year_id: item.academic_year_id
             });
-            if (res.ok) {
-                toast.success("Correction request sent to College Admin!");
-                fetchTrackingData();
-            } else {
-                const err = await res.json();
-                toast.error(err.error || "Failed to send back to college");
-            }
+            toast.success("Correction request sent to College Admin!");
+            fetchTrackingData();
         } catch (error) {
-            toast.error("Error sending correction to college");
+            toast.error(error.response?.data?.error || "Error sending correction to college");
         } finally {
             setIsUnlocking(false);
         }
@@ -143,16 +116,11 @@ const MarksVerification = () => {
         setLogModalOpen(true);
         setLoadingLogs(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl(`/college-admin/marks-audit-log?subject_id=${item.subject_id}&workflow_id=${item.id}`), {
-                headers: { Authorization: `Bearer ${token}` }
+            const data = await collegeAdminApi.getMarksAuditLog({
+                subject_id: item.subject_id,
+                workflow_id: item.id
             });
-            if (res.ok) {
-                const data = await res.json();
-                setAuditLogs(data);
-            } else {
-                toast.error("Failed to load audit logs");
-            }
+            setAuditLogs(data);
         } catch(err) {
             toast.error("Error fetching logs");
         } finally {

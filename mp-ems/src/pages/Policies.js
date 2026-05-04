@@ -13,10 +13,10 @@ import {
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import { formatDate } from '../utils/dateUtils';
-import { getApiUrl } from '../config';
+import Select from 'react-select';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
-import Select from "react-select";
+import { masterDataApi } from "../api/masterDataApi";
 import authUtils from "../utils/authUtils";
 
 const Policies = () => {
@@ -67,14 +67,8 @@ const Policies = () => {
 
   const fetchAvailableMasters = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/masters'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const result = await res.json();
-        setAvailableMasters(result.policies.map(p => ({ value: p.id, label: p.name })));
-      }
+      const result = await masterDataApi.getMasters();
+      setAvailableMasters(result.policies.map(p => ({ value: p.id, label: p.name })));
     } catch (err) {
       console.error(err);
     }
@@ -82,15 +76,7 @@ const Policies = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/master-policies'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`HTTP ${response.status}: ${text}`);
-      }
-      const result = await response.json();
+      const result = await masterDataApi.getPolicies();
       const activeData = (result || []).filter(item => item.status === true || item.status === 1 || item.status === '1' || item.status === 'true');
       setData(activeData);
     } catch (err) {
@@ -106,34 +92,23 @@ const Policies = () => {
   const handleMap = async () => {
     if (!mappingSelection) return toast.warning('Please select a policy');
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/master-policies/map'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ policy_id: mappingSelection.value })
-      });
-      if (!res.ok) throw new Error('Mapping failed');
+      await masterDataApi.mapPolicy({ policy_id: mappingSelection.value });
       toast.success('Policy assigned successfully');
       setShowAssignModal(false);
       setMappingSelection(null);
       fetchData();
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
   };
 
   const handleUnmap = async (id) => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl(`/master-policies/unmap/${id}`), {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Unmapping failed');
+      await masterDataApi.unmapPolicy(id);
       toast.success('Policy removed from your university');
       fetchData();
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -145,17 +120,12 @@ const Policies = () => {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl(`/master-policies/${deleteTarget.id}`), {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Delete failed');
+      await masterDataApi.deletePolicy(deleteTarget.id);
       setShowDeleteModal(false);
       setDeleteTarget(null);
       fetchData();
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
   };
 

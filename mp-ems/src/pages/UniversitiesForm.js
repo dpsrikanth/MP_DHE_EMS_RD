@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getApiUrl } from '../config';
 import { useNavigate, useParams } from 'react-router-dom';
+import { masterDataApi } from '../api/masterDataApi';
 import { toast } from 'react-toastify';
 import Select, { components } from 'react-select';
 import { School, ArrowLeft, Check, ShieldCheck, ShieldAlert } from "lucide-react";
@@ -42,28 +42,27 @@ const UniversitiesForm = () => {
 
   const fetchMasterData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-      const masterRes = await fetch(getApiUrl('/masters'), { headers });
-      if (!masterRes.ok) throw new Error('Failed to fetch master data');
-      const masterData = await masterRes.json();
+      const masterData = await masterDataApi.getMasters();
       
       const pOptions = masterData.policies.map(p => ({ value: p.id, label: p.name }));
       const prgOptions = masterData.programs.map(p => ({ value: p.id, label: p.name }));
       const ayOptions = masterData.academicYears.map(ay => ({ value: ay.id, label: ay.year_name }));
       const semOptions = masterData.semesters.map(s => ({ value: s.id, label: s.semester_name }));
-      setPolicyOptions(pOptions); setProgramOptions(prgOptions); setAcademicYearOptions(ayOptions); setSemesterOptions(semOptions);
+      
+      setPolicyOptions(pOptions); 
+      setProgramOptions(prgOptions); 
+      setAcademicYearOptions(ayOptions); 
+      setSemesterOptions(semOptions);
+      
       if (isEditing) loadConfigData(id, pOptions, prgOptions, ayOptions, semOptions);
-    } catch (err) { console.error('Error loading master data:', err); }
+    } catch (err) { 
+      console.error('Error loading master data:', err); 
+    }
   };
 
   const loadUniversity = async (univId) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/universities'), { headers: { Authorization: `Bearer ${token}` } });
-      if (!response.ok) throw new Error('Failed to fetch universities');
-      const data = await response.json();
-      const university = data.find(u => u.id.toString() === univId);
+      const university = await masterDataApi.getUniversityById(univId);
       if (university) {
         setForm({ 
           name: university.name || university.university_name || '', 
@@ -71,64 +70,67 @@ const UniversitiesForm = () => {
           status: university.status === undefined ? true : university.status,
           university_type: university.university_type || ''
         });
-      } else { toast.error('University not found'); navigate('/universities'); }
-    } catch (err) { toast.error(err.message); } 
-    finally { setDataLoading(false); }
+      } else { 
+        toast.error('University not found'); 
+        navigate('/universities'); 
+      }
+    } catch (err) { 
+      toast.error(err.message); 
+    } finally { 
+      setDataLoading(false); 
+    }
   };
 
   const loadConfigData = async (universityId, pOpts, prgOpts, ayOpts, semOpts) => {
     try {
       setConfigLoading(true);
-      const token = localStorage.getItem('token');
-      const configRes = await fetch(getApiUrl(`/universities/${universityId}/config`), { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } });
-      if (!configRes.ok) throw new Error('Failed to fetch university config');
-      const configData = await configRes.json();
+      const configData = await masterDataApi.getUniversityConfig(universityId);
       setSelectedPolicies((pOpts || policyOptions).filter(opt => configData.policies.includes(opt.value)));
       setSelectedPrograms((prgOpts || programOptions).filter(opt => configData.programs.includes(opt.value)));
       setSelectedAcademicYears((ayOpts || academicYearOptions).filter(opt => configData.academicYears.includes(opt.value)));
       setSelectedSemesters((semOpts || semesterOptions).filter(opt => configData.semesters.includes(opt.value)));
-    } catch (err) { console.error(err); toast.error('Error loading configuration: ' + err.message); }
-    finally { setConfigLoading(false); }
+    } catch (err) { 
+      console.error(err); 
+      toast.error('Error loading configuration: ' + err.message); 
+    } finally { 
+      setConfigLoading(false); 
+    }
   };
 
   const submitConfigPayload = async (univId) => {
-    const token = localStorage.getItem('token');
     const payload = {
-      policies: selectedPolicies.map(p => p.value), programs: selectedPrograms.map(p => p.value),
-      academicYears: selectedAcademicYears.map(a => a.value), semesters: selectedSemesters.map(s => s.value)
+      policies: selectedPolicies.map(p => p.value), 
+      programs: selectedPrograms.map(p => p.value),
+      academicYears: selectedAcademicYears.map(a => a.value), 
+      semesters: selectedSemesters.map(s => s.value)
     };
-    const res = await fetch(getApiUrl(`/universities/${univId}/config`), {
-      method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error('Failed to update config');
+    await masterDataApi.updateUniversityConfig(univId, payload);
   };
 
   const handleSave = async () => {
     try {
       setSavingConfig(true);
-      const token = localStorage.getItem('token');
       if (!form.name) { setSavingConfig(false); return toast.warning('Name is required'); }
       let finalUniversityId = null, toastMessage = '';
+      
       if (isEditing) {
-        const res = await fetch(getApiUrl(`/universities/${id}`), {
-          method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(form)
-        });
-        if (!res.ok) { const t = await res.text(); throw new Error(t || 'Update failed'); }
-        const updatedUniv = await res.json();
-        toastMessage = updatedUniv.message || 'University updated successfully!'; finalUniversityId = id;
+        const updatedUniv = await masterDataApi.updateUniversity(id, form);
+        toastMessage = updatedUniv.message || 'University updated successfully!'; 
+        finalUniversityId = id;
       } else {
-        const res = await fetch(getApiUrl('/universities'), {
-          method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(form)
-        });
-        if (!res.ok) { const t = await res.text(); throw new Error(t || 'Create failed'); }
-        const createdUniv = await res.json();
+        const createdUniv = await masterDataApi.createUniversity(form);
         finalUniversityId = createdUniv.data ? createdUniv.data.id : createdUniv.id;
         toastMessage = createdUniv.message || 'University added successfully!';
       }
+      
       await submitConfigPayload(finalUniversityId);
-      toast.success(toastMessage); navigate('/universities');
-    } catch (err) { toast.error('Error: ' + (err.message || err)); }
-    finally { setSavingConfig(false); }
+      toast.success(toastMessage); 
+      navigate('/universities');
+    } catch (err) { 
+      toast.error('Error: ' + (err.message || err)); 
+    } finally { 
+      setSavingConfig(false); 
+    }
   };
 
   if (dataLoading) return (

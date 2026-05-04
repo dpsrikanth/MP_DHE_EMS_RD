@@ -3,7 +3,8 @@ import { toast } from 'react-toastify';
 import Select from 'react-select';
 import { BookOpenCheck, Save, Plus, Trash2, Pencil, X, BarChart3, Search } from "lucide-react";
 import { TableSearch } from '../../components/TableControls';
-import { getApiUrl } from '../../config';
+import { collegeAdminApi } from '../../api/collegeAdminApi';
+import { masterDataApi } from '../../api/masterDataApi';
 
 const MarksConfig = () => {
     const [policies, setPolicies] = useState([]);
@@ -105,14 +106,8 @@ const MarksConfig = () => {
 
     const fetchSavedStructures = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/college-admin/all-marks-structures'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setSavedStructures(data);
-            }
+            const data = await collegeAdminApi.getAllMarksStructures();
+            setSavedStructures(data);
         } catch (err) {
             console.error('Failed to load saved marks structures', err);
         }
@@ -121,18 +116,12 @@ const MarksConfig = () => {
     const fetchMasterData = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/masters'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setPolicies(data.policies || []);
-                setPrograms(data.programs || []);
-                setSemesters(data.semesters || []);
-                setSubjects(data.subjects || []);
-                setDepartments(data.departments || []);
-            }
+            const data = await masterDataApi.getMasters();
+            setPolicies(data.policies || []);
+            setPrograms(data.programs || []);
+            setSemesters(data.semesters || []);
+            setSubjects(data.subjects || []);
+            setDepartments(data.departments || []);
         } catch (err) {
             toast.error('Failed to load master data');
         } finally {
@@ -166,24 +155,19 @@ const MarksConfig = () => {
         }
 
         try {
-            const token = localStorage.getItem('token');
             const collegeId = localStorage.getItem('collegeId');
 
             for (let comp of components) {
-                await fetch(getApiUrl('/college-admin/marks-structure'), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                    body: JSON.stringify({
-                        college_id: collegeId,
-                        policy_id: selectedPolicy.value,
-                        program_id: selectedProgram.value,
-                        semester_id: selectedSemester.value,
-                        department_id: selectedDepartment.value,
-                        subject_id: selectedSubject.value,
-                        component_name: comp.name,
-                        max_marks: comp.maxMarks,
-                        passing_marks: comp.passingMarks
-                    })
+                await collegeAdminApi.saveMarksStructure({
+                    college_id: collegeId,
+                    policy_id: selectedPolicy.value,
+                    program_id: selectedProgram.value,
+                    semester_id: selectedSemester.value,
+                    department_id: selectedDepartment.value,
+                    subject_id: selectedSubject.value,
+                    component_name: comp.name,
+                    max_marks: comp.maxMarks,
+                    passing_marks: comp.passingMarks
                 });
             }
 
@@ -204,17 +188,9 @@ const MarksConfig = () => {
     const handleDeleteConfirm = async () => {
         if (!deleteTarget) return;
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl(`/college-admin/marks-structure/${deleteTarget.id}`), {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                toast.success("Marks structure deleted successfully");
-                fetchSavedStructures();
-            } else {
-                toast.error("Failed to delete marks structure");
-            }
+            await collegeAdminApi.deleteMarksStructure(deleteTarget.id);
+            toast.success("Marks structure deleted successfully");
+            fetchSavedStructures();
         } catch (err) {
             toast.error("An error occurred while deleting");
         } finally {
@@ -233,19 +209,10 @@ const MarksConfig = () => {
             return toast.warning("Please fill in all component details");
         }
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl(`/college-admin/marks-structure/${editingStructure.id}`), {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify(editingStructure)
-            });
-            if (res.ok) {
-                toast.success("Marks structure updated successfully");
-                setShowEditModal(false);
-                fetchSavedStructures();
-            } else {
-                toast.error("Failed to update structure");
-            }
+            await collegeAdminApi.updateMarksStructure(editingStructure.id, editingStructure);
+            toast.success("Marks structure updated successfully");
+            setShowEditModal(false);
+            fetchSavedStructures();
         } catch (err) {
             toast.error("An error occurred while updating");
         }

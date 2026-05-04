@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Server, Hash, Mail, Lock, User, Eye, EyeOff, Save, CheckCircle2, AlertCircle } from "lucide-react";
-import authUtils from "../utils/authUtils";
-import { getApiUrl } from "../config";
+import { systemConfigApi } from "../api/systemConfigApi";
 
 const SmtpConfig = () => {
   const [formData, setFormData] = useState({
@@ -27,15 +26,8 @@ const SmtpConfig = () => {
   const fetchConfig = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(getApiUrl('/config/smtp'), {
-        headers: authUtils.getAuthHeader()
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setFormData(data);
-      } else {
-        throw new Error("Failed to fetch configuration");
-      }
+      const data = await systemConfigApi.getSmtpConfig();
+      setFormData(data);
     } catch (error) {
       console.error("Fetch config error:", error);
       setStatus({ type: 'error', message: "Failed to load SMTP configuration" });
@@ -56,25 +48,12 @@ const SmtpConfig = () => {
     setStatus({ type: null, message: "" });
 
     try {
-      const response = await fetch(getApiUrl('/config/smtp'), {
-        method: "POST",
-        headers: {
-          ...authUtils.getAuthHeader(),
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        setStatus({ type: 'success', message: "Configuration updated successfully!" });
-        setTimeout(() => setStatus({ type: null, message: "" }), 3000);
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update configuration");
-      }
+      await systemConfigApi.updateSmtpConfig(formData);
+      setStatus({ type: 'success', message: "Configuration updated successfully!" });
+      setTimeout(() => setStatus({ type: null, message: "" }), 3000);
     } catch (error) {
       console.error("Update config error:", error);
-      setStatus({ type: 'error', message: error.message || "Failed to update configuration" });
+      setStatus({ type: 'error', message: error.response?.data?.message || "Failed to update configuration" });
     } finally {
       setIsSaving(false);
     }

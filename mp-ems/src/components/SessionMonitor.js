@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { getApiUrl } from '../config';
+import { authApi } from '../api/authApi';
 
 const SessionMonitor = ({ children }) => {
   const [showWarning, setShowWarning] = useState(false);
@@ -78,40 +78,16 @@ const SessionMonitor = ({ children }) => {
     return () => clearInterval(checkInterval.current);
   }, [checkToken]);
 
-  const handleExtendSession = async () => {
-    try {
-      // Background request to refresh token using the HttpOnly cookie
-      const response = await fetch(getApiUrl('/refresh-token'), {
-        method: 'POST',
-        // Important: we need to send credentials to ensure the HttpOnly cookie is included
-        credentials: 'include' 
-      });
-
-      // Actually, since axios or fetch requires specific cors config for credentials, we must add credentials: 'include'.
-      // Note: We'll modify it dynamically here.
-    } catch(e) {}
-  };
-
   const handleExtend = async () => {
     try {
-      const response = await fetch(getApiUrl('/refresh-token'), {
-        method: 'POST',
-        credentials: 'include' // sends HttpOnly cookies
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Update local storage with the new fresh token (payload decoded correctly)
-        localStorage.setItem('token', data.token);
-        setShowWarning(false);
-        // Refresh our interval check instantly
-        checkToken();
-        // Reset activity
-        lastActivity.current = Date.now();
-      } else {
-        // Failed to refresh (maybe refresh token expired too). Let them get logged out.
-        setShowWarning(false);
-      }
+      const data = await authApi.refreshToken();
+      // Update local storage with the new fresh token (payload decoded correctly)
+      localStorage.setItem('token', data.token);
+      setShowWarning(false);
+      // Refresh our interval check instantly
+      checkToken();
+      // Reset activity
+      lastActivity.current = Date.now();
     } catch (err) {
       console.error('Failed to extend session', err);
       setShowWarning(false);

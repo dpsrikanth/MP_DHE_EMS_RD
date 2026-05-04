@@ -108,5 +108,10 @@ export const examApi = {
     updateTotalRooms: async (data) => {
         const response = await apiClient.put('/college-admin/total-rooms', data);
         return response.data;
+    },
+    getComponents: async (params) => {
+        const queryParams = new URLSearchParams(params).toString();
+        const response = await apiClient.get(`/college-admin/get-components?${queryParams}`);
+        return response.data;
     }
 };

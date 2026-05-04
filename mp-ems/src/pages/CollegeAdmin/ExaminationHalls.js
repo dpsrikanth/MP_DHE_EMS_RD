@@ -5,8 +5,7 @@ import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js';
 import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
-import { getApiUrl } from '../../config';
-import { examApi } from '../../api/examApi';
+import { collegeAdminApi } from '../../api/collegeAdminApi';
 
 ChartJS.register(ArcElement, Tooltip);
 
@@ -35,7 +34,7 @@ const ExaminationHalls = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
 
-    const apiBase = getApiUrl('/examination-halls');
+
 
     const filteredHalls = useMemo(() => {
         if (!searchQuery.trim()) return halls;
@@ -87,7 +86,7 @@ const ExaminationHalls = () => {
 
     const fetchExams = async () => {
         try {
-            const data = await examApi.getExams();
+            const data = await collegeAdminApi.getExams();
             if (data) {
                 const published = data.filter(e => e.status === true || e.is_published === true);
                 // Deduplicate by program + semester + exam name to avoid repeated entries
@@ -111,7 +110,7 @@ const ExaminationHalls = () => {
 
     const fetchStudentCount = async (examId = null) => {
         try {
-            const data = await examApi.getSeatingRequirement(examId);
+            const data = await collegeAdminApi.getSeatingRequirement(examId);
             if (data) {
                 setTotalStudents(parseInt(data.total_required) || 0);
                 setHostingSources(data.hosting_sources || []);
@@ -124,7 +123,7 @@ const ExaminationHalls = () => {
 
     const fetchShortageRequests = async () => {
         try {
-            const data = await examApi.getShortages();
+            const data = await collegeAdminApi.getShortages();
             if (data) {
                 setShortageRequests(data);
             }
@@ -135,7 +134,7 @@ const ExaminationHalls = () => {
 
     const fetchTotalRooms = async () => {
         try {
-            const data = await examApi.getTotalRooms();
+            const data = await collegeAdminApi.getTotalRooms();
             if (data) {
                 setTotalRooms(data.total_rooms || 0);
             }
@@ -147,7 +146,7 @@ const ExaminationHalls = () => {
     const handleUpdateTotalRooms = async () => {
         setIsEditingRooms(false);
         try {
-            await examApi.updateTotalRooms({ total_rooms: totalRooms });
+            await collegeAdminApi.updateTotalRooms({ total_rooms: totalRooms });
             toast.success("Total college rooms updated");
         } catch (err) {
             toast.error(err.response?.data?.message || "Failed to update total rooms");
@@ -158,7 +157,7 @@ const ExaminationHalls = () => {
     const fetchHalls = async () => {
         try {
             setLoading(true);
-            const data = await examApi.getHalls();
+            const data = await collegeAdminApi.getHalls();
             if (data) {
                 setHalls(data);
             }
@@ -176,7 +175,7 @@ const ExaminationHalls = () => {
         }
 
         try {
-            await examApi.createHallMapping(newHall);
+            await collegeAdminApi.createHallMapping(newHall);
             toast.success("Examination hall added as Draft");
             setNewHall({ hall_code: '', rows: '', seats_per_row: '', exam_id: '' });
             fetchHalls();
@@ -191,7 +190,7 @@ const ExaminationHalls = () => {
         }
 
         try {
-            await examApi.updateHallMapping(editingHall.id, editingHall);
+            await collegeAdminApi.updateHallMapping(editingHall.id, editingHall);
             toast.success("Hall updated successfully");
             setShowEditModal(false);
             fetchHalls();
@@ -202,7 +201,7 @@ const ExaminationHalls = () => {
 
     const handleSubmitHall = async (hallId) => {
         try {
-            await examApi.submitHallMapping(hallId);
+            await collegeAdminApi.submitHallMapping(hallId);
             toast.success("Hall submitted for approval");
             fetchHalls();
         } catch (err) {
@@ -215,7 +214,7 @@ const ExaminationHalls = () => {
             const shortage = totalStudents - capacityStats.approved;
             if (shortage <= 0) return toast.info("No shortage to report");
 
-            await examApi.requestShortage({
+            await collegeAdminApi.requestShortage({
                 student_count: totalStudents,
                 available_capacity: capacityStats.approved,
                 shortage: shortage
@@ -232,7 +231,7 @@ const ExaminationHalls = () => {
     const handleDeleteConfirm = async () => {
         if (!deleteTarget) return;
         try {
-            await examApi.deleteHallMapping(deleteTarget.id);
+            await collegeAdminApi.deleteHallMapping(deleteTarget.id);
             toast.success("Hall deleted successfully");
             fetchHalls();
         } catch (err) {

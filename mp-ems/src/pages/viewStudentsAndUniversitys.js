@@ -9,7 +9,7 @@ import {
   Building2,
   TrendingUp
 } from "lucide-react";
-import { getApiUrl } from "../config";
+import { masterDataApi } from "../api/masterDataApi";
 
 /**
  * Modern Data Overview component with Tailwind CSS styling.
@@ -25,12 +25,10 @@ const ViewStudentsAndUniversities = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const studentRes = await fetch(getApiUrl("/students"));
-        const universityRes = await fetch(getApiUrl("/universities"));
-        const studentData = await studentRes.json();
-        const universityData = await universityRes.json();
-        setStudents(studentData);
-        setUniversities(universityData);
+        const studentData = await masterDataApi.getStudents();
+        const universityData = await masterDataApi.getUniversities();
+        setStudents(studentData || []);
+        setUniversities(universityData || []);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {

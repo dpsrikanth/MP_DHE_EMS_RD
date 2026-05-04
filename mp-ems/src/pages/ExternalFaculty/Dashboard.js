@@ -5,8 +5,8 @@ import {
   Calendar, Award, ListChecks, Search, X
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { TableSearch } from "../../components/TableControls";
-import { getApiUrl } from "../../config";
+import { externalFacultyApi } from "../../api/externalFacultyApi";
+import { TableSearch } from '../../components/TableControls';
 
 const ExternalFacultyDashboard = () => {
   const [stats, setStats] = useState({
@@ -26,24 +26,18 @@ const ExternalFacultyDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(getApiUrl('/external-faculty/assignments'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setAllAssignments(data);
-        
-        const counts = data.reduce((acc, curr) => {
-          acc.total++;
-          if (curr.assignment_status === 'Assigned') acc.pending++;
-          else if (curr.assignment_status === 'Evaluated') acc.evaluated++;
-          else if (curr.assignment_status === 'Submitted') acc.submitted++;
-          return acc;
-        }, { total: 0, pending: 0, evaluated: 0, submitted: 0 });
-        
-        setStats(counts);
-      }
+      const data = await externalFacultyApi.getAssignments();
+      setAllAssignments(data);
+      
+      const counts = data.reduce((acc, curr) => {
+        acc.total++;
+        if (curr.assignment_status === 'Assigned') acc.pending++;
+        else if (curr.assignment_status === 'Evaluated') acc.evaluated++;
+        else if (curr.assignment_status === 'Submitted') acc.submitted++;
+        return acc;
+      }, { total: 0, pending: 0, evaluated: 0, submitted: 0 });
+      
+      setStats(counts);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
     } finally {

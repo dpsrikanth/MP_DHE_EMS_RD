@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { FileDown, Printer, Filter, Search, BookOpen, GraduationCap } from "lucide-react";
 import Select from 'react-select';
-import { getApiUrl } from '../../config';
+import { collegeAdminApi } from '../../api/collegeAdminApi';
+import { masterDataApi } from '../../api/masterDataApi';
 
 const MarksReports = () => {
     const [reportData, setReportData] = useState([]);
@@ -18,22 +19,9 @@ const MarksReports = () => {
 
     const fetchMetadata = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const semRes = await fetch(getApiUrl('/semesters'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (semRes.ok) {
-                const data = await semRes.json();
-                setSemesters(data.map(s => ({ value: s.id, label: s.semester_name })));
-            }
-
-            const subRes = await fetch(getApiUrl('/subjects'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (subRes.ok) {
-                const data = await subRes.json();
-                setSubjects(data.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}`, semester_id: s.semester_id })));
-            }
+            const data = await masterDataApi.getMasters();
+            setSemesters((data.semesters || []).map(s => ({ value: s.id, label: s.semester_name })));
+            setSubjects((data.subjects || []).map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}`, semester_id: s.semester_id })));
         } catch (err) {
             toast.error("Failed to load metadata for filters");
         }
@@ -46,21 +34,15 @@ const MarksReports = () => {
         }
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
             const userStr = localStorage.getItem('user');
             const collegeId = userStr ? JSON.parse(userStr).college_id : 1;
 
-            let url = getApiUrl(`/college-admin/marks-report?college_id=${collegeId}&semester_id=${selectedSemester.value}`);
-            if (selectedSubject) url += `&subject_id=${selectedSubject.value}`;
+            const params = { college_id: collegeId, semester_id: selectedSemester.value };
+            if (selectedSubject) params.subject_id = selectedSubject.value;
 
-            const res = await fetch(url, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setReportData(data);
-                if (data.length === 0) toast.info("No locked marks found for the selected criteria.");
-            }
+            const data = await collegeAdminApi.getMarksReport(params);
+            setReportData(data);
+            if (data.length === 0) toast.info("No locked marks found for the selected criteria.");
         } catch (err) {
             toast.error("Failed to fetch report data");
         } finally {

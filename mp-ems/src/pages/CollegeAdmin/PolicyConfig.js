@@ -3,7 +3,8 @@ import { toast } from 'react-toastify';
 import Select from 'react-select';
 import { ShieldCheck, Save, Pencil, Trash2, X, Search } from "lucide-react";
 import { TableSearch } from '../../components/TableControls';
-import { getApiUrl } from '../../config';
+import { collegeAdminApi } from '../../api/collegeAdminApi';
+import { masterDataApi } from '../../api/masterDataApi';
 
 const PolicyConfig = () => {
     const [policies, setPolicies] = useState([]);
@@ -86,14 +87,8 @@ const PolicyConfig = () => {
 
     const fetchSavedMappings = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/college-admin/policy-mappings'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setSavedMappings(data);
-            }
+            const data = await collegeAdminApi.getPolicyMappings();
+            setSavedMappings(data);
         } catch (err) {
             console.error('Failed to load saved mappings', err);
         }
@@ -102,19 +97,12 @@ const PolicyConfig = () => {
     const fetchMasterData = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            // For a real app, you would fetch these from specific endpoints or a master endpoint
-            const res = await fetch(getApiUrl('/masters'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setPolicies(data.policies || []);
-                setPrograms(data.programs || []);
-                setSemesters(data.semesters || []);
-                setSubjects(data.subjects || []); // Assuming masters returns subjects too
-                setDepartments(data.departments || []);
-            }
+            const data = await masterDataApi.getMasters();
+            setPolicies(data.policies || []);
+            setPrograms(data.programs || []);
+            setSemesters(data.semesters || []);
+            setSubjects(data.subjects || []); 
+            setDepartments(data.departments || []);
         } catch (err) {
             toast.error('Failed to load master data');
         } finally {
@@ -128,36 +116,27 @@ const PolicyConfig = () => {
         }
 
         try {
-            const token = localStorage.getItem('token');
             const collegeId = localStorage.getItem('collegeId');
 
             // 1. Map Program & Semester to Policy
-            await fetch(getApiUrl('/college-admin/map-policy'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    policy_id: selectedPolicy.value,
-                    program_id: selectedProgram.value,
-                    semester_id: selectedSemester.value,
-                    department_id: selectedDepartment.value,
-                    college_id: collegeId
-                })
+            await collegeAdminApi.mapPolicy({
+                policy_id: selectedPolicy.value,
+                program_id: selectedProgram.value,
+                semester_id: selectedSemester.value,
+                department_id: selectedDepartment.value,
+                college_id: collegeId
             });
 
             // 2. Map Subjects
             if (selectedSubjects.length > 0) {
                 for (let subject of selectedSubjects) {
-                    await fetch(getApiUrl('/college-admin/map-subject'), {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                        body: JSON.stringify({
-                            policy_id: selectedPolicy.value,
-                            program_id: selectedProgram.value,
-                            semester_id: selectedSemester.value,
-                            department_id: selectedDepartment.value,
-                            subject_id: subject.value,
-                            college_id: collegeId
-                        })
+                    await collegeAdminApi.mapSubject({
+                        policy_id: selectedPolicy.value,
+                        program_id: selectedProgram.value,
+                        semester_id: selectedSemester.value,
+                        department_id: selectedDepartment.value,
+                        subject_id: subject.value,
+                        college_id: collegeId
                     });
                 }
             }
@@ -179,17 +158,9 @@ const PolicyConfig = () => {
     const handleDeleteConfirm = async () => {
         if (!deleteTarget) return;
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl(`/college-admin/policy-mappings/${deleteTarget.id}`), {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                toast.success("Mapping deleted successfully");
-                fetchSavedMappings();
-            } else {
-                toast.error("Failed to delete mapping");
-            }
+            await collegeAdminApi.deletePolicyMapping(deleteTarget.id);
+            toast.success("Mapping deleted successfully");
+            fetchSavedMappings();
         } catch (err) {
             toast.error("An error occurred while deleting");
         } finally {
@@ -208,19 +179,10 @@ const PolicyConfig = () => {
             return toast.warning("Please ensure all fields are selected");
         }
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl(`/college-admin/policy-mappings/${editingMapping.id}`), {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify(editingMapping)
-            });
-            if (res.ok) {
-                toast.success("Mapping updated successfully");
-                setShowEditModal(false);
-                fetchSavedMappings();
-            } else {
-                toast.error("Failed to update mapping");
-            }
+            await collegeAdminApi.updatePolicyMapping(editingMapping.id, editingMapping);
+            toast.success("Mapping updated successfully");
+            setShowEditModal(false);
+            fetchSavedMappings();
         } catch (err) {
             toast.error("An error occurred while updating");
         }

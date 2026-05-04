@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Layers, Plus, CheckCircle2, AlertCircle } from 'lucide-react';
-import { getApiUrl } from '../../config';
+
 import { examApi } from '../../api/examApi';
 
 const RoundManagement = () => {

@@ -26,6 +26,10 @@ export const masterDataApi = {
         const response = await apiClient.get('/masters');
         return response.data;
     },
+    getMasterDetails: async () => {
+        const response = await apiClient.get('/masterDetails');
+        return response.data;
+    },
     mapAcademicYear: async (data) => {
         const response = await apiClient.post('/master-academic-years/map', data);
         return response.data;
@@ -86,8 +90,28 @@ export const masterDataApi = {
         const response = await apiClient.get('/universities');
         return response.data;
     },
+    getUniversityById: async (id) => {
+        const response = await apiClient.get(`/universities/${id}`);
+        return response.data;
+    },
+    createUniversity: async (data) => {
+        const response = await apiClient.post('/universities', data);
+        return response.data;
+    },
+    updateUniversity: async (id, data) => {
+        const response = await apiClient.put(`/universities/${id}`, data);
+        return response.data;
+    },
+    deleteUniversity: async (id) => {
+        const response = await apiClient.delete(`/universities/${id}`);
+        return response.data;
+    },
     getUniversityConfig: async (id) => {
         const response = await apiClient.get(`/universities/${id}/config`);
+        return response.data;
+    },
+    updateUniversityConfig: async (id, data) => {
+        const response = await apiClient.put(`/universities/${id}/config`, data);
         return response.data;
     },
 
@@ -170,14 +194,30 @@ export const masterDataApi = {
         const response = await apiClient.get('/master-policies');
         return response.data;
     },
+    getPolicyById: async (id) => {
+        const response = await apiClient.get(`/master-policies/${id}`);
+        return response.data;
+    },
+    createPolicy: async (data) => {
+        const response = await apiClient.post('/master-policies', data);
+        return response.data;
+    },
+    updatePolicy: async (id, data) => {
+        const response = await apiClient.put(`/master-policies/${id}`, data);
+        return response.data;
+    },
+    deletePolicy: async (id) => {
+        const response = await apiClient.delete(`/master-policies/${id}`);
+        return response.data;
+    },
 
     // --- Semesters ---
     getSemesters: async () => {
-        const response = await apiClient.get('/master-semesters');
+        const response = await apiClient.get('/semesters');
         return response.data;
     },
     getSemesterById: async (id) => {
-        const response = await apiClient.get(`/master-semesters/${id}`);
+        const response = await apiClient.get(`/semesters/${id}`);
         return response.data;
     },
     createSemester: async (data) => {
@@ -208,8 +248,9 @@ export const masterDataApi = {
     },
 
     // --- Teachers ---
-    getTeachers: async () => {
-        const response = await apiClient.get('/master-teachers');
+    getTeachers: async (params) => {
+        const queryParams = params ? `?${new URLSearchParams(params).toString()}` : '';
+        const response = await apiClient.get(`/teachers${queryParams}`);
         return response.data;
     },
     getTeacherById: async (id) => {
@@ -256,8 +297,9 @@ export const masterDataApi = {
     },
 
     // --- Students ---
-    getStudents: async () => {
-        const response = await apiClient.get('/students');
+    getStudents: async (params) => {
+        const queryParams = params ? `?${new URLSearchParams(params).toString()}` : '';
+        const response = await apiClient.get(`/students${queryParams}`);
         return response.data;
     },
     getStudentById: async (id) => {

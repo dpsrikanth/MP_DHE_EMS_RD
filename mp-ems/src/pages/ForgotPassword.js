@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Mail, ArrowRight, ArrowLeft, School, CheckCircle2 } from "lucide-react";
-import { getApiUrl } from '../config';
+import { authApi } from '../api/authApi';
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -18,24 +18,10 @@ const ForgotPassword = () => {
     setMessage(null);
 
     try {
-      const response = await fetch(getApiUrl('/forgot-password'), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessage(data.message || "Email sent successfully");
-      } else {
-        setError(data.message || "Failed to send reset email");
-      }
+      const data = await authApi.forgotPassword(email);
+      setMessage(data.message || "Email sent successfully");
     } catch (error) {
-      console.error("Forgot password error:", error);
-      setError("Network error. Please try again.");
+      setError(error.response?.data?.message || "Failed to send reset email");
     } finally {
       setLoading(false);
     }

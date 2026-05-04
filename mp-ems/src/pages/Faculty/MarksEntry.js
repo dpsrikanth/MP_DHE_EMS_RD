@@ -4,7 +4,9 @@ import Select from 'react-select';
 import { BookOpen, Users, Save, CheckCircle, ShieldAlert, Search, X } from "lucide-react";
 import { useLocation } from 'react-router-dom';
 import { TableSearch } from '../../components/TableControls';
-import { API_ENDPOINTS, getApiUrl } from '../../config';
+import { facultyApi } from '../../api/facultyApi';
+import { marksApi } from '../../api/marksApi';
+import { masterDataApi } from '../../api/masterDataApi';
 
 const MarksEntry = () => {
     const location = useLocation();
@@ -43,16 +45,10 @@ const MarksEntry = () => {
     const fetchAssignedSubjects = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
             const userStr = localStorage.getItem('user');
             const teacherId = userStr ? JSON.parse(userStr).teacher_id : 1;
-            const res = await fetch(getApiUrl(`/faculty-marks/assigned-subjects/${teacherId}`), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setAssignedSubjects(data || []);
-            }
+            const data = await facultyApi.getAssignedSubjects(teacherId);
+            setAssignedSubjects(data || []);
         } catch (err) {
             toast.error('Failed to load assigned subjects');
         } finally {
@@ -64,49 +60,42 @@ const MarksEntry = () => {
         if (!assignment) return;
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-
             // 1. Fetch Marks Structure for this subject
-            const structureRes = await fetch(getApiUrl(`/college-admin/marks-structure/${assignment.subject_id}`), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            let structureData = [];
-            if (structureRes.ok) structureData = await structureRes.json();
-            setMarksStructure(structureData);
-
+            const structureData = await facultyApi.getMarksStructure(assignment.subject_id);
+            setMarksStructure(structureData || []);
+    
             // 2. Fetch Students for this subject
-            const studentsRes = await fetch(getApiUrl(`/faculty-marks/students?college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&program_id=${assignment.program_id}`), {
-                headers: { Authorization: `Bearer ${token}` }
+            const studentsData = await facultyApi.getStudentsForSubject({
+                college_id: assignment.college_id,
+                semester_id: assignment.semester_id,
+                program_id: assignment.program_id
             });
-            let studentsData = [];
-            if (studentsRes.ok) studentsData = await studentsRes.json();
-            setStudents(studentsData);
-
+            setStudents(studentsData || []);
+    
             // 3. Fetch already entered marks and status
-            const marksRes = await fetch(getApiUrl(`/faculty-marks/entered-marks?subject_id=${assignment.subject_id}&section=${assignment.section}&college_id=${assignment.college_id}&semester_id=${assignment.semester_id}&academic_year_id=${assignment.academic_year_id}`), {
-                headers: { Authorization: `Bearer ${token}` }
+            const data = await facultyApi.getEnteredMarks({
+                subject_id: assignment.subject_id,
+                section: assignment.section,
+                college_id: assignment.college_id,
+                semester_id: assignment.semester_id,
+                academic_year_id: assignment.academic_year_id
             });
-            let existingMarks = [];
-            let status = 'Pending';
-            let reviewsData = {};
-            if (marksRes.ok) {
-                const data = await marksRes.json();
-                existingMarks = data.marks || [];
-                status = data.workflowStatus || 'Pending';
-                reviewsData = data.reviews || {};
-            }
+            
+            const existingMarks = data.marks || [];
+            const status = data.workflowStatus || 'Pending';
+            const reviewsData = data.reviews || {};
+            
             setEnteredMarks(existingMarks);
             setWorkflowStatus(status);
             setReviews(reviewsData);
-
+    
             // 4. Fetch Internal Schedules for this subject & college
-            const internalRes = await fetch(getApiUrl(`/internal-exams/schedules?program_id=${assignment.program_id}&semester_id=${assignment.semester_id}&academic_year_id=${assignment.academic_year_id}`), {
-                headers: { Authorization: `Bearer ${token}` }
+            const internalData = await facultyApi.getInternalSchedules({
+                program_id: assignment.program_id,
+                semester_id: assignment.semester_id,
+                academic_year_id: assignment.academic_year_id
             });
-            if (internalRes.ok) {
-                const internalData = await internalRes.json();
-                setSubjectSchedules(internalData.filter(s => s.subject_id === assignment.subject_id));
-            }
+            setSubjectSchedules(internalData.filter(s => s.subject_id === assignment.subject_id));
 
             // Populate draft state with existing marks
             const draft = {};
@@ -313,30 +302,17 @@ const MarksEntry = () => {
                 return;
             }
 
-            const response = await fetch(API_ENDPOINTS.FACULTY_MARKS_ENTER, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    marksData: payload,
-                    faculty_id: teacherId,
-                    college_id: assignmentStr.college_id,
-                    semester_id: assignmentStr.semester_id,
-                    academic_year_id: assignmentStr.academic_year_id,
-                    section: assignmentStr.section
-                })
+            await facultyApi.saveMarks({
+                marksData: payload,
+                faculty_id: teacherId,
+                college_id: assignmentStr.college_id,
+                semester_id: assignmentStr.semester_id,
+                academic_year_id: assignmentStr.academic_year_id,
+                section: assignmentStr.section
             });
 
-            const responseData = await response.json();
-
-            if (response.ok) {
-                toast.success("Marks saved successfully!");
-                fetchSubjectDetails(assignmentStr);
-            } else {
-                toast.error(responseData.error || "Failed to save marks");
-            }
+            toast.success("Marks saved successfully!");
+            fetchSubjectDetails(assignmentStr);
         } catch (err) {
             toast.error("Error saving marks");
         } finally {
@@ -382,46 +358,28 @@ const MarksEntry = () => {
             // Even if payload is empty, we proceed to submit if some marks exist in DB, 
             // but usually we want to save current state.
             if (payload.length > 0) {
-                const saveRes = await fetch(API_ENDPOINTS.FACULTY_MARKS_ENTER, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                    body: JSON.stringify({
-                        marksData: payload,
-                        faculty_id: teacherId,
-                        college_id: assignmentStr.college_id,
-                        semester_id: assignmentStr.semester_id,
-                        academic_year_id: assignmentStr.academic_year_id,
-                        section: assignmentStr.section
-                    })
-                });
-                if (!saveRes.ok) {
-                    const errorData = await saveRes.json();
-                    throw new Error(errorData.error || "Failed to save marks before submission");
-                }
-            }
-
-            // 2. Then Submit
-            const res = await fetch(API_ENDPOINTS.FACULTY_MARKS_SUBMIT, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    subject_id: assignmentStr.subject_id,
-                    section: assignmentStr.section,
+                await facultyApi.saveMarks({
+                    marksData: payload,
+                    faculty_id: teacherId,
                     college_id: assignmentStr.college_id,
                     semester_id: assignmentStr.semester_id,
                     academic_year_id: assignmentStr.academic_year_id,
-                    faculty_id: teacherId
-                })
+                    section: assignmentStr.section
+                });
+            }
+
+            // 2. Then Submit
+            const responseData = await facultyApi.submitMarks({
+                subject_id: assignmentStr.subject_id,
+                section: assignmentStr.section,
+                college_id: assignmentStr.college_id,
+                semester_id: assignmentStr.semester_id,
+                academic_year_id: assignmentStr.academic_year_id,
+                faculty_id: teacherId
             });
 
-            const responseData = await res.json();
-
-            if (res.ok) {
-                toast.success("Marks submitted successfully!");
-                fetchSubjectDetails(assignmentStr);
-            } else {
-                toast.error(responseData.error || "Failed to submit marks");
-            }
+            toast.success("Marks submitted successfully!");
+            fetchSubjectDetails(assignmentStr);
         } catch (err) {
             toast.error("Error submitting marks");
         } finally {
@@ -438,27 +396,18 @@ const MarksEntry = () => {
         setIsSaving(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/faculty-marks/request-unlock'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    subject_id: assignmentStr.subject_id,
-                    section: assignmentStr.section,
-                    college_id: assignmentStr.college_id,
-                    semester_id: assignmentStr.semester_id,
-                    academic_year_id: assignmentStr.academic_year_id
-                })
+            const data = await facultyApi.requestUnlock({
+                subject_id: assignmentStr.subject_id,
+                section: assignmentStr.section,
+                college_id: assignmentStr.college_id,
+                semester_id: assignmentStr.semester_id,
+                academic_year_id: assignmentStr.academic_year_id
             });
 
-            const data = await res.json();
-            if (res.ok) {
-                toast.success("Correction request sent to HOD successfully!");
-                // Optimistic update to lock UI immediately
-                setWorkflowStatus('Correction Requested');
-                fetchSubjectDetails(assignmentStr);
-            } else {
-                toast.error(data.error || "Failed to send request");
-            }
+            toast.success("Correction request sent to HOD successfully!");
+            // Optimistic update to lock UI immediately
+            setWorkflowStatus('Correction Requested');
+            fetchSubjectDetails(assignmentStr);
         } catch (err) {
             toast.error("Error sending correction request");
         } finally {

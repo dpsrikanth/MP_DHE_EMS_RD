@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { UserCheck, Clock, CheckCircle2, AlertCircle, Calendar, Filter } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
-import { getApiUrl } from '../../config';
+import { collegeAdminApi } from '../../api/collegeAdminApi';
+import { masterDataApi } from '../../api/masterDataApi';
 
 const FacultyStatus = () => {
   const [data, setData] = useState([]);
@@ -16,11 +17,8 @@ const FacultyStatus = () => {
 
   const fetchSemesters = async () => {
     try {
-      const response = await fetch(getApiUrl('/semesters'), {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      const result = await response.json();
-      setSemesters(result);
+      const data = await masterDataApi.getMasters();
+      setSemesters(data.semesters || []);
     } catch (error) {
       console.error('Error fetching semesters:', error);
     }
@@ -29,12 +27,11 @@ const FacultyStatus = () => {
   const fetchFacultyStatus = async () => {
     setLoading(true);
     try {
-      const queryParams = selectedSemester ? `?semester_id=${selectedSemester}` : '';
-      const response = await fetch(getApiUrl(`/reports/faculty-grading-status${queryParams}`), {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      const result = await response.json();
-      setData(Array.isArray(result) ? result : []);
+      const params = {};
+      if (selectedSemester) params.semester_id = selectedSemester;
+
+      const data = await collegeAdminApi.getFacultyGradingStatus(params);
+      setData(Array.isArray(data) ? data : []);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching status:', error);

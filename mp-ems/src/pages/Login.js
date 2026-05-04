@@ -39,7 +39,7 @@ const Login = () => {
         return;
       }
 
-      const data = await authApi.login(formData);
+      const data = await authApi.login({ email: formData.email, password: formData.password, rememberMe: formData.rememberMe });
 
       if (data && data.token) {
         authUtils.setAuth(

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { toast } from 'react-toastify';
 import { useNavigate, useParams } from "react-router-dom";
 import { ShieldCheck, Check, Hash, FileText, ArrowLeft } from "lucide-react";
-import { getApiUrl } from '../config';
+import { masterDataApi } from "../api/masterDataApi";
+
 import '../styles/FormPage.css';
 
 const PoliciesForm = () => {
@@ -21,12 +22,7 @@ const PoliciesForm = () => {
 
   const fetchPolicyData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/master-policies'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const result = await response.json();
+      const result = await masterDataApi.getPolicies();
       const item = (result || []).find(p => p.id === editingId);
       
       if (item) {
@@ -48,28 +44,17 @@ const PoliciesForm = () => {
     
     setSaving(true);
     try {
-      const token = localStorage.getItem('token');
-      const method = isEditing ? 'PUT' : 'POST';
-      const url = isEditing 
-        ? getApiUrl(`/master-policies/${editingId}`)
-        : getApiUrl('/master-policies');
-        
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
-      });
-      
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || (isEditing ? 'Update failed' : 'Save failed'));
+      let result;
+      if (isEditing) {
+        result = await masterDataApi.updatePolicy(editingId, form);
+      } else {
+        result = await masterDataApi.createPolicy(form);
       }
       
-      const result = await res.json();
       toast.success(result.message || (isEditing ? 'Policy updated successfully!' : 'Policy added successfully!'));
       navigate('/policies');
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     } finally {
       setSaving(false);
     }

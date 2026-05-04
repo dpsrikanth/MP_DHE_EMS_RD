@@ -11,9 +11,10 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getApiUrl } from '../config';
+import { authApi } from '../api/authApi';
 
 const Register = () => {
+
   const navigate = useNavigate();
   const location = useLocation();
   const [formData, setFormData] = useState({
@@ -82,25 +83,13 @@ const Register = () => {
   const sendOtp = async () => {
     setLoading(true);
     try {
-      const response = await fetch(getApiUrl('/register'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email })
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        setMessage(data.message || 'Activation Failed');
-        return;
-      }
-
+      const data = await authApi.register(formData.email);
       setMessage('A 6-digit verification code has been sent to your email.');
       setStep(2);
       setTimer(300);
       setOtp('');
     } catch (error) {
-      setMessage('Network error. Please try again.');
-      console.error('Error:', error);
+      setMessage(error.response?.data?.message || 'Activation Failed');
     } finally {
       setLoading(false);
     }
@@ -119,26 +108,14 @@ const Register = () => {
       }
       setLoading(true);
       try {
-        const response = await fetch(getApiUrl('/verify-otp'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: formData.email, otp: otp })
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-          setMessage(data.message || 'Verification Failed');
-          if (data.message && data.message.toLowerCase().includes('expire')) {
-            setTimer(0);
-          }
-          return;
-        }
-
+        await authApi.verifyOtp(formData.email, otp);
         setMessage('Identity Verified! Please set your new password.');
         setStep(3); // Move to Set Password step
       } catch (error) {
-        setMessage('Verification error. Please try again.');
-        console.error('Error:', error);
+        setMessage(error.response?.data?.message || 'Verification Failed');
+        if (error.response?.data?.message?.toLowerCase().includes('expire')) {
+          setTimer(0);
+        }
       } finally {
         setLoading(false);
       }
@@ -146,23 +123,11 @@ const Register = () => {
       if (!validateForm()) return;
       setLoading(true);
       try {
-        const response = await fetch(getApiUrl('/set-password'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: formData.email, password: formData.password })
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-          setMessage(data.message || 'Failed to set password');
-          return;
-        }
-
+        await authApi.setPassword(formData.email, formData.password);
         setMessage('Password Set Successfully! Redirecting to Portal...');
         setTimeout(() => navigate('/'), 2000);
       } catch (error) {
-        setMessage('Error setting password. Please try again.');
-        console.error('Error:', error);
+        setMessage(error.response?.data?.message || 'Failed to set password');
       } finally {
         setLoading(false);
       }

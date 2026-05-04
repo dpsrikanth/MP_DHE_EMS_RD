@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
-import { API_ENDPOINTS } from '../config';
+import { authApi } from '../api/authApi';
 
 const ChangePasswordModal = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
@@ -54,24 +54,10 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(API_ENDPOINTS.CHANGE_PASSWORD, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          oldPassword: formData.oldPassword,
-          newPassword: formData.newPassword
-        })
+      await authApi.changePassword({
+        oldPassword: formData.oldPassword,
+        newPassword: formData.newPassword
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to change password');
-      }
 
       setSuccess(true);
       setFormData({ oldPassword: '', newPassword: '', confirmPassword: '' });
@@ -86,7 +72,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
       }, 1500);
 
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }

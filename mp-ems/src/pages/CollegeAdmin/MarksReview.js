@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { CheckCircle, ArrowLeft, ShieldCheck, AlertCircle, MessageSquare, X, Send, Lock } from 'lucide-react';
-import { getApiUrl } from '../../config';
+import { collegeAdminApi } from '../../api/collegeAdminApi';
 
 const MarksReview = () => {
     const { subjectId, section } = useParams();
@@ -44,40 +44,33 @@ const MarksReview = () => {
     const fetchReviewData = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
             const collegeId = user.college_id;
 
             // 1. Fetch Marks Structure 
-            const structureRes = await fetch(getApiUrl(`/college-admin/marks-structure/${subjectId}`), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            let structData = [];
-            if (structureRes.ok) structData = await structureRes.json();
-            setMarksStructure(structData);
+            const structData = await collegeAdminApi.getMarksStructure(subjectId);
+            setMarksStructure(structData || []);
 
             // 2. Fetch Review Marks (Raw data grouped by student)
-            const reviewRes = await fetch(getApiUrl(`/college-admin/review-marks?subject_id=${subjectId}&section=${section}&college_id=${collegeId}&semester_id=${semesterId}&academic_year_id=${academicYearId}`), {
-                headers: { Authorization: `Bearer ${token}` }
+            const reviewData = await collegeAdminApi.getReviewMarks({
+                subject_id: subjectId,
+                section: section,
+                college_id: collegeId,
+                semester_id: semesterId,
+                academic_year_id: academicYearId
             });
+            setMarksData(reviewData || []);
 
-            if (reviewRes.ok) {
-                const reviewData = await reviewRes.json();
-                setMarksData(reviewData);
-            }
-
-            // 3. Setup basic subject meta (could fetch more details from subject API)
+            // 3. Setup basic subject meta
             setSubjectMeta({ id: subjectId, section: section, collegeId, status: '' });
 
             // 4. Fetch status
-            const workflowRes = await fetch(getApiUrl(`/college-admin/workflow-status?college_id=${collegeId}&semester_id=${semesterId}`), {
-                headers: { Authorization: `Bearer ${token}` }
+            const workflows = await collegeAdminApi.getWorkflowStatus({
+                college_id: collegeId,
+                semester_id: semesterId
             });
-            if (workflowRes.ok) {
-                const workflows = await workflowRes.json();
-                const currentWf = workflows.find(w => w.subject_id.toString() === subjectId.toString() && w.section === section);
-                if (currentWf) {
-                    setSubjectMeta(prev => ({ ...prev, status: currentWf.status }));
-                }
+            const currentWf = workflows.find(w => w.subject_id.toString() === subjectId.toString() && w.section === section);
+            if (currentWf) {
+                setSubjectMeta(prev => ({ ...prev, status: currentWf.status }));
             }
 
         } catch (err) {
@@ -89,34 +82,23 @@ const MarksReview = () => {
 
     const handleApproveSection = async () => {
         toast.info("Approving section...");
-
-        setIsLocking(true); // Reusing isLocking for loading state
+        setIsLocking(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl(`/college-admin/workflow-status`), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    subject_id: subjectId,
-                    section: section,
-                    college_id: subjectMeta.collegeId,
-                    semester_id: semesterId,
-                    academic_year_id: academicYearId,
-                    status: 'Approved'
-                })
+            const result = await collegeAdminApi.updateWorkflowStatus({
+                subject_id: subjectId,
+                section: section,
+                college_id: subjectMeta.collegeId,
+                semester_id: semesterId,
+                academic_year_id: academicYearId,
+                status: 'Approved'
             });
 
-            if (res.ok) {
-                const result = await res.json();
-                if (result.status === 'Rejected') {
-                    toast.warning("Section rejected due to individual student rejections. Sent back to faculty.");
-                } else {
-                    toast.success("Section approved successfully!");
-                }
-                navigate('/hod/marks-approval');
+            if (result.status === 'Rejected') {
+                toast.warning("Section rejected due to individual student rejections. Sent back to faculty.");
             } else {
-                toast.error("Failed to approve section");
+                toast.success("Section approved successfully!");
             }
+            navigate('/hod/marks-approval');
         } catch (err) {
             toast.error("Error approving section");
         } finally {
@@ -126,35 +108,23 @@ const MarksReview = () => {
 
     const handleLockMarks = async () => {
         toast.info("Locking marks and calculating results...");
-
         setIsLocking(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl(`/college-admin/lock-marks`), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    subject_id: subjectId,
-                    section: section,
-                    college_id: subjectMeta.collegeId,
-                    semester_id: semesterId,
-                    academic_year_id: academicYearId,
-                    studentsGraceMarks: studentsGraceMarks
-                })
+            const result = await collegeAdminApi.lockMarks({
+                subject_id: subjectId,
+                section: section,
+                college_id: subjectMeta.collegeId,
+                semester_id: semesterId,
+                academic_year_id: academicYearId,
+                studentsGraceMarks: studentsGraceMarks
             });
 
-            if (res.ok) {
-                const result = await res.json();
-                toast.success(result.message || "Marks locked and synced successfully!");
-                setTimeout(() => {
-                    navigate('/college-admin/marks-approval');
-                }, 2000);
-            } else {
-                const errorData = await res.json();
-                toast.error(errorData.error || "Failed to lock marks");
-            }
+            toast.success(result.message || "Marks locked and synced successfully!");
+            setTimeout(() => {
+                navigate('/college-admin/marks-approval');
+            }, 2000);
         } catch (err) {
-            toast.error("Error locking marks");
+            toast.error(err.response?.data?.error || "Error locking marks");
         } finally {
             setIsLocking(false);
         }
@@ -162,28 +132,18 @@ const MarksReview = () => {
 
     const handleRejectWorkflow = async () => {
         toast.info("Rejecting section and sending back to faculty...");
-
         setIsRejecting(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl(`/college-admin/reject-workflow-section`), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    subject_id: subjectId,
-                    section: section,
-                    college_id: subjectMeta.collegeId,
-                    semester_id: semesterId,
-                    academic_year_id: academicYearId
-                })
+            await collegeAdminApi.rejectWorkflowSection({
+                subject_id: subjectId,
+                section: section,
+                college_id: subjectMeta.collegeId,
+                semester_id: semesterId,
+                academic_year_id: academicYearId
             });
 
-            if (res.ok) {
-                toast.success("Section rejected and sent back to faculty.");
-                navigate(isHOD ? '/hod/marks-approval' : '/admin/marks-verification');
-            } else {
-                toast.error("Failed to reject section");
-            }
+            toast.success("Section rejected and sent back to faculty.");
+            navigate(isHOD ? '/hod/marks-approval' : '/admin/marks-verification');
         } catch (err) {
             toast.error("Error rejecting section");
         } finally {
@@ -195,27 +155,17 @@ const MarksReview = () => {
         if (!window.confirm(`Send correction request back to College Admin for review?`)) return;
         setIsRejecting(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl(`/college-admin/send-back-correction`), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    subject_id: subjectId,
-                    section: section,
-                    college_id: subjectMeta.collegeId,
-                    semester_id: semesterId,
-                    academic_year_id: academicYearId
-                })
+            await collegeAdminApi.sendBackCorrection({
+                subject_id: subjectId,
+                section: section,
+                college_id: subjectMeta.collegeId,
+                semester_id: semesterId,
+                academic_year_id: academicYearId
             });
-            if (res.ok) {
-                toast.success("Correction request sent to College Admin!");
-                navigate('/admin/marks-verification');
-            } else {
-                const err = await res.json();
-                toast.error(err.error || "Failed to send back to college");
-            }
+            toast.success("Correction request sent to College Admin!");
+            navigate('/admin/marks-verification');
         } catch (error) {
-            toast.error("Error sending correction to college");
+            toast.error(error.response?.data?.error || "Error sending correction to college");
         } finally {
             setIsRejecting(false);
         }
@@ -245,33 +195,22 @@ const MarksReview = () => {
     };
 
     const handleSaveReview = async (status) => {
-        console.log(`handleSaveReview triggered with status: ${status}`);
-        console.log("Selected student:", selectedStudent);
         setIsSavingReview(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl(`/college-admin/save-student-review`), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    subject_id: subjectId,
-                    section: section,
-                    student_id: selectedStudent.student_id,
-                    college_id: subjectMeta.collegeId,
-                    semester_id: semesterId,
-                    academic_year_id: academicYearId,
-                    status: status,
-                    comment: reviewComment
-                })
+            await collegeAdminApi.saveStudentReview({
+                subject_id: subjectId,
+                section: section,
+                student_id: selectedStudent.student_id,
+                college_id: subjectMeta.collegeId,
+                semester_id: semesterId,
+                academic_year_id: academicYearId,
+                status: status,
+                comment: reviewComment
             });
 
-            if (res.ok) {
-                toast.success(`Student marks marked as ${status}`);
-                setIsReviewOpen(false);
-                fetchReviewData(); // Refresh
-            } else {
-                toast.error("Failed to save review");
-            }
+            toast.success(`Student marks marked as ${status}`);
+            setIsReviewOpen(false);
+            fetchReviewData();
         } catch (err) {
             toast.error("Error saving review");
         } finally {

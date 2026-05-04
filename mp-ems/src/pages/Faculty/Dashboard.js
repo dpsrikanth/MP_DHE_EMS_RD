@@ -3,7 +3,8 @@ import { toast } from 'react-toastify';
 import { BookOpen, CheckCircle, Clock, ShieldAlert, ChevronRight, User, Search, X } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { TableSearch } from '../../components/TableControls';
-import { getApiUrl } from '../../config';
+import { facultyApi } from '../../api/facultyApi';
+import { collegeAdminApi } from '../../api/collegeAdminApi';
 
 const FacultyDashboard = () => {
     const [assignedSubjects, setAssignedSubjects] = useState([]);
@@ -19,34 +20,26 @@ const FacultyDashboard = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
             const userStr = localStorage.getItem('user');
             const user = userStr ? JSON.parse(userStr) : null;
             const teacherId = user ? user.teacher_id : 1;
             const collegeId = user ? user.college_id : 1;
 
             // 1. Fetch Assigned Subjects
-            const subRes = await fetch(getApiUrl(`/faculty-marks/assigned-subjects/${teacherId}`), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            
-            if (subRes.ok) {
-                const subjects = await subRes.json();
-                setAssignedSubjects(subjects || []);
+            const subjects = await facultyApi.getAssignedSubjects(teacherId);
+            setAssignedSubjects(subjects || []);
 
-                // 2. Fetch Workflow Status for overall tracking
-                const statusRes = await fetch(getApiUrl(`/college-admin/marks-tracking?college_id=${collegeId}`), {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                if (statusRes.ok) {
-                    const statusData = await statusRes.json();
-                    // Create a lookup map: { subjectId_section: status }
-                    const statusMap = {};
+            // 2. Fetch Workflow Status for overall tracking
+            if (subjects && subjects.length > 0) {
+                const statusData = await collegeAdminApi.getMarksTracking({ college_id: collegeId });
+                // Create a lookup map: { subjectId_section: status }
+                const statusMap = {};
+                if (Array.isArray(statusData)) {
                     statusData.forEach(item => {
                         statusMap[`${item.subject_id}_${item.section}`] = item.status;
                     });
-                    setWorkflowStatus(statusMap);
                 }
+                setWorkflowStatus(statusMap);
             }
         } catch (err) {
             toast.error('Failed to load dashboard data');

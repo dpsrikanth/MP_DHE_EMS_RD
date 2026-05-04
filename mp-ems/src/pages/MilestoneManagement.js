@@ -16,7 +16,8 @@ import { MdDelete } from "react-icons/md";
 import { formatDate } from '../utils/dateUtils';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader } from '../components/TableControls';
-import { getApiUrl } from '../config';
+import { milestoneApi } from '../api/milestoneApi';
+import { masterDataApi } from '../api/masterDataApi';
 
 const MilestoneManagement = () => {
   const navigate = useNavigate();
@@ -89,14 +90,8 @@ const MilestoneManagement = () => {
 
   const fetchValidationSetting = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/settings/roadmap_validation'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setIsValidationEnabled(data.enabled);
-      }
+      const data = await milestoneApi.getValidationSetting();
+      setIsValidationEnabled(data.enabled);
     } catch (err) {
       console.error("Failed to fetch validation setting", err);
     }
@@ -105,24 +100,11 @@ const MilestoneManagement = () => {
   const toggleValidation = async () => {
     try {
       setUpdatingSettings(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/settings/roadmap_validation'), {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ value: { enabled: !isValidationEnabled } })
-      });
-      
-      if (response.ok) {
-        setIsValidationEnabled(!isValidationEnabled);
-        toast.success(`Roadmap validation ${!isValidationEnabled ? 'enabled' : 'disabled'}`);
-      } else {
-        throw new Error('Failed to update setting');
-      }
+      await milestoneApi.updateValidationSetting(!isValidationEnabled);
+      setIsValidationEnabled(!isValidationEnabled);
+      toast.success(`Roadmap validation ${!isValidationEnabled ? 'enabled' : 'disabled'}`);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err.response?.data?.message || err.message);
     } finally {
       setUpdatingSettings(false);
     }
@@ -130,19 +112,16 @@ const MilestoneManagement = () => {
 
   const fetchMetadata = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
-      const [yearsRes, programsRes, semestersRes] = await Promise.all([
-        fetch(getApiUrl('/academic-years'), { headers }),
-        fetch(getApiUrl('/programs'), { headers }),
-        fetch(getApiUrl('/semesters'), { headers })
+      const [years, programs, semesters] = await Promise.all([
+        masterDataApi.getAcademicYears(),
+        masterDataApi.getPrograms(),
+        masterDataApi.getSemesters()
       ]);
 
       setMetadata({
-        academicYears: await yearsRes.json(),
-        programs: await programsRes.json(),
-        semesters: await semestersRes.json()
+        academicYears: years,
+        programs: programs,
+        semesters: semesters
       });
     } catch (err) {
       console.error("Metadata fetch error:", err);
@@ -152,17 +131,12 @@ const MilestoneManagement = () => {
   const fetchData = async () => {
     try {
       if (!loading) setRefreshing(true);
-      const token = localStorage.getItem('token');
-      const queryParams = new URLSearchParams();
-      if (filters.academic_year_id) queryParams.append('academic_year_id', filters.academic_year_id);
-      if (filters.program_id) queryParams.append('program_id', filters.program_id);
-      if (filters.semester_id) queryParams.append('semester_id', filters.semester_id);
+      const params = {};
+      if (filters.academic_year_id) params.academic_year_id = filters.academic_year_id;
+      if (filters.program_id) params.program_id = filters.program_id;
+      if (filters.semester_id) params.semester_id = filters.semester_id;
       
-      const response = await fetch(getApiUrl(`/milestones?${queryParams.toString()}`), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const result = await response.json();
+      const result = await milestoneApi.getMilestones(params);
       setData(result || []);
     } catch (err) {
       setError(err.message);
@@ -234,41 +208,28 @@ const MilestoneManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      const method = formData.id ? 'PUT' : 'POST';
-      const url = formData.id 
-        ? getApiUrl(`/milestones/${formData.id}`) 
-        : getApiUrl('/milestones');
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(formData)
-      });
-
-      if (!response.ok) throw new Error('Action failed');
+      if (formData.id) {
+        await milestoneApi.updateMilestone(formData.id, formData);
+      } else {
+        await milestoneApi.createMilestone(formData);
+      }
       
       toast.success(`Milestone ${formData.id ? 'updated' : 'created'} successfully`);
       setShowModal(false);
       fetchData();
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
   };
 
   const confirmDelete = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl(`/milestones/${deleteTarget.id}`), {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Delete failed');
+      await milestoneApi.deleteMilestone(deleteTarget.id);
       toast.success('Milestone removed');
       setShowDeleteModal(false);
       fetchData();
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
   };
 

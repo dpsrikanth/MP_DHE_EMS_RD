@@ -4,7 +4,8 @@ import Select from 'react-select';
 import { FileText, CheckCircle2, XCircle, Search, Lock, Eye, X } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { TableSearch } from '../../components/TableControls';
-import { getApiUrl } from '../../config';
+import { collegeAdminApi } from '../../api/collegeAdminApi';
+import { masterDataApi } from '../../api/masterDataApi';
 
 const MarksApproval = () => {
     const [workflows, setWorkflows] = useState([]);
@@ -26,14 +27,8 @@ const MarksApproval = () => {
 
     const fetchSemesters = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/masters'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setSemesters(data.semesters || []);
-            }
+            const data = await masterDataApi.getMasters();
+            setSemesters(data.semesters || []);
         } catch (err) {
             console.error('Failed to load semesters');
         }
@@ -42,19 +37,13 @@ const MarksApproval = () => {
     const fetchWorkflows = async (semesterId = null) => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
             const collegeId = user.college_id;
 
-            const queryParams = new URLSearchParams({ college_id: collegeId });
-            if (semesterId) queryParams.append('semester_id', semesterId);
+            const params = { college_id: collegeId };
+            if (semesterId) params.semester_id = semesterId;
 
-            const res = await fetch(getApiUrl(`/college-admin/workflow-status?${queryParams.toString()}`), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setWorkflows(data || []);
-            }
+            const data = await collegeAdminApi.getWorkflowStatus(params);
+            setWorkflows(data || []);
         } catch (err) {
             toast.error("Failed to fetch workflow status");
         } finally {
@@ -93,7 +82,6 @@ const MarksApproval = () => {
     const updateStatus = async (workflowId, newStatus) => {
         console.log(`updateStatus triggered: workflowId=${workflowId}, newStatus=${newStatus}`);
         try {
-            const token = localStorage.getItem('token');
             // Optimistic update
             setWorkflows(workflows.map(w => w.id === workflowId ? { ...w, status: newStatus } : w));
 
@@ -101,17 +89,13 @@ const MarksApproval = () => {
             const workflow = workflows.find(w => w.id === workflowId);
             if (!workflow) return;
 
-            await fetch(getApiUrl('/college-admin/workflow-status'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    college_id: workflow.college_id,
-                    subject_id: workflow.subject_id,
-                    semester_id: workflow.semester_id,
-                    academic_year_id: workflow.academic_year_id,
-                    section: workflow.section,
-                    status: newStatus
-                })
+            await collegeAdminApi.updateWorkflowStatus({
+                college_id: workflow.college_id,
+                subject_id: workflow.subject_id,
+                semester_id: workflow.semester_id,
+                academic_year_id: workflow.academic_year_id,
+                section: workflow.section,
+                status: newStatus
             });
 
             toast.success(`Marks status updated to ${newStatus}`);

@@ -8,7 +8,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
-import { getApiUrl } from '../../config';
+import { hodApi } from '../../api/hodApi';
 
 const AssessmentAcceptance = () => {
     const [assessments, setAssessments] = useState([]);
@@ -26,19 +26,10 @@ const AssessmentAcceptance = () => {
     const fetchAssessments = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/college-admin/pending-component-approvals'), {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                setAssessments(data);
-            } else {
-                toast.error("Failed to load assessments");
-            }
+            const data = await hodApi.getAssessmentAcceptance();
+            setAssessments(data);
         } catch (err) {
-            toast.error("Network error while loading assessments");
+            toast.error(err.response?.data?.message || "Failed to load assessments");
         } finally {
             setLoading(false);
         }
@@ -79,31 +70,18 @@ const AssessmentAcceptance = () => {
         setProcessingId(id);
         
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(getApiUrl('/college-admin/accept-component'), {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}` 
-                },
-                body: JSON.stringify({
-                    subject_id: component.subject_id,
-                    semester_id: component.semester_id,
-                    academic_year_id: component.academic_year_id,
-                    section: component.section,
-                    component_id: component.component_id
-                })
+            await hodApi.acceptComponent({
+                subject_id: component.subject_id,
+                semester_id: component.semester_id,
+                academic_year_id: component.academic_year_id,
+                section: component.section,
+                component_id: component.component_id
             });
 
-            if (res.ok) {
-                toast.success(`'${component.component_name}' accepted. Students can now view these marks.`);
-                fetchAssessments(); // Refresh
-            } else {
-                const err = await res.json();
-                toast.error(err.error || "Failed to accept assessment");
-            }
+            toast.success(`'${component.component_name}' accepted. Students can now view these marks.`);
+            fetchAssessments(); // Refresh
         } catch (error) {
-            toast.error("Error accepting assessment");
+            toast.error(error.response?.data?.error || "Failed to accept assessment");
         } finally {
             setProcessingId(null);
         }
