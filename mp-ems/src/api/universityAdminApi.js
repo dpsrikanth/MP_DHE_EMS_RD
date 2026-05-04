@@ -55,28 +55,8 @@ export const universityAdminApi = {
         const response = await apiClient.get('/examination-halls/shortage-requests');
         return response.data;
     },
-    approveRejectHall: async (hallId, data) => {
-        const response = await apiClient.post(`/examination-halls/${hallId}/approve-reject`, data);
-        return response.data;
-    },
     allocateHallShortage: async (requestId, data) => {
         const response = await apiClient.post(`/examination-halls/shortage-requests/${requestId}/allocate`, data);
-        return response.data;
-    },
-    getExternalFaculties: async () => {
-        const response = await apiClient.get('/university-admin/external-faculties');
-        return response.data;
-    },
-    getPendingExternalAssignments: async () => {
-        const response = await apiClient.get('/university-admin/pending-external-assignments');
-        return response.data;
-    },
-    getExternalAssignments: async () => {
-        const response = await apiClient.get('/university-admin/external-assignments');
-        return response.data;
-    },
-    assignExternalFaculty: async (data) => {
-        const response = await apiClient.post('/university-admin/assign-external-faculty', data);
         return response.data;
     },
     getInstitutionalRanking: async () => {
