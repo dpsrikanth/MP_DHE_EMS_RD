@@ -1264,7 +1264,11 @@ exports.getCollegeNotifications = async (req, res) => {
         res.status(200).json(result.rows);
     } catch (error) {
         console.error("getCollegeNotifications error:", error);
-        res.status(500).json({ error: "Failed to fetch notifications" });
+        // If table doesn't exist (code 42P01), return empty array
+        if (error.code === '42P01') {
+            return res.status(200).json([]);
+        }
+        res.status(500).json({ error: "Failed to fetch notifications", message: error.message });
     }
 };
 
