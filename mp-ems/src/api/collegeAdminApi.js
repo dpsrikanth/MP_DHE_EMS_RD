@@ -50,6 +50,14 @@ export const collegeAdminApi = {
     },
 
     /**
+     * Get marks tracking for overall status map
+     */
+    getMarksTracking: async (params) => {
+        const response = await apiClient.get('/college-admin/marks-tracking', { params });
+        return response.data;
+    },
+
+    /**
      * Update workflow status (Approve section)
      */
     updateWorkflowStatus: async (data) => {

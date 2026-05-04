@@ -11,7 +11,10 @@ const apiClient = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
-    // We don't set baseURL here immediately in case window.EMS_CONFIG isn't loaded yet when this module is parsed
+    // Accept 304 Not Modified as a successful response
+    validateStatus: function (status) {
+        return (status >= 200 && status < 300) || status === 304;
+    },
 });
 
 // Request interceptor to attach the auth token and dynamic baseURL
@@ -39,7 +42,7 @@ apiClient.interceptors.response.use(
             // Token is likely expired or invalid
             console.error('Session expired or unauthorized. Logging out...');
             authUtils.logout(); // This clears local storage and handles redirect
-            
+
             // If authUtils doesn't hard-redirect, we could do:
             // window.location.href = '/login';
         }

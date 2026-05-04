@@ -250,7 +250,7 @@ export const masterDataApi = {
     // --- Teachers ---
     getTeachers: async (params) => {
         const queryParams = params ? `?${new URLSearchParams(params).toString()}` : '';
-        const response = await apiClient.get(`/teachers${queryParams}`);
+        const response = await apiClient.get(`/master-teachers${queryParams}`);
         return response.data;
     },
     getTeacherById: async (id) => {
@@ -271,8 +271,9 @@ export const masterDataApi = {
     },
 
     // --- Subjects ---
-    getSubjects: async () => {
-        const response = await apiClient.get('/master-subjects');
+    getSubjects: async (params) => {
+        const queryParams = params ? `?${new URLSearchParams(params).toString()}` : '';
+        const response = await apiClient.get(`/master-subjects${queryParams}`);
         return response.data;
     },
     getSubjectById: async (id) => {

@@ -2894,9 +2894,18 @@ const getMasterSubjects = async (req, res) => {
         WHERE (ms.status IS NULL OR ms.status = 'Active')`;
     const params = [];
 
+    const { program_id, semester_id } = req.query;
     if (uId) {
-      query += " AND ms.university_id = $1";
+      query += " AND ms.university_id = $" + (params.length + 1);
       params.push(uId);
+    }
+    if (program_id) {
+      query += " AND ms.program_id = $" + (params.length + 1);
+      params.push(program_id);
+    }
+    if (semester_id) {
+      query += " AND ms.semester_id = $" + (params.length + 1);
+      params.push(semester_id);
     }
 
     query += " ORDER BY ms.id";
