@@ -1,4 +1,4 @@
-const db = require('../db');
+const db = require('../config/db');
 
 // Add a new examination hall (Starts as Draft)
 exports.createHall = async (req, res) => {

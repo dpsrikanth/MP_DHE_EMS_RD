@@ -1,4 +1,4 @@
-const db = require('../db');
+const db = require('../config/db');
 
 /**
  * Applies grace marks to a student for a specific exam series using strict budgeting rules.

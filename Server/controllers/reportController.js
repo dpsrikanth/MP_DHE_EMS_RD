@@ -1,4 +1,4 @@
-const db = require('../db');
+const db = require('../config/db');
 
 // --- Helper: Get Pass Threshold ---
 const getPassThreshold = async (university_id) => {

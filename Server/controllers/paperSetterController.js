@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const pool = require('../db');
+const pool = require('../config/db');
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, '../uploads/papers');

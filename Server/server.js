@@ -1,4 +1,4 @@
-require("dotenv").config(); 
+require("dotenv").config({ path: './config/.env' }); 
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -19,7 +19,7 @@ const hallRoutes = require('./routes/hallRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 
 const swaggerUi = require('swagger-ui-express');
-const swaggerSpecs = require('./swagger');
+const swaggerSpecs = require('./config/swagger');
 
 const corsOptions = {
   origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://[::1]:3000'],

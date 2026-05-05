@@ -65,7 +65,7 @@ router.post('/set-password', setInitialPassword);
 router.get('/demo/apply-grace', async (req, res) => {
     try {
         const { applyGraceMarks } = require('../utils/graceUtils');
-        const db = require('../db');
+        const db = require('../config/db');
         const rollNumber = '25BT1303';
         const examName = 'Programming Lab';
         

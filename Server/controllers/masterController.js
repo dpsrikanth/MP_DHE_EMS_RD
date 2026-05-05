@@ -1,4 +1,4 @@
-const client = require("../db");
+const client = require('../config/db');
 
 const getMasters = async (req, res) => {
   try {

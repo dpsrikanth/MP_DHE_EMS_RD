@@ -1,4 +1,4 @@
-const db = require('../db');
+const db = require('../config/db');
 
 /**
  * Helper to parse custom time strings like "09.00 am", "12.00 noon", "03.00 pm"

@@ -1,7 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const bcrypt = require("bcryptjs");
-const client = require("../db");
+const client = require('../config/db');
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const sendEmail = require("../utils/sendEmail");// -- Phase 1: Student Account Activation (Self-Onboarding) --

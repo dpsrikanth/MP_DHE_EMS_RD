@@ -1,4 +1,4 @@
-const db = require('../db');
+const db = require('../config/db');
 
 // --- Policy Mapping APIs ---
 exports.mapPolicyToProgramSemester = async (req, res) => {
