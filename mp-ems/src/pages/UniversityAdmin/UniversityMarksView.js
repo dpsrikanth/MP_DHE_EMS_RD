@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import { getGradeAndPoints, isPass, calculateSGPA } from "../../utils/gradingUtils";
 import { universityAdminApi } from "../../api/universityAdminApi";
 import { masterDataApi } from "../../api/masterDataApi";
+import { examApi } from "../../api/examApi";
 import { useGradingPolicy } from "../../hooks/useGradingPolicy";
 
 const UniversityMarksView = () => {
@@ -39,7 +40,7 @@ const UniversityMarksView = () => {
     const fetchFilters = async () => {
       try {
         const [exRes, colRes, progRes] = await Promise.all([
-          masterDataApi.getExams(),
+          examApi.getExams(),
           masterDataApi.getColleges(),
           masterDataApi.getPrograms()
         ]);
@@ -55,7 +56,13 @@ const UniversityMarksView = () => {
 
   const uniqueExams = useMemo(() => {
     const map = new Map();
-    exams.filter(e => e.exam_type === 2).forEach(e => {
+    if (!exams) return map;
+    
+    exams.filter(e => 
+      e.exam_type == 2 || 
+      e.exam_type_name?.toLowerCase().includes('external') || 
+      e.exam_type_name?.toLowerCase().includes('semester')
+    ).forEach(e => {
       const name = e.exam_name || e.name;
       if (!name) return;
       if (!map.has(name)) map.set(name, []);

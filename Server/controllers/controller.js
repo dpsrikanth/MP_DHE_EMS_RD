@@ -1468,8 +1468,8 @@ const getExams = async (req, res) => {
       params.push(college_id, department_id);
     } else if (role === 'university_admin') {
       const university_id = req.user?.university_id || req.user?.universityId;
-      visibilityClause = `WHERE (e.university_id = $1 OR c.university_id = $1)`;
-      internalVisibilityClause = `WHERE c.university_id = $1`;
+      visibilityClause = `WHERE (e.university_id = $1 OR c.university_id = $1 OR (e.university_id IS NULL AND e.college_id IS NULL))`;
+      internalVisibilityClause = `WHERE (c.university_id = $1 OR (c.university_id IS NULL))`;
       params.push(university_id);
     }
 
