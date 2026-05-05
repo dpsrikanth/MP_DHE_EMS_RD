@@ -29,8 +29,8 @@ const InstitutionalRanking = () => {
   );
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 sm:p-6 bg-slate-50 min-h-screen space-y-4">
+      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
             <Trophy className="text-amber-500" /> Institutional Rankings
@@ -71,7 +71,7 @@ const InstitutionalRanking = () => {
               
               return (
                 <tr key={index} className="hover:bg-slate-50/80 transition-colors group">
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-3">
                     <div className="flex items-center justify-center">
                       {rank === 1 ? <Medal className="text-amber-400" /> : 
                        rank === 2 ? <Medal className="text-slate-300" /> : 
@@ -79,14 +79,14 @@ const InstitutionalRanking = () => {
                        <span className="font-bold text-slate-400">#{rank}</span>}
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-3">
                     <span className={`font-semibold ${isTopThree ? 'text-slate-900 font-bold' : 'text-slate-700'}`}>
                       {item.college_name}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-500 font-medium">{item.total_marks_entered || 0}</td>
-                  <td className="px-6 py-4 text-emerald-600 font-semibold">{item.passed_count || 0}</td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-3 text-slate-500 font-medium">{item.total_marks_entered || 0}</td>
+                  <td className="px-6 py-3 text-emerald-600 font-semibold">{item.passed_count || 0}</td>
+                  <td className="px-6 py-3">
                     <div className="flex items-center gap-3">
                       <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden w-32 border border-slate-50 shadow-inner">
                         <div 
@@ -110,14 +110,9 @@ const InstitutionalRanking = () => {
         </table>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-        <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 flex items-start gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+        <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-100 flex items-start gap-4">
           <div className="p-3 bg-emerald-100 rounded-xl text-emerald-600">
-            <Star size={24} />
-          </div>
-          <div>
-            <h4 className="text-emerald-800 font-bold">Top Performing</h4>
-            <p className="text-emerald-600 text-[13px] mt-1">Institutions with Pass Rate {'>'} 75%</p>
             <div className="text-2xl font-black text-emerald-800 mt-2">
               {ranking.filter(r => r.pass_percentage >= 75).length}
             </div>

@@ -252,15 +252,15 @@ const Marks = () => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-4 animate-in fade-in duration-500">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-5">
-          <div className="w-16 h-16 bg-indigo-500 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-indigo-500/20">
-            <BarChart3 size={32} />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-indigo-500 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-500/20">
+            <BarChart3 size={28} />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Marks <span className="text-indigo-600">Management</span></h1>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Marks <span className="text-indigo-600">Management</span></h1>
             <p className="text-slate-500 font-bold text-sm tracking-widest  flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
               60/40 Split & Approvals
@@ -312,7 +312,7 @@ const Marks = () => {
       </div>
 
       {/* Filter Section */}
-      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <div>
           <label className="block text-[13px] font-bold text-slate-500  tracking-widest mb-2">College</label>
           <select
@@ -408,9 +408,9 @@ const Marks = () => {
       </div>
 
       {/* Main Content Card */}
-      <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
         {/* Table Toolbar */}
-        <div className="p-8 border-b border-slate-50 bg-slate-50/30 flex flex-col lg:flex-row justify-between items-center gap-6">
+        <div className="p-6 border-b border-slate-50 bg-slate-50/30 flex flex-col lg:flex-row justify-between items-center gap-4">
           <TableSearch
             value={searchQuery}
             onChange={setSearchQuery}
@@ -456,7 +456,7 @@ const Marks = () => {
                     field="enrollment_number"
                     currentSort={sortConfig}
                     onSort={handleSort}
-                    className="px-8 py-6 text-[12px] font-black  tracking-[0.2em] border-b border-slate-100"
+                    className="px-6 py-4 text-[12px] font-black  tracking-[0.2em] border-b border-slate-100"
                     visible={visibleColumns.id}
                   />
                   <SortHeader
@@ -464,37 +464,37 @@ const Marks = () => {
                     field="student_name"
                     currentSort={sortConfig}
                     onSort={handleSort}
-                    className="px-8 py-6 text-[12px] font-black  tracking-[0.2em] border-b border-slate-100"
+                    className="px-6 py-4 text-[12px] font-black  tracking-[0.2em] border-b border-slate-100"
                     visible={visibleColumns.student}
                   />
                   {activeTab === 'teacher' ? (
                     <>
-                      <th className="px-8 py-6 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Internal (40)</th>
-                      <th className="px-8 py-6 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">External (60)</th>
-                      <th className="px-8 py-6 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Total (100)</th>
+                      <th className="px-6 py-4 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Internal (40)</th>
+                      <th className="px-6 py-4 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">External (60)</th>
+                      <th className="px-6 py-4 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Total (100)</th>
                     </>
                   ) : (
                     <>
-                      <th className="px-8 py-6 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Subject</th>
-                      <th className="px-8 py-6 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Total Marks</th>
-                      <th className="px-8 py-6 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Submitted By</th>
+                      <th className="px-6 py-4 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Subject</th>
+                      <th className="px-6 py-4 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Total Marks</th>
+                      <th className="px-6 py-4 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Submitted By</th>
                     </>
                   )}
-                  <th className="px-8 py-6 text-right text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Status</th>
+                  <th className="px-6 py-4 text-right text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {paginatedData.map((item) => (
                   <tr key={item.mark_id || item.student_id} className="group hover:bg-slate-50/50 transition-colors">
                     {visibleColumns.id && (
-                      <td className="px-8 py-6 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-bold text-slate-500 tabular-nums">
                           {item.enrollment_number || 'N/A'}
                         </span>
                       </td>
                     )}
                     {visibleColumns.student && (
-                      <td className="px-8 py-6">
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600 group-hover:bg-sky-500 group-hover:text-white transition-all">
                             <GraduationCap size={18} />
@@ -509,7 +509,7 @@ const Marks = () => {
 
                     {activeTab === 'teacher' ? (
                       <>
-                        <td className="px-8 py-6">
+                        <td className="px-6 py-4">
                           <input
                             type="number"
                             min="0" max="40"
@@ -519,7 +519,7 @@ const Marks = () => {
                             className="w-20 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 text-center focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-400"
                           />
                         </td>
-                        <td className="px-8 py-6">
+                        <td className="px-6 py-4">
                           <input
                             type="number"
                             min="0" max="60"
@@ -529,7 +529,7 @@ const Marks = () => {
                             className="w-20 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 text-center focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-400"
                           />
                         </td>
-                        <td className="px-8 py-6">
+                        <td className="px-6 py-4">
                           <span className={`text-sm font-black tabular-nums ${getPerformanceColor(item.total_marks || 0, 100)} px-3 py-1.5 rounded-lg border`}>
                             {item.total_marks || 0}
                           </span>
@@ -537,17 +537,17 @@ const Marks = () => {
                       </>
                     ) : (
                       <>
-                        <td className="px-8 py-6 text-sm font-bold text-slate-700">{item.subject_name}</td>
-                        <td className="px-8 py-6">
+                        <td className="px-6 py-4 text-sm font-bold text-slate-700">{item.subject_name}</td>
+                        <td className="px-6 py-4">
                           <span className={`text-sm font-black tabular-nums ${getPerformanceColor(item.total_marks || 0, 100)} px-3 py-1.5 rounded-lg border`}>
                             {item.total_marks || 0}
                           </span>
                         </td>
-                        <td className="px-8 py-6 text-sm font-bold text-slate-600">{item.submitted_by}</td>
+                        <td className="px-6 py-4 text-sm font-bold text-slate-600">{item.submitted_by}</td>
                       </>
                     )}
 
-                    <td className="px-8 py-6 text-right whitespace-nowrap">
+                    <td className="px-6 py-4 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-3">
                         <span className={`px-3 py-1 text-[12px] font-black  tracking-wider rounded-md border
                           ${item.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
@@ -603,25 +603,25 @@ const Marks = () => {
       </div>
 
       {/* Footer Insight Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-12">
-        <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 p-10 rounded-[3rem] text-white shadow-2xl shadow-indigo-500/20 relative overflow-hidden group">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8">
+        <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 p-8 rounded-3xl text-white shadow-2xl shadow-indigo-500/20 relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-8 text-white opacity-10 group-hover:scale-150 transition-transform duration-700">
-            <CheckCircle2 size={120} />
+            <CheckCircle2 size={100} />
           </div>
-          <h4 className="text-xl font-black mb-4  tracking-tighter">Record Verification</h4>
-          <p className="text-indigo-100 font-medium mb-8 leading-relaxed max-w-sm">All academic records are signed and synchronized across the institutional blockchain for integrity.</p>
+          <h4 className="text-lg font-black mb-3  tracking-tighter">Record Verification</h4>
+          <p className="text-indigo-100 font-medium mb-6 leading-relaxed max-w-sm text-sm">All academic records are signed and synchronized across the institutional blockchain for integrity.</p>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-            <span className="text-[13px] font-black  tracking-widest">Secure Ledger Active</span>
+            <span className="text-[12px] font-black  tracking-widest">Secure Ledger Active</span>
           </div>
         </div>
-        <div className="bg-slate-900 p-10 rounded-[3rem] text-white shadow-2xl shadow-slate-900/20 relative overflow-hidden group border border-slate-800">
+        <div className="bg-slate-900 p-8 rounded-3xl text-white shadow-2xl shadow-slate-900/20 relative overflow-hidden group border border-slate-800">
           <div className="absolute top-0 right-0 p-8 text-sky-500 opacity-20 group-hover:scale-150 transition-transform duration-700">
-            <TrendingUp size={120} />
+            <TrendingUp size={100} />
           </div>
-          <h4 className="text-xl font-black mb-4  tracking-tighter">Trend Insights</h4>
-          <p className="text-slate-400 font-medium mb-8 leading-relaxed max-w-sm">Use our advanced AI engines to predict student outcomes based on historical performance data.</p>
-          <button className="text-sm font-black text-sky-400 hover:text-sky-300 transition-colors  tracking-widest flex items-center gap-2">
+          <h4 className="text-lg font-black mb-3  tracking-tighter">Trend Insights</h4>
+          <p className="text-slate-400 font-medium mb-6 leading-relaxed max-w-sm text-sm">Use our advanced AI engines to predict student outcomes based on historical performance data.</p>
+          <button className="text-[12px] font-black text-sky-400 hover:text-sky-300 transition-colors  tracking-widest flex items-center gap-2">
             Explore Analytics
             <ArrowUpRight size={16} />
           </button>

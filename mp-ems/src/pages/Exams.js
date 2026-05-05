@@ -437,10 +437,10 @@ const Exams = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Page Header Card */}
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-5">
             <div className="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-600">
               <FileText size={32} />
@@ -480,7 +480,7 @@ const Exams = () => {
 
         {/* University Admin: Cascading Filter Bar */}
         {isUniversityAdminRole && (
-          <div className="px-8 py-5 bg-gradient-to-r from-slate-50/80 to-purple-50/40 border-t border-slate-100">
+          <div className="px-5 py-3 bg-gradient-to-r from-slate-50/80 to-purple-50/40 border-t border-slate-100">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center text-purple-500">
                 <Filter size={14} />
@@ -577,7 +577,7 @@ const Exams = () => {
 
         {/* Tab Switcher — only visible for college admin */}
         {isCollegeAdminRole && (
-          <div className="px-8 pb-0 flex items-center gap-2 border-b border-slate-100">
+          <div className="px-6 pb-0 flex items-center gap-2 border-b border-slate-100">
             <button
               onClick={() => { setExamTypeFilter('internal'); setFilterProgram(''); setFilterSemester(''); }}
               className={`px-6 py-3 text-[13px] font-black  tracking-widest rounded-t-xl transition-all border-b-2 ${
@@ -603,7 +603,7 @@ const Exams = () => {
 
         {/* College Admin: Program & Semester Filter Bar */}
         {isCollegeAdminRole && (
-          <div className="px-8 py-4 bg-gradient-to-r from-slate-50/80 to-purple-50/40 border-t border-slate-100">
+          <div className="px-5 py-3 bg-gradient-to-r from-slate-50/80 to-purple-50/40 border-t border-slate-100">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center text-purple-500">
                 <Filter size={14} />
@@ -660,22 +660,22 @@ const Exams = () => {
 
         {/* Read-only banner for college admin viewing external exams */}
         {isCollegeAdminRole && examTypeFilter === 'external' && (
-          <div className="mx-8 mt-4 px-5 py-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-center gap-3 text-sm text-blue-700 font-semibold">
+          <div className="mx-6 mt-4 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-2xl flex items-center gap-3 text-sm text-blue-700 font-semibold">
             <Globe size={16} className="shrink-0" />
             External exams are managed by the University Admin. You can view them here but cannot create, edit or delete them.
           </div>
         )}
 
         {/* Premium Card-based List */}
-        <div className="p-8 space-y-6">
+        <div className="p-4 sm:p-5 space-y-4">
           {groupedPaginatedData.length > 0 ? (
             groupedPaginatedData.map((item) => (
-              <div key={item.id} className="group glass-card rounded-[2rem] border border-slate-200/60 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 animate-premium-fade">
+              <div key={item.id} className="group glass-card rounded-[1.5rem] border border-slate-200/60 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 animate-premium-fade">
                 <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
                   
                   {/* Card Section 1: Identity & Meta */}
-                  <div className="p-8 lg:w-1/3 bg-slate-50/30">
-                    <div className="flex items-start justify-between mb-6">
+                  <div className="p-5 lg:w-1/3 bg-slate-50/30">
+                     <div className="flex items-start justify-between mb-6">
                       <div className="w-14 h-14 rounded-2xl bg-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition-transform duration-500">
                         <Layers size={28} />
                       </div>
@@ -725,7 +725,7 @@ const Exams = () => {
                   </div>
 
                   {/* Card Section 2: Timeline & Subjects */}
-                  <div className="p-8 lg:w-1/2 flex-1">
+                  <div className="p-5 lg:w-1/2 flex-1">
                     <div className="flex items-center justify-between mb-6">
                       <h4 className="text-[12px] font-black text-slate-400  tracking-[0.2em]">Examination Schedule</h4>
                       <div className="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[9px] font-black  tracking-widest border border-slate-200">
@@ -766,7 +766,7 @@ const Exams = () => {
                   </div>
 
                   {/* Card Section 3: Orchestration & Actions */}
-                  <div className="p-8 lg:w-64 bg-slate-50/50 flex flex-col justify-between">
+                  <div className="p-5 lg:w-64 bg-slate-50/50 flex flex-col justify-between">
                     {(authUtils.isAdmin() || (authUtils.isCollegeAdmin() && item.exam_type != 2)) ? (
                       <div>
                         <h4 className="text-[12px] font-black text-slate-400  tracking-[0.2em] mb-6">Orchestration</h4>

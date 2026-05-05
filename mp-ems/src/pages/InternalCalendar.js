@@ -161,9 +161,9 @@ const InternalCalendar = () => {
   }
 
   return (
-    <div className="p-4 sm:p-8 space-y-8 animate-in fade-in duration-700">
+    <div className="p-4 sm:p-5 space-y-4 animate-in fade-in duration-700">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-5">
           <div className="w-14 h-14 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-600 shadow-sm border border-sky-100">
             <CalendarIcon size={32} />
@@ -188,10 +188,10 @@ const InternalCalendar = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Main Calendar Grid */}
-        <div className="lg:col-span-3 space-y-6">
-          <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/20 overflow-hidden">
+        <div className="lg:col-span-3 space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/20 overflow-hidden">
             {/* Days of week header */}
             <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/50">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
@@ -360,13 +360,13 @@ const InternalCalendar = () => {
               </button>
             </div>
           ) : (
-            <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl shadow-slate-900/20 group">
+            <div className="bg-slate-900 rounded-2xl p-6 text-white relative overflow-hidden shadow-2xl shadow-slate-900/20 group">
               <div className="absolute -top-10 -right-10 w-40 h-40 bg-sky-500/20 rounded-full blur-3xl opacity-50 transition-opacity group-hover:opacity-100" />
               
               <div className="relative z-10">
-                <Globe className="text-sky-400 mb-6" size={32} />
-                <h3 className="text-xl font-black mb-4 tracking-tight leading-tight italic ">Institutional<br/>Roadmap</h3>
-                <p className="text-slate-400 text-[12px] leading-relaxed font-medium mb-8">
+                <Globe className="text-sky-400 mb-4" size={28} />
+                <h3 className="text-xl font-black mb-3 tracking-tight leading-tight italic ">Institutional<br/>Roadmap</h3>
+                <p className="text-slate-400 text-[12px] leading-relaxed font-medium mb-6">
                   Visualize the high-level academic cycle including marks entry windows, commencement dates, and final assessment timelines.
                 </p>
                 

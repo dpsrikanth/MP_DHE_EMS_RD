@@ -111,7 +111,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-6 animate-in fade-in duration-700">
       {/* Welcome Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -152,8 +152,8 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 gap-8">
         {/* Teacher Overview */}
         <div>
-          <div className="stitch-card p-8 h-full flex flex-col">
-            <div className="flex items-center justify-between mb-8">
+          <div className="stitch-card p-6 h-full flex flex-col">
+            <div className="flex items-center justify-between mb-6">
               <div>
                 <h4 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
                   <Users size={20} className="text-blue-500" /> Personnel Overview
@@ -165,7 +165,7 @@ const Dashboard = () => {
             
             <div className="flex-1 overflow-y-auto pr-2 space-y-3 scrollbar-hide">
               {teachers.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-20 opacity-50 grayscale">
+                <div className="flex flex-col items-center justify-center py-12 opacity-50 grayscale">
                   <User size={48} className="text-slate-300 mb-4" />
                   <p className="text-sm font-bold text-slate-400">No personnel records found</p>
                 </div>

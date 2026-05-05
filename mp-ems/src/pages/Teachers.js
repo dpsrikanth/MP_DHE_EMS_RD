@@ -335,10 +335,10 @@ const Teachers = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header Statistics Card */}
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-5">
             <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-600">
               <Users size={32} />
@@ -350,7 +350,7 @@ const Teachers = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-4 px-6 py-2 bg-slate-50 rounded-2xl border border-slate-100">
+            <div className="flex items-center gap-4 px-5 py-2 bg-slate-50 rounded-2xl border border-slate-100">
               <div className="text-center">
                 <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">Total</p>
                 <p className="text-xl font-black text-slate-900 leading-none">{total}</p>
@@ -446,13 +446,13 @@ const Teachers = () => {
         </div>
 
         {/* Staff Category Tabs */}
-        <div className="px-8 pb-4 flex items-center gap-2 border-b border-slate-100">
+        <div className="px-5 pb-2 flex items-center gap-2 border-b border-slate-100">
           <button
             onClick={() => {
               setStaffType('Teaching');
               setDesignationFilter('All');
             }}
-            className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${
+            className={`px-5 py-2 rounded-xl font-bold text-sm transition-all ${
               staffType === 'Teaching'
                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
                 : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
@@ -465,7 +465,7 @@ const Teachers = () => {
               setStaffType('Non-Teaching');
               setDesignationFilter('All');
             }}
-            className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${
+            className={`px-5 py-2 rounded-xl font-bold text-sm transition-all ${
               staffType === 'Non-Teaching'
                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
                 : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
@@ -536,7 +536,7 @@ const Teachers = () => {
                 <th className={`${visibleColumns.phone ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Phone</th>
                 <th className={`${visibleColumns.address ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Address</th> */}
                 <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400 text-center`}>Status</th>
-                {!authUtils.isUniversityAdmin() && <th className="px-8 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Actions</th>}
+                {!authUtils.isUniversityAdmin() && <th className="px-6 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -551,7 +551,7 @@ const Teachers = () => {
                       </td>
                     )}
                     {visibleColumns.name && (
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
                             <User size={20} />
@@ -563,77 +563,28 @@ const Teachers = () => {
                       </td>
                     )}
                     {visibleColumns.email && (
-                      <td className="px-4 py-5">
+                      <td className="px-4 py-4">
                         <p className="text-[13px] text-slate-700 font-medium">{item.email}</p>
                       </td>
                     )}
                     {authUtils.isUniversityAdmin() && visibleColumns.college_name && (
-                      <td className="px-4 py-5">
+                      <td className="px-4 py-4">
                         <p className="text-[13px] text-slate-700 font-medium">{item.college_name || 'Global'}</p>
                       </td>
                     )}
                     {visibleColumns.department && (
-                      <td className="px-4 py-5">
+                      <td className="px-4 py-4">
                         <p className="text-[13px] text-slate-700 font-medium">{safeDisplay(item.department)}</p>
                       </td>
                     )}
                     {visibleColumns.designation && (
-                      <td className="px-4 py-5">
+                      <td className="px-4 py-4">
                         <p className="text-[13px] text-slate-700 font-bold text-blue-600/80">{safeDisplay(item.designation)}</p>
                       </td>
                     )}
-                    {/* {visibleColumns.qualification && (
-                      <td className="px-4 py-5">
-                        <p className="text-[11px] text-slate-700">{item.qualification ?? '-'}</p>
-                      </td>
-                    )}
-                    {visibleColumns.experience && (
-                      <td className="px-4 py-5">
-                        <p className="text-[11px] text-slate-700">{item.experience ?? '-'}</p>
-                      </td>
-                    )}
-                    {visibleColumns.specialization && (
-                      <td className="px-4 py-5">
-                        <p className="text-[11px] text-slate-700">{item.specialization ?? '-'}</p>
-                      </td>
-                    )}
-                    {visibleColumns.pan_no && (
-                      <td className="px-4 py-5">
-                        <p className="text-[11px] text-slate-700 font-mono">{item.pan_no ?? '-'}</p>
-                      </td>
-                    )}
-                    {visibleColumns.aadhaar_no && (
-                      <td className="px-4 py-5">
-                        <p className="text-[11px] text-slate-700 font-mono">{item.aadhaar_no ?? '-'}</p>
-                      </td>
-                    )}
-                    {visibleColumns.dob && (
-                      <td className="px-4 py-5">
-                        <p className="text-[11px] text-slate-700">{formatDate(item.dob)}</p>
-                      </td>
-                    )}
-                    {visibleColumns.gender && (
-                      <td className="px-4 py-5">
-                        <p className="text-[11px] text-slate-700">{item.gender ?? '-'}</p>
-                      </td>
-                    )}
-                    {visibleColumns.joining_date && (
-                      <td className="px-4 py-5">
-                        <p className="text-[11px] text-slate-700">{formatDate(item.joining_date)}</p>
-                      </td>
-                    )}
-                    {visibleColumns.phone && (
-                      <td className="px-4 py-5">
-                        <p className="text-[11px] text-slate-700 font-mono">{item.phone ?? '-'}</p>
-                      </td>
-                    )}
-                    {visibleColumns.address && (
-                      <td className="px-4 py-5">
-                        <p className="text-[11px] text-slate-700 max-w-xs truncate">{item.address ?? '-'}</p>
-                      </td>
-                    )} */}
+                    {/* ... omitted commented out cells ... */}
                     {visibleColumns.status && (
-                      <td className="px-4 py-5 text-center">
+                      <td className="px-4 py-4 text-center">
                         {(item.status === 'Active' || item.status === true) ? (
                           <span className="inline-flex items-center gap-1 text-[12px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full  border border-emerald-100 tracking-tighter shadow-sm">
                             <ShieldCheck size={12} /> Active
@@ -646,7 +597,7 @@ const Teachers = () => {
                       </td>
                     )}
                     {!authUtils.isUniversityAdmin() && (
-                      <td className="px-8 py-5 text-right">
+                      <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => navigate(`/teachers/edit/${item.id}`)}
@@ -669,7 +620,7 @@ const Teachers = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="px-8 py-12 text-center">
+                  <td colSpan="5" className="px-6 py-8 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <p className="text-sm font-bold text-slate-400  tracking-widest">No faculty members found</p>
                       <button
@@ -700,8 +651,8 @@ const Teachers = () => {
       {showDeleteModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
-          <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
-            <div className="p-8 text-center flex flex-col items-center">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+            <div className="p-6 text-center flex flex-col items-center">
               <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
                 <MdDelete size={32} />
               </div>
@@ -731,9 +682,9 @@ const Teachers = () => {
       {showViewModal && viewData && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowViewModal(false)} />
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 flex flex-col">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 flex flex-col">
             {/* Header */}
-            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-5">
                 <div className="w-14 h-14 bg-indigo-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
                   <User size={30} />
@@ -752,8 +703,8 @@ const Teachers = () => {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Personal Information Section */}
                 <div className="col-span-full mb-2">
                   <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
@@ -826,7 +777,7 @@ const Teachers = () => {
             </div>
 
             {/* Footer */}
-            <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
               <button
                 onClick={() => setShowViewModal(false)}
                 className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm  tracking-widest"

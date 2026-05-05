@@ -157,10 +157,10 @@ const Universities = () => {
   if (error) return <div className="error">Error: {error}</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Page Header Card */}
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-600">
               <School size={28} />
@@ -201,7 +201,7 @@ const Universities = () => {
                   field="id" 
                   currentSort={sortConfig} 
                   onSort={handleSort} 
-                  className="px-8" 
+                  className="px-6" 
                   visible={visibleColumns.id}
                 />
                 <SortHeader 
@@ -211,22 +211,22 @@ const Universities = () => {
                   onSort={handleSort} 
                   visible={visibleColumns.name}
                 />
-                <th className={`${visibleColumns.colleges ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Linked Colleges</th>
-                <th className="px-8 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Settings</th>
+                <th className={`${visibleColumns.colleges ? '' : 'hidden'} px-4 py-3.5 text-[12px] font-black  tracking-widest text-slate-400`}>Linked Colleges</th>
+                <th className="px-6 py-3.5 text-[12px] font-black  tracking-widest text-slate-400 text-right">Settings</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {paginatedData.length > 0 ? (
                 paginatedData.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
-                    {visibleColumns.id && <td className="px-8 py-5 text-sm font-bold text-slate-400">#{item.id}</td>}
+                    {visibleColumns.id && <td className="px-6 py-4 text-sm font-bold text-slate-400">#{item.id}</td>}
                     {visibleColumns.name && (
-                      <td className="px-4 py-5 text-sm font-semibold text-slate-900 leading-tight">
+                      <td className="px-4 py-4 text-sm font-semibold text-slate-900 leading-tight">
                         {item.name}
                       </td>
                     )}
                     {visibleColumns.colleges && (
-                      <td className="px-4 py-5 font-medium">
+                      <td className="px-4 py-4 font-medium">
                         {item.colleges_count > 0 ? (
                           <button 
                             onClick={() => showDetails(item, 'colleges')}
@@ -239,7 +239,7 @@ const Universities = () => {
                         )}
                       </td>
                     )}
-                    <td className="px-8 py-5 text-right">
+                    <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button 
                           onClick={() => navigate(`/universities/edit/${item.id}`)}
@@ -270,7 +270,7 @@ const Universities = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="px-8 py-12 text-center">
+                  <td colSpan="4" className="px-6 py-8 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <p className="text-sm font-bold text-slate-400  tracking-widest">No universities match your search</p>
                       <button 
@@ -303,8 +303,8 @@ const Universities = () => {
       {detailsModal && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-950/20 backdrop-blur-md animate-in fade-in" onClick={() => setDetailsModal(false)} />
-          <div className="relative bg-white rounded-3xl shadow-3xl w-full max-w-md overflow-hidden animate-in zoom-in-95">
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+          <div className="relative bg-white rounded-2xl shadow-3xl w-full max-w-md overflow-hidden animate-in zoom-in-95">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-lg font-bold text-slate-900">
                 {detailsType === 'colleges' ? 'Colleges List' : detailsType === 'programs' ? 'Programs Overview' : 'Academic Calendar'}
               </h3>
@@ -336,8 +336,8 @@ const Universities = () => {
       {showDeleteModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
-          <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
-            <div className="p-8 text-center flex flex-col items-center">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+            <div className="p-6 text-center flex flex-col items-center">
               <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
                 <MdDelete size={32} />
               </div>

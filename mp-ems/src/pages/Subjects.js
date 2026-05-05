@@ -201,9 +201,9 @@ const Subjects = () => {
   if (loading) return <div className="flex items-center justify-center min-h-[400px]"><div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-600">
               <BookOpen size={28} />
@@ -230,7 +230,7 @@ const Subjects = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-y border-slate-100 bg-slate-50/50">
-                <SortHeader label="ID" field="id" currentSort={sortConfig} onSort={handleSort} className="px-8" visible={visibleColumns.id} />
+                <SortHeader label="ID" field="id" currentSort={sortConfig} onSort={handleSort} className="px-6" visible={visibleColumns.id} />
                 <SortHeader label="Course Name" field="program_name" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.program_name} />
                 <SortHeader label="Class" field="class_name" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.class_name} />
                 <SortHeader label="Batch" field="batch" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.batch} />
@@ -239,13 +239,13 @@ const Subjects = () => {
                 <SortHeader label="Credits" field="credit" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.credit} className="text-center" />
                 <SortHeader label="Faculty" field="teacher_name" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.teacher_name} />
                 <SortHeader label="PPW" field="periods_per_week" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.periods_per_week} className="text-center" />
-                <th className="px-8 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Settings</th>
+                <th className="px-6 py-3.5 text-[12px] font-black  tracking-widest text-slate-400 text-right">Settings</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {paginatedData.map(item => (
                 <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
-                  {visibleColumns.id && <td className="px-8 py-5 text-sm font-bold text-slate-400">#{item.id}</td>}
+                  {visibleColumns.id && <td className="px-6 py-4 text-sm font-bold text-slate-400">#{item.id}</td>}
                   {visibleColumns.program_name && <td className="px-4 py-5 text-sm font-semibold text-slate-900">{item.program_name || '—'}</td>}
                   {visibleColumns.class_name && <td className="px-4 py-5 font-bold"><span className={`px-3 py-1.5 rounded-xl border text-[13px] ${item.program_name ? 'text-amber-600 bg-amber-50 border-amber-100' : 'text-slate-400 bg-slate-50 border-slate-100'}`}>{item.class_name}</span></td>}
                   {visibleColumns.batch && <td className="px-4 py-5 text-sm font-bold text-slate-500 text-center">{item.batch || '—'}</td>}
@@ -278,7 +278,7 @@ const Subjects = () => {
                     </td>
                   )}
                   {visibleColumns.periods_per_week && <td className="px-4 py-5 text-center text-sm font-black text-slate-900">{item.periods_per_week}</td>}
-                  <td className="px-8 py-5 text-right">
+                  <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button onClick={() => navigate(`/subjects/edit/${item.id}`)} className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"><Pencil size={18} /></button>
                       <button onClick={() => { setDeleteTarget(item); setShowDeleteModal(true); }} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><MdDelete size={20} /></button>
@@ -297,8 +297,8 @@ const Subjects = () => {
       {showDeleteModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
-          <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
-            <div className="p-8 text-center flex flex-col items-center">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+            <div className="p-6 text-center flex flex-col items-center">
               <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6"><MdDelete size={32} /></div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">Confirm Removal</h3>
               <p className="text-slate-500 text-sm leading-relaxed mb-8">Permanently remove this subject entry? This cannot be undone.</p>

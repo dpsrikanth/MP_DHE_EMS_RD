@@ -100,22 +100,22 @@ const ExternalAssignment = () => {
   }
 
   return (
-    <div className="max-w-[1600px] mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
-      <div className="bg-slate-900 rounded-[2.5rem] p-8 md:p-12 text-white shadow-2xl relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-          <div className="space-y-4">
+    <div className="max-w-[1600px] mx-auto p-4 sm:p-5 space-y-4 animate-in fade-in duration-500">
+      <div className="bg-slate-900 rounded-2xl p-5 text-white shadow-2xl relative overflow-hidden">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
             <h1 className="text-4xl font-black italic text-indigo-400">Exam Evaluation Control</h1>
             <p className="text-slate-400 max-w-xl text-lg font-medium leading-relaxed">
               Assign external faculty to Exams. Assigned faculty will see all registered students and all their subjects for that exam.
             </p>
           </div>
-          <div className="bg-slate-800 p-6 rounded-[2rem]">
+          <div className="bg-slate-800 p-4 rounded-2xl">
             <GraduationCap size={40} className="text-indigo-400" />
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
         <div className="flex bg-slate-100 p-1.5 rounded-2xl w-fit">
           <button onClick={() => setActiveTab("pending")} className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all ${activeTab === "pending" ? "bg-white text-slate-900 shadow-lg" : "text-slate-500 hover:text-slate-700"}`}>Pending Exams</button>
           <button onClick={() => setActiveTab("history")} className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all ${activeTab === "history" ? "bg-white text-slate-900 shadow-lg" : "text-slate-500 hover:text-slate-700"}`}>Assignment History</button>
@@ -127,18 +127,18 @@ const ExternalAssignment = () => {
       </div>
 
       {activeTab === "pending" ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-8 space-y-4">
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
-              <div className="px-8 py-6 border-b bg-slate-50/30 flex justify-between items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div className="lg:col-span-8 space-y-3">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="px-6 py-3.5 border-b bg-slate-50/30 flex justify-between items-center">
                 <h3 className="text-lg font-black text-slate-900  tracking-tight">Available Exams</h3>
                 <span className="text-[13px] font-black text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full  tracking-widest">{selectedExams.length} selected</span>
               </div>
               <div className="divide-y divide-slate-50 max-h-[600px] overflow-y-auto">
                 {filteredPending.map((ex) => (
-                  <div key={ex.exam_id} onClick={() => handleSelectExam(ex.exam_id)} className={`p-6 flex items-center gap-6 cursor-pointer transition-all hover:bg-slate-50 ${selectedExams.includes(ex.exam_id) ? 'bg-indigo-50/50' : ''}`}>
+                  <div key={ex.exam_id} onClick={() => handleSelectExam(ex.exam_id)} className={`p-3.5 flex items-center gap-4 cursor-pointer transition-all hover:bg-slate-50 ${selectedExams.includes(ex.exam_id) ? 'bg-indigo-50/50' : ''}`}>
                     <input type="checkbox" checked={selectedExams.includes(ex.exam_id)} readOnly className="w-5 h-5 rounded-lg border-slate-300 text-indigo-500" />
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 font-black"><Building size={20} /></div>
                         <div>
@@ -169,10 +169,10 @@ const ExternalAssignment = () => {
             </div>
           </div>
 
-          <div className="lg:col-span-4 space-y-6 sticky top-8">
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl overflow-hidden">
-               <div className="p-8 bg-slate-900 text-white"><h3 className="text-xl font-black  tracking-tight">Assign Evaluator</h3></div>
-               <div className="p-8 space-y-6">
+          <div className="lg:col-span-4 space-y-4 sticky top-6">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-xl overflow-hidden">
+               <div className="p-5 bg-slate-900 text-white"><h3 className="text-xl font-black  tracking-tight">Assign Evaluator</h3></div>
+               <div className="p-5 space-y-4">
                   <div className="space-y-3">
                     <label className="text-[13px] font-black text-slate-400  tracking-widest">External Faculty</label>
                     <select value={selectedFaculty} onChange={(e) => setSelectedFaculty(e.target.value)} className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl px-5 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10">
@@ -195,31 +195,33 @@ const ExternalAssignment = () => {
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           <table className="w-full text-left font-medium">
             <thead>
               <tr className="bg-slate-50 border-b">
-                <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest">Evaluator</th>
-                <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest">Scope</th>
-                <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest">Exam</th>
-                <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Students</th>
+                <th className="px-6 py-3.5 text-[13px] font-black text-slate-400  tracking-widest">Evaluator</th>
+                <th className="px-6 py-3.5 text-[13px] font-black text-slate-400  tracking-widest">Scope</th>
+                <th className="px-6 py-3 text-[11px] font-black text-slate-400 tracking-widest">Evaluator</th>
+                <th className="px-6 py-3 text-[11px] font-black text-slate-400 tracking-widest">Scope</th>
+                <th className="px-6 py-3 text-[11px] font-black text-slate-400 tracking-widest">Exam</th>
+                <th className="px-6 py-3 text-[11px] font-black text-slate-400 tracking-widest text-center">Students</th>
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filteredAssignments.map((row) => (
+               {filteredAssignments.map((row) => (
                 <tr key={row.assignment_id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-8 py-6">
+                  <td className="px-6 py-4">
                     <p className="text-sm font-black text-slate-900">{row.faculty_name}</p>
-                    <p className="text-[12px] font-black text-indigo-500  tracking-widest bg-indigo-50 px-2 py-0.5 rounded w-fit mt-1">External Faculty</p>
+                    <p className="text-[10px] font-black text-indigo-500 tracking-widest bg-indigo-50 px-1.5 py-0.5 rounded w-fit mt-0.5">External Faculty</p>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-6 py-4">
                     <p className="text-sm font-bold text-slate-900">{row.subject_name}</p>
                   </td>
-                  <td className="px-8 py-6">
-                    <p className="text-sm font-medium text-slate-600">{row.exam_name}</p>
+                  <td className="px-6 py-4">
+                    <p className="text-xs font-medium text-slate-600">{row.exam_name}</p>
                   </td>
-                  <td className="px-8 py-6 text-center">
-                    <span className="bg-slate-100 text-slate-900 px-3 py-1 rounded-lg font-black text-sm">{row.student_count}</span>
+                  <td className="px-6 py-4 text-center">
+                    <span className="bg-slate-100 text-slate-900 px-2 py-0.5 rounded-md font-black text-xs">{row.student_count}</span>
                   </td>
                 </tr>
               ))}

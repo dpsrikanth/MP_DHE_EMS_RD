@@ -165,7 +165,7 @@ const GradingPolicy = () => {
     }
 
     return (
-        <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
+        <div className="max-w-5xl mx-auto p-4 sm:p-5 space-y-4 animate-in fade-in duration-500">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
@@ -210,9 +210,9 @@ const GradingPolicy = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Grade Scale Editor */}
-                <div className="lg:col-span-8 space-y-6">
-                    <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <div className="lg:col-span-8 space-y-4">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                             <h3 className="text-sm font-black text-slate-400  tracking-widest flex items-center gap-2">
                                 <BarChart3 size={16} />
                                 Grade Scale Definitions
@@ -229,16 +229,16 @@ const GradingPolicy = () => {
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="bg-slate-50/30 text-[12px] font-black  tracking-widest text-slate-400 border-b border-slate-100">
-                                        <th className="px-8 py-4">Min. Marks (%)</th>
-                                        <th className="px-8 py-4">Letter Grade</th>
-                                        <th className="px-8 py-4">Grade Points</th>
-                                        <th className="px-8 py-4 text-center">Actions</th>
+                                        <th className="px-6 py-3">Min. Marks (%)</th>
+                                        <th className="px-6 py-3">Letter Grade</th>
+                                        <th className="px-6 py-3">Grade Points</th>
+                                        <th className="px-6 py-3 text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {config.grade_scale.map((row, index) => (
                                         <tr key={index} className="hover:bg-slate-50/50 transition-colors group">
-                                            <td className="px-8 py-4">
+                                            <td className="px-6 py-3">
                                                 <input
                                                     type="number"
                                                     value={row.min}
@@ -246,7 +246,7 @@ const GradingPolicy = () => {
                                                     className="w-24 h-10 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-black text-slate-700 focus:bg-white focus:border-sky-500 outline-none transition-all"
                                                 />
                                             </td>
-                                            <td className="px-8 py-4">
+                                            <td className="px-6 py-3">
                                                 <input
                                                     type="text"
                                                     value={row.grade}
@@ -255,7 +255,7 @@ const GradingPolicy = () => {
                                                     className="w-24 h-10 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-black text-slate-700 focus:bg-white focus:border-sky-500 outline-none transition-all "
                                                 />
                                             </td>
-                                            <td className="px-8 py-4">
+                                            <td className="px-6 py-3">
                                                 <input
                                                     type="number"
                                                     step="0.1"
@@ -264,7 +264,7 @@ const GradingPolicy = () => {
                                                     className="w-24 h-10 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-black text-slate-700 focus:bg-white focus:border-sky-500 outline-none transition-all"
                                                 />
                                             </td>
-                                            <td className="px-8 py-4 text-center">
+                                            <td className="px-6 py-3 text-center">
                                                 <button
                                                     onClick={() => handleRemoveRow(index)}
                                                     className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
@@ -281,8 +281,8 @@ const GradingPolicy = () => {
                 </div>
 
                 {/* General Settings */}
-                <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden p-8 space-y-8">
+                <div className="lg:col-span-4 space-y-4">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-5 space-y-6">
                         <div className="space-y-6">
                             <h3 className="text-sm font-black text-slate-400  tracking-widest flex items-center gap-2">
                                 <Settings size={16} />
@@ -330,7 +330,7 @@ const GradingPolicy = () => {
                         </div>
                     </div>
 
-                    <div className="bg-sky-900 rounded-[2rem] p-8 text-white space-y-4 shadow-xl shadow-sky-900/20">
+                    <div className="bg-sky-900 rounded-2xl p-5 text-white space-y-4 shadow-xl shadow-sky-900/20">
                         <div className="flex items-center gap-3">
                             <Info size={20} className="text-sky-400" />
                             <h4 className="font-black text-sm  tracking-widest">Logic Guide</h4>

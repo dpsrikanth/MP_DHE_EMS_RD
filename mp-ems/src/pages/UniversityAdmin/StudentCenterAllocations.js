@@ -160,30 +160,30 @@ const StudentCenterAllocations = () => {
     const selectedCollegeName = selectedCollegeObj ? (selectedCollegeObj.name || selectedCollegeObj.college_name) : '';
 
     return (
-        <div className="p-8 space-y-10 animate-fade-in pb-20">
+        <div className="p-4 sm:p-5 space-y-4 animate-fade-in pb-12">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
                         <UserCheck size={26} />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Student Center Allocation</h1>
-                        <p className="text-[13px] text-slate-400 font-black tracking-[0.2em] mt-1 ">Map Specific Roll Numbers to Centers</p>
+                        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Student Center Allocation</h1>
+                        <p className="text-[11px] text-slate-400 font-black tracking-[0.2em] mt-1 ">MAP SPECIFIC ROLL NUMBERS TO CENTERS</p>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 items-start">
                 {/* Left Sidebar Filters */}
-                <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col gap-6 sticky top-24">
+                <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col gap-3 sticky top-20">
                     <div>
-                        <label className="text-[12px] font-black text-slate-400  tracking-widest mb-2 block ml-1">Source College</label>
+                        <label className="text-[11px] font-black text-slate-400 tracking-widest mb-1 block ml-1 uppercase">Source College</label>
                         <select 
                             value={selectedCollegeId}
                             onChange={handleCollegeChange}
                             disabled={loadingColleges}
-                            className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all cursor-pointer"
+                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all cursor-pointer"
                         >
                             <option value="">Choose College...</option>
                             {colleges.map(c => (
@@ -211,7 +211,7 @@ const StudentCenterAllocations = () => {
                     <div className="h-px bg-slate-100"></div>
 
                     {!isUniversityAdmin ? (
-                        <div className="bg-indigo-50/50 rounded-2xl p-5 border border-indigo-100/50 space-y-3">
+                        <div className="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-100/50 space-y-3">
                             <div className="flex items-center gap-2 text-indigo-600 mb-1">
                                 <ShieldCheck size={18} />
                                 <span className="text-[13px] font-black  tracking-widest">Allocation Panel</span>
@@ -236,7 +236,7 @@ const StudentCenterAllocations = () => {
                             <button 
                                 onClick={handleAllocate}
                                 disabled={allocating || selectedStudentIds.size === 0 || !targetCenterId}
-                                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[13px] font-black  tracking-widest inline-flex items-center justify-center gap-2 rounded-xl shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[13px] font-black  tracking-widest inline-flex items-center justify-center gap-2 rounded-xl shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                             >
                                 {allocating ? 'Processing...' : `Assign ${selectedStudentIds.size} Students`} <ArrowRight size={14} />
                             </button>
@@ -262,9 +262,9 @@ const StudentCenterAllocations = () => {
                 </div>
 
                 {/* Right Area - Students Table */}
-                <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden flex flex-col min-h-[500px]">
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden flex flex-col min-h-[500px]">
                     {!selectedCollegeId || !selectedExamId ? (
-                        <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
                             <div className="w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-full flex items-center justify-center text-slate-300 mb-4">
                                 <Building2 size={32} />
                             </div>
@@ -278,7 +278,7 @@ const StudentCenterAllocations = () => {
                             <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent flex items-center justify-center animate-spin rounded-full"></div>
                         </div>
                     ) : students.length === 0 ? (
-                        <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
                             <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 mb-4">
                                 <Users size={32} />
                             </div>
@@ -287,12 +287,12 @@ const StudentCenterAllocations = () => {
                         </div>
                     ) : (
                         <>
-                            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                                 <div className="flex flex-col">
                                     <h3 className="text-sm font-black text-slate-900 tracking-tight">{selectedCollegeName}</h3>
-                                    <p className="text-[12px] font-bold text-slate-500  tracking-widest mt-0.5">{students.length} Total Registered Students</p>
+                                    <p className="text-[11px] font-bold text-slate-500  tracking-widest mt-0.5">{students.length} Total Registered Students</p>
                                 </div>
-                                <div className="text-[12px] font-black  tracking-widest px-3 py-1 bg-white/50 text-slate-400 rounded-lg border border-slate-100">
+                                <div className="text-[11px] font-black  tracking-widest px-3 py-1 bg-white/50 text-slate-400 rounded-lg border border-slate-100">
                                     Finalized Assignments
                                 </div>
                             </div>
@@ -300,9 +300,9 @@ const StudentCenterAllocations = () => {
                             <div className="overflow-x-auto flex-1">
                                 <table className="w-full text-left">
                                     <thead>
-                                        <tr className="bg-slate-50/80 border-b border-slate-100 text-[12px] font-black text-slate-400  tracking-widest">
+                                        <tr className="bg-slate-50 border-b border-slate-100">
                                             {!isUniversityAdmin && (
-                                                <th className="px-6 py-4 w-12">
+                                                <th className="px-5 py-3 w-10 text-center">
                                                     <input 
                                                         type="checkbox" 
                                                         checked={selectedStudentIds.size === students.length && students.length > 0}
@@ -311,10 +311,10 @@ const StudentCenterAllocations = () => {
                                                     />
                                                 </th>
                                             )}
-                                            <th className="px-4 py-4">Roll Number</th>
-                                            <th className="px-4 py-4">Student Name</th>
-                                            <th className="px-4 py-4">Program & Sem</th>
-                                            <th className="px-6 py-4">Current Assigned Center</th>
+                                            <th className="px-4 py-3 text-[11px] font-black text-slate-400 tracking-widest uppercase">Roll Number</th>
+                                            <th className="px-4 py-3 text-[11px] font-black text-slate-400 tracking-widest uppercase">Student Name</th>
+                                            <th className="px-4 py-3 text-[11px] font-black text-slate-400 tracking-widest uppercase">Program & Sem</th>
+                                            <th className="px-6 py-3 text-[11px] font-black text-slate-400 tracking-widest uppercase">Current Assigned Center</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
@@ -352,7 +352,7 @@ const StudentCenterAllocations = () => {
                                                     onClick={() => handleSelectStudent(student.id)}
                                                 >
                                                     {!isUniversityAdmin && (
-                                                        <td className="px-6 py-4">
+                                                        <td className="px-5 py-3">
                                                             <input 
                                                                 type="checkbox" 
                                                                 checked={isSelected}
@@ -361,17 +361,17 @@ const StudentCenterAllocations = () => {
                                                             />
                                                         </td>
                                                     )}
-                                                    <td className="px-4 py-4 text-[13px] font-black text-slate-800 tabular-nums tracking-tight">
+                                                    <td className="px-4 py-3 text-[13px] font-black text-slate-800 tabular-nums tracking-tight">
                                                         {student.rollnumber}
                                                     </td>
-                                                    <td className="px-4 py-4">
+                                                    <td className="px-4 py-3">
                                                         <p className="text-sm font-bold text-slate-900">{student.name}</p>
                                                     </td>
-                                                    <td className="px-4 py-4">
+                                                    <td className="px-4 py-3">
                                                         <p className="text-[13px] font-bold text-slate-500">{student.programName}</p>
                                                         <p className="text-[12px] font-black text-slate-400 ">{student.semister}</p>
                                                     </td>
-                                                    <td className="px-6 py-4">
+                                                    <td className="px-6 py-3">
                                                         <div className="flex flex-col gap-1">
                                                             <span className={`inline-flex px-3 py-1 rounded-xl text-[12px] font-black tracking-widest  border ${centerStyle}`}>
                                                                 {centerName}

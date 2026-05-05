@@ -198,10 +198,10 @@ const Programs = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Page Header Card */}
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600">
               <BookOpen size={28} />
@@ -252,7 +252,7 @@ const Programs = () => {
                   field="id" 
                   currentSort={sortConfig} 
                   onSort={handleSort} 
-                  className="px-8" 
+                  className="px-6" 
                   visible={visibleColumns.id}
                 />
                 <SortHeader 
@@ -270,29 +270,29 @@ const Programs = () => {
                   visible={visibleColumns.duration_years}
                 />
                 <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400 text-center`}>Status</th>
-                <th className={`${visibleColumns.created_at ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Created On</th>
-                <th className="px-8 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Actions</th>
+                <th className={`${visibleColumns.created_at ? '' : 'hidden'} px-4 py-3.5 text-[12px] font-black  tracking-widest text-slate-400`}>Created On</th>
+                <th className="px-6 py-3.5 text-[12px] font-black  tracking-widest text-slate-400 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {paginatedData.length > 0 ? (
                 paginatedData.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
-                    {visibleColumns.id && <td className="px-8 py-5 text-sm font-bold text-slate-400">#{item.id}</td>}
+                    {visibleColumns.id && <td className="px-6 py-4 text-sm font-bold text-slate-400">#{item.id}</td>}
                     {visibleColumns.name && (
-                      <td className="px-4 py-5 text-sm font-semibold text-slate-900 leading-tight">
+                      <td className="px-4 py-4 text-sm font-semibold text-slate-900 leading-tight">
                         {item.name}
                       </td>
                     )}
                     {visibleColumns.duration_years && (
-                      <td className="px-4 py-5 text-[13px] font-bold text-emerald-600  tracking-tighter">
+                      <td className="px-4 py-4 text-[13px] font-bold text-emerald-600  tracking-tighter">
                         <span className="bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
                           {item.duration_years} Years
                         </span>
                       </td>
                     )}
                     {visibleColumns.status && (
-                      <td className="px-4 py-5 text-center">
+                      <td className="px-4 py-4 text-center">
                         {(item.status === 'Active' || item.status === true) ? (
                           <span className="inline-flex items-center gap-1 text-[12px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full  border border-emerald-100 tracking-tighter shadow-sm">
                             <ShieldCheck size={12} /> Active
@@ -305,9 +305,9 @@ const Programs = () => {
                       </td>
                     )}
                     {visibleColumns.created_at && (
-                      <td className="px-4 py-5 text-[13px] font-medium text-slate-400">{formatDate(item.created_at)}</td>
+                      <td className="px-4 py-4 text-[13px] font-medium text-slate-400">{formatDate(item.created_at)}</td>
                     )}
-                    <td className="px-8 py-5 text-right">
+                    <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button 
                           onClick={() => { setViewData(item); setShowViewModal(true); }}
@@ -336,7 +336,7 @@ const Programs = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="px-8 py-12 text-center">
+                  <td colSpan="5" className="px-6 py-8 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <p className="text-sm font-bold text-slate-400  tracking-widest">No programs found matching your search</p>
                       <button 
@@ -367,8 +367,8 @@ const Programs = () => {
       {showAssignModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowAssignModal(false)} />
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden flex flex-col mb-20 animate-in zoom-in-95 duration-300">
-            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col mb-20 animate-in zoom-in-95 duration-300">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 leading-none mb-1">Assign Program</h2>
                 <p className="text-[12px] font-black text-slate-400  tracking-widest opacity-70">Master Catalog</p>
@@ -381,7 +381,7 @@ const Programs = () => {
               </button>
             </div>
             
-            <div className="p-10 space-y-8">
+            <div className="p-8 space-y-6">
               <div className="space-y-3">
                 <label className="text-[11px] font-black text-slate-400  tracking-widest ml-1">Select from Master</label>
                 <Select
@@ -408,7 +408,7 @@ const Programs = () => {
               </div>
             </div>
 
-            <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-5">
+            <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4">
               <button 
                 onClick={() => setShowAssignModal(false)}
                 className="text-sm font-bold text-slate-400 hover:text-slate-800 transition-colors"
@@ -418,7 +418,7 @@ const Programs = () => {
               <button 
                 onClick={handleMap}
                 disabled={!mappingSelection}
-                className="px-10 py-4 bg-emerald-600 disabled:opacity-50 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm  tracking-widest flex items-center gap-3"
+                className="px-8 py-3.5 bg-emerald-600 disabled:opacity-50 hover:bg-emerald-700 text-white font-black rounded-xl shadow-xl shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm  tracking-widest flex items-center gap-3"
               >
                 <Check size={20} />
                 <span>Assign Program</span>
@@ -434,8 +434,8 @@ const Programs = () => {
       {showDeleteModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
-          <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
-            <div className="p-8 text-center flex flex-col items-center">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+            <div className="p-6 text-center flex flex-col items-center">
               <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
                 <MdDelete size={32} />
               </div>
@@ -466,9 +466,9 @@ const Programs = () => {
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowViewModal(false)} />
           
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
             {/* Header */}
-            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
               <div>
                 <h2 className="text-2xl font-black tracking-tight leading-none mb-1">
                   Program Profile
@@ -486,7 +486,7 @@ const Programs = () => {
             </div>
             
             {/* Body */}
-            <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto">
+            <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InfoItem label="Program Name" value={viewData.name} className="col-span-full" />
                 <InfoItem label="Program Code" value={viewData.code} isMono={true} />
@@ -521,7 +521,7 @@ const Programs = () => {
             </div>
 
             {/* Footer */}
-            <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+            <div className="px-8 py-5 bg-slate-50 border-t border-slate-100 flex justify-end">
               <button 
                 onClick={() => setShowViewModal(false)}
                 className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm  tracking-widest"

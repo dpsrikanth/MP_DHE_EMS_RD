@@ -64,8 +64,8 @@ const InfrastructureAnalytics = () => {
   );
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+    <div className="p-4 sm:p-6 bg-slate-50 min-h-screen space-y-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <h1 className="text-2xl font-black text-slate-800 flex items-center gap-3">
             <Building2 className="text-blue-600" size={32} /> Infrastructure Analytics
@@ -103,15 +103,15 @@ const InfrastructureAnalytics = () => {
       {/* Global Stats Bar */}
       {!loading && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
             <p className="text-[12px] font-black text-slate-400  tracking-widest mb-1">Total Capacity</p>
             <p className="text-xl font-black text-slate-800">{stats.totalSeats.toLocaleString()}</p>
           </div>
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
             <p className="text-[12px] font-black text-slate-400  tracking-widest mb-1">Total Students</p>
             <p className="text-xl font-black text-slate-800">{stats.totalStudents.toLocaleString()}</p>
           </div>
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
             <p className="text-[12px] font-black text-slate-400  tracking-widest mb-1">Overall Shortage</p>
             <p className="text-xl font-black text-rose-600">{stats.shortages.toLocaleString()}</p>
           </div>
@@ -132,7 +132,7 @@ const InfrastructureAnalytics = () => {
           const isDeficit = item.total_students > item.approved_capacity;
 
           return (
-            <div key={item.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition-shadow">
+            <div key={item.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <h3 className="font-semibold text-slate-800 truncate" title={item.college_name}>

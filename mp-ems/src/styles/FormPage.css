@@ -65,7 +65,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.5rem 2.5rem;
+  padding: 1.25rem 2rem;
   background: linear-gradient(135deg, #fafbff 0%, #f1f0ff 100%);
   border-bottom: 1px solid #e8e5fc;
 }
@@ -130,12 +130,12 @@
 
 /* ---- Sections ---- */
 .form-body {
-  padding: 2rem 2.5rem;
+  padding: 1.5rem 2rem;
   background: #fafbfc;
 }
 
 .form-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .form-section:last-child {
@@ -180,7 +180,7 @@
 /* ---- Grid ---- */
 .form-grid {
   display: grid;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .form-grid--2 {
@@ -504,7 +504,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 0.75rem;
-  padding: 1.25rem 2.5rem;
+  padding: 1rem 2rem;
   background: #ffffff;
   border-top: 1px solid #e8eaee;
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.03);

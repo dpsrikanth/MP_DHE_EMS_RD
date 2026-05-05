@@ -251,12 +251,12 @@ const UniversityMarksView = () => {
     : '0.0';
 
   return (
-    <div className="max-w-[1600px] mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
+    <div className="max-w-[1600px] mx-auto p-4 sm:p-5 space-y-4 animate-in fade-in duration-500">
       {/* ─── Header ─── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-5">
-          <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-indigo-500/25 rotate-3 hover:rotate-0 transition-transform">
-            <ClipboardCheck size={32} />
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-500/25 rotate-3 hover:rotate-0 transition-transform">
+            <ClipboardCheck size={28} />
           </div>
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Result <span className="text-indigo-600">Hub</span></h1>
@@ -295,7 +295,7 @@ const UniversityMarksView = () => {
       </div>
 
       {/* ─── Filter Bar ─── */}
-      <div className="stitch-card p-6 rounded-[2rem]">
+      <div className="stitch-card p-5 rounded-2xl">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div>
             <label className="block text-[12px] font-black text-slate-400  tracking-widest mb-2">Exam Series *</label>
@@ -344,21 +344,21 @@ const UniversityMarksView = () => {
       {/* ─── Summary Cards ─── */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="stitch-card p-6">
+          <div className="stitch-card p-5">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center text-sky-500 transition-transform group-hover:scale-110"><Users size={20} /></div>
               <p className="text-[9px] font-black text-slate-400  tracking-widest">Students</p>
             </div>
             <p className="text-3xl font-black text-slate-900 tracking-tight">{summary.totalStudents}</p>
           </div>
-          <div className="stitch-card p-6">
+          <div className="stitch-card p-5">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-violet-50 rounded-xl flex items-center justify-center text-violet-500"><BookOpen size={20} /></div>
               <p className="text-[9px] font-black text-slate-400  tracking-widest">Subjects</p>
             </div>
             <p className="text-3xl font-black text-slate-900 tracking-tight">{summary.totalSubjects}</p>
           </div>
-          <div className="stitch-card p-6">
+          <div className="stitch-card p-5">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500"><CheckCircle2 size={20} /></div>
               <p className="text-[9px] font-black text-slate-400  tracking-widest">Pass Rate</p>
@@ -366,7 +366,7 @@ const UniversityMarksView = () => {
             <p className="text-3xl font-black text-emerald-600 tracking-tight">{passRate}%</p>
             <p className="text-[9px] font-bold text-slate-400 mt-1  tracking-tighter">{summary.passCount} pass / {summary.failCount} fail</p>
           </div>
-          <div className="stitch-card p-6">
+          <div className="stitch-card p-5">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-500"><TrendingUp size={20} /></div>
               <p className="text-[9px] font-black text-slate-400  tracking-widest">Avg Marks</p>
@@ -389,7 +389,7 @@ const UniversityMarksView = () => {
 
       {/* ─── No Data State ─── */}
       {!loading && marks.length === 0 && (
-        <div className="bg-white rounded-[3rem] p-24 text-center border-2 border-dashed border-slate-100 flex flex-col items-center gap-8">
+        <div className="bg-white rounded-2xl p-16 text-center border-2 border-dashed border-slate-100 flex flex-col items-center gap-6">
           <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center text-slate-200">
             <BarChart3 size={48} />
           </div>
@@ -415,7 +415,7 @@ const UniversityMarksView = () => {
       {!loading && marks.length > 0 && (
         <div className="space-y-6">
           {/* View Toggle + Search */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 stitch-card p-5">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 stitch-card p-4">
             <div className="flex bg-slate-100 p-1.5 rounded-xl w-full md:w-auto">
               <button
                 onClick={() => setViewMode("subject")}
@@ -463,8 +463,8 @@ const UniversityMarksView = () => {
               </div>
 
               {/* Subject Table */}
-              <div className="stitch-card rounded-[2rem] shadow-xl shadow-slate-200/30 overflow-hidden">
-                <div className="bg-slate-900 p-8 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="stitch-card rounded-2xl shadow-xl shadow-slate-200/30 overflow-hidden">
+                <div className="bg-slate-900 p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div className="flex items-center gap-4">
                     <div className="p-2.5 bg-indigo-500/20 rounded-xl border border-indigo-500/30">
                       <BookOpen size={20} className="text-indigo-400" />
@@ -488,25 +488,25 @@ const UniversityMarksView = () => {
                   </div>
                 </div>
 
-                <div className="overflow-auto max-h-[550px]">
+                <div className="overflow-auto max-h-[500px]">
                   <table className="w-full text-left border-collapse">
                     <thead className="sticky top-0 z-10 bg-white">
                       <tr className="bg-slate-50/80 backdrop-blur-md border-b border-slate-100">
-                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest w-36">Roll No</th>
-                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest">Student</th>
-                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Int</th>
+                        <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest w-36">Roll No</th>
+                        <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest">Student</th>
+                        <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Int</th>
                         {summary?.examType !== 1 && (
-                          <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Ext</th>
+                          <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Ext</th>
                         )}
-                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Total</th>
+                        <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Total</th>
                         {summary?.isGraceEnabled && (
-                          <th className="px-8 py-5 text-[13px] font-black text-indigo-500  tracking-widest text-center">Grace {subjectWiseData[activeSubject]?.[0]?.grace_budget ? `(${subjectWiseData[activeSubject][0].grace_budget})` : ''}</th>
+                          <th className="px-6 py-3.5 text-[11px] font-black text-indigo-500  tracking-widest text-center">Grace {subjectWiseData[activeSubject]?.[0]?.grace_budget ? `(${subjectWiseData[activeSubject][0].grace_budget})` : ''}</th>
                         )}
-                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Grade</th>
-                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">GP</th>
-                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Credits</th>
-                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Cr. Pts</th>
-                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Result</th>
+                        <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Grade</th>
+                        <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">GP</th>
+                        <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Credits</th>
+                        <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Cr. Pts</th>
+                        <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Result</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -517,12 +517,12 @@ const UniversityMarksView = () => {
                         )
                         .map((item) => (
                           <tr key={`${item.student_id}-${item.subject_id}`} className="hover:bg-slate-50/50 transition-all group">
-                            <td className="px-8 py-5">
+                            <td className="px-6 py-3.5">
                               <span className="text-sm font-black text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
                                 #{item.rollnumber}
                               </span>
                             </td>
-                            <td className="px-8 py-5">
+                            <td className="px-6 py-3.5">
                               <p className="font-black text-slate-800 text-sm tracking-tight">{item.student_name}</p>
                               <p className="text-[9px] font-bold text-slate-400 ">{item.college_name}</p>
                             </td>
@@ -564,8 +564,8 @@ const UniversityMarksView = () => {
 
           {/* ─── Student View ─── */}
           {viewMode === "student" && (
-            <div className="stitch-card rounded-[2rem] shadow-xl shadow-slate-200/30 overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
-              <div className="bg-indigo-600 p-8 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="stitch-card rounded-2xl shadow-xl shadow-slate-200/30 overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-indigo-600 p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
                   <div className="p-2.5 bg-white/10 rounded-xl border border-white/20">
                     <TrendingUp size={20} className="text-white" />
@@ -585,11 +585,11 @@ const UniversityMarksView = () => {
                 <table className="w-full text-left border-collapse">
                   <thead className="sticky top-0 z-10 bg-white">
                     <tr className="bg-slate-50/80 backdrop-blur-md border-b border-slate-100">
-                      <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest">Student</th>
-                      <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest">College / Program</th>
-                      <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Subjects</th>
-                      <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Credits</th>
-                      <th className="px-8 py-5 text-[13px] font-black text-indigo-600  tracking-widest text-center bg-indigo-50">SGPA</th>
+                      <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest">Student</th>
+                      <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest">College / Program</th>
+                      <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Subjects</th>
+                      <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Credits</th>
+                      <th className="px-6 py-3.5 text-[11px] font-black text-indigo-600  tracking-widest text-center bg-indigo-50">SGPA</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -600,7 +600,7 @@ const UniversityMarksView = () => {
                       )
                       .map((student) => (
                         <tr key={student.student_id} className="hover:bg-indigo-50/20 transition-all group">
-                          <td className="px-8 py-5">
+                          <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 bg-slate-900 rounded-[1rem] flex items-center justify-center text-white text-[13px] font-black group-hover:bg-indigo-600 transition-all shadow-md">
                                 <GraduationCap size={16} />
@@ -611,7 +611,7 @@ const UniversityMarksView = () => {
                               </div>
                             </div>
                           </td>
-                          <td className="px-8 py-5">
+                          <td className="px-6 py-4">
                             <div className="flex items-center gap-2 mb-0.5">
                               <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
                               <p className="text-[12px] font-bold text-slate-600 truncate max-w-[220px]">{student.college_name || "N/A"}</p>

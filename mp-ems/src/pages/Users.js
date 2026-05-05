@@ -105,10 +105,10 @@ const Users = () => {
   if (loading) return <div className="p-8 text-center font-bold text-slate-400 animate-pulse">Initializing User Matrix...</div>;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-4 animate-in fade-in duration-500">
       {/* Page Header */}
-      <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-5">
             <div className="w-14 h-14 bg-indigo-500/10 rounded-[1.5rem] flex items-center justify-center text-indigo-600 shadow-inner">
               <UsersIcon size={32} />
@@ -135,19 +135,19 @@ const Users = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-y border-slate-50 bg-slate-50/30">
-                <SortHeader label="ID" field="id" currentSort={sortConfig} onSort={handleSort} className="px-8 py-5" visible={visibleColumns.id} />
-                <SortHeader label="User Info" field="name" currentSort={sortConfig} onSort={handleSort} className="px-4 py-5" visible={visibleColumns.name} />
-                <SortHeader label="Role" field="role_name" currentSort={sortConfig} onSort={handleSort} className="px-4 py-5" visible={visibleColumns.role_name} />
-                <th className="px-4 py-5 text-[13px] font-black  tracking-widest text-slate-400">Institution</th>
-                <th className="px-4 py-5 text-[13px] font-black  tracking-widest text-slate-400 text-center">Status</th>
-                <th className="px-8 py-5 text-[13px] font-black  tracking-widest text-slate-400 text-right">Actions</th>
+                <SortHeader label="ID" field="id" currentSort={sortConfig} onSort={handleSort} className="px-6 py-4" visible={visibleColumns.id} />
+                <SortHeader label="User Info" field="name" currentSort={sortConfig} onSort={handleSort} className="px-4 py-4" visible={visibleColumns.name} />
+                <SortHeader label="Role" field="role_name" currentSort={sortConfig} onSort={handleSort} className="px-4 py-4" visible={visibleColumns.role_name} />
+                <th className="px-4 py-4 text-[13px] font-black  tracking-widest text-slate-400">Institution</th>
+                <th className="px-4 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-center">Status</th>
+                <th className="px-6 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {paginatedData.map((user) => (
                 <tr key={user.id} className="hover:bg-indigo-50/30 transition-all duration-300 group">
-                  <td className="px-8 py-5 text-sm font-bold text-slate-400">#{user.id}</td>
-                  <td className="px-4 py-5">
+                  <td className="px-6 py-4 text-sm font-bold text-slate-400">#{user.id}</td>
+                  <td className="px-4 py-4">
                     <div className="flex flex-col">
                       <span className="text-[15px] font-black text-slate-900 group-hover:text-indigo-600 transition-colors  tracking-tight">{user.name}</span>
                       <span className="text-[13px] font-bold text-indigo-500/80">{user.email}</span>
@@ -181,7 +181,7 @@ const Users = () => {
                   <td className="px-4 py-5 text-center">
                     <span className={`inline-flex h-2 w-2 rounded-full ${user.is_active ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300'}`} />
                   </td>
-                  <td className="px-8 py-5 text-right">
+                  <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                        <button onClick={() => navigate(`/users/edit/${user.id}`)} className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"><Pencil size={18} /></button>
                        <button onClick={() => { setDeleteTarget(user); setShowDeleteModal(true); }} className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"><MdDelete size={20} /></button>
@@ -201,7 +201,7 @@ const Users = () => {
       {showDeleteModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
-          <div className="relative bg-white rounded-[2rem] shadow-3xl w-full max-w-sm overflow-hidden p-8 text-center">
+          <div className="relative bg-white rounded-2xl shadow-3xl w-full max-w-sm overflow-hidden p-6 text-center">
             <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner"><MdDelete size={32} /></div>
             <h3 className="text-xl font-black text-slate-900 mb-2">Purge Identity?</h3>
             <p className="text-slate-500 text-sm font-medium mb-8 leading-relaxed">This will permanently remove <span className="text-slate-900 font-bold">"{deleteTarget?.name}"</span> from the system records. This operation is irreversible.</p>

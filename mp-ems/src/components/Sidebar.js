@@ -330,9 +330,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         </div>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="text-slate-400 hover:text-white transition-colors lg:hidden"
+          className="text-slate-400 hover:text-white transition-colors"
         >
-          <X size={24} />
+          <Menu size={24} />
         </button>
       </div>
 

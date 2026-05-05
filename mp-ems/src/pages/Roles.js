@@ -81,10 +81,10 @@ const Roles = () => {
   if (loading) return <div className="p-8 text-center font-bold text-slate-400 animate-pulse">Synchronizing Permissions...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="max-w-4xl mx-auto space-y-4 animate-in fade-in duration-500">
       {/* Page Header */}
-      <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-5">
             <div className="w-14 h-14 bg-amber-500/10 rounded-[1.5rem] flex items-center justify-center text-amber-600 shadow-inner">
               <ShieldCheck size={32} />
@@ -107,10 +107,10 @@ const Roles = () => {
         </div>
 
         {/* List Content */}
-        <div className="px-8 pb-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="px-6 pb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {paginatedData.map((role) => (
-                    <div key={role.id} className="group bg-slate-50 hover:bg-white border-2 border-slate-50 hover:border-amber-100 rounded-[1.5rem] p-6 transition-all duration-300 flex items-center justify-between shadow-sm hover:shadow-xl hover:shadow-amber-900/5">
+                    <div key={role.id} className="group bg-slate-50 hover:bg-white border-2 border-slate-50 hover:border-amber-100 rounded-2xl p-5 transition-all duration-300 flex items-center justify-between shadow-sm hover:shadow-xl hover:shadow-amber-900/5">
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 group-hover:text-amber-500 group-hover:rotate-12 transition-all">
                                 <Lock size={20} />
@@ -143,7 +143,7 @@ const Roles = () => {
       {showDeleteModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
-          <div className="relative bg-white rounded-[2rem] shadow-3xl w-full max-w-sm overflow-hidden p-8 text-center">
+          <div className="relative bg-white rounded-2xl shadow-3xl w-full max-w-sm overflow-hidden p-6 text-center">
             <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner"><MdDelete size={32} /></div>
             <h3 className="text-xl font-black text-slate-900 mb-2">Delete Role?</h3>
             <p className="text-slate-500 text-sm font-medium mb-8 leading-relaxed">System entities assigned to <span className="text-slate-900 font-bold">"{deleteTarget?.role_name}"</span> may lose access. Proceed with caution.</p>

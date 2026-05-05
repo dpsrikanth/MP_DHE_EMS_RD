@@ -49,8 +49,8 @@ const ExamAnalytics = () => {
   const passRate = stats.total_passed === 0 ? 0 : Math.round((stats.total_passed / (parseInt(stats.total_passed) + parseInt(stats.total_failed))) * 100);
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+    <div className="p-4 sm:p-5 bg-slate-50 min-h-screen space-y-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <h1 className="text-2xl font-black text-slate-800 flex items-center gap-3">
             <FileCheck className="text-indigo-600" size={32} /> Global Exam Analytics
@@ -75,7 +75,7 @@ const ExamAnalytics = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex items-center gap-4 mb-2 text-slate-500">
             <FileCheck size={20} />
             <span className="text-sm font-medium">Total Exams</span>
@@ -83,7 +83,7 @@ const ExamAnalytics = () => {
           <div className="text-3xl font-bold text-slate-800">{stats.total_exams}</div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex items-center gap-4 mb-2 text-slate-500">
             <Users size={20} />
             <span className="text-sm font-medium">Total Students</span>
@@ -91,7 +91,7 @@ const ExamAnalytics = () => {
           <div className="text-3xl font-bold text-slate-800">{stats.total_students}</div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex items-center gap-4 mb-2 text-emerald-500">
             <CheckCircle size={20} />
             <span className="text-sm font-medium text-slate-500">Global Passed</span>
@@ -99,7 +99,7 @@ const ExamAnalytics = () => {
           <div className="text-3xl font-bold text-emerald-600">{stats.total_passed}</div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex items-center gap-4 mb-2 text-rose-500">
             <XCircle size={20} />
             <span className="text-sm font-medium text-slate-500">Global Failed</span>
@@ -108,7 +108,7 @@ const ExamAnalytics = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
         <div className="flex items-center gap-2 mb-6">
           <BarChart2 className="text-indigo-600" />
           <h2 className="text-lg font-semibold text-slate-800">Overall Performance Distribution</h2>

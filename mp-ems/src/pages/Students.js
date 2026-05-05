@@ -193,10 +193,10 @@ const Students = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Page Header Card */}
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-5">
             <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600">
               <GraduationCap size={32} />
@@ -325,7 +325,7 @@ const Students = () => {
                 paginatedData.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
                     {visibleColumns.id && (
-                      <td className="px-8 py-5 text-center">
+                      <td className="px-6 py-4 text-center">
                         <span className="text-[12px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
                           ID-{item.id.toString().padStart(4, '0')}
                         </span>
@@ -374,7 +374,7 @@ const Students = () => {
                       </td>
                     )}
                     {!authUtils.isUniversityAdmin() && (
-                      <td className="px-8 py-5 text-right">
+                      <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => navigate(`/students/edit/${item.id}`)}
@@ -397,7 +397,7 @@ const Students = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="px-8 py-12 text-center">
+                  <td colSpan="7" className="px-6 py-8 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <p className="text-sm font-bold text-slate-400  tracking-widest">No students found matching your query</p>
                       <button
@@ -431,8 +431,8 @@ const Students = () => {
       {showDeleteModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={closeDeleteModal} />
-          <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
-            <div className="p-8 text-center flex flex-col items-center">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+            <div className="p-6 text-center flex flex-col items-center">
               <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
                 <MdDelete size={32} />
               </div>

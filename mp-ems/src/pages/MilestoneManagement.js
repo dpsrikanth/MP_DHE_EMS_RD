@@ -244,7 +244,7 @@ const MilestoneManagement = () => {
   );
 
   return (
-    <div className="p-4 sm:p-8 space-y-8 animate-in fade-in duration-500">
+    <div className="p-4 sm:p-6 space-y-4 animate-in fade-in duration-500">
       {/* Header section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-5">
@@ -281,7 +281,7 @@ const MilestoneManagement = () => {
       </div>
 
       {/* Filter Section */}
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-wrap gap-4 items-end mb-8">
+      <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-wrap gap-4 items-end mb-4">
         <div className="flex-1 min-w-[200px]">
           <label className="block text-[12px] font-bold text-slate-400  tracking-widest mb-2 ml-1">Academic Year</label>
           <select name="academic_year_id" value={filters.academic_year_id} onChange={handleFilterChange} className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-700">
@@ -306,8 +306,8 @@ const MilestoneManagement = () => {
           </select>
         </div>
       </div>
-      <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-200 overflow-hidden">
-        <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <TableSearch value={searchQuery} onChange={setSearchQuery} placeholder="Search milestones, roles..." />
         </div>
 
@@ -320,7 +320,7 @@ const MilestoneManagement = () => {
           <table className={`w-full text-left border-collapse transition-opacity duration-300 ${refreshing ? 'opacity-40 select-none' : 'opacity-100'}`}>
             <thead>
               <tr className="bg-slate-50/50">
-                <SortHeader label="Activity" field="name" currentSort={sortConfig} onSort={handleSort} className="px-8 py-5" visible={true} />
+                <SortHeader label="Activity" field="name" currentSort={sortConfig} onSort={handleSort} className="px-6 py-4" visible={true} />
                 <SortHeader label="Timeline" field="start_date" currentSort={sortConfig} onSort={handleSort} className="px-4 py-5" visible={true} />
                 <th className="px-4 py-5 text-[13px] font-black  tracking-widest text-slate-400">Responsibility</th>
                 {canEdit && <th className="px-4 py-5 text-[13px] font-black  tracking-widest text-slate-400 text-right">Actions</th>}
@@ -329,7 +329,7 @@ const MilestoneManagement = () => {
             <tbody className="divide-y divide-slate-100">
               {paginatedData.map((item) => (
                 <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group text-[11px] font-bold">
-                  <td className="px-8 py-5">
+                  <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">
                       <span className="text-sm font-black text-slate-900  tracking-tight">{item.name}</span>
                       <div className="flex flex-wrap gap-1.5 items-center mt-1">
@@ -392,8 +392,8 @@ const MilestoneManagement = () => {
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <form onSubmit={handleSubmit} className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
+          <form onSubmit={handleSubmit} className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 leading-none">{formData.id ? 'Edit' : 'New'} Milestone</h2>
                 <p className="text-[12px] font-black text-indigo-500  tracking-[0.2em] mt-2">Institutional Roadmap Data</p>
@@ -401,7 +401,7 @@ const MilestoneManagement = () => {
               <button type="button" onClick={() => setShowModal(false)} className="p-3 bg-white text-slate-400 hover:bg-slate-100 rounded-2xl transition-all shadow-sm border border-slate-100"><X size={20} /></button>
             </div>
             
-            <div className="p-10 space-y-6">
+            <div className="p-8 space-y-6">
               <div className="space-y-2">
                 <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1">Activity Name</label>
                 <input required type="text" name="name" value={formData.name} onChange={handleInputChange} className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-500 focus:bg-white outline-none transition-all" />
@@ -461,7 +461,7 @@ const MilestoneManagement = () => {
               </div>
             </div>
 
-            <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4">
+            <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4">
               <button type="button" onClick={() => setShowModal(false)} className="text-sm font-bold text-slate-400 hover:text-slate-600 px-4">Cancel</button>
               <button type="submit" className="px-10 py-4 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 transition-all  text-[13px] tracking-widest flex items-center gap-2">
                 <Check size={20} />
@@ -478,8 +478,8 @@ const MilestoneManagement = () => {
       {showDeleteModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
-            <div className="p-10 text-center flex flex-col items-center">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+            <div className="p-8 text-center flex flex-col items-center">
               <div className="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mb-6 border border-red-100 shadow-sm"><MdDelete size={40} /></div>
               <h3 className="text-2xl font-black text-slate-900 mb-2">Delete Milestone?</h3>
               <p className="text-slate-500 text-sm font-medium leading-relaxed mb-10 italic">This activity will be removed from the institutional roadmap permanently.</p>

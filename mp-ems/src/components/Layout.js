@@ -42,7 +42,7 @@ const Layout = ({ children }) => {
         <Navbar toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen} />
         
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-8 pb-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <main className="flex-1 p-4 lg:p-6 pb-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

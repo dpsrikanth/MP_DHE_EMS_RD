@@ -152,7 +152,7 @@ const ManageCredits = () => {
     }
 
     return (
-        <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
+        <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-4 animate-in fade-in duration-500">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
@@ -196,7 +196,7 @@ const ManageCredits = () => {
             </div>
 
             {/* Toolbar & Search */}
-            <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-center">
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-center">
                 <div className="relative flex-1 group w-full">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
                     <input 
@@ -213,7 +213,7 @@ const ManageCredits = () => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
@@ -233,24 +233,24 @@ const ManageCredits = () => {
 
                                 return (
                                     <tr key={sub.id} className="hover:bg-slate-50/30 transition-colors group">
-                                        <td className="px-8 py-5">
+                                        <td className="px-6 py-4">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-black text-slate-900 leading-tight">{sub.name}</span>
                                                 <span className="text-[12px] font-bold text-slate-400  tracking-wider">{sub.subject_code}</span>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-5">
+                                        <td className="px-6 py-4">
                                             <div className="flex flex-col">
                                                 <span className="text-[13px] font-bold text-slate-600">{sub.program_name}</span>
                                                 <span className="text-[12px] font-medium text-slate-400">{sub.semester_name}</span>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-5">
+                                        <td className="px-6 py-4">
                                             <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-500 font-bold text-[13px] ring-1 ring-inset ring-slate-200">
                                                 {sub.credit}
                                             </span>
                                         </td>
-                                        <td className="px-8 py-5">
+                                        <td className="px-6 py-4">
                                             <input 
                                                 type="number" 
                                                 placeholder="None"
@@ -259,7 +259,7 @@ const ManageCredits = () => {
                                                 className={`w-24 h-10 border rounded-xl px-4 text-sm font-black outline-none transition-all ${isOverridden ? 'bg-indigo-50 border-indigo-200 text-indigo-600 focus:bg-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-400 focus:bg-white focus:border-indigo-500'}`}
                                             />
                                         </td>
-                                        <td className="px-8 py-5">
+                                        <td className="px-6 py-4">
                                             <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg font-black text-[13px] shadow-sm ${isOverridden ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-white'}`}>
                                                 {effectiveValue}
                                             </span>
@@ -272,7 +272,7 @@ const ManageCredits = () => {
                 </div>
             </div>
 
-            <div className="bg-slate-900 rounded-[2rem] p-8 text-white space-y-6 shadow-xl shadow-slate-900/20">
+            <div className="bg-slate-900 rounded-2xl p-6 text-white space-y-6 shadow-xl shadow-slate-900/20">
                 <div className="flex items-center gap-3">
                     <Info size={24} className="text-indigo-400" />
                     <h4 className="font-black text-lg  tracking-widest">About Credit Overrides</h4>

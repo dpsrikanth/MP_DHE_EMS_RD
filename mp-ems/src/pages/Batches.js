@@ -135,10 +135,10 @@ const Batches = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Page Header Card */}
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-600">
               <Layers size={28} />
@@ -174,29 +174,29 @@ const Batches = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-y border-slate-100 bg-slate-50/50">
-                <SortHeader label="ID" field="id" currentSort={sortConfig} onSort={handleSort} className="px-8" visible={visibleColumns.id} />
+                <SortHeader label="ID" field="id" currentSort={sortConfig} onSort={handleSort} className="px-6" visible={visibleColumns.id} />
                 <SortHeader label="Batch Name" field="batch_name" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.batch_name} />
                 <SortHeader label="Start Date" field="start_date" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.start_date} />
                 <SortHeader label="End Date" field="end_date" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.end_date} />
                 <SortHeader label="Policy" field="policy_name" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.policy_name} />
                 <SortHeader label="Program" field="program_name" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.program_name} />
                 <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400 text-center`}>Status</th>
-                <th className={`${visibleColumns.created_at ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Created On</th>
-                <th className="px-8 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Actions</th>
+                <th className={`${visibleColumns.created_at ? '' : 'hidden'} px-4 py-3.5 text-[12px] font-black  tracking-widest text-slate-400`}>Created On</th>
+                <th className="px-6 py-3.5 text-[12px] font-black  tracking-widest text-slate-400 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {paginatedData.length > 0 ? (
                 paginatedData.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
-                    {visibleColumns.id && <td className="px-8 py-5 text-sm font-bold text-slate-400">#{item.id}</td>}
-                    {visibleColumns.batch_name && <td className="px-4 py-5 text-sm font-semibold text-slate-900 leading-tight">{item.batch_name}</td>}
-                    {visibleColumns.start_date && <td className="px-4 py-5 text-sm text-slate-600">{formatDate(item.start_date)}</td>}
-                    {visibleColumns.end_date && <td className="px-4 py-5 text-sm text-slate-600">{formatDate(item.end_date)}</td>}
-                    {visibleColumns.policy_name && <td className="px-4 py-5 text-sm font-bold text-indigo-600"><span className="bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">{item.policy_name || 'No Policy'}</span></td>}
-                    {visibleColumns.program_name && <td className="px-4 py-5 text-sm font-medium text-slate-600">{item.program_name}</td>}
+                    {visibleColumns.id && <td className="px-6 py-4 text-sm font-bold text-slate-400">#{item.id}</td>}
+                    {visibleColumns.batch_name && <td className="px-4 py-4 text-sm font-semibold text-slate-900 leading-tight">{item.batch_name}</td>}
+                    {visibleColumns.start_date && <td className="px-4 py-4 text-sm text-slate-600">{formatDate(item.start_date)}</td>}
+                    {visibleColumns.end_date && <td className="px-4 py-4 text-sm text-slate-600">{formatDate(item.end_date)}</td>}
+                    {visibleColumns.policy_name && <td className="px-4 py-4 text-sm font-bold text-indigo-600"><span className="bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">{item.policy_name || 'No Policy'}</span></td>}
+                    {visibleColumns.program_name && <td className="px-4 py-4 text-sm font-medium text-slate-600">{item.program_name}</td>}
                     {visibleColumns.status && (
-                      <td className="px-4 py-5 text-center">
+                      <td className="px-4 py-4 text-center">
                         {item.status === 'Active' ? (
                           <span className="inline-flex items-center gap-1 text-[12px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full  border border-emerald-100 tracking-tighter shadow-sm"><ShieldCheck size={12} /> Active</span>
                         ) : (
@@ -204,8 +204,8 @@ const Batches = () => {
                         )}
                       </td>
                     )}
-                    {visibleColumns.created_at && <td className="px-4 py-5 text-[13px] font-medium text-slate-400">{formatDate(item.created_at)}</td>}
-                    <td className="px-8 py-5 text-right">
+                    {visibleColumns.created_at && <td className="px-4 py-4 text-[13px] font-medium text-slate-400">{formatDate(item.created_at)}</td>}
+                    <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button onClick={() => { setViewData(item); setShowViewModal(true); }} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all" title="View Details"><Eye size={18} /></button>
                         <button onClick={() => navigate(`/batches/edit/${item.id}`)} className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 rounded-xl transition-all" title="Edit Batch"><Pencil size={18} /></button>
@@ -215,7 +215,7 @@ const Batches = () => {
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan="7" className="px-8 py-12 text-center text-sm font-bold text-slate-400  tracking-widest">No batches found</td></tr>
+                <tr><td colSpan="7" className="px-6 py-8 text-center text-sm font-bold text-slate-400  tracking-widest">No batches found</td></tr>
               )}
             </tbody>
           </table>
@@ -229,8 +229,8 @@ const Batches = () => {
       {showDeleteModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
-          <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
-            <div className="p-8 text-center flex flex-col items-center">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+            <div className="p-6 text-center flex flex-col items-center">
               <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6"><MdDelete size={32} /></div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">Confirm Removal</h3>
               <p className="text-slate-500 text-sm leading-relaxed mb-8">Are you sure you want to delete <span className="font-bold text-slate-900">"{deleteTarget?.batch_name}"</span>?</p>
@@ -247,15 +247,15 @@ const Batches = () => {
       {showViewModal && viewData && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowViewModal(false)} />
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
-            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
               <div>
                 <h2 className="text-2xl font-black tracking-tight leading-none mb-1">Batch Profile</h2>
                 <p className="text-[12px] font-black text-slate-400  tracking-widest opacity-70 flex items-center gap-2"><Calendar size={12} /> Academic Management System</p>
               </div>
               <button onClick={() => setShowViewModal(false)} className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-2xl transition-all"><X size={20} /></button>
             </div>
-            <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto">
+            <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InfoItem label="Batch Name" value={viewData.batch_name} className="col-span-full" />
                 <InfoItem label="Course/Program" value={viewData.program_name} />
@@ -267,7 +267,7 @@ const Batches = () => {
                 <InfoItem label="Created On" value={formatDate(viewData.created_at)} />
               </div>
             </div>
-            <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+            <div className="px-8 py-5 bg-slate-50 border-t border-slate-100 flex justify-end">
               <button onClick={() => setShowViewModal(false)} className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm  tracking-widest">Close Details</button>
             </div>
           </div>

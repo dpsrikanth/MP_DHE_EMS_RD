@@ -206,7 +206,7 @@ const HallApprovals = () => {
     };
 
     return (
-        <div className="p-8 space-y-10 animate-fade-in pb-20">
+        <div className="p-4 sm:p-5 space-y-4 animate-fade-in pb-10">
             {/* Main content... */}
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -254,7 +254,7 @@ const HallApprovals = () => {
 
             {/* Shortage Requests */}
             {shortageRequests.length > 0 && (
-                <div className="relative bg-rose-50 rounded-[2rem] p-8 shadow-sm border border-rose-100 overflow-hidden">
+                <div className="relative bg-rose-50 rounded-2xl p-5 shadow-sm border border-rose-100 overflow-hidden">
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-8">
                             <div className="w-10 h-10 bg-rose-100 text-rose-500 rounded-xl flex items-center justify-center">
@@ -267,7 +267,7 @@ const HallApprovals = () => {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {shortageRequests.map(req => (
-                                <div key={req.id} className="bg-white p-6 rounded-2xl border border-rose-100/50 shadow-sm flex flex-col gap-5 hover:shadow-md transition-all">
+                                <div key={req.id} className="bg-white p-5 rounded-2xl border border-rose-100/50 shadow-sm flex flex-col gap-5 hover:shadow-md transition-all">
                                     <div className="flex justify-between items-start gap-4">
                                         <span className="text-sm font-black text-slate-800 leading-tight">{req.college_name}</span>
                                         <span className="flex-shrink-0 px-3 py-1 bg-amber-50 text-amber-600 text-[9px] font-black  tracking-widest rounded-lg border border-amber-200">Pending</span>
@@ -301,7 +301,7 @@ const HallApprovals = () => {
                     <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
             ) : filteredHalls.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 bg-slate-50 border border-dashed border-slate-200 rounded-[2.5rem]">
+                <div className="flex flex-col items-center justify-center h-64 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
                     <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-slate-300 shadow-sm border border-slate-100 mb-4">
                         <CheckCircle2 size={32} />
                     </div>
@@ -317,8 +317,8 @@ const HallApprovals = () => {
                             const isFulfilled = college.college_approved_capacity >= college.total_required;
                             
                             return (
-                                <div key={college.college_id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/60 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-2xl group border-t-8 border-t-purple-500">
-                                    <div className="p-8 flex flex-col flex-1">
+                                <div key={college.college_id} className="bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/60 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-2xl group border-t-8 border-t-purple-500">
+                                    <div className="p-5 flex flex-col flex-1">
                                         <div className="flex justify-between items-start mb-8">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 border border-purple-100 shadow-sm group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
@@ -456,8 +456,8 @@ const HallApprovals = () => {
                             const isProcessed = hall.status !== 'Pending';
 
                             return (
-                                <div key={hall.id} className="group bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-purple-200 border-t-8 border-t-purple-500">
-                                    <div className="p-6 space-y-5">
+                                <div key={hall.id} className="group bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-purple-200 border-t-8 border-t-purple-500">
+                                    <div className="p-5 space-y-5">
                                         <div className="flex justify-between items-start">
                                             <div className="flex flex-col gap-1">
                                                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-900 text-white rounded-lg text-[12px] font-black  tracking-widest shadow-lg shadow-slate-900/10">
@@ -551,8 +551,8 @@ const HallApprovals = () => {
             {showAllocateModal && selectedRequest && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !allocating && setShowAllocateModal(false)} />
-                    <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden pointer-events-auto animate-in zoom-in-95 duration-200">
-                        <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden pointer-events-auto animate-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div>
                                 <h3 className="text-xl font-black text-slate-900">External Allocation</h3>
                                 <p className="text-[13px] text-slate-500 font-bold  tracking-widest mt-0.5">Assign alternative examination center</p>
@@ -566,7 +566,7 @@ const HallApprovals = () => {
                             </button>
                         </div>
 
-                        <div className="p-8 space-y-6">
+                        <div className="p-6 space-y-6">
                             <div className="bg-rose-50 rounded-2xl p-4 border border-rose-100 flex flex-col gap-1 text-center">
                                 <span className="text-[12px] font-black text-rose-400  tracking-widest">Source Institution</span>
                                 <span className="text-sm font-black text-slate-900">{selectedRequest.college_name}</span>
@@ -628,7 +628,7 @@ const HallApprovals = () => {
                             </div>
                         </div>
 
-                        <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+                        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-3">
                             <button
                                 onClick={() => setShowAllocateModal(false)}
                                 disabled={allocating}
