@@ -104,6 +104,28 @@ const MarksConfig = () => {
         fetchSavedStructures();
     }, []);
 
+    // Load existing components when subject is selected
+    useEffect(() => {
+        if (selectedSubject && savedStructures.length > 0) {
+            const existing = savedStructures.filter(s => s.subject_id === selectedSubject.value);
+            if (existing.length > 0) {
+                // Map existing structures to component state
+                const mapped = existing.map(e => ({
+                    id: e.id,
+                    name: e.component_name,
+                    maxMarks: e.max_marks,
+                    passingMarks: e.passing_marks,
+                    isExisting: true
+                }));
+                setComponents(mapped);
+            } else {
+                setComponents([{ id: Date.now(), name: '', maxMarks: '', passingMarks: '' }]);
+            }
+        } else {
+            setComponents([{ id: Date.now(), name: '', maxMarks: '', passingMarks: '' }]);
+        }
+    }, [selectedSubject, savedStructures]);
+
     const fetchSavedStructures = async () => {
         try {
             const data = await collegeAdminApi.getAllMarksStructures();
@@ -139,7 +161,7 @@ const MarksConfig = () => {
 
     const updateComponent = (id, field, value) => {
         setComponents(components.map(c =>
-            c.id === id ? { ...c, [field]: value } : c
+            c.id === id ? { ...c, [field]: field === 'name' ? value.toUpperCase() : value } : c
         ));
     };
 
@@ -154,10 +176,21 @@ const MarksConfig = () => {
             return toast.warning("Please fill all fields for components.");
         }
 
+        // Check for duplicate component names
+        const names = components.map(c => c.name.toLowerCase().trim()).filter(n => n !== '');
+        const duplicates = names.filter((name, index) => names.indexOf(name) !== index);
+        
+        if (duplicates.length > 0) {
+            const duplicateName = components.find(c => c.name.toLowerCase().trim() === duplicates[0])?.name;
+            return toast.error(`You already created component: "${duplicateName}"`);
+        }
+
         try {
             const collegeId = localStorage.getItem('collegeId');
 
             for (let comp of components) {
+                // If it's existing, we could call update, but the requirement is mostly about showing and adding
+                // Let's assume we save/update all
                 await collegeAdminApi.saveMarksStructure({
                     college_id: collegeId,
                     policy_id: selectedPolicy.value,
@@ -310,7 +343,12 @@ const MarksConfig = () => {
                             {components.map((comp, idx) => (
                                 <div key={comp.id} className="flex flex-col md:flex-row gap-4 items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
                                     <div className="flex-1 w-full space-y-1">
-                                        <label className="text-xs font-bold text-slate-500 uppercase">Component Name</label>
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-bold text-slate-500 uppercase">Component Name</label>
+                                            {comp.isExisting && (
+                                                <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">Saved</span>
+                                            )}
+                                        </div>
                                         <input
                                             type="text"
                                             placeholder="e.g. IA1, Assignment, Practical"

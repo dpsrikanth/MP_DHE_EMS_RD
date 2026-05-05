@@ -133,7 +133,11 @@ const ExamScheduling = () => {
             
             // Fetch subjects, existing schedules, and milestones
             const [subjectsData, schedulesData, milestonesData] = await Promise.all([
-                masterDataApi.getSubjects({ program_id: filters.program_id, semester_id: filters.semester_id }),
+                masterDataApi.getSubjects({ 
+                    program_id: filters.program_id, 
+                    semester_id: filters.semester_id,
+                    component_name: filters.round_id
+                }),
                 internalExamApi.getSchedules({ 
                     round_id: filters.round_id, 
                     program_id: filters.program_id, 

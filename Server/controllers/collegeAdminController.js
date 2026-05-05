@@ -201,6 +201,11 @@ exports.getAllMarksStructures = async (req, res) => {
         const query = `
             SELECT 
                 ims.id,
+                ims.policy_id,
+                ims.program_id,
+                ims.semester_id,
+                ims.department_id,
+                ims.subject_id,
                 mp.name as policy_name,
                 md.department_name,
                 mpr.name as program_name,

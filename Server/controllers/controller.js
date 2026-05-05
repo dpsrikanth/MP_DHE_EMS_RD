@@ -2894,7 +2894,9 @@ const getMasterSubjects = async (req, res) => {
         WHERE (ms.status IS NULL OR ms.status = 'Active')`;
     const params = [];
 
-    const { program_id, semester_id } = req.query;
+    const { program_id, semester_id, component_name } = req.query;
+    const { college_id } = req.user || {};
+
     if (uId) {
       query += " AND ms.university_id = $" + (params.length + 1);
       params.push(uId);
@@ -2906,6 +2908,16 @@ const getMasterSubjects = async (req, res) => {
     if (semester_id) {
       query += " AND ms.semester_id = $" + (params.length + 1);
       params.push(semester_id);
+    }
+
+    if (component_name && college_id) {
+      query += ` AND EXISTS (
+        SELECT 1 FROM internal_marks_structure ims 
+        WHERE ims.subject_id = ms.id 
+        AND ims.college_id = $${params.length + 1} 
+        AND ims.component_name = $${params.length + 2}
+      )`;
+      params.push(college_id, component_name);
     }
 
     query += " ORDER BY ms.id";
