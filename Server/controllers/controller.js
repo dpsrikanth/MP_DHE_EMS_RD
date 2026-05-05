@@ -371,28 +371,45 @@ const getSubjects = async (req, res) => {
     const { role, university_id } = req.user || {};
     const { program_id, semester_id } = req.query;
 
-    let query = "SELECT s.id, s.name, s.subject_code, s.credit as credits, s.status, s.program_id, s.semester_id FROM master_subjects s";
+    // Base query for subjects
+    let query = `
+      SELECT s.id, s.name, s.subject_code, s.credit as credits, s.status, s.program_id, s.semester_id 
+      FROM master_subjects s
+    `;
     const params = [];
-    let whereAdded = false;
+    const whereClauses = [];
 
-    if ((role === 'university_admin' || role === 'college_admin') && university_id) {
-      query += ` JOIN master_programs p ON s.program_id = p.id 
-                 WHERE (p.university_id = $1 OR EXISTS (SELECT 1 FROM university_master_programs ump WHERE ump.program_id = p.id AND ump.university_id = $1))`;
-      params.push(university_id);
-      whereAdded = true;
-    }
-
+    // Filter by Program
     if (program_id) {
-      query += whereAdded ? " AND s.program_id = $" + (params.length + 1) : " WHERE s.program_id = $" + (params.length + 1);
       params.push(program_id);
-      whereAdded = true;
+      whereClauses.push(`s.program_id = $${params.length}`);
     }
 
+    // Filter by Semester
     if (semester_id) {
-      query += whereAdded ? " AND s.semester_id = $" + (params.length + 1) : " WHERE s.semester_id = $" + (params.length + 1);
       params.push(semester_id);
-      whereAdded = true;
+      whereClauses.push(`s.semester_id = $${params.length}`);
     }
+
+    // Role-based filtering: university_admin/college_admin should only see subjects 
+    // belonging to their university's programs.
+    if ((role === 'university_admin' || role === 'college_admin') && university_id) {
+      params.push(university_id);
+      whereClauses.push(`EXISTS (
+        SELECT 1 FROM master_programs p 
+        WHERE p.id = s.program_id 
+        AND (p.university_id = $${params.length} OR EXISTS (
+          SELECT 1 FROM university_master_programs ump 
+          WHERE ump.program_id = p.id AND ump.university_id = $${params.length}
+        ))
+      )`);
+    }
+
+    if (whereClauses.length > 0) {
+      query += " WHERE " + whereClauses.join(" AND ");
+    }
+
+    query += " ORDER BY s.id ASC";
 
     const result = await client.query(query, params);
     res.json(result.rows);

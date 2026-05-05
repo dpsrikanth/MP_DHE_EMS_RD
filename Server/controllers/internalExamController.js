@@ -51,7 +51,10 @@ exports.getSchedules = async (req, res) => {
         if (!college_id) return res.status(403).json({ error: "Unauthorized" });
 
         const query = `
-            SELECT ies.*, ms.name as subject_name, ms.subject_code 
+            SELECT ies.id, ies.round_id, ies.program_id, ies.semester_id, ies.academic_year_id, 
+                   ies.college_id, ies.subject_id, TO_CHAR(ies.exam_date, 'YYYY-MM-DD') as exam_date,
+                   ies.start_time, ies.end_time,
+                   ms.name as subject_name, ms.subject_code 
             FROM internal_exam_schedules ies
             JOIN master_subjects ms ON ies.subject_id = ms.id
             WHERE ies.round_id = $1 AND ies.program_id = $2 AND ies.semester_id = $3 

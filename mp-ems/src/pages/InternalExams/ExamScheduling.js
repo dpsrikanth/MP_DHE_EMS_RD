@@ -187,6 +187,14 @@ const ExamScheduling = () => {
         // Find milestones that might match
         const matches = milestones.filter(m => {
             const mName = m.name.toUpperCase();
+            
+            // Context Check: Milestone must belong to selected Program/Semester
+            // If the milestone has a null context, we assume it's global (standard practice)
+            const isContextMatch = 
+                (!m.program_id || m.program_id.toString() === filters.program_id.toString()) && 
+                (!m.semester_id || m.semester_id.toString() === filters.semester_id.toString());
+            
+            if (!isContextMatch) return false;
 
             // Rule 1: Name contains the round name (e.g. "MID-1" in "INTERNAL EXAM 1 (MID-1)")
             if (mName.includes(roundName)) return true;
@@ -236,9 +244,18 @@ const ExamScheduling = () => {
 
         const matches = milestones.filter(m => {
             const mName = m.name.toUpperCase();
+            
+            // Context Check
+            const isContextMatch = 
+                (!m.program_id || m.program_id.toString() === filters.program_id.toString()) && 
+                (!m.semester_id || m.semester_id.toString() === filters.semester_id.toString());
+            
+            if (!isContextMatch) return false;
+
             const isTopicMatch = mName.includes(roundName) ||
                 (roundName.includes("IA") && roundNum && (mName.includes("INTERNAL EXAM " + roundNum) || mName.includes("MID-" + roundNum))) ||
                 (roundName.includes("MID") && roundNum && mName.includes("INTERNAL EXAM " + roundNum));
+                
             return isTopicMatch && mName.includes("SCHEDULE");
         });
 
@@ -281,13 +298,8 @@ const ExamScheduling = () => {
     };
 
     const handleScheduleChange = (subjectId, field, value) => {
-        if (field === 'exam_date' && value) {
-            const range = getActiveMilestone();
-            if (range && (value < range.start || value > range.end)) {
-                // toast.error(`You cannot select dates like that! Please select a date between ${range.start} and ${range.end} for ${range.name}`);
-            }
-        }
-
+        // Validation removed from here as per user request (it's annoying while typing)
+        // We will keep it only on Save, or just show the red ring
         setSchedules(prev => ({
             ...prev,
             [subjectId]: {
@@ -310,15 +322,17 @@ const ExamScheduling = () => {
             return;
         }
 
-        // Validate against milestone range
-        const range = getActiveMilestone();
-        if (range) {
-            const invalidSchedules = scheduleArray.filter(s =>
-                s.exam_date < range.start || s.exam_date > range.end
-            );
-            if (invalidSchedules.length > 0) {
-                // toast.error(`Some dates are outside the allowed range for ${range.name} (${range.start} to ${range.end})`);
-                // return;
+        // Validate against milestone range (Only if validation is enabled)
+        if (isValidationEnabled) {
+            const range = getActiveMilestone();
+            if (range) {
+                const invalidSchedules = scheduleArray.filter(s =>
+                    s.exam_date < range.start || s.exam_date > range.end
+                );
+                if (invalidSchedules.length > 0) {
+                    toast.error(`Some exam dates are outside the allowed range for ${range.name} (${formatDate(range.start)} to ${formatDate(range.end)})`);
+                    return;
+                }
             }
         }
 
@@ -531,7 +545,7 @@ const ExamScheduling = () => {
                                                         <input
                                                             type="date"
                                                             disabled={closed}
-                                                            className={`w-full bg-slate-50 border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 font-medium text-slate-600 ${false && range && schedules[sub.id]?.exam_date && (schedules[sub.id].exam_date < range.start || schedules[sub.id].exam_date > range.end) ? 'ring-2 ring-red-500/50' : ''
+                                                            className={`w-full bg-slate-50 border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 font-medium text-slate-600 ${isValidationEnabled && range && schedules[sub.id]?.exam_date && (schedules[sub.id].exam_date < range.start || schedules[sub.id].exam_date > range.end) ? 'ring-2 ring-red-500/50' : ''
                                                                 } ${closed ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                                                             value={schedules[sub.id]?.exam_date || ''}
                                                             onChange={(e) => handleScheduleChange(sub.id, 'exam_date', e.target.value)}
