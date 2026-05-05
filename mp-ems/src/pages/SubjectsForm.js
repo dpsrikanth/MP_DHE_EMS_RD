@@ -187,7 +187,7 @@ const SubjectsForm = () => {
                     <Code size={18} className="form-input-wrap__icon" />
                     <input type="text" placeholder="e.g. CS101" value={form.subject_code} 
                       onChange={(e) => setForm({ ...form, subject_code: e.target.value })} 
-                      className="form-input form-input--with-icon" style={{ textTransform: 'uppercase' }} />
+                      className="form-input form-input--with-icon" style={{ textTransform: '' }} />
                   </div>
                 </div>
               </div>

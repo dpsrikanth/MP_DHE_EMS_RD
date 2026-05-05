@@ -98,11 +98,11 @@ const RoundManagement = () => {
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-slate-800">{round.name}</h3>
-                                        <p className="text-xs text-slate-400">Created: {new Date(round.created_at).toLocaleDateString()}</p>
+                                        <p className="text-[13px] text-slate-400">Created: {new Date(round.created_at).toLocaleDateString()}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-wider rounded-full flex items-center gap-1">
+                                    <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[12px] font-bold  tracking-wider rounded-full flex items-center gap-1">
                                         <CheckCircle2 size={10} /> Active
                                     </span>
                                 </div>

@@ -101,7 +101,7 @@ const SubmittedPapers = () => {
             </div>
             <div>
               <h1 className="text-2xl font-black text-slate-800 tracking-tight">Paper Setter <span className="text-sky-500">Portal</span></h1>
-              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Submitted Papers</p>
+              <p className="text-slate-400 text-[12px] font-bold  tracking-widest">Submitted Papers</p>
             </div>
           </div>
           <div className="w-full md:w-80">
@@ -118,14 +118,14 @@ const SubmittedPapers = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-40 gap-4">
             <Loader2 className="text-sky-500 animate-spin" size={48} />
-            <p className="text-slate-400 font-black uppercase tracking-widest text-sm animate-pulse">Loading secure data...</p>
+            <p className="text-slate-400 font-black  tracking-widest text-sm animate-pulse">Loading secure data...</p>
           </div>
         ) : filteredPapers.length === 0 ? (
           <div className="text-center py-24 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-200 group">
             <div className="bg-white w-20 h-20 rounded-[2rem] shadow-xl shadow-slate-200/50 flex items-center justify-center mx-auto mb-6 text-slate-300 group-hover:scale-110 transition-transform duration-500">
                 {searchQuery ? <Search size={40} /> : <Shield size={40} />}
             </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">
+            <h3 className="text-xl font-black text-slate-900 mb-2  tracking-tight">
               {searchQuery ? "No matching papers found" : "No papers submitted yet"}
             </h3>
             <p className="text-slate-500 font-medium max-w-sm mx-auto mb-8">
@@ -134,7 +134,7 @@ const SubmittedPapers = () => {
             {searchQuery && (
               <button 
                 onClick={() => setSearchQuery('')}
-                className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-sky-500 transition-all shadow-xl shadow-slate-900/20 active:scale-95"
+                className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-[13px]  tracking-[0.2em] hover:bg-sky-500 transition-all shadow-xl shadow-slate-900/20 active:scale-95"
               >
                 Reset Filters
               </button>
@@ -150,17 +150,17 @@ const SubmittedPapers = () => {
                     <div className="space-y-4">
                       <div>
                         <h3 className="text-xl font-black text-slate-800">{paper.subject_name}</h3>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Paper ID: QP00{paper.paper_id} | Set {paper.set_name} | Exam: EX00{paper.assignment_id}</p>
+                        <p className="text-[13px] font-bold text-slate-400  tracking-widest">Paper ID: QP00{paper.paper_id} | Set {paper.set_name} | Exam: EX00{paper.assignment_id}</p>
                       </div>
 
                       <div className="grid grid-cols-2 gap-8">
                         <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Submitted Date</label>
+                          <label className="text-[12px] font-black text-slate-400  tracking-widest block mb-1">Submitted Date</label>
                           <p className="font-bold text-slate-700">{formatDate(paper.submitted_date)}</p>
                         </div>
                         <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Status</label>
-                          <p className={`font-black uppercase text-[11px] tracking-wider ${
+                          <label className="text-[12px] font-black text-slate-400  tracking-widest block mb-1">Status</label>
+                          <p className={`font-black  text-[11px] tracking-wider ${
                             paper.status === 'Approved' ? 'text-emerald-500' : 
                             paper.status === 'Rejected' ? 'text-rose-500' : 'text-amber-500'
                           }`}>{paper.status}</p>
@@ -169,7 +169,7 @@ const SubmittedPapers = () => {
 
                       {paper.feedback && (
                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Feedback:</p>
+                          <p className="text-[12px] font-black text-slate-400  tracking-widest">Feedback:</p>
                           <p className="text-sm font-semibold text-slate-600 italic tracking-tight">{paper.feedback}</p>
                         </div>
                       )}
@@ -190,7 +190,7 @@ const SubmittedPapers = () => {
                       </div>
                     </div>
 
-                    <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 ${
+                    <div className={`px-4 py-1.5 rounded-full text-[12px] font-black  tracking-widest flex items-center gap-1.5 ${
                       paper.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 
                       paper.status === 'Rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 
                       'bg-blue-50 text-blue-600 border border-blue-100'
@@ -207,7 +207,7 @@ const SubmittedPapers = () => {
         )}
       </div>
       
-      <footer className="pt-12 pb-8 text-center text-slate-400 font-bold text-[10px] uppercase tracking-widest">
+      <footer className="pt-12 pb-8 text-center text-slate-400 font-bold text-[12px]  tracking-widest">
         {new Date().getFullYear()} Secure EMS Portal • End-to-End Encryption Enabled
       </footer>
     </div>

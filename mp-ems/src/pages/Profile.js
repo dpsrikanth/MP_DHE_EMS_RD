@@ -32,7 +32,7 @@ const Profile = () => {
         <div className="text-center md:text-left flex-1">
           <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">{user.name}</h1>
-            <span className="px-4 py-1.5 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-indigo-100 w-fit mx-auto md:mx-0">
+            <span className="px-4 py-1.5 bg-indigo-50 text-indigo-600 text-[12px] font-black  tracking-widest rounded-full border border-indigo-100 w-fit mx-auto md:mx-0">
               {roleName.replace('_', ' ')} Account
             </span>
           </div>
@@ -51,11 +51,11 @@ const Profile = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
               <div className="space-y-1">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Full Name</p>
+                <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none">Full Name</p>
                 <p className="text-slate-800 font-bold">{user.name}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Email Address</p>
+                <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none">Email Address</p>
                 <div className="flex items-center gap-2">
                   <p className="text-slate-800 font-bold">{user.email}</p>
                   <Shield size={14} className="text-emerald-500" />
@@ -63,18 +63,18 @@ const Profile = () => {
               </div>
               {isStudent && (
                 <div className="space-y-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Roll Number</p>
+                  <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none">Roll Number</p>
                   <p className="text-slate-800 font-bold">{user.rollnumber || 'Not Assigned'}</p>
                 </div>
               )}
               {isFaculty && (
                 <div className="space-y-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Department</p>
+                  <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none">Department</p>
                   <p className="text-slate-800 font-bold">{user.department_name || 'Not Assigned'}</p>
                 </div>
               )}
               <div className="space-y-1">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Account Status</p>
+                <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none">Account Status</p>
                 <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
                   <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
                   Active
@@ -95,7 +95,7 @@ const Profile = () => {
                   <Building2 size={18} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">College / Institution</p>
+                  <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">College / Institution</p>
                   <p className="text-slate-800 font-bold">{user.collageName || user.college_name || 'Associated Institution'}</p>
                 </div>
               </div>
@@ -106,7 +106,7 @@ const Profile = () => {
                     <GraduationCap size={18} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Enrolled Program</p>
+                    <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">Enrolled Program</p>
                     <p className="text-slate-800 font-bold">{user.programName || 'Not Available'}</p>
                   </div>
                 </div>
@@ -115,7 +115,7 @@ const Profile = () => {
                     <MapPin size={18} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Current Semester</p>
+                    <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">Current Semester</p>
                     <p className="text-slate-800 font-bold">{user.semister || 'Freshman'}</p>
                   </div>
                 </div>
@@ -134,7 +134,7 @@ const Profile = () => {
             <p className="text-slate-400 text-sm font-medium mb-8 leading-relaxed">
               Your account is protected with enterprise-grade encryption. Ensure your password is kept confidential.
             </p>
-            <button className="w-full bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest py-4 rounded-2xl transition-all border border-white/10">
+            <button className="w-full bg-white/10 hover:bg-white/20 text-white font-black text-[13px]  tracking-widest py-4 rounded-2xl transition-all border border-white/10">
               Security Logs
             </button>
           </div>
@@ -142,12 +142,12 @@ const Profile = () => {
           <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
              <div className="flex items-center gap-3 mb-6">
                 <Globe size={20} className="text-slate-400" />
-                <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Connect</h4>
+                <h4 className="text-sm font-black text-slate-900  tracking-widest">Connect</h4>
              </div>
-             <p className="text-xs text-slate-500 font-medium leading-relaxed mb-6">
+             <p className="text-[13px] text-slate-500 font-medium leading-relaxed mb-6">
                 Need to update your professional details? Please contact the administration office for official records modernization.
              </p>
-             <a href="mailto:support@intense.cms" className="text-indigo-600 font-black text-xs uppercase tracking-widest hover:text-indigo-700 transition-colors">
+             <a href="mailto:support@intense.cms" className="text-indigo-600 font-black text-[13px]  tracking-widest hover:text-indigo-700 transition-colors">
                 Contact Admin &rarr;
              </a>
           </div>

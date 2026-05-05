@@ -168,7 +168,7 @@ const ManageCredits = () => {
                 <div className="flex items-center gap-4">
                     {(isSuperOrAdmin || isUniversityAdmin) && universities.length > 0 && (
                         <div className="flex flex-col">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                            <label className="text-[12px] font-black text-slate-400  tracking-widest mb-1.5 ml-1">
                                 {isSuperOrAdmin ? 'Select University' : 'University'}
                             </label>
                             <select 
@@ -209,7 +209,7 @@ const ManageCredits = () => {
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-2xl border border-indigo-100">
                     <GraduationCap size={18} />
-                    <span className="text-xs font-black uppercase tracking-wider">{subjects.length} Subjects Total</span>
+                    <span className="text-[13px] font-black  tracking-wider">{subjects.length} Subjects Total</span>
                 </div>
             </div>
 
@@ -217,7 +217,7 @@ const ManageCredits = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
-                            <tr className="bg-slate-50/50 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                            <tr className="bg-slate-50/50 text-[12px] font-black  tracking-widest text-slate-400 border-b border-slate-100">
                                 <th className="px-8 py-5">Subject Info</th>
                                 <th className="px-8 py-5">Program & Semester</th>
                                 <th className="px-8 py-5">Global Credits</th>
@@ -236,17 +236,17 @@ const ManageCredits = () => {
                                         <td className="px-8 py-5">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-black text-slate-900 leading-tight">{sub.name}</span>
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{sub.subject_code}</span>
+                                                <span className="text-[12px] font-bold text-slate-400  tracking-wider">{sub.subject_code}</span>
                                             </div>
                                         </td>
                                         <td className="px-8 py-5">
                                             <div className="flex flex-col">
-                                                <span className="text-xs font-bold text-slate-600">{sub.program_name}</span>
-                                                <span className="text-[10px] font-medium text-slate-400">{sub.semester_name}</span>
+                                                <span className="text-[13px] font-bold text-slate-600">{sub.program_name}</span>
+                                                <span className="text-[12px] font-medium text-slate-400">{sub.semester_name}</span>
                                             </div>
                                         </td>
                                         <td className="px-8 py-5">
-                                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-500 font-bold text-xs ring-1 ring-inset ring-slate-200">
+                                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-500 font-bold text-[13px] ring-1 ring-inset ring-slate-200">
                                                 {sub.credit}
                                             </span>
                                         </td>
@@ -260,7 +260,7 @@ const ManageCredits = () => {
                                             />
                                         </td>
                                         <td className="px-8 py-5">
-                                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg font-black text-xs shadow-sm ${isOverridden ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-white'}`}>
+                                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg font-black text-[13px] shadow-sm ${isOverridden ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-white'}`}>
                                                 {effectiveValue}
                                             </span>
                                         </td>
@@ -275,19 +275,19 @@ const ManageCredits = () => {
             <div className="bg-slate-900 rounded-[2rem] p-8 text-white space-y-6 shadow-xl shadow-slate-900/20">
                 <div className="flex items-center gap-3">
                     <Info size={24} className="text-indigo-400" />
-                    <h4 className="font-black text-lg uppercase tracking-widest">About Credit Overrides</h4>
+                    <h4 className="font-black text-lg  tracking-widest">About Credit Overrides</h4>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-4">
                         <div className="flex gap-4 group">
-                            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-black text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors">1</div>
-                            <p className="text-xs font-medium leading-relaxed opacity-80 flex-1">
+                            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[13px] font-black text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors">1</div>
+                            <p className="text-[13px] font-medium leading-relaxed opacity-80 flex-1">
                                 These overrides allow your university to use its own credit system for subjects without affecting the global master data.
                             </p>
                         </div>
                         <div className="flex gap-4 group">
-                            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-black text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors">2</div>
-                            <p className="text-xs font-medium leading-relaxed opacity-80 flex-1">
+                            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[13px] font-black text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors">2</div>
+                            <p className="text-[13px] font-medium leading-relaxed opacity-80 flex-1">
                                 If no override is provided, the subject will default to its **Global Credits** value.
                             </p>
                         </div>
@@ -295,9 +295,9 @@ const ManageCredits = () => {
                     <div className="bg-indigo-500/10 rounded-2xl p-6 border border-indigo-500/20 space-y-3">
                         <div className="flex items-center gap-2 text-indigo-400">
                             <AlertTriangle size={18} />
-                            <span className="text-xs font-black uppercase tracking-tight">Calculation Impact</span>
+                            <span className="text-[13px] font-black  tracking-tight">Calculation Impact</span>
                         </div>
-                        <p className="text-[10px] font-bold text-indigo-200 leading-relaxed uppercase tracking-tight">
+                        <p className="text-[12px] font-bold text-indigo-200 leading-relaxed  tracking-tight">
                             Changing credits will affect SGPA and CGPA calculations for all students enrolled in these subjects within your university.
                         </p>
                     </div>

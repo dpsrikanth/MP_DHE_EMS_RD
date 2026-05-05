@@ -216,7 +216,7 @@ const HallApprovals = () => {
                     </div>
                     <div>
                         <h1 className="text-3xl font-black text-slate-900 tracking-tight">Infrastructure Validation</h1>
-                        <p className="text-xs text-slate-400 font-black tracking-[0.2em] mt-1 uppercase">Review &amp; validate physical campus capacities</p>
+                        <p className="text-[13px] text-slate-400 font-black tracking-[0.2em] mt-1 ">Review &amp; validate physical campus capacities</p>
                     </div>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -262,7 +262,7 @@ const HallApprovals = () => {
                             </div>
                             <div>
                                 <h2 className="text-xl font-black text-slate-900">Infrastructure Shortages</h2>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Colleges requiring external center allocation</p>
+                                <p className="text-[12px] font-black text-slate-400  tracking-widest mt-0.5">Colleges requiring external center allocation</p>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -270,22 +270,22 @@ const HallApprovals = () => {
                                 <div key={req.id} className="bg-white p-6 rounded-2xl border border-rose-100/50 shadow-sm flex flex-col gap-5 hover:shadow-md transition-all">
                                     <div className="flex justify-between items-start gap-4">
                                         <span className="text-sm font-black text-slate-800 leading-tight">{req.college_name}</span>
-                                        <span className="flex-shrink-0 px-3 py-1 bg-amber-50 text-amber-600 text-[9px] font-black uppercase tracking-widest rounded-lg border border-amber-200">Pending</span>
+                                        <span className="flex-shrink-0 px-3 py-1 bg-amber-50 text-amber-600 text-[9px] font-black  tracking-widest rounded-lg border border-amber-200">Pending</span>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3 text-center">
                                         <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                                             <div className="text-xl font-black text-slate-800">{req.student_count}</div>
-                                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Students</div>
+                                            <div className="text-[9px] font-black text-slate-400  tracking-widest mt-1">Students</div>
                                         </div>
                                         <div className="bg-rose-50 rounded-xl p-4 border border-rose-100">
                                             <div className="text-xl font-black text-rose-600">{req.shortage}</div>
-                                            <div className="text-[9px] font-black text-rose-400 uppercase tracking-widest mt-1">Shortage</div>
+                                            <div className="text-[9px] font-black text-rose-400  tracking-widest mt-1">Shortage</div>
                                         </div>
                                     </div>
 
                                     <button
                                         onClick={() => { setSelectedRequest(req); setShowAllocateModal(true); }}
-                                        className="w-full py-3.5 bg-slate-900 hover:bg-black text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20"
+                                        className="w-full py-3.5 bg-slate-900 hover:bg-black text-white text-[13px] font-black  tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20"
                                     >
                                         Allocate Center <ArrowRight size={14} />
                                     </button>
@@ -327,14 +327,14 @@ const HallApprovals = () => {
                                                 <div>
                                                     <h3 className="text-xl font-black text-slate-800 leading-tight">{college.college_name}</h3>
                                                     <div className="flex items-center gap-2 mt-1">
-                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-full">ID: {college.college_id}</span>
+                                                        <span className="text-[12px] font-black text-slate-400  tracking-widest bg-slate-100 px-2 py-0.5 rounded-full">ID: {college.college_id}</span>
                                                         <div className="w-1 h-1 rounded-full bg-slate-300" />
-                                                        <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest leading-none">Pending: {college.halls.filter(h => h.status === 'Pending').length}</span>
+                                                        <span className="text-[12px] font-black text-purple-600  tracking-widest leading-none">Pending: {college.halls.filter(h => h.status === 'Pending').length}</span>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="bg-slate-900 text-white px-5 py-2.5 rounded-[1.25rem] text-center shadow-lg shadow-slate-900/20">
-                                                <div className="text-[9px] font-black uppercase tracking-widest opacity-60 mb-0.5">{isFulfilled ? 'Allotted' : 'Required'}</div>
+                                                <div className="text-[9px] font-black  tracking-widest opacity-60 mb-0.5">{isFulfilled ? 'Allotted' : 'Required'}</div>
                                                 <div className="text-xl font-black leading-none">{college.total_required}</div>
                                             </div>
                                         </div>
@@ -342,7 +342,7 @@ const HallApprovals = () => {
                                         <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
                                             <div className="md:col-span-3 space-y-4">
                                                 <div className="flex items-center justify-between mb-2">
-                                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                                    <h4 className="text-[12px] font-black text-slate-400  tracking-widest flex items-center gap-2">
                                                         <Zap size={14} className="text-amber-500" /> Infrastructure Queue
                                                     </h4>
                                                 </div>
@@ -350,20 +350,20 @@ const HallApprovals = () => {
                                                     {college.halls.map((hall) => (
                                                         <div key={hall.id} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-200/50 transition-all hover:bg-white hover:border-purple-200 hover:shadow-lg group/hall">
                                                             <div className="flex items-center gap-4">
-                                                                <span className="text-xs font-black text-slate-700 uppercase tracking-wider">{hall.hall_code}</span>
+                                                                <span className="text-[13px] font-black text-slate-700  tracking-wider">{hall.hall_code}</span>
                                                                 <div className="flex flex-col">
-                                                                    <span className="text-[8px] font-black text-slate-400 uppercase">Cap.</span>
-                                                                    <span className="text-xs font-black text-slate-900">{hall.total_capacity}</span>
+                                                                    <span className="text-[8px] font-black text-slate-400 ">Cap.</span>
+                                                                    <span className="text-[13px] font-black text-slate-900">{hall.total_capacity}</span>
                                                                 </div>
                                                                 {hall.status !== 'Pending' && (
-                                                                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${hall.status === 'Approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                                                                    <span className={`text-[8px] font-black  px-1.5 py-0.5 rounded ${hall.status === 'Approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
                                                                         {hall.status}
                                                                     </span>
                                                                 )}
                                                             </div>
                                                             <button 
                                                                 onClick={() => setSelectedCollegeId(String(college.college_id))}
-                                                                className="px-4 py-2 bg-white border border-slate-200 text-[9px] font-black text-purple-600 rounded-lg uppercase tracking-widest hover:bg-purple-50 hover:border-purple-200 transition-all"
+                                                                className="px-4 py-2 bg-white border border-slate-200 text-[9px] font-black text-purple-600 rounded-lg  tracking-widest hover:bg-purple-50 hover:border-purple-200 transition-all"
                                                             >
                                                                 View
                                                             </button>
@@ -376,8 +376,8 @@ const HallApprovals = () => {
                                                 <div className="bg-slate-50/80 rounded-[1.75rem] p-6 border border-slate-100 h-full flex flex-col relative overflow-hidden group/status">
                                                     {/* Goal/Target Label */}
                                                     <div className="flex items-center justify-between mb-4">
-                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Readiness Status</span>
-                                                        <div className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-tighter ${
+                                                        <span className="text-[12px] font-black text-slate-400  tracking-widest">Readiness Status</span>
+                                                        <div className={`px-2 py-0.5 rounded-lg text-[8px] font-black  tracking-tighter ${
                                                             isFulfilled ? 'bg-emerald-100 text-emerald-600' : 
                                                             (Number(college.college_approved_capacity) + college.halls.reduce((sum, h) => h.status === 'Pending' ? sum + Number(h.total_capacity) : sum, 0) >= Number(college.total_required)) 
                                                                 ? 'bg-amber-100 text-amber-600' 
@@ -392,7 +392,7 @@ const HallApprovals = () => {
                                                         <span className="text-3xl font-black text-slate-900 leading-none">{college.college_approved_capacity}</span>
                                                         <span className="text-sm font-bold text-slate-300">/ {college.total_required}</span>
                                                     </div>
-                                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Seeds Validated</div>
+                                                    <div className="text-[12px] font-black text-slate-400  tracking-widest mb-6">Seeds Validated</div>
 
                                                     {/* Progress Visual */}
                                                     <div className="relative h-4 w-full bg-white rounded-xl p-1 border border-slate-200 overflow-hidden shadow-inner mb-6">
@@ -410,7 +410,7 @@ const HallApprovals = () => {
                                                             <div className="flex items-start gap-3 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 animate-in fade-in zoom-in duration-300">
                                                                 <CheckCircle2 className="text-emerald-500 shrink-0 mt-0.5" size={18} />
                                                                 <div className="flex flex-col">
-                                                                    <span className="text-[11px] font-black text-emerald-700 uppercase tracking-tight">Success: Fully Seated</span>
+                                                                    <span className="text-[11px] font-black text-emerald-700  tracking-tight">Success: Fully Seated</span>
                                                                     <span className="text-[9px] font-bold text-emerald-600 leading-tight mt-0.5">This college has enough approved infrastructure for all {college.total_required} students.</span>
                                                                 </div>
                                                             </div>
@@ -418,7 +418,7 @@ const HallApprovals = () => {
                                                             <div className="flex items-start gap-3 p-4 bg-amber-50/50 rounded-2xl border border-amber-100 animate-in fade-in slide-in-from-bottom-2">
                                                                 <Clock className="text-amber-500 shrink-0 mt-0.5" size={18} />
                                                                 <div className="flex flex-col">
-                                                                    <span className="text-[11px] font-black text-amber-700 uppercase tracking-tight">Review Pending</span>
+                                                                    <span className="text-[11px] font-black text-amber-700  tracking-tight">Review Pending</span>
                                                                     <span className="text-[9px] font-bold text-amber-600 leading-tight mt-0.5">Verify the pending halls to cover the remaining {Number(college.total_required) - Number(college.college_approved_capacity)} students.</span>
                                                                 </div>
                                                             </div>
@@ -426,7 +426,7 @@ const HallApprovals = () => {
                                                             <div className="flex items-start gap-3 p-4 bg-rose-50/50 rounded-2xl border border-rose-100 animate-in shake">
                                                                 <AlertTriangle className="text-rose-500 shrink-0 mt-0.5" size={18} />
                                                                 <div className="flex flex-col">
-                                                                    <span className="text-[11px] font-black text-rose-700 uppercase tracking-tight">Action: Capacity Gap</span>
+                                                                    <span className="text-[11px] font-black text-rose-700  tracking-tight">Action: Capacity Gap</span>
                                                                     <span className="text-[9px] font-bold text-rose-600 leading-tight mt-0.5">Alert! Total infrastructure is short by {Number(college.total_required) - (Number(college.college_approved_capacity) + college.halls.reduce((sum, h) => h.status === 'Pending' ? sum + Number(h.total_capacity) : sum, 0))} seats.</span>
                                                                 </div>
                                                             </div>
@@ -436,7 +436,7 @@ const HallApprovals = () => {
                                                     <div className="mt-auto pt-6 border-t border-slate-200">
                                                         <button 
                                                             onClick={() => setSelectedCollegeId(String(college.college_id))}
-                                                            className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-slate-900/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                                            className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white text-[12px] font-black  tracking-widest rounded-2xl shadow-lg shadow-slate-900/20 active:scale-95 transition-all flex items-center justify-center gap-2"
                                                         >
                                                             Inspect Institution <ArrowRight size={14} />
                                                         </button>
@@ -460,7 +460,7 @@ const HallApprovals = () => {
                                     <div className="p-6 space-y-5">
                                         <div className="flex justify-between items-start">
                                             <div className="flex flex-col gap-1">
-                                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/10">
+                                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-900 text-white rounded-lg text-[12px] font-black  tracking-widest shadow-lg shadow-slate-900/10">
                                                     {hall.hall_code}
                                                 </div>
                                                 <h3 className="text-sm font-black text-slate-800 leading-tight line-clamp-2 mt-2" title={hall.college_name}>
@@ -468,8 +468,8 @@ const HallApprovals = () => {
                                                 </h3>
                                             </div>
                                             <div className="flex flex-col items-end">
-                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Status</span>
-                                                <span className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-lg border mt-0.5 ${
+                                                <span className="text-[12px] font-black text-slate-400  tracking-tighter">Status</span>
+                                                <span className={`px-2 py-0.5 text-[9px] font-black  tracking-widest rounded-lg border mt-0.5 ${
                                                     hall.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
                                                     hall.status === 'Rejected' ? 'bg-rose-50 text-rose-600 border-rose-200' :
                                                     'bg-amber-50 text-amber-600 border-amber-200'
@@ -481,9 +481,9 @@ const HallApprovals = () => {
 
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="bg-slate-50/80 rounded-2xl p-3 border border-slate-100/50">
-                                                <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Capacity</div>
+                                                <div className="text-[9px] font-black text-slate-400  tracking-widest mb-1">Capacity</div>
                                                 <div className="text-lg font-black text-slate-900 tabular-nums">{hall.total_capacity}</div>
-                                                <div className="text-[8px] font-black text-purple-600 uppercase tracking-tighter mt-0.5">{hall.rows}×{hall.seats_per_row}</div>
+                                                <div className="text-[8px] font-black text-purple-600  tracking-tighter mt-0.5">{hall.rows}×{hall.seats_per_row}</div>
                                             </div>
                                             {(() => {
                                                 const utilizationPct = hall.total_capacity > 0 
@@ -491,7 +491,7 @@ const HallApprovals = () => {
                                                     : 0;
                                                 return (
                                                     <div className="bg-indigo-50/50 rounded-2xl p-3 border border-indigo-100/50 relative overflow-hidden">
-                                                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Load Status</div>
+                                                        <div className="text-[9px] font-black text-slate-400  tracking-widest mb-1">Load Status</div>
                                                         <div className="text-lg font-black text-indigo-700 tabular-nums">{utilizationPct}%</div>
                                                         <div className="w-full h-1 bg-indigo-100 rounded-full mt-1.5 overflow-hidden">
                                                             <div className={`h-full rounded-full ${utilizationPct >= 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{ width: `${Math.min(utilizationPct, 100)}%` }} />
@@ -503,12 +503,12 @@ const HallApprovals = () => {
 
                                         <div className="flex flex-col gap-2 pt-2 border-t border-slate-50">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-[9px] font-bold text-slate-400 uppercase">Allocated Seats</span>
-                                                <span className="text-[10px] font-black text-slate-700">{hall.hall_allocated_count || 0} Students</span>
+                                                <span className="text-[9px] font-bold text-slate-400 ">Allocated Seats</span>
+                                                <span className="text-[12px] font-black text-slate-700">{hall.hall_allocated_count || 0} Students</span>
                                             </div>
                                             <div className="flex items-center justify-between">
-                                                <span className="text-[9px] font-bold text-slate-400 uppercase">Remaining Seats</span>
-                                                <span className={`text-[10px] font-black ${(hall.total_capacity - (hall.hall_allocated_count || 0)) > 0 ? 'text-indigo-600' : 'text-slate-400'}`}>
+                                                <span className="text-[9px] font-bold text-slate-400 ">Remaining Seats</span>
+                                                <span className={`text-[12px] font-black ${(hall.total_capacity - (hall.hall_allocated_count || 0)) > 0 ? 'text-indigo-600' : 'text-slate-400'}`}>
                                                     {(hall.total_capacity - (hall.hall_allocated_count || 0))} Available
                                                 </span>
                                             </div>
@@ -519,19 +519,19 @@ const HallApprovals = () => {
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <button 
                                                         onClick={() => handleAction(hall.id, 'Approved')}
-                                                        className="py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-emerald-500/10 active:scale-95 flex items-center justify-center gap-2"
+                                                        className="py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-[12px] font-black  tracking-widest rounded-xl transition-all shadow-lg shadow-emerald-500/10 active:scale-95 flex items-center justify-center gap-2"
                                                     >
                                                         <CheckCircle2 size={14} /> Approve
                                                     </button>
                                                     <button 
                                                         onClick={() => handleAction(hall.id, 'Rejected')}
-                                                        className="py-3 bg-white border border-rose-100 text-rose-500 hover:bg-rose-50 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                                                        className="py-3 bg-white border border-rose-100 text-rose-500 hover:bg-rose-50 text-[12px] font-black  tracking-widest rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2"
                                                     >
                                                         <XCircle size={14} /> Reject
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <div className={`w-full py-3 rounded-xl border flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest ${
+                                                <div className={`w-full py-3 rounded-xl border flex items-center justify-center gap-2 text-[12px] font-black  tracking-widest ${
                                                     hall.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'
                                                 }`}>
                                                     {hall.status === 'Approved' ? <ShieldCheck size={14} /> : <XCircle size={14} />}
@@ -555,7 +555,7 @@ const HallApprovals = () => {
                         <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div>
                                 <h3 className="text-xl font-black text-slate-900">External Allocation</h3>
-                                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">Assign alternative examination center</p>
+                                <p className="text-[13px] text-slate-500 font-bold  tracking-widest mt-0.5">Assign alternative examination center</p>
                             </div>
                             <button
                                 onClick={() => setShowAllocateModal(false)}
@@ -568,17 +568,17 @@ const HallApprovals = () => {
 
                         <div className="p-8 space-y-6">
                             <div className="bg-rose-50 rounded-2xl p-4 border border-rose-100 flex flex-col gap-1 text-center">
-                                <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest">Source Institution</span>
+                                <span className="text-[12px] font-black text-rose-400  tracking-widest">Source Institution</span>
                                 <span className="text-sm font-black text-slate-900">{selectedRequest.college_name}</span>
-                                <div className="mt-2 text-xs font-bold text-rose-600 flex items-center justify-center gap-1">
+                                <div className="mt-2 text-[13px] font-bold text-rose-600 flex items-center justify-center gap-1">
                                     <AlertTriangle size={14} /> Shortage: {selectedRequest.shortage} students
                                 </div>
                             </div>
 
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Select Nearby College</label>
-                                    <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-500 font-bold whitespace-nowrap">Radius: 8KM</span>
+                                    <label className="text-[13px] font-black text-slate-400  tracking-widest ml-1">Select Nearby College</label>
+                                    <span className="text-[12px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-500 font-bold whitespace-nowrap">Radius: 8KM</span>
                                 </div>
 
                                 {nearbyColleges.length > 0 ? (
@@ -600,16 +600,16 @@ const HallApprovals = () => {
                                             <div className="flex items-center gap-3 p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 animate-in fade-in slide-in-from-top-1">
                                                 <XCircle size={20} className="shrink-0" />
                                                 <div className="flex flex-col">
-                                                    <span className="text-xs font-black uppercase tracking-wider">Capacity Error</span>
-                                                    <span className="text-[10px] font-bold leading-tight mt-0.5">Seats are already filled select another college</span>
+                                                    <span className="text-[13px] font-black  tracking-wider">Capacity Error</span>
+                                                    <span className="text-[12px] font-bold leading-tight mt-0.5">Seats are already filled select another college</span>
                                                 </div>
                                             </div>
                                         ) : targetCollegeId && nearbyColleges.find(c => String(c.id) === String(targetCollegeId))?.internal_capacity === 0 && (
                                             <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-700 animate-in fade-in slide-in-from-top-1">
                                                 <AlertTriangle size={20} className="shrink-0" />
                                                 <div className="flex flex-col">
-                                                    <span className="text-xs font-black uppercase tracking-wider">Infrastructure Alert</span>
-                                                    <span className="text-[10px] font-bold leading-tight mt-0.5">This college has no approved halls. Please verify infrastructure before assigning students.</span>
+                                                    <span className="text-[13px] font-black  tracking-wider">Infrastructure Alert</span>
+                                                    <span className="text-[12px] font-bold leading-tight mt-0.5">This college has no approved halls. Please verify infrastructure before assigning students.</span>
                                                 </div>
                                             </div>
                                         )}
@@ -622,7 +622,7 @@ const HallApprovals = () => {
                             </div>
 
                             <div className="bg-blue-50/50 rounded-2xl p-4 border border-blue-100/50">
-                                <p className="text-[10px] font-bold text-blue-600 leading-relaxed text-center">
+                                <p className="text-[12px] font-bold text-blue-600 leading-relaxed text-center">
                                     Optimized for logistical efficiency based on distance.
                                 </p>
                             </div>
@@ -632,14 +632,14 @@ const HallApprovals = () => {
                             <button
                                 onClick={() => setShowAllocateModal(false)}
                                 disabled={allocating}
-                                className="flex-1 py-3 text-sm font-black text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest"
+                                className="flex-1 py-3 text-sm font-black text-slate-500 hover:text-slate-800 transition-colors  tracking-widest"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleAllocate}
                                 disabled={allocating || !targetCollegeId || nearbyColleges.find(c => String(c.id) === String(targetCollegeId))?.isFilled}
-                                className="flex-[2] py-3 bg-purple-600 hover:bg-purple-700 text-white text-sm font-black rounded-xl shadow-lg shadow-purple-500/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-widest"
+                                className="flex-[2] py-3 bg-purple-600 hover:bg-purple-700 text-white text-sm font-black rounded-xl shadow-lg shadow-purple-500/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2  tracking-widest"
                             >
                                 {allocating ? (
                                     <Clock size={16} className="animate-spin" />

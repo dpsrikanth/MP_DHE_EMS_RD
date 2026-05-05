@@ -211,8 +211,8 @@ const Universities = () => {
                   onSort={handleSort} 
                   visible={visibleColumns.name}
                 />
-                <th className={`${visibleColumns.colleges ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Linked Colleges</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Settings</th>
+                <th className={`${visibleColumns.colleges ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Linked Colleges</th>
+                <th className="px-8 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Settings</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -258,7 +258,7 @@ const Universities = () => {
                         <div className="w-px h-4 bg-slate-200 mx-1"></div>
                         <button 
                           onClick={() => navigate('/colleges', { state: { universityId: item.id, addMode: true } })}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl text-xs font-bold transition-all"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl text-[13px] font-bold transition-all"
                           title="Manage Colleges"
                         >
                           <Plus size={14} />
@@ -272,10 +272,10 @@ const Universities = () => {
                 <tr>
                   <td colSpan="4" className="px-8 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No universities match your search</p>
+                      <p className="text-sm font-bold text-slate-400  tracking-widest">No universities match your search</p>
                       <button 
                         onClick={() => setSearchQuery('')}
-                        className="text-xs font-black text-sky-500 hover:text-sky-600 underline uppercase tracking-tighter"
+                        className="text-[13px] font-black text-sky-500 hover:text-sky-600 underline  tracking-tighter"
                       >
                         Clear Search
                       </button>
@@ -315,7 +315,7 @@ const Universities = () => {
             <div className="p-2 divide-y divide-slate-50 max-h-[400px] overflow-y-auto">
               {detailsList.length === 0 ? (
                 <div className="py-12 text-center">
-                  <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No entries found</p>
+                  <p className="text-sm font-bold text-slate-400  tracking-widest">No entries found</p>
                 </div>
               ) : (
                 detailsList.map((item) => (

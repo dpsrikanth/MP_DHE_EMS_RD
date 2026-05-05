@@ -96,7 +96,7 @@ const FacultyAssignmentEdit = () => {
         <div className="p-6 md:p-8 space-y-6 animate-in slide-in-from-bottom-4 duration-500">
             <button 
                 onClick={() => navigate('/college-admin/faculty-assign')}
-                className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest"
+                className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors  tracking-widest"
             >
                 <ArrowLeft size={16} /> Back to Assignments
             </button>
@@ -172,7 +172,7 @@ const FacultyAssignmentEdit = () => {
                 <div className="flex justify-end pt-8 border-t border-slate-100">
                     <button
                         onClick={handleUpdateAssignment}
-                        className="inline-flex items-center gap-2 px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-xs rounded-xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02]"
+                        className="inline-flex items-center gap-2 px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black  tracking-widest text-[13px] rounded-xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02]"
                     >
                         <Save size={16} />
                         <span>Update Assignment</span>

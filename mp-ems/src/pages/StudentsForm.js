@@ -243,7 +243,7 @@ const StudentsForm = () => {
           </div>
           <div className="form-header__right">
              <div className="flex items-center gap-3">
-               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+               <span className="text-[12px] font-black text-slate-400  tracking-[0.2em] bg-white px-3 py-1.5 rounded-lg border border-slate-200">
                  Draft Mode
                </span>
              </div>

@@ -42,7 +42,7 @@ const Option = (props) => {
 
 const InfoItem = ({ label, value, isMono = false, className = "" }) => (
   <div className={`space-y-1.5 ${className}`}>
-    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none ml-0.5">{label}</p>
+    <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none ml-0.5">{label}</p>
     <div className={`bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl ${isMono ? 'font-mono' : 'font-bold'} text-slate-700 text-sm`}>
       {value || '-'}
     </div>
@@ -269,9 +269,9 @@ const Programs = () => {
                   onSort={handleSort} 
                   visible={visibleColumns.duration_years}
                 />
-                <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center`}>Status</th>
-                <th className={`${visibleColumns.created_at ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Created On</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
+                <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400 text-center`}>Status</th>
+                <th className={`${visibleColumns.created_at ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Created On</th>
+                <th className="px-8 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -285,7 +285,7 @@ const Programs = () => {
                       </td>
                     )}
                     {visibleColumns.duration_years && (
-                      <td className="px-4 py-5 text-[13px] font-bold text-emerald-600 uppercase tracking-tighter">
+                      <td className="px-4 py-5 text-[13px] font-bold text-emerald-600  tracking-tighter">
                         <span className="bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
                           {item.duration_years} Years
                         </span>
@@ -294,18 +294,18 @@ const Programs = () => {
                     {visibleColumns.status && (
                       <td className="px-4 py-5 text-center">
                         {(item.status === 'Active' || item.status === true) ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase border border-emerald-100 tracking-tighter shadow-sm">
+                          <span className="inline-flex items-center gap-1 text-[12px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full  border border-emerald-100 tracking-tighter shadow-sm">
                             <ShieldCheck size={12} /> Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase border border-slate-200 tracking-tighter">
+                          <span className="inline-flex items-center gap-1 text-[12px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full  border border-slate-200 tracking-tighter">
                             <ShieldAlert size={12} /> Inactive
                           </span>
                         )}
                       </td>
                     )}
                     {visibleColumns.created_at && (
-                      <td className="px-4 py-5 text-xs font-medium text-slate-400">{formatDate(item.created_at)}</td>
+                      <td className="px-4 py-5 text-[13px] font-medium text-slate-400">{formatDate(item.created_at)}</td>
                     )}
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -338,10 +338,10 @@ const Programs = () => {
                 <tr>
                   <td colSpan="5" className="px-8 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No programs found matching your search</p>
+                      <p className="text-sm font-bold text-slate-400  tracking-widest">No programs found matching your search</p>
                       <button 
                         onClick={() => setSearchQuery('')}
-                        className="text-xs font-black text-emerald-500 hover:text-emerald-600 underline uppercase tracking-tighter"
+                        className="text-[13px] font-black text-emerald-500 hover:text-emerald-600 underline  tracking-tighter"
                       >
                         Clear Filters
                       </button>
@@ -371,7 +371,7 @@ const Programs = () => {
             <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 leading-none mb-1">Assign Program</h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70">Master Catalog</p>
+                <p className="text-[12px] font-black text-slate-400  tracking-widest opacity-70">Master Catalog</p>
               </div>
               <button 
                 onClick={() => setShowAssignModal(false)}
@@ -383,7 +383,7 @@ const Programs = () => {
             
             <div className="p-10 space-y-8">
               <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Select from Master</label>
+                <label className="text-[11px] font-black text-slate-400  tracking-widest ml-1">Select from Master</label>
                 <Select
                   options={availableMasters.filter(m => !data.some(d => d.id === m.value))}
                   value={mappingSelection}
@@ -404,7 +404,7 @@ const Programs = () => {
                     })
                   }}
                 />
-                <p className="text-[10px] text-slate-400 font-medium px-1">If the program you need is not in the list, please contact the System Administrator.</p>
+                <p className="text-[12px] text-slate-400 font-medium px-1">If the program you need is not in the list, please contact the System Administrator.</p>
               </div>
             </div>
 
@@ -418,7 +418,7 @@ const Programs = () => {
               <button 
                 onClick={handleMap}
                 disabled={!mappingSelection}
-                className="px-10 py-4 bg-emerald-600 disabled:opacity-50 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm uppercase tracking-widest flex items-center gap-3"
+                className="px-10 py-4 bg-emerald-600 disabled:opacity-50 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm  tracking-widest flex items-center gap-3"
               >
                 <Check size={20} />
                 <span>Assign Program</span>
@@ -473,7 +473,7 @@ const Programs = () => {
                 <h2 className="text-2xl font-black tracking-tight leading-none mb-1">
                   Program Profile
                 </h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70 flex items-center gap-2">
+                <p className="text-[12px] font-black text-slate-400  tracking-widest opacity-70 flex items-center gap-2">
                   <BookOpen size={12} /> Academic Management System
                 </p>
               </div>
@@ -508,7 +508,7 @@ const Programs = () => {
                     viewData.department_ids.map(deptId => {
                       const dept = departments.find(d => d.value === deptId);
                       return (
-                        <span key={deptId} className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-600">
+                        <span key={deptId} className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold text-slate-600">
                           {dept ? dept.label : `ID: ${deptId}`}
                         </span>
                       );
@@ -524,7 +524,7 @@ const Programs = () => {
             <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex justify-end">
               <button 
                 onClick={() => setShowViewModal(false)}
-                className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm uppercase tracking-widest"
+                className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm  tracking-widest"
               >
                 Close Details
               </button>

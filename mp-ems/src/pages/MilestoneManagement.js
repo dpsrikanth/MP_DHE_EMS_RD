@@ -253,13 +253,13 @@ const MilestoneManagement = () => {
           </div>
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight italic">Institutional<span className="text-indigo-500 not-italic ml-2">Milestones</span></h1>
-            <p className="text-sm text-slate-500 font-medium tracking-tight uppercase tracking-widest">Global Academic roadmap & administrative deadlines</p>
+            <p className="text-sm text-slate-500 font-medium tracking-tight  tracking-widest">Global Academic roadmap & administrative deadlines</p>
           </div>
         </div>
         {canEdit && (
           <div className="flex items-center gap-6">
             <div className="flex flex-col items-end gap-1.5 px-6 py-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Schedule Validation</span>
+              <span className="text-[12px] font-black text-slate-400  tracking-widest">Schedule Validation</span>
               <button 
                 onClick={toggleValidation}
                 disabled={updatingSettings}
@@ -271,7 +271,7 @@ const MilestoneManagement = () => {
 
             <button 
               onClick={handleAddClick}
-              className="flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase text-xs tracking-widest"
+              className="flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]  text-[13px] tracking-widest"
             >
               <Plus size={20} />
               <span>Add Milestone</span>
@@ -283,7 +283,7 @@ const MilestoneManagement = () => {
       {/* Filter Section */}
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-wrap gap-4 items-end mb-8">
         <div className="flex-1 min-w-[200px]">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Academic Year</label>
+          <label className="block text-[12px] font-bold text-slate-400  tracking-widest mb-2 ml-1">Academic Year</label>
           <select name="academic_year_id" value={filters.academic_year_id} onChange={handleFilterChange} className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-700">
             <option value="">All Years</option>
             {metadata.academicYears.map(y => (
@@ -292,14 +292,14 @@ const MilestoneManagement = () => {
           </select>
         </div>
         <div className="flex-1 min-w-[200px]">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Program</label>
+          <label className="block text-[12px] font-bold text-slate-400  tracking-widest mb-2 ml-1">Program</label>
           <select name="program_id" value={filters.program_id} onChange={handleFilterChange} className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-700">
             <option value="">All Programs</option>
             {metadata.programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         </div>
         <div className="flex-1 min-w-[200px]">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Semester</label>
+          <label className="block text-[12px] font-bold text-slate-400  tracking-widest mb-2 ml-1">Semester</label>
           <select name="semester_id" value={filters.semester_id} onChange={handleFilterChange} className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-700">
             <option value="">All Semesters</option>
             {metadata.semesters.map(s => <option key={s.id} value={s.id}>{s.semester_name}</option>)}
@@ -322,8 +322,8 @@ const MilestoneManagement = () => {
               <tr className="bg-slate-50/50">
                 <SortHeader label="Activity" field="name" currentSort={sortConfig} onSort={handleSort} className="px-8 py-5" visible={true} />
                 <SortHeader label="Timeline" field="start_date" currentSort={sortConfig} onSort={handleSort} className="px-4 py-5" visible={true} />
-                <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Responsibility</th>
-                {canEdit && <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>}
+                <th className="px-4 py-5 text-[13px] font-black  tracking-widest text-slate-400">Responsibility</th>
+                {canEdit && <th className="px-4 py-5 text-[13px] font-black  tracking-widest text-slate-400 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -331,45 +331,45 @@ const MilestoneManagement = () => {
                 <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group text-[11px] font-bold">
                   <td className="px-8 py-5">
                     <div className="flex flex-col gap-1">
-                      <span className="text-sm font-black text-slate-900 uppercase tracking-tight">{item.name}</span>
+                      <span className="text-sm font-black text-slate-900  tracking-tight">{item.name}</span>
                       <div className="flex flex-wrap gap-1.5 items-center mt-1">
                         <span className={`text-[9px] font-black w-fit px-2 py-0.5 rounded-md border 
                           ${item.type === 'Internal' ? 'bg-sky-50 text-sky-600 border-sky-100' : 
-                            item.type === 'External' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-slate-50 text-slate-500 border-slate-200'} uppercase`}>
+                            item.type === 'External' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-slate-50 text-slate-500 border-slate-200'} `}>
                           {item.type}
                         </span>
                         
                         {/* Scope Badges */}
                         {resolveMetadataName('academicYears', item.academic_year_id) && (
-                          <span className="text-[9px] font-black bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-md uppercase">
+                          <span className="text-[9px] font-black bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-md ">
                             {resolveMetadataName('academicYears', item.academic_year_id)}
                           </span>
                         )}
                         {resolveMetadataName('programs', item.program_id) && (
-                          <span className="text-[9px] font-black bg-violet-50 text-violet-600 border border-violet-100 px-2 py-0.5 rounded-md uppercase">
+                          <span className="text-[9px] font-black bg-violet-50 text-violet-600 border border-violet-100 px-2 py-0.5 rounded-md ">
                             {resolveMetadataName('programs', item.program_id)}
                           </span>
                         )}
                         {resolveMetadataName('semesters', item.semester_id) && (
-                          <span className="text-[9px] font-black bg-purple-50 text-purple-600 border border-purple-100 px-2 py-0.5 rounded-md uppercase">
+                          <span className="text-[9px] font-black bg-purple-50 text-purple-600 border border-purple-100 px-2 py-0.5 rounded-md ">
                             {resolveMetadataName('semesters', item.semester_id)}
                           </span>
                         )}
                         {!item.academic_year_id && !item.program_id && !item.semester_id && (
-                          <span className="text-[9px] font-black bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-md uppercase italic">
+                          <span className="text-[9px] font-black bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-md  italic">
                             Global
                           </span>
                         )}
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-5 font-mono text-xs font-bold text-slate-500 italic lowercase tracking-tighter">
+                  <td className="px-4 py-5 font-mono text-[13px] font-bold text-slate-500 italic lowercase tracking-tighter">
                      {formatDate(item.start_date)} - {formatDate(item.end_date)}
                   </td>
                   <td className="px-4 py-5">
                     <div className="flex items-center gap-2">
                        <User size={14} className="text-indigo-400" />
-                       <span className="text-xs font-black text-slate-600 uppercase tracking-widest">{item.responsibility}</span>
+                       <span className="text-[13px] font-black text-slate-600  tracking-widest">{item.responsibility}</span>
                     </div>
                   </td>
                   {canEdit && (
@@ -396,35 +396,35 @@ const MilestoneManagement = () => {
             <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 leading-none">{formData.id ? 'Edit' : 'New'} Milestone</h2>
-                <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mt-2">Institutional Roadmap Data</p>
+                <p className="text-[12px] font-black text-indigo-500  tracking-[0.2em] mt-2">Institutional Roadmap Data</p>
               </div>
               <button type="button" onClick={() => setShowModal(false)} className="p-3 bg-white text-slate-400 hover:bg-slate-100 rounded-2xl transition-all shadow-sm border border-slate-100"><X size={20} /></button>
             </div>
             
             <div className="p-10 space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Activity Name</label>
+                <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1">Activity Name</label>
                 <input required type="text" name="name" value={formData.name} onChange={handleInputChange} className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-500 focus:bg-white outline-none transition-all" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Start Date</label>
+                  <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1">Start Date</label>
                   <input required type="date" name="start_date" value={formData.start_date} onChange={handleInputChange} className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-500 focus:bg-white outline-none transition-all" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">End Date</label>
+                  <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1">End Date</label>
                   <input required type="date" name="end_date" value={formData.end_date} onChange={handleInputChange} className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-500 focus:bg-white outline-none transition-all" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Responsibility</label>
+                  <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1">Responsibility</label>
                   <input required type="text" name="responsibility" placeholder="e.g. Faculty, HOD" value={formData.responsibility} onChange={handleInputChange} className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-500 focus:bg-white outline-none transition-all" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Event Type</label>
+                  <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1">Event Type</label>
                   <select name="type" value={formData.type} onChange={handleInputChange} className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-500 focus:bg-white outline-none transition-all">
                     <option value="General">General</option>
                     <option value="Internal">Internal</option>
@@ -434,25 +434,25 @@ const MilestoneManagement = () => {
               </div>
 
               <div className="space-y-4 border-t border-slate-50 pt-6">
-                <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest leading-none">Milestone Scope (Leave blank for global)</p>
+                <p className="text-[12px] font-black text-indigo-500  tracking-widest leading-none">Milestone Scope (Leave blank for global)</p>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Year</label>
-                    <select name="academic_year_id" value={formData.academic_year_id} onChange={handleInputChange} className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold focus:border-indigo-500 outline-none transition-all">
+                    <label className="text-[9px] font-black text-slate-400  tracking-widest ml-1">Year</label>
+                    <select name="academic_year_id" value={formData.academic_year_id} onChange={handleInputChange} className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold focus:border-indigo-500 outline-none transition-all">
                       <option value="">Global</option>
                       {metadata.academicYears.map(y => <option key={y.id} value={y.id}>{y.year_name || `${y.start_year}-${y.end_year}`}</option>)}
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Program</label>
-                    <select name="program_id" value={formData.program_id} onChange={handleInputChange} className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold focus:border-indigo-500 outline-none transition-all">
+                    <label className="text-[9px] font-black text-slate-400  tracking-widest ml-1">Program</label>
+                    <select name="program_id" value={formData.program_id} onChange={handleInputChange} className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold focus:border-indigo-500 outline-none transition-all">
                       <option value="">Global</option>
                       {metadata.programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Semester</label>
-                    <select name="semester_id" value={formData.semester_id} onChange={handleInputChange} className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold focus:border-indigo-500 outline-none transition-all">
+                    <label className="text-[9px] font-black text-slate-400  tracking-widest ml-1">Semester</label>
+                    <select name="semester_id" value={formData.semester_id} onChange={handleInputChange} className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold focus:border-indigo-500 outline-none transition-all">
                       <option value="">Global</option>
                       {metadata.semesters.map(s => <option key={s.id} value={s.id}>{s.semester_name}</option>)}
                     </select>
@@ -463,7 +463,7 @@ const MilestoneManagement = () => {
 
             <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4">
               <button type="button" onClick={() => setShowModal(false)} className="text-sm font-bold text-slate-400 hover:text-slate-600 px-4">Cancel</button>
-              <button type="submit" className="px-10 py-4 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 transition-all uppercase text-xs tracking-widest flex items-center gap-2">
+              <button type="submit" className="px-10 py-4 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 transition-all  text-[13px] tracking-widest flex items-center gap-2">
                 <Check size={20} />
                 <span>{formData.id ? 'Save Changes' : 'Create Milestone'}</span>
               </button>
@@ -484,8 +484,8 @@ const MilestoneManagement = () => {
               <h3 className="text-2xl font-black text-slate-900 mb-2">Delete Milestone?</h3>
               <p className="text-slate-500 text-sm font-medium leading-relaxed mb-10 italic">This activity will be removed from the institutional roadmap permanently.</p>
               <div className="flex gap-4 w-full">
-                <button className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold rounded-2xl transition-all uppercase text-[10px] tracking-widest" onClick={() => setShowDeleteModal(false)}>Cancel</button>
-                <button className="flex-1 py-4 bg-red-500 hover:bg-red-600 text-white font-black rounded-2xl shadow-xl shadow-red-500/20 transition-all uppercase text-[10px] tracking-widest" onClick={confirmDelete}>Delete</button>
+                <button className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold rounded-2xl transition-all  text-[12px] tracking-widest" onClick={() => setShowDeleteModal(false)}>Cancel</button>
+                <button className="flex-1 py-4 bg-red-500 hover:bg-red-600 text-white font-black rounded-2xl shadow-xl shadow-red-500/20 transition-all  text-[12px] tracking-widest" onClick={confirmDelete}>Delete</button>
               </div>
             </div>
           </div>

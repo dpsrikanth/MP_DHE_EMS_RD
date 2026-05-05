@@ -56,12 +56,12 @@ const ViewStudentsAndUniversities = () => {
             <div className="w-12 h-12 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-600 group-hover:scale-110 transition-transform">
               <Users size={24} />
             </div>
-            <span className="text-[10px] font-black text-emerald-500 bg-emerald-50 px-2 py-1 rounded-lg uppercase tracking-wider">Active</span>
+            <span className="text-[12px] font-black text-emerald-500 bg-emerald-50 px-2 py-1 rounded-lg  tracking-wider">Active</span>
           </div>
-          <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-1">Total Students</p>
+          <p className="text-slate-500 text-sm font-bold  tracking-widest mb-1">Total Students</p>
           <div className="flex items-end gap-2">
             <h3 className="text-3xl font-black text-slate-900 leading-none">{students.length}</h3>
-            <p className="text-xs font-bold text-slate-400 mb-1">Enrolled</p>
+            <p className="text-[13px] font-bold text-slate-400 mb-1">Enrolled</p>
           </div>
         </div>
 
@@ -70,12 +70,12 @@ const ViewStudentsAndUniversities = () => {
             <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
               <School size={24} />
             </div>
-            <span className="text-[10px] font-black text-indigo-500 bg-indigo-50 px-2 py-1 rounded-lg uppercase tracking-wider">Affiliated</span>
+            <span className="text-[12px] font-black text-indigo-500 bg-indigo-50 px-2 py-1 rounded-lg  tracking-wider">Affiliated</span>
           </div>
-          <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-1">Total Universities</p>
+          <p className="text-slate-500 text-sm font-bold  tracking-widest mb-1">Total Universities</p>
           <div className="flex items-end gap-2">
             <h3 className="text-3xl font-black text-slate-900 leading-none">{universities.length}</h3>
-            <p className="text-xs font-bold text-slate-400 mb-1">Partners</p>
+            <p className="text-[13px] font-bold text-slate-400 mb-1">Partners</p>
           </div>
         </div>
 
@@ -84,9 +84,9 @@ const ViewStudentsAndUniversities = () => {
             <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
               <Activity size={24} />
             </div>
-            <span className="text-[10px] font-black text-emerald-500 bg-emerald-50 px-2 py-1 rounded-lg uppercase tracking-wider">Live</span>
+            <span className="text-[12px] font-black text-emerald-500 bg-emerald-50 px-2 py-1 rounded-lg  tracking-wider">Live</span>
           </div>
-          <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-1">System Health</p>
+          <p className="text-slate-500 text-sm font-bold  tracking-widest mb-1">System Health</p>
           <div className="flex items-end gap-2">
             <h3 className="text-3xl font-black text-slate-900 leading-none">Optimal</h3>
             <span className="w-2 h-2 rounded-full bg-emerald-500 mb-2 animate-pulse"></span>
@@ -98,12 +98,12 @@ const ViewStudentsAndUniversities = () => {
             <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
               <TrendingUp size={24} />
             </div>
-            <span className="text-[10px] font-black text-amber-500 bg-amber-50 px-2 py-1 rounded-lg uppercase tracking-wider">Growth</span>
+            <span className="text-[12px] font-black text-amber-500 bg-amber-50 px-2 py-1 rounded-lg  tracking-wider">Growth</span>
           </div>
-          <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-1">Ecosystem Pulse</p>
+          <p className="text-slate-500 text-sm font-bold  tracking-widest mb-1">Ecosystem Pulse</p>
           <div className="flex items-end gap-2">
             <h3 className="text-3xl font-black text-slate-900 leading-none">+12.4%</h3>
-            <p className="text-xs font-bold text-slate-400 mb-1">Monthly</p>
+            <p className="text-[13px] font-bold text-slate-400 mb-1">Monthly</p>
           </div>
         </div>
       </div>
@@ -152,7 +152,7 @@ const ViewStudentsAndUniversities = () => {
           {loading ? (
             <div className="py-20 flex flex-col items-center justify-center gap-4">
               <div className="w-12 h-12 border-4 border-sky-100 border-t-sky-500 rounded-full animate-spin"></div>
-              <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Synchronizing Ecosystem Data...</p>
+              <p className="text-slate-400 font-bold  tracking-widest text-[13px]">Synchronizing Ecosystem Data...</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -165,12 +165,12 @@ const ViewStudentsAndUniversities = () => {
                   <div className="w-16 h-16 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-600 mb-6 group-hover:bg-sky-500 group-hover:text-white transition-all duration-300">
                     <Users size={28} />
                   </div>
-                  <h4 className="text-xl font-black text-slate-900 mb-2 truncate group-hover:text-sky-600 transition-colors uppercase tracking-tight">{student.student_name}</h4>
+                  <h4 className="text-xl font-black text-slate-900 mb-2 truncate group-hover:text-sky-600 transition-colors  tracking-tight">{student.student_name}</h4>
                   <p className="text-sm font-bold text-slate-400 mb-6 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
                     Student ID: <span className="text-slate-600">{student.student_id || student.id}</span>
                   </p>
-                  <button className="w-full flex items-center justify-center gap-2 py-3 bg-slate-50 text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest group-hover:bg-sky-500 group-hover:text-white transition-all">
+                  <button className="w-full flex items-center justify-center gap-2 py-3 bg-slate-50 text-slate-900 rounded-xl font-black text-[13px]  tracking-widest group-hover:bg-sky-500 group-hover:text-white transition-all">
                     View Portfolio
                     <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
                   </button>
@@ -186,12 +186,12 @@ const ViewStudentsAndUniversities = () => {
                   <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-6 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300">
                     <School size={28} />
                   </div>
-                  <h4 className="text-xl font-black text-slate-900 mb-2 truncate group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{uni.university_name}</h4>
+                  <h4 className="text-xl font-black text-slate-900 mb-2 truncate group-hover:text-indigo-600 transition-colors  tracking-tight">{uni.university_name}</h4>
                   <p className="text-sm font-bold text-slate-400 mb-6 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
                     University Code: <span className="text-slate-600">{uni.university_code || uni.id}</span>
                   </p>
-                  <button className="w-full flex items-center justify-center gap-2 py-3 bg-slate-50 text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest group-hover:bg-indigo-500 group-hover:text-white transition-all">
+                  <button className="w-full flex items-center justify-center gap-2 py-3 bg-slate-50 text-slate-900 rounded-xl font-black text-[13px]  tracking-widest group-hover:bg-indigo-500 group-hover:text-white transition-all">
                     Affiliation Details
                     <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
                   </button>

@@ -211,9 +211,9 @@ const Semesters = () => {
                   onSort={handleSort} 
                   visible={visibleColumns.semester_name}
                 />
-                <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center`}>Status</th>
-                <th className={`${visibleColumns.log ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>System Log</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Settings</th>
+                <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400 text-center`}>Status</th>
+                <th className={`${visibleColumns.log ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>System Log</th>
+                <th className="px-8 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Settings</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -222,7 +222,7 @@ const Semesters = () => {
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
                     {visibleColumns.id && (
                       <td className="px-8 py-5">
-                        <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                        <span className="text-[12px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                           #{item.id}
                         </span>
                       </td>
@@ -240,11 +240,11 @@ const Semesters = () => {
                     {visibleColumns.status && (
                       <td className="px-4 py-5 text-center">
                         {(item.status === 'Active' || item.status === true) ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase border border-emerald-100 tracking-tighter shadow-sm">
+                          <span className="inline-flex items-center gap-1 text-[12px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full  border border-emerald-100 tracking-tighter shadow-sm">
                             <ShieldCheck size={12} /> Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase border border-slate-200 tracking-tighter">
+                          <span className="inline-flex items-center gap-1 text-[12px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full  border border-slate-200 tracking-tighter">
                             <ShieldAlert size={12} /> Inactive
                           </span>
                         )}
@@ -252,8 +252,8 @@ const Semesters = () => {
                     )}
                     {visibleColumns.log && (
                       <td className="px-4 py-5">
-                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Registered On</p>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-[12px] font-black text-slate-300  tracking-widest mb-1">Registered On</p>
+                        <p className="text-[13px] font-semibold text-slate-500">
                           {formatDate(item.created_at)}
                         </p>
                       </td>
@@ -282,10 +282,10 @@ const Semesters = () => {
                 <tr>
                   <td colSpan="4" className="px-8 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No semesters found matching your criteria</p>
+                      <p className="text-sm font-bold text-slate-400  tracking-widest">No semesters found matching your criteria</p>
                       <button 
                         onClick={() => setSearchQuery('')}
-                        className="text-xs font-black text-indigo-500 hover:text-indigo-600 underline uppercase tracking-tighter"
+                        className="text-[13px] font-black text-indigo-500 hover:text-indigo-600 underline  tracking-tighter"
                       >
                         Reset Results
                       </button>
@@ -317,7 +317,7 @@ const Semesters = () => {
             <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 leading-none mb-1">Assign Semester</h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70">Master Catalog</p>
+                <p className="text-[12px] font-black text-slate-400  tracking-widest opacity-70">Master Catalog</p>
               </div>
               <button 
                 onClick={() => setShowAssignModal(false)}
@@ -329,7 +329,7 @@ const Semesters = () => {
             
             <div className="p-10 space-y-8">
               <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Select from Master</label>
+                <label className="text-[11px] font-black text-slate-400  tracking-widest ml-1">Select from Master</label>
                 <Select
                   options={availableMasters.filter(m => !data.some(d => d.id === m.value))}
                   value={mappingSelection}
@@ -350,7 +350,7 @@ const Semesters = () => {
                     })
                   }}
                 />
-                <p className="text-[10px] text-slate-400 font-medium px-1">If the semester you need is not in the list, please contact the System Administrator.</p>
+                <p className="text-[12px] text-slate-400 font-medium px-1">If the semester you need is not in the list, please contact the System Administrator.</p>
               </div>
             </div>
 
@@ -365,7 +365,7 @@ const Semesters = () => {
               <button 
                 onClick={handleMap}
                 disabled={!mappingSelection}
-                className="px-10 py-4 bg-indigo-600 disabled:opacity-50 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm uppercase tracking-widest flex items-center gap-3"
+                className="px-10 py-4 bg-indigo-600 disabled:opacity-50 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm  tracking-widest flex items-center gap-3"
               >
                 <Check size={20} />
                 <span>Assign Semester</span>

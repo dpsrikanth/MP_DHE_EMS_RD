@@ -278,12 +278,12 @@ const ExaminationHalls = () => {
                     </div>
                     <div>
                         <h1 className="text-3xl font-black text-slate-900 tracking-tight">Examination Halls</h1>
-                        <p className="text-sm text-slate-500 font-medium tracking-wide mt-1 uppercase">Configure physical hall infrastructure and manage approvals.</p>
+                        <p className="text-sm text-slate-500 font-medium tracking-wide mt-1 ">Configure physical hall infrastructure and manage approvals.</p>
                     </div>
                 </div>
                 {/* Global Exam Context Selector */}
                 <div className="flex flex-col gap-1 min-w-[280px]">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Active Exam Context</label>
+                    <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1">Active Exam Context</label>
                     <select
                         value={newHall.exam_id}
                         onChange={(e) => setNewHall({ ...newHall, exam_id: e.target.value })}
@@ -312,15 +312,15 @@ const ExaminationHalls = () => {
                     </div>
                     <div>
                         <h2 className="text-lg font-black text-slate-900">Total Campus Rooms Configuration</h2>
-                        <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">Define the absolute limit of physical rooms available in your institution</p>
+                        <p className="text-[13px] font-bold text-slate-500 mt-1  tracking-wider">Define the absolute limit of physical rooms available in your institution</p>
                         {/* Context badge — only shows when an exam is chosen */}
                         {newHall.exam_id && (
                             totalRooms > 0 ? (
-                                <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black rounded-full uppercase tracking-widest">
+                                <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[12px] font-black rounded-full  tracking-widest">
                                     <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"/> {totalRooms} Rooms Configured for this Exam
                                 </span>
                             ) : (
-                                <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 bg-rose-50 border border-rose-200 text-rose-600 text-[10px] font-black rounded-full uppercase tracking-widest animate-pulse">
+                                <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 bg-rose-50 border border-rose-200 text-rose-600 text-[12px] font-black rounded-full  tracking-widest animate-pulse">
                                     <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"/> Set Room Limit Before Adding Halls
                                 </span>
                             )
@@ -340,7 +340,7 @@ const ExaminationHalls = () => {
                             />
                             <button
                                 onClick={handleUpdateTotalRooms}
-                                className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 uppercase tracking-widest text-xs"
+                                className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95  tracking-widest text-[13px]"
                             >
                                 Save Limit
                             </button>
@@ -354,7 +354,7 @@ const ExaminationHalls = () => {
                             </div>
                             <button
                                 onClick={() => setIsEditingRooms(true)}
-                                className={`px-8 py-4 font-black rounded-2xl shadow-sm transition-all active:scale-95 uppercase tracking-widest text-xs border ${
+                                className={`px-8 py-4 font-black rounded-2xl shadow-sm transition-all active:scale-95  tracking-widest text-[13px] border ${
                                     newHall.exam_id && totalRooms < 1
                                         ? 'bg-rose-500 hover:bg-rose-600 text-white border-rose-500 shadow-rose-200 animate-pulse'
                                         : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-600'
@@ -373,7 +373,7 @@ const ExaminationHalls = () => {
             <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between transition-all hover:border-indigo-200 group">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-indigo-400">Total Students</span>
+                            <span className="text-[12px] font-black text-slate-400  tracking-widest group-hover:text-indigo-400">Total Students</span>
                             {newHall.exam_id ? (
                                 <span className="text-[9px] font-bold text-indigo-500 lowercase italic mt-0.5">
                                     {exams.find(e => String(e.id) === String(newHall.exam_id))?.program_name || ''} - {exams.find(e => String(e.id) === String(newHall.exam_id))?.semester_name || ''}
@@ -388,7 +388,7 @@ const ExaminationHalls = () => {
                     </div>
                     <div>
                         <span className="text-4xl font-black text-slate-900">{totalStudents}</span>
-                        {newHall.exam_id && <span className="text-xs font-bold text-indigo-400 ml-2">for selected exam</span>}
+                        {newHall.exam_id && <span className="text-[13px] font-bold text-indigo-400 ml-2">for selected exam</span>}
                     </div>
                 </div>
 
@@ -396,7 +396,7 @@ const ExaminationHalls = () => {
                 <div className="bg-white p-6 rounded-[2rem] border border-emerald-100 shadow-sm flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full translate-x-16 -translate-y-16 pointer-events-none" />
                     <div className="flex items-center justify-between mb-4 relative z-10">
-                        <span className="text-[10px] font-black text-emerald-600/70 uppercase tracking-widest">Approved Capacity (Seats)</span>
+                        <span className="text-[12px] font-black text-emerald-600/70  tracking-widest">Approved Capacity (Seats)</span>
                         <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 transition-colors">
                             <CheckCircle2 size={18} />
                         </div>
@@ -413,7 +413,7 @@ const ExaminationHalls = () => {
                     <div className={`absolute top-0 right-0 w-32 h-32 rounded-full translate-x-16 -translate-y-16 pointer-events-none ${approvedCapacity < totalLoad ? 'bg-rose-100/50' : 'bg-blue-50'
                         }`} />
                     <div className="flex items-center justify-between mb-4 relative z-10">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${approvedCapacity < totalLoad ? 'text-rose-600' : 'text-blue-500'
+                        <span className={`text-[12px] font-black  tracking-widest ${approvedCapacity < totalLoad ? 'text-rose-600' : 'text-blue-500'
                             }`}>
                             {approvedCapacity < totalLoad ? 'Shortage' : 'Surplus Capacity'}
                         </span>
@@ -428,7 +428,7 @@ const ExaminationHalls = () => {
                                 }`}>
                                 {Math.abs(totalLoad - approvedCapacity)}
                             </span>
-                            <span className={`text-xs font-black uppercase tracking-widest ml-1 ${approvedCapacity < totalLoad ? 'text-rose-400' : 'text-blue-400'
+                            <span className={`text-[13px] font-black  tracking-widest ml-1 ${approvedCapacity < totalLoad ? 'text-rose-400' : 'text-blue-400'
                                 }`}>Seats</span>
                         </div>
                         {approvedCapacity < totalLoad && (() => {
@@ -437,7 +437,7 @@ const ExaminationHalls = () => {
                             const allocatedReport = shortageRequests.find(r => r.status === 'Allocated');
                             if (allocatedReport) {
                                 return (
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-xl text-[12px] font-black  tracking-widest">
                                         <CheckCircle2 size={12} />
                                         Center Assigned
                                     </span>
@@ -445,7 +445,7 @@ const ExaminationHalls = () => {
                             }
                             if (pendingReport) {
                                 return (
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-xl text-[10px] font-black uppercase tracking-widest animate-pulse">
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-xl text-[12px] font-black  tracking-widest animate-pulse">
                                         <Clock size={12} />
                                         Reported · Awaiting
                                     </span>
@@ -454,7 +454,7 @@ const ExaminationHalls = () => {
                             return (
                                 <button
                                     onClick={handleReportShortage}
-                                    className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2"
+                                    className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-[12px] font-black  tracking-widest rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2"
                                 >
                                     <SendHorizontal size={14} />
                                     Report
@@ -467,7 +467,7 @@ const ExaminationHalls = () => {
                 <div className="bg-white p-6 rounded-[2rem] border border-amber-100 shadow-sm flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full translate-x-16 -translate-y-16 pointer-events-none" />
                     <div className="flex items-center justify-between mb-4 relative z-10">
-                        <span className="text-[10px] font-black text-amber-600/70 uppercase tracking-widest">Awaiting Verification</span>
+                        <span className="text-[12px] font-black text-amber-600/70  tracking-widest">Awaiting Verification</span>
                         <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 transition-colors">
                             <Clock size={18} />
                         </div>
@@ -477,7 +477,7 @@ const ExaminationHalls = () => {
                             {pendingCapacity + shortageRequests.filter(r => r.status === 'Pending').length}
                         </span>
                         {shortageRequests.some(r => r.status === 'Pending') && (
-                            <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">
+                            <p className="text-[12px] font-bold text-amber-500  tracking-widest">
                                 Incl. shortage report pending
                             </p>
                         )}
@@ -492,7 +492,7 @@ const ExaminationHalls = () => {
                     <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center">
                         <Layers size={18} />
                     </div>
-                    <h3 className="text-lg font-black text-slate-800 uppercase tracking-widest">Add New Infrastructure</h3>
+                    <h3 className="text-lg font-black text-slate-800  tracking-widest">Add New Infrastructure</h3>
                 </div>
                 {totalRooms < 1 && (
                     <div className="absolute inset-0 bg-slate-50/60 backdrop-blur-[2px] z-20 flex items-center justify-center p-6">
@@ -502,7 +502,7 @@ const ExaminationHalls = () => {
                             </div>
                             <div>
                                 <h4 className="text-sm font-bold text-slate-900">Configuration Required</h4>
-                                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                                <p className="text-[13px] text-slate-500 mt-1 leading-relaxed">
                                     Please set your <strong>Total Campus Rooms Configuration</strong> above to at least 1 before adding or editing examination halls.
                                 </p>
                             </div>
@@ -515,31 +515,31 @@ const ExaminationHalls = () => {
                         const ctx = exams.find(e => String(e.id) === String(newHall.exam_id));
                         return (
                             <div className="flex items-center gap-3 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl">
-                                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Linked Exam:</span>
-                                <span className="text-xs font-black text-indigo-700">{ctx.program_name} • {ctx.semester_name} – {ctx.exam_name}</span>
+                                <span className="text-[12px] font-black text-indigo-400  tracking-widest">Linked Exam:</span>
+                                <span className="text-[13px] font-black text-indigo-700">{ctx.program_name} • {ctx.semester_name} – {ctx.exam_name}</span>
                             </div>
                         );
                     })()}
                     {!newHall.exam_id && (
                         <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-100 rounded-xl">
-                            <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">⚠ Select an Active Exam Context from the top-right dropdown first.</span>
+                            <span className="text-[12px] font-black text-amber-500  tracking-widest">⚠ Select an Active Exam Context from the top-right dropdown first.</span>
                         </div>
                     )}
                     {/* Inline fields row */}
                     <div className="grid grid-cols-1 md:grid-cols-6 gap-6 items-end">
                     <div className="space-y-3 col-span-1 md:col-span-2">
-                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-4">Hall Code</label>
+                        <label className="text-[13px] font-black text-slate-400  tracking-widest ml-4">Hall Code</label>
                         <input
                             type="text"
                             disabled={totalRooms < 1}
                             value={newHall.hall_code}
                             onChange={(e) => setNewHall({ ...newHall, hall_code: e.target.value.toUpperCase() })}
                             placeholder="HALL-A"
-                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-[1.25rem] text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all uppercase placeholder:text-slate-300"
+                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-[1.25rem] text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all  placeholder:text-slate-300"
                         />
                     </div>
                     <div className="space-y-3">
-                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-4">Rows</label>
+                        <label className="text-[13px] font-black text-slate-400  tracking-widest ml-4">Rows</label>
                         <input
                             type="number"
                             min="1"
@@ -551,7 +551,7 @@ const ExaminationHalls = () => {
                         />
                     </div>
                     <div className="space-y-3">
-                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-4">Seats/Row</label>
+                        <label className="text-[13px] font-black text-slate-400  tracking-widest ml-4">Seats/Row</label>
                         <input
                             type="number"
                             min="1"
@@ -563,7 +563,7 @@ const ExaminationHalls = () => {
                         />
                     </div>
                     <div className="bg-indigo-50/50 p-4 rounded-[1.25rem] border border-indigo-100 flex flex-col items-center justify-center min-h-[58px]">
-                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1 text-center leading-tight">Total Capacity</span>
+                        <span className="text-[12px] font-black text-indigo-400  tracking-widest mb-1 text-center leading-tight">Total Capacity</span>
                         <span className="text-xl font-black text-indigo-600 leading-none">
                             {(parseInt(newHall.rows) || 0) * (parseInt(newHall.seats_per_row) || 0)}
                         </span>
@@ -571,7 +571,7 @@ const ExaminationHalls = () => {
                     <button
                         type="submit"
                         disabled={totalRooms < 1}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-widest text-[10px] disabled:bg-slate-300 disabled:shadow-none disabled:grayscale disabled:scale-100 w-full min-h-[58px]"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-95  tracking-widest text-[12px] disabled:bg-slate-300 disabled:shadow-none disabled:grayscale disabled:scale-100 w-full min-h-[58px]"
                     >
                         <Save size={16} />
                         <span className="leading-tight">Add Draft</span>
@@ -585,7 +585,7 @@ const ExaminationHalls = () => {
                 <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-50/30">
                     <div>
                         <h2 className="text-xl font-black text-slate-900 tracking-tight">Hall Infrastructure Mapping</h2>
-                        <p className="text-sm text-slate-500 mt-1 font-bold uppercase tracking-wide">Review, edit, and submit halls for validation</p>
+                        <p className="text-sm text-slate-500 mt-1 font-bold  tracking-wide">Review, edit, and submit halls for validation</p>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="relative">
@@ -604,11 +604,11 @@ const ExaminationHalls = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-y border-slate-100/60">
-                                <th className="py-5 px-8 text-[10px] font-black text-slate-400 uppercase tracking-widest">Hall Details</th>
-                                <th className="py-5 px-8 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Layout Configuration</th>
-                                <th className="py-5 px-8 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Net Capacity</th>
-                                <th className="py-5 px-8 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Approval Status</th>
-                                <th className="py-5 px-8 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                                <th className="py-5 px-8 text-[13px] font-black text-slate-400  tracking-widest">Hall Details</th>
+                                <th className="py-5 px-8 text-[13px] font-black text-slate-400  tracking-widest text-center">Layout Configuration</th>
+                                <th className="py-5 px-8 text-[13px] font-black text-slate-400  tracking-widest text-center">Net Capacity</th>
+                                <th className="py-5 px-8 text-[13px] font-black text-slate-400  tracking-widest text-center">Approval Status</th>
+                                <th className="py-5 px-8 text-[13px] font-black text-slate-400  tracking-widest text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -621,8 +621,8 @@ const ExaminationHalls = () => {
                                                     <Building2 size={24} />
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-black text-slate-800 uppercase tracking-tight">{hall.hall_code}</span>
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">ID: {String(hall.id).slice(0, 8)}</span>
+                                                    <span className="text-sm font-black text-slate-800  tracking-tight">{hall.hall_code}</span>
+                                                    <span className="text-[12px] font-bold text-slate-400  tracking-widest mt-0.5">ID: {String(hall.id).slice(0, 8)}</span>
                                                 </div>
                                             </div>
                                         </td>
@@ -630,23 +630,23 @@ const ExaminationHalls = () => {
                                             <div className="flex items-center justify-center gap-6 text-slate-500">
                                                 <div className="flex flex-col items-center">
                                                     <span className="text-sm font-black text-slate-900 leading-none">{hall.rows}</span>
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Rows</span>
+                                                    <span className="text-[9px] font-black text-slate-400  tracking-widest mt-1">Rows</span>
                                                 </div>
                                                 <div className="w-px h-8 bg-slate-200"></div>
                                                 <div className="flex flex-col items-center">
                                                     <span className="text-sm font-black text-slate-900 leading-none">{hall.seats_per_row}</span>
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">S/Row</span>
+                                                    <span className="text-[9px] font-black text-slate-400  tracking-widest mt-1">S/Row</span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="py-5 px-8 text-center">
                                             <div className="inline-flex flex-col items-center px-4 py-1.5 bg-indigo-50 text-indigo-700 rounded-xl border border-indigo-100 font-black shadow-sm h-12 justify-center min-w-[90px]">
                                                 <span className="text-base">{hall.total_capacity}</span>
-                                                <span className="text-[9px] uppercase tracking-widest opacity-60">Units</span>
+                                                <span className="text-[9px]  tracking-widest opacity-60">Units</span>
                                             </div>
                                         </td>
                                         <td className="py-5 px-8 text-center">
-                                            <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all shadow-sm ${getStatusClasses(hall.status)}`}>
+                                            <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[12px] font-black  tracking-widest border transition-all shadow-sm ${getStatusClasses(hall.status)}`}>
                                                 {getStatusIcon(hall.status)}
                                                 {hall.status}
                                             </span>
@@ -657,7 +657,7 @@ const ExaminationHalls = () => {
                                                     <button
                                                         disabled={totalRooms < 1}
                                                         onClick={() => handleSubmitHall(hall.id)}
-                                                        className="h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-500/20 flex items-center gap-2 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
+                                                        className="h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all font-black text-[12px]  tracking-widest shadow-lg shadow-indigo-500/20 flex items-center gap-2 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
                                                         title={totalRooms < 1 ? "Set room limit first" : "Submit for Approval"}
                                                     >
                                                         <SendHorizontal size={14} />
@@ -705,10 +705,10 @@ const ExaminationHalls = () => {
                                                 <Building2 size={40} />
                                             </div>
                                             <div className="space-y-1">
-                                                <p className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">
+                                                <p className="text-sm font-black text-slate-400  tracking-[0.2em]">
                                                     Zero Infrastructure Detected
                                                 </p>
-                                                <p className="text-xs text-slate-300 font-bold uppercase tracking-widest">
+                                                <p className="text-[13px] text-slate-300 font-bold  tracking-widest">
                                                     Start by adding your first examination hall above
                                                 </p>
                                             </div>
@@ -730,7 +730,7 @@ const ExaminationHalls = () => {
                         </div>
                         <div>
                             <h3 className="text-xl font-black text-slate-900">Seating Requirement Source</h3>
-                            <p className="text-sm text-slate-500 font-bold uppercase tracking-wider">Breakdown of internal & guest institutions</p>
+                            <p className="text-sm text-slate-500 font-bold  tracking-wider">Breakdown of internal & guest institutions</p>
                         </div>
                     </div>
 
@@ -743,7 +743,7 @@ const ExaminationHalls = () => {
                                         <span className="text-sm font-black text-slate-800">{src.name}</span>
                                     </div>
                                     <div className="px-4 py-1.5 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-black text-indigo-600">
-                                        {src.count} <span className="text-[10px] text-slate-400 font-bold ml-1 uppercase">Students</span>
+                                        {src.count} <span className="text-[12px] text-slate-400 font-bold ml-1 ">Students</span>
                                     </div>
                                 </div>
                             ))
@@ -757,26 +757,26 @@ const ExaminationHalls = () => {
                     
                     {examBreakdown.length > 0 && (
                         <div className="mt-8 pt-6 border-t border-slate-100">
-                            <h4 className="text-[10px] font-black text-slate-400 mb-4 uppercase tracking-widest">Active Exam Details</h4>
+                            <h4 className="text-[12px] font-black text-slate-400 mb-4  tracking-widest">Active Exam Details</h4>
                             <div className="flex flex-col gap-3">
                                 {examBreakdown.map((exam, idx) => (
                                     <div key={idx} className="flex items-center justify-between p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-xl bg-white border border-indigo-100 text-indigo-500 flex items-center justify-center font-black text-xs shadow-sm">
+                                            <div className="w-8 h-8 rounded-xl bg-white border border-indigo-100 text-indigo-500 flex items-center justify-center font-black text-[13px] shadow-sm">
                                                 E{idx + 1}
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-black text-slate-800 uppercase tracking-tight">
+                                                <span className="text-sm font-black text-slate-800  tracking-tight">
                                                     {exam.program_name || 'Unknown Program'} - {exam.semester || 'N/A'}
                                                 </span>
-                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate max-w-[200px]">
+                                                <span className="text-[12px] font-bold text-slate-500  tracking-widest truncate max-w-[200px]">
                                                     {exam.exam_name}
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="px-3 py-1.5 bg-white border border-indigo-100 rounded-lg shadow-sm">
                                             <span className="text-sm font-black text-indigo-600">{exam.student_count}</span>
-                                            <span className="text-[10px] text-slate-400 font-bold ml-1 uppercase">Students</span>
+                                            <span className="text-[12px] text-slate-400 font-bold ml-1 ">Students</span>
                                         </div>
                                     </div>
                                 ))}
@@ -791,7 +791,7 @@ const ExaminationHalls = () => {
                         <div className="flex justify-between items-start mb-4">
                             <div>
                                 <h3 className="text-xl font-black text-white">Seating Governance</h3>
-                                <p className="text-emerald-400 text-[10px] font-black uppercase tracking-widest mt-1">Real-time capacity distribution</p>
+                                <p className="text-emerald-400 text-[12px] font-black  tracking-widest mt-1">Real-time capacity distribution</p>
                             </div>
                         </div>
 
@@ -822,7 +822,7 @@ const ExaminationHalls = () => {
                                     <span style={{ fontSize: 22, fontWeight: 900, color: 'white', lineHeight: 1 }}>
                                         {totalStudents > 0 ? (((capacityStats.approved + capacityStats.allocated) / totalStudents) * 100).toFixed(0) : 0}%
                                     </span>
-                                    <span style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 2, marginTop: 4 }}>Coverage</span>
+                                    <span style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: '', letterSpacing: 2, marginTop: 4 }}>Coverage</span>
                                 </div>
                             </div>
                         </div>
@@ -832,21 +832,21 @@ const ExaminationHalls = () => {
                             <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-2">
                                     <div className="w-2 h-2 bg-emerald-500 rounded-full ring-4 ring-emerald-500/20" />
-                                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Internal</span>
+                                    <span className="text-[9px] font-black text-white/40  tracking-widest">Internal</span>
                                 </div>
                                 <p className="text-sm font-black text-white">{capacityStats.approved}</p>
                             </div>
                             <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-2">
                                     <div className="w-2 h-2 bg-blue-500 rounded-full ring-4 ring-blue-500/20" />
-                                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">External</span>
+                                    <span className="text-[9px] font-black text-white/40  tracking-widest">External</span>
                                 </div>
                                 <p className="text-sm font-black text-white">{capacityStats.allocated}</p>
                             </div>
                             <div className="flex flex-col gap-1 border-l border-white/10 pl-2">
                                 <div className="flex items-center gap-2">
                                     <div className="w-2 h-2 bg-amber-500 rounded-full ring-4 ring-amber-500/20" />
-                                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Target</span>
+                                    <span className="text-[9px] font-black text-white/40  tracking-widest">Target</span>
                                 </div>
                                 <p className="text-sm font-black text-white">{totalStudents}</p>
                             </div>
@@ -863,7 +863,7 @@ const ExaminationHalls = () => {
                         <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div>
                                 <h3 className="text-lg font-black text-slate-900">Modify Hall</h3>
-                                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-0.5">Status: {editingHall.status}</p>
+                                <p className="text-[12px] text-slate-500 font-black  tracking-widest mt-0.5">Status: {editingHall.status}</p>
                             </div>
                             <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-slate-200 text-slate-400 rounded-xl transition-colors">
                                 <X size={20} />
@@ -871,24 +871,24 @@ const ExaminationHalls = () => {
                         </div>
                         <div className="p-8 space-y-6">
                             <div className="space-y-1.5 text-center p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex flex-col items-center">
-                                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Capacity Forecast</span>
+                                <span className="text-[12px] font-black text-indigo-400  tracking-widest">Capacity Forecast</span>
                                 <div className="text-2xl font-black text-indigo-600 mt-1">
                                     {(parseInt(editingHall.rows) || 0) * (parseInt(editingHall.seats_per_row) || 0)}
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hall Code</label>
+                                <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1">Hall Code</label>
                                 <input
                                     type="text"
                                     value={editingHall.hall_code}
                                     onChange={(e) => setEditingHall({ ...editingHall, hall_code: e.target.value.toUpperCase() })}
-                                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 uppercase"
+                                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 "
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rows</label>
+                                    <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1">Rows</label>
                                     <input
                                         type="number"
                                         value={editingHall.rows}
@@ -897,7 +897,7 @@ const ExaminationHalls = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Seats/Row</label>
+                                    <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1">Seats/Row</label>
                                     <input
                                         type="number"
                                         value={editingHall.seats_per_row}
@@ -908,8 +908,8 @@ const ExaminationHalls = () => {
                             </div>
                         </div>
                         <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex gap-3">
-                            <button onClick={() => setShowEditModal(false)} className="flex-1 py-3 text-xs font-black text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest">Cancel</button>
-                            <button onClick={handleUpdateHall} className="flex-[2] py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 uppercase tracking-widest">Apply Changes</button>
+                            <button onClick={() => setShowEditModal(false)} className="flex-1 py-3 text-[13px] font-black text-slate-500 hover:text-slate-800 transition-colors  tracking-widest">Cancel</button>
+                            <button onClick={handleUpdateHall} className="flex-[2] py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[13px] font-black rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95  tracking-widest">Apply Changes</button>
                         </div>
                     </div>
                 </div>
@@ -930,13 +930,13 @@ const ExaminationHalls = () => {
                             </p>
                             <div className="flex gap-4 w-full">
                                 <button
-                                    className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
+                                    className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[13px] font-black rounded-2xl transition-all  tracking-widest"
                                     onClick={() => setShowDeleteModal(false)}
                                 >
                                     Abort
                                 </button>
                                 <button
-                                    className="flex-1 py-4 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-2xl shadow-lg shadow-rose-500/20 transition-all uppercase tracking-widest"
+                                    className="flex-1 py-4 bg-rose-600 hover:bg-rose-700 text-white text-[13px] font-black rounded-2xl shadow-lg shadow-rose-500/20 transition-all  tracking-widest"
                                     onClick={handleDeleteConfirm}
                                 >
                                     Confirm

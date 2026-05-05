@@ -31,7 +31,7 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-6">Quick Links</h4>
+            <h4 className="text-sm font-bold text-slate-900  tracking-wider mb-6">Quick Links</h4>
             <ul className="space-y-4">
               <li><button className="text-sm text-slate-500 hover:text-sky-500 transition-colors">Documentation</button></li>
               <li><button className="text-sm text-slate-500 hover:text-sky-500 transition-colors">Support Center</button></li>
@@ -41,7 +41,7 @@ const Footer = () => {
 
           {/* Legal */}
           <div>
-            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-6">Legal</h4>
+            <h4 className="text-sm font-bold text-slate-900  tracking-wider mb-6">Legal</h4>
             <ul className="space-y-4">
               <li><button className="text-sm text-slate-500 hover:text-sky-500 transition-colors">Privacy Policy</button></li>
               <li><button className="text-sm text-slate-500 hover:text-sky-500 transition-colors">Terms of Service</button></li>
@@ -51,7 +51,7 @@ const Footer = () => {
 
           {/* Contact */}
           <div>
-            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-6">Contact Us</h4>
+            <h4 className="text-sm font-bold text-slate-900  tracking-wider mb-6">Contact Us</h4>
             <ul className="space-y-4">
               <li className="text-sm text-slate-500">support@ems.edu.in</li>
               <li className="text-sm text-slate-500">+91 0123 456 789</li>
@@ -61,12 +61,12 @@ const Footer = () => {
         </div>
 
         <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs font-medium text-slate-400">
+          <p className="text-[13px] font-medium text-slate-400">
             &copy; {currentYear} Education Management System. Built with ❤️ for better learning.
           </p>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter">System Online</span>
+            <span className="text-[13px] font-bold text-slate-500  tracking-tighter">System Online</span>
           </div>
         </div>
       </div>

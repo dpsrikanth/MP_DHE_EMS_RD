@@ -21,7 +21,7 @@ const StudentDashboard = () => {
             </div>
             <div>
               <h2 className="text-2xl font-black text-slate-900 leading-tight">{user.name}</h2>
-              <p className="text-sky-600 font-black text-sm uppercase tracking-widest mt-1">Undergraduate Student</p>
+              <p className="text-sky-600 font-black text-sm  tracking-widest mt-1">Undergraduate Student</p>
             </div>
           </div>
 
@@ -32,7 +32,7 @@ const StudentDashboard = () => {
                   <Mail size={18} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Email Address</p>
+                  <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">Email Address</p>
                   <p className="text-slate-700 font-bold">{user.email}</p>
                 </div>
               </div>
@@ -41,7 +41,7 @@ const StudentDashboard = () => {
                   <GraduationCap size={18} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Roll Number</p>
+                  <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">Roll Number</p>
                   <p className="text-slate-700 font-bold">{user.rollnumber || 'N/A'}</p>
                 </div>
               </div>
@@ -52,7 +52,7 @@ const StudentDashboard = () => {
                   <School size={18} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Institution</p>
+                  <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">Institution</p>
                   <p className="text-slate-700 font-bold">{user.collageName || 'N/A'}</p>
                 </div>
               </div>
@@ -61,7 +61,7 @@ const StudentDashboard = () => {
                   <BookOpen size={18} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Current Program</p>
+                  <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">Current Program</p>
                   <p className="text-slate-700 font-bold">{user.programName || 'N/A'}{user.semister ? ` - ${user.semister}` : ''}</p>
                 </div>
               </div>
@@ -76,7 +76,7 @@ const StudentDashboard = () => {
              <Calendar className="text-sky-400 mb-4" size={32} />
              <h3 className="text-xl font-black mb-2 tracking-tight">Examinations</h3>
              <p className="text-slate-400 text-sm font-medium mb-6 leading-relaxed">View scheduled exams, register for seating, and download hall tickets.</p>
-             <a href="/student/exams" className="inline-flex items-center gap-2 text-sky-400 font-black text-xs uppercase tracking-widest hover:text-sky-300 transition-colors">
+             <a href="/student/exams" className="inline-flex items-center gap-2 text-sky-400 font-black text-[13px]  tracking-widest hover:text-sky-300 transition-colors">
                Access Exams <div className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
              </a>
           </div>
@@ -86,7 +86,7 @@ const StudentDashboard = () => {
              <FileText className="text-emerald-500 mb-4" size={32} />
              <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight text-shadow-sm">Academic Results</h3>
              <p className="text-slate-500 text-sm font-medium mb-6 leading-relaxed text-shadow-sm">Check your finalized grades, SGPA, and download official marksheets.</p>
-             <a href="/student/results" className="inline-flex items-center gap-2 text-emerald-600 font-black text-xs uppercase tracking-widest hover:text-emerald-500 transition-colors">
+             <a href="/student/results" className="inline-flex items-center gap-2 text-emerald-600 font-black text-[13px]  tracking-widest hover:text-emerald-500 transition-colors">
                View Results <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
              </a>
           </div>
@@ -96,7 +96,7 @@ const StudentDashboard = () => {
              <Calendar className="text-sky-500 mb-4" size={32} />
              <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Attendance Record</h3>
              <p className="text-slate-500 text-sm font-medium mb-6 leading-relaxed">Track your subject-wise attendance and verify eligibility for examinations.</p>
-             <a href="/student/attendance" className="inline-flex items-center gap-2 text-sky-600 font-black text-xs uppercase tracking-widest hover:text-sky-500 transition-colors">
+             <a href="/student/attendance" className="inline-flex items-center gap-2 text-sky-600 font-black text-[13px]  tracking-widest hover:text-sky-500 transition-colors">
                Track Attendance <div className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
              </a>
           </div>
@@ -105,7 +105,7 @@ const StudentDashboard = () => {
             <h3 className="text-lg font-black text-slate-900 mb-4 tracking-tight">Important Notice</h3>
             <div className="flex gap-4 p-4 bg-amber-50 rounded-2xl border border-amber-100 italic">
               <AlertCircle className="text-amber-500 shrink-0" size={20} />
-              <p className="text-xs text-amber-800 font-medium leading-relaxed">
+              <p className="text-[13px] text-amber-800 font-medium leading-relaxed">
                 Exam registration for Semester 1 (2026 Batch) is now open. Please complete your registration before March 20th.
               </p>
             </div>

@@ -91,14 +91,14 @@ const Roles = () => {
             </div>
             <div>
               <h1 className="text-3xl font-black text-slate-900 tracking-tight">Security Roles</h1>
-              <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">Permission Hierarchies</p>
+              <p className="text-[13px] text-slate-500 mt-1 font-bold  tracking-widest">Permission Hierarchies</p>
             </div>
           </div>
           <div className="flex flex-col md:flex-row md:items-center gap-4">
             <TableSearch value={searchQuery} onChange={setSearchQuery} placeholder="Filter roles..." />
             <button 
               onClick={() => navigate('/roles/add')}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-amber-600 hover:bg-amber-700 text-white font-black rounded-2xl shadow-xl shadow-amber-600/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap text-sm uppercase tracking-widest"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-amber-600 hover:bg-amber-700 text-white font-black rounded-2xl shadow-xl shadow-amber-600/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap text-sm  tracking-widest"
             >
               <ShieldPlus size={20} />
               <span>New Role</span>
@@ -116,8 +116,8 @@ const Roles = () => {
                                 <Lock size={20} />
                             </div>
                             <div>
-                                <h3 className="font-black text-slate-900 group-hover:text-amber-600 transition-colors uppercase tracking-tight">{role.role_name}</h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: #{role.id}</p>
+                                <h3 className="font-black text-slate-900 group-hover:text-amber-600 transition-colors  tracking-tight">{role.role_name}</h3>
+                                <p className="text-[12px] font-bold text-slate-400  tracking-widest">ID: #{role.id}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -130,7 +130,7 @@ const Roles = () => {
             {data.length === 0 && (
                 <div className="py-20 text-center border-2 border-dashed border-slate-100 rounded-[2rem]">
                     <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300"><Plus size={32} /></div>
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No roles defined in system</p>
+                    <p className="text-sm font-bold text-slate-400  tracking-widest">No roles defined in system</p>
                 </div>
             )}
         </div>

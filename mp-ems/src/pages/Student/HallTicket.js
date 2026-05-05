@@ -90,11 +90,11 @@ const HallTicket = () => {
                 {/* Simulated Logo */}
                 <div className="absolute left-4 top-4 w-16 h-16 border-2 border-[#1e3a8a] rounded-full flex flex-col items-center justify-center bg-white text-[#1e3a8a]">
                   <GraduationCap size={24} />
-                  <span className="text-[6px] font-bold uppercase mt-1">MP-EMS</span>
+                  <span className="text-[6px] font-bold  mt-1">MP-EMS</span>
                 </div>
                 
-                <h1 className="text-lg font-bold text-[#1e3a8a] uppercase tracking-wide leading-tight mt-1">{university || 'DHE EMS UNIVERSITY'}</h1>
-                <h2 className="text-[13px] font-bold text-[#2563eb] uppercase tracking-wider mt-1">ADMIT CARD FOR {examName}</h2>
+                <h1 className="text-lg font-bold text-[#1e3a8a]  tracking-wide leading-tight mt-1">{university || 'DHE EMS UNIVERSITY'}</h1>
+                <h2 className="text-[13px] font-bold text-[#2563eb]  tracking-wider mt-1">ADMIT CARD FOR {examName}</h2>
               </td>
             </tr>
 
@@ -110,33 +110,33 @@ const HallTicket = () => {
                     </tr>
                     <tr>
                       <td className="p-1.5 px-2 text-right border-b border-r border-[#1e3a8a] font-medium text-slate-600 align-top">Center of <br/>Examination :</td>
-                      <td className="p-1.5 px-2 border-b border-[#1e3a8a] font-bold text-black uppercase align-top">
+                      <td className="p-1.5 px-2 border-b border-[#1e3a8a] font-bold text-black  align-top">
                         {center?.name || student.collageName}
                         {center?.address && <div className="text-[9px] font-normal mt-0.5 capitalize">{center.address}</div>}
                       </td>
                     </tr>
                     <tr>
                       <td className="p-1.5 px-2 text-right border-b border-r border-[#1e3a8a] font-medium text-slate-600">Candidate's Name :</td>
-                      <td className="p-1.5 px-2 border-b border-[#1e3a8a] font-bold text-black uppercase">{student.name}</td>
+                      <td className="p-1.5 px-2 border-b border-[#1e3a8a] font-bold text-black ">{student.name}</td>
                     </tr>
                     <tr>
                       <td className="p-1.5 px-2 text-right border-b border-r border-[#1e3a8a] font-medium text-slate-600">Father's Name :</td>
-                      <td className="p-1.5 px-2 border-b border-[#1e3a8a] font-bold text-black uppercase">{student.fatherName || 'N/A'}</td>
+                      <td className="p-1.5 px-2 border-b border-[#1e3a8a] font-bold text-black ">{student.fatherName || 'N/A'}</td>
                     </tr>
                     <tr>
-                      <td colSpan="2" className="p-1 px-2 text-left font-bold text-[#af87b9] text-[10px] bg-slate-50 italic">Candidate Mailing Address</td>
+                      <td colSpan="2" className="p-1 px-2 text-left font-bold text-[#af87b9] text-[12px] bg-slate-50 italic">Candidate Mailing Address</td>
                     </tr>
                     <tr>
                       <td className="p-1 px-2 text-right border-r border-[#1e3a8a] font-medium text-slate-600">Address :</td>
-                      <td className="p-1 px-2 font-bold text-black uppercase">{student.address || 'N/A'}</td>
+                      <td className="p-1 px-2 font-bold text-black ">{student.address || 'N/A'}</td>
                     </tr>
                     <tr>
                       <td className="p-1 px-2 text-right border-r border-[#1e3a8a] font-medium text-slate-600">City / District :</td>
-                      <td className="p-1 px-2 font-bold text-black uppercase">Indore</td>
+                      <td className="p-1 px-2 font-bold text-black ">Indore</td>
                     </tr>
                     <tr>
                       <td className="p-1 px-2 text-right border-r border-[#1e3a8a] font-medium text-slate-600">State :</td>
-                      <td className="p-1 px-2 font-bold text-black uppercase">Madhya Pradesh</td>
+                      <td className="p-1 px-2 font-bold text-black ">Madhya Pradesh</td>
                     </tr>
                     <tr>
                       <td className="p-1 px-2 text-right border-r border-[#1e3a8a] font-medium text-slate-600 border-t">Email Address :</td>
@@ -158,7 +158,7 @@ const HallTicket = () => {
                       <td className="p-1.5 text-[#1e3a8a] font-medium border-b border-[#1e3a8a]">Course</td>
                     </tr>
                     <tr>
-                      <td className="p-1.5 font-bold text-black uppercase border-b border-[#1e3a8a]">{student.programName}</td>
+                      <td className="p-1.5 font-bold text-black  border-b border-[#1e3a8a]">{student.programName}</td>
                     </tr>
                     <tr>
                       <td className="p-1.5 text-[#1e3a8a] font-medium border-b border-[#1e3a8a]">Semester</td>
@@ -170,13 +170,13 @@ const HallTicket = () => {
                       <td className="p-1.5 text-[#1e3a8a] font-medium border-b border-[#1e3a8a]">Gender</td>
                     </tr>
                     <tr>
-                      <td className="p-1.5 font-bold text-black uppercase border-b border-[#1e3a8a]">{student.gender || 'N/A'}</td>
+                      <td className="p-1.5 font-bold text-black  border-b border-[#1e3a8a]">{student.gender || 'N/A'}</td>
                     </tr>
                     <tr>
                       <td className="p-1.5 text-[#1e3a8a] font-medium border-b border-[#1e3a8a]">Category</td>
                     </tr>
                     <tr>
-                      <td className="p-1.5 font-bold text-black uppercase">GENERAL</td>
+                      <td className="p-1.5 font-bold text-black ">GENERAL</td>
                     </tr>
                   </tbody>
                 </table>
@@ -190,7 +190,7 @@ const HallTicket = () => {
                       <td className="p-1.5 text-[#1e3a8a] font-medium border-b border-[#1e3a8a]">Roll Number</td>
                     </tr>
                     <tr>
-                      <td className="p-1.5 font-bold text-black uppercase border-b border-[#1e3a8a]">{student.rollnumber}</td>
+                      <td className="p-1.5 font-bold text-black  border-b border-[#1e3a8a]">{student.rollnumber}</td>
                     </tr>
                     <tr>
                       <td className="p-2 pt-4">
@@ -211,11 +211,11 @@ const HallTicket = () => {
           <table className="w-full border-collapse border border-[#1e3a8a] text-center">
             <thead>
               <tr>
-                <td colSpan="5" className="p-1.5 bg-slate-50 border border-[#1e3a8a] font-bold text-[#1e3a8a] uppercase">
+                <td colSpan="5" className="p-1.5 bg-slate-50 border border-[#1e3a8a] font-bold text-[#1e3a8a] ">
                   Examination Paper Details
                 </td>
               </tr>
-              <tr className="bg-slate-50 text-[10px] text-slate-700">
+              <tr className="bg-slate-50 text-[12px] text-slate-700">
                 <th className="p-1.5 border border-[#1e3a8a] font-medium w-[15%]">Date of Exam</th>
                 <th className="p-1.5 border border-[#1e3a8a] font-medium w-[15%]">Paper Code</th>
                 <th className="p-1.5 border border-[#1e3a8a] font-medium w-[40%] text-left">Subject Name</th>
@@ -225,12 +225,12 @@ const HallTicket = () => {
             </thead>
             <tbody>
               {exams.length > 0 ? exams.map((exam, idx) => (
-                <tr key={idx} className="font-bold text-black text-[10px]">
+                <tr key={idx} className="font-bold text-black text-[12px]">
                   <td className="p-1.5 border border-[#1e3a8a] whitespace-nowrap">
                     {formatDate(exam.exam_date)}
                   </td>
                   <td className="p-1.5 border border-[#1e3a8a]">{exam.subject_code || '---'}</td>
-                  <td className="p-1.5 border border-[#1e3a8a] text-left uppercase truncate max-w-[200px]" title={exam.subject_name}>
+                  <td className="p-1.5 border border-[#1e3a8a] text-left  truncate max-w-[200px]" title={exam.subject_name}>
                     {exam.subject_name}
                   </td>
                   <td className="p-1.5 border border-[#1e3a8a] whitespace-nowrap">
@@ -256,7 +256,7 @@ const HallTicket = () => {
           
           {/* Instructions Block */}
           <div className="mb-12">
-            <h4 className="font-bold text-[#1e3a8a] text-[10px] mb-2 uppercase underline">Important Instructions for Candidates</h4>
+            <h4 className="font-bold text-[#1e3a8a] text-[12px] mb-2  underline">Important Instructions for Candidates</h4>
             <ul className="list-decimal pl-4 text-[9px] text-justify font-medium text-slate-700 space-y-1 pr-4">
               <li>Please verify all particulars including Name, Father's Name, Category, Date of Birth, Gender, State of Eligibility and Center of Examination.</li>
               <li>Candidate must carry the printed copy of Admit Card downloaded from MP-EMS portal along with valid photo identity proof.</li>
@@ -273,14 +273,14 @@ const HallTicket = () => {
                 <img src="https://upload.wikimedia.org/wikipedia/commons/f/f6/Signature_of_R._K._Singh.svg" alt="signature" className="h-full" style={{filter: 'grayscale(100%) brightness(50%)'}} onError={(e) => e.target.style.display='none'} />
               </div>
               <div className="border-t border-black w-full border-dashed pt-1">
-                <span className="font-bold text-black text-[10px] uppercase">Controller of Examinations</span>
+                <span className="font-bold text-black text-[12px] ">Controller of Examinations</span>
               </div>
             </div>
             
             <div className="text-center w-48">
               <div className="h-10 mb-1"></div>
               <div className="border-t border-black w-full border-dashed pt-1">
-                <span className="font-bold text-black text-[10px] uppercase">Signature of the Candidate</span>
+                <span className="font-bold text-black text-[12px] ">Signature of the Candidate</span>
                 <div className="text-[8px] text-slate-500 font-normal leading-tight">(To be signed in presence of Invigilator)</div>
               </div>
             </div>

@@ -77,11 +77,11 @@ const FacultyStatus = () => {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="px-6 py-4 text-xs font-bold uppercase text-slate-500 tracking-wider">Faculty Member</th>
-              <th className="px-6 py-4 text-xs font-bold uppercase text-slate-500 tracking-wider">Subject & Program</th>
-              <th className="px-6 py-4 text-xs font-bold uppercase text-slate-500 tracking-wider">Semester / Sec</th>
-              <th className="px-6 py-4 text-xs font-bold uppercase text-slate-500 tracking-wider">Grading Status</th>
-              <th className="px-6 py-4 text-xs font-bold uppercase text-slate-500 tracking-wider">Last Updated</th>
+              <th className="px-6 py-4 text-[13px] font-bold  text-slate-500 tracking-wider">Faculty Member</th>
+              <th className="px-6 py-4 text-[13px] font-bold  text-slate-500 tracking-wider">Subject & Program</th>
+              <th className="px-6 py-4 text-[13px] font-bold  text-slate-500 tracking-wider">Semester / Sec</th>
+              <th className="px-6 py-4 text-[13px] font-bold  text-slate-500 tracking-wider">Grading Status</th>
+              <th className="px-6 py-4 text-[13px] font-bold  text-slate-500 tracking-wider">Last Updated</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
@@ -94,24 +94,24 @@ const FacultyStatus = () => {
                 <td className="px-6 py-4">
                   <div className="flex flex-col">
                     <span className="font-bold text-slate-900">{item.faculty_name}</span>
-                    <span className="text-[10px] text-slate-400 uppercase tracking-tight">Teacher Code: {item.allocation_id}</span>
+                    <span className="text-[12px] text-slate-400  tracking-tight">Teacher Code: {item.allocation_id}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-sm">
                   <div className="flex flex-col">
                     <span>{item.subject_name}</span>
-                    <span className="text-xs text-slate-400">{item.program_name}</span>
+                    <span className="text-[13px] text-slate-400">{item.program_name}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-sm">
                   <div className="flex items-center gap-2">
                     <Calendar size={14} className="text-slate-400" />
                     <span>{item.semester_name}</span>
-                    <span className="bg-slate-100 px-2 py-0.5 rounded text-[10px] font-bold">SEC: {item.section}</span>
+                    <span className="bg-slate-100 px-2 py-0.5 rounded text-[12px] font-bold">SEC: {item.section}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(item.grading_status)}`}>
+                  <span className={`px-3 py-1 rounded-full text-[13px] font-bold border ${getStatusColor(item.grading_status)}`}>
                     {item.grading_status}
                   </span>
                 </td>

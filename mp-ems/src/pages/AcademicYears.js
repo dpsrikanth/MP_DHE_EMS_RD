@@ -216,8 +216,8 @@ const AcademicYears = () => {
                   onSort={handleSort} 
                   visible={visibleColumns.year_name}
                 />
-                <th className={`${visibleColumns.timeline ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Timeline</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Settings</th>
+                <th className={`${visibleColumns.timeline ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Timeline</th>
+                <th className="px-8 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Settings</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -235,8 +235,8 @@ const AcademicYears = () => {
                     {visibleColumns.timeline && (
                       <td className="px-4 py-5">
                         <div className="flex flex-col gap-1">
-                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Initialization</p>
-                          <p className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                          <p className="text-[12px] font-black text-slate-300  tracking-widest">Initialization</p>
+                          <p className="text-[13px] font-semibold text-slate-500 flex items-center gap-1.5">
                             <History size={12} /> {formatDate(item.created_at)}
                           </p>
                         </div>
@@ -266,10 +266,10 @@ const AcademicYears = () => {
                 <tr>
                   <td colSpan="4" className="px-8 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No academic years found</p>
+                      <p className="text-sm font-bold text-slate-400  tracking-widest">No academic years found</p>
                       <button 
                         onClick={() => setSearchQuery('')}
-                        className="text-xs font-black text-sky-500 hover:text-sky-600 underline uppercase tracking-tighter"
+                        className="text-[13px] font-black text-sky-500 hover:text-sky-600 underline  tracking-tighter"
                       >
                         Reset Search
                       </button>
@@ -301,7 +301,7 @@ const AcademicYears = () => {
             <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 leading-none mb-1">Assign Session</h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70">Master Catalog</p>
+                <p className="text-[12px] font-black text-slate-400  tracking-widest opacity-70">Master Catalog</p>
               </div>
               <button 
                 onClick={() => setShowAssignModal(false)}
@@ -313,7 +313,7 @@ const AcademicYears = () => {
             
             <div className="p-10 space-y-8">
               <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Select from Master</label>
+                <label className="text-[11px] font-black text-slate-400  tracking-widest ml-1">Select from Master</label>
                 <Select
                   options={availableMasters.filter(m => !data.some(d => d.id === m.value))}
                   value={mappingSelection}
@@ -334,7 +334,7 @@ const AcademicYears = () => {
                     })
                   }}
                 />
-                <p className="text-[10px] text-slate-400 font-medium px-1">If the session you need is not in the list, please contact the System Administrator.</p>
+                <p className="text-[12px] text-slate-400 font-medium px-1">If the session you need is not in the list, please contact the System Administrator.</p>
               </div>
             </div>
 
@@ -348,7 +348,7 @@ const AcademicYears = () => {
               <button 
                 onClick={handleMap}
                 disabled={!mappingSelection}
-                className="px-10 py-4 bg-sky-600 disabled:opacity-50 hover:bg-sky-700 text-white font-black rounded-2xl shadow-xl shadow-sky-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm uppercase tracking-widest flex items-center gap-3"
+                className="px-10 py-4 bg-sky-600 disabled:opacity-50 hover:bg-sky-700 text-white font-black rounded-2xl shadow-xl shadow-sky-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm  tracking-widest flex items-center gap-3"
               >
                 <Check size={20} />
                 <span>Assign Session</span>

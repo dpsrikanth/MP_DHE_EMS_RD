@@ -40,7 +40,7 @@ import { masterDataApi } from '../api/masterDataApi';
 
 const InfoItem = ({ label, value, isMono = false, className = "" }) => (
   <div className={`space-y-1.5 ${className}`}>
-    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none ml-0.5">{label}</p>
+    <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none ml-0.5">{label}</p>
     <div className={`bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl ${isMono ? 'font-mono' : 'font-bold'} text-slate-700 text-sm`}>
       {value || '-'}
     </div>
@@ -352,12 +352,12 @@ const Teachers = () => {
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-4 px-6 py-2 bg-slate-50 rounded-2xl border border-slate-100">
               <div className="text-center">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total</p>
+                <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">Total</p>
                 <p className="text-xl font-black text-slate-900 leading-none">{total}</p>
               </div>
               <div className="w-px h-8 bg-slate-200" />
               <div className="text-center text-emerald-600">
-                <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest leading-none mb-1 text-center">Active</p>
+                <p className="text-[12px] font-black text-emerald-400  tracking-widest leading-none mb-1 text-center">Active</p>
                 <p className="text-xl font-black leading-none">{activeCount}</p>
               </div>
             </div>
@@ -370,7 +370,7 @@ const Teachers = () => {
               />
 
               <div className="flex items-center gap-2">
-                <label className="text-xs font-black text-slate-600">Designation:</label>
+                <label className="text-[13px] font-black text-slate-600">Designation:</label>
                 <select
                   value={designationFilter}
                   onChange={e => setDesignationFilter(e.target.value)}
@@ -495,7 +495,7 @@ const Teachers = () => {
                   onSort={handleSort}
                   visible={visibleColumns.name}
                 />
-                <th className={`${visibleColumns.email ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Email</th>
+                <th className={`${visibleColumns.email ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Email</th>
                 {authUtils.isUniversityAdmin() && (
                   <SortHeader
                     label="College"
@@ -519,7 +519,7 @@ const Teachers = () => {
                   onSort={handleSort}
                   visible={visibleColumns.designation}
                 />
-                {/* <th className={`${visibleColumns.qualification ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Qualification</th>
+                {/* <th className={`${visibleColumns.qualification ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Qualification</th>
                 <SortHeader
                   label="Experience"
                   field="experience"
@@ -527,16 +527,16 @@ const Teachers = () => {
                   onSort={handleSort}
                   visible={visibleColumns.experience}
                 />
-                <th className={`${visibleColumns.specialization ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Specialization</th>
-                <th className={`${visibleColumns.pan_no ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>PAN</th>
-                <th className={`${visibleColumns.aadhaar_no ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Aadhaar</th>
-                <th className={`${visibleColumns.dob ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>DOB</th>
-                <th className={`${visibleColumns.gender ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Gender</th>
-                <th className={`${visibleColumns.joining_date ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Joining Date</th>
-                <th className={`${visibleColumns.phone ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Phone</th>
-                <th className={`${visibleColumns.address ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Address</th> */}
-                <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center`}>Status</th>
-                {!authUtils.isUniversityAdmin() && <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>}
+                <th className={`${visibleColumns.specialization ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Specialization</th>
+                <th className={`${visibleColumns.pan_no ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>PAN</th>
+                <th className={`${visibleColumns.aadhaar_no ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Aadhaar</th>
+                <th className={`${visibleColumns.dob ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>DOB</th>
+                <th className={`${visibleColumns.gender ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Gender</th>
+                <th className={`${visibleColumns.joining_date ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Joining Date</th>
+                <th className={`${visibleColumns.phone ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Phone</th>
+                <th className={`${visibleColumns.address ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Address</th> */}
+                <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400 text-center`}>Status</th>
+                {!authUtils.isUniversityAdmin() && <th className="px-8 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -545,7 +545,7 @@ const Teachers = () => {
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
                     {visibleColumns.id && (
                       <td className="px-4 py-5 text-center">
-                        <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
+                        <span className="text-[12px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
                           #{item.id}
                         </span>
                       </td>
@@ -635,11 +635,11 @@ const Teachers = () => {
                     {visibleColumns.status && (
                       <td className="px-4 py-5 text-center">
                         {(item.status === 'Active' || item.status === true) ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase border border-emerald-100 tracking-tighter shadow-sm">
+                          <span className="inline-flex items-center gap-1 text-[12px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full  border border-emerald-100 tracking-tighter shadow-sm">
                             <ShieldCheck size={12} /> Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase border border-slate-200 tracking-tighter">
+                          <span className="inline-flex items-center gap-1 text-[12px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full  border border-slate-200 tracking-tighter">
                             <ShieldAlert size={12} /> Inactive
                           </span>
                         )}
@@ -671,10 +671,10 @@ const Teachers = () => {
                 <tr>
                   <td colSpan="5" className="px-8 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No faculty members found</p>
+                      <p className="text-sm font-bold text-slate-400  tracking-widest">No faculty members found</p>
                       <button
                         onClick={() => setSearchQuery('')}
-                        className="text-xs font-black text-blue-500 hover:text-blue-600 underline uppercase tracking-tighter"
+                        className="text-[13px] font-black text-blue-500 hover:text-blue-600 underline  tracking-tighter"
                       >
                         Clear Search
                       </button>
@@ -740,7 +740,7 @@ const Teachers = () => {
                 </div>
                 <div>
                   <h2 className="text-2xl font-black text-slate-900 leading-none">Staff Profile</h2>
-                  <p className="text-sm text-slate-500 mt-1 font-bold uppercase tracking-wider">{viewData.name}</p>
+                  <p className="text-sm text-slate-500 mt-1 font-bold  tracking-wider">{viewData.name}</p>
                 </div>
               </div>
               <button
@@ -829,7 +829,7 @@ const Teachers = () => {
             <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex justify-end">
               <button
                 onClick={() => setShowViewModal(false)}
-                className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm uppercase tracking-widest"
+                className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm  tracking-widest"
               >
                 Close Profile
               </button>

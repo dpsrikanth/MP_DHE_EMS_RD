@@ -84,7 +84,7 @@ const SemestersForm = () => {
             </div>
           </div>
           <div className="form-header__right">
-              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 shadow-sm">
+              <span className="text-[12px] font-black text-indigo-400  tracking-widest bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 shadow-sm">
                 Framework Module v2.0
               </span>
           </div>
@@ -103,7 +103,7 @@ const SemestersForm = () => {
                     {isEditing && (
                       <div className="p-8 bg-slate-50 border-2 border-slate-100 rounded-[2.5rem] flex items-center justify-between shadow-inner">
                          <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Structural Entry</p>
+                            <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-2">Structural Entry</p>
                             <p className="text-sm font-black text-slate-900 font-mono tracking-tighter">SEM-SPEC-{id.padStart(3, '0')}</p>
                          </div>
                          <div className="w-12 h-12 bg-white rounded-2xl border border-slate-200 flex items-center justify-center text-slate-300 shadow-sm"><Hash size={20} /></div>
@@ -126,7 +126,7 @@ const SemestersForm = () => {
                       <div className="mt-4 p-5 bg-indigo-50 border border-indigo-100 rounded-[2rem] flex items-start gap-4">
                          <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm mt-0.5"><Layers size={14} /></div>
                          <p className="text-[11px] font-medium text-indigo-700 leading-relaxed">
-                            <span className="font-extrabold uppercase block mb-1">Architectural Hint:</span> 
+                            <span className="font-extrabold  block mb-1">Architectural Hint:</span> 
                             Define a title that clearly identifies the semester rank or periodic nature within the academic program framework.
                          </p>
                       </div>
@@ -149,11 +149,11 @@ const SemestersForm = () => {
                     </div>
 
                     <div className="relative z-10 pt-10 border-t border-white/5 mt-10 flex items-center justify-between">
-                       <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">
+                       <div className="flex items-center gap-4 text-[12px] font-black  tracking-[0.2em] text-indigo-400">
                           <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
                           Global Tier Logic Active
                        </div>
-                       <div className="text-[10px] font-black text-white/20 uppercase tracking-widest">v2.01 // Tier-C</div>
+                       <div className="text-[12px] font-black text-white/20  tracking-widest">v2.01 // Tier-C</div>
                     </div>
                  </div>
               </div>

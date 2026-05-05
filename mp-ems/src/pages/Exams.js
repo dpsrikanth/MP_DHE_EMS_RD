@@ -485,11 +485,11 @@ const Exams = () => {
               <div className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center text-purple-500">
                 <Filter size={14} />
               </div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Filter Examinations</span>
+              <span className="text-[12px] font-black text-slate-400  tracking-[0.2em]">Filter Examinations</span>
               {hasActiveFilters && (
                 <button
                   onClick={handleClearAllFilters}
-                  className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all"
+                  className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-black  tracking-widest text-red-500 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all"
                 >
                   <X size={12} />
                   Clear All
@@ -502,7 +502,7 @@ const Exams = () => {
                 <select
                   value={filterCollege}
                   onChange={(e) => handleCollegeFilterChange(e.target.value)}
-                  className="w-full appearance-none bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 rounded-xl px-4 py-3 pr-10 text-xs font-bold text-slate-700 outline-none transition-all cursor-pointer shadow-sm"
+                  className="w-full appearance-none bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold text-slate-700 outline-none transition-all cursor-pointer shadow-sm"
                 >
                   <option value="">All Colleges</option>
                   {filterOptions.availableColleges.map(c => (
@@ -518,7 +518,7 @@ const Exams = () => {
                   value={filterProgram}
                   onChange={(e) => handleProgramFilterChange(e.target.value)}
                   disabled={!filterCollege}
-                  className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-xs font-bold outline-none transition-all cursor-pointer shadow-sm ${
+                  className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold outline-none transition-all cursor-pointer shadow-sm ${
                     filterCollege 
                       ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-purple-500 text-slate-700' 
                       : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
@@ -538,7 +538,7 @@ const Exams = () => {
                   value={filterSemester}
                   onChange={(e) => handleSemesterFilterChange(e.target.value)}
                   disabled={!filterProgram}
-                  className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-xs font-bold outline-none transition-all cursor-pointer shadow-sm ${
+                  className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold outline-none transition-all cursor-pointer shadow-sm ${
                     filterProgram 
                       ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-purple-500 text-slate-700' 
                       : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
@@ -558,7 +558,7 @@ const Exams = () => {
                   value={filterExamType}
                   onChange={(e) => setFilterExamType(e.target.value)}
                   disabled={!filterSemester}
-                  className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-xs font-bold outline-none transition-all cursor-pointer shadow-sm ${
+                  className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold outline-none transition-all cursor-pointer shadow-sm ${
                     filterSemester 
                       ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-purple-500 text-slate-700' 
                       : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
@@ -580,7 +580,7 @@ const Exams = () => {
           <div className="px-8 pb-0 flex items-center gap-2 border-b border-slate-100">
             <button
               onClick={() => { setExamTypeFilter('internal'); setFilterProgram(''); setFilterSemester(''); }}
-              className={`px-6 py-3 text-xs font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 ${
+              className={`px-6 py-3 text-[13px] font-black  tracking-widest rounded-t-xl transition-all border-b-2 ${
                 examTypeFilter === 'internal'
                   ? 'border-purple-500 text-purple-600 bg-purple-50/50'
                   : 'border-transparent text-slate-400 hover:text-slate-700'
@@ -590,7 +590,7 @@ const Exams = () => {
             </button>
             <button
               onClick={() => { setExamTypeFilter('external'); setFilterProgram(''); setFilterSemester(''); }}
-              className={`px-6 py-3 text-xs font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 ${
+              className={`px-6 py-3 text-[13px] font-black  tracking-widest rounded-t-xl transition-all border-b-2 ${
                 examTypeFilter === 'external'
                   ? 'border-blue-500 text-blue-600 bg-blue-50/50'
                   : 'border-transparent text-slate-400 hover:text-slate-700'
@@ -608,11 +608,11 @@ const Exams = () => {
               <div className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center text-purple-500">
                 <Filter size={14} />
               </div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Filter by Program & Semester</span>
+              <span className="text-[12px] font-black text-slate-400  tracking-[0.2em]">Filter by Program & Semester</span>
               {(filterProgram || filterSemester) && (
                 <button
                   onClick={() => { setFilterProgram(''); setFilterSemester(''); }}
-                  className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all"
+                  className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-black  tracking-widest text-red-500 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all"
                 >
                   <X size={12} />
                   Clear
@@ -625,7 +625,7 @@ const Exams = () => {
                 <select
                   value={filterProgram}
                   onChange={(e) => handleProgramFilterChange(e.target.value)}
-                  className="w-full appearance-none bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 rounded-xl px-4 py-3 pr-10 text-xs font-bold text-slate-700 outline-none transition-all cursor-pointer shadow-sm"
+                  className="w-full appearance-none bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold text-slate-700 outline-none transition-all cursor-pointer shadow-sm"
                 >
                   <option value="">All Programs</option>
                   {collegeAdminFilterOptions.programs.map(p => (
@@ -641,7 +641,7 @@ const Exams = () => {
                   value={filterSemester}
                   onChange={(e) => setFilterSemester(e.target.value)}
                   disabled={!filterProgram}
-                  className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-xs font-bold outline-none transition-all cursor-pointer shadow-sm ${
+                  className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold outline-none transition-all cursor-pointer shadow-sm ${
                     filterProgram 
                       ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-purple-500 text-slate-700' 
                       : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
@@ -679,7 +679,7 @@ const Exams = () => {
                       <div className="w-14 h-14 rounded-2xl bg-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition-transform duration-500">
                         <Layers size={28} />
                       </div>
-                      <span className="text-[10px] font-black text-slate-400 bg-white border border-slate-200 px-3 py-1 rounded-full uppercase tracking-widest shadow-sm">
+                      <span className="text-[12px] font-black text-slate-400 bg-white border border-slate-200 px-3 py-1 rounded-full  tracking-widest shadow-sm">
                         ID: #{item.id}
                       </span>
                     </div>
@@ -689,10 +689,10 @@ const Exams = () => {
                     </h3>
                     
                     <div className="flex items-center gap-2 mb-6">
-                      <span className="px-3 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest border border-indigo-100">
+                      <span className="px-3 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-[12px] font-black  tracking-widest border border-indigo-100">
                         {item.semester_name || `SEM-${item.semester_id}`}
                       </span>
-                      <span className="px-3 py-1 rounded-lg bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest border border-slate-200">
+                      <span className="px-3 py-1 rounded-lg bg-slate-100 text-slate-500 text-[12px] font-black  tracking-widest border border-slate-200">
                         {item.exam_type_name || 'General Exam'}
                       </span>
                     </div>
@@ -703,8 +703,8 @@ const Exams = () => {
                           <Globe size={14} />
                         </div>
                         <div>
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Institution</p>
-                          <p className="text-xs font-bold text-slate-700 leading-tight">{item.college_name || 'University-wide'}</p>
+                          <p className="text-[12px] font-black text-slate-400  tracking-widest mb-0.5">Institution</p>
+                          <p className="text-[13px] font-bold text-slate-700 leading-tight">{item.college_name || 'University-wide'}</p>
                         </div>
                       </div>
                       
@@ -714,8 +714,8 @@ const Exams = () => {
                             <BookOpen size={14} />
                           </div>
                           <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Program Context</p>
-                            <p className="text-xs font-bold text-slate-700 leading-tight">
+                            <p className="text-[12px] font-black text-slate-400  tracking-widest mb-0.5">Program Context</p>
+                            <p className="text-[13px] font-bold text-slate-700 leading-tight">
                               {[item.department_name, item.program_name].filter(Boolean).join(' • ')}
                             </p>
                           </div>
@@ -727,8 +727,8 @@ const Exams = () => {
                   {/* Card Section 2: Timeline & Subjects */}
                   <div className="p-8 lg:w-1/2 flex-1">
                     <div className="flex items-center justify-between mb-6">
-                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Examination Schedule</h4>
-                      <div className="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-widest border border-slate-200">
+                      <h4 className="text-[12px] font-black text-slate-400  tracking-[0.2em]">Examination Schedule</h4>
+                      <div className="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[9px] font-black  tracking-widest border border-slate-200">
                         {item.subjects.length} Subjects in Series
                       </div>
                     </div>
@@ -738,19 +738,19 @@ const Exams = () => {
                         <div key={sub.id} className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all group/sub">
                           <div className="flex items-center gap-4">
                             <div className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-slate-50 text-slate-400 border border-slate-100 group-hover/sub:bg-indigo-50 group-hover/sub:text-indigo-500 group-hover/sub:border-indigo-100 transition-colors shrink-0">
-                              <span className="text-[10px] font-black leading-tight text-center">{formatDate(sub.exam_date).split('-').slice(0,2).join('-')}<br/>{formatDate(sub.exam_date).split('-')[2]}</span>
+                              <span className="text-[12px] font-black leading-tight text-center">{formatDate(sub.exam_date).split('-').slice(0,2).join('-')}<br/>{formatDate(sub.exam_date).split('-')[2]}</span>
                             </div>
                             <div>
                               <p className="text-sm font-bold text-slate-900 mb-0.5">{sub.subject_name}</p>
                               <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-1 text-[10px] text-slate-400 font-bold uppercase tracking-tight">
+                                <div className="flex items-center gap-1 text-[12px] text-slate-400 font-bold  tracking-tight">
                                   <Clock size={10} />
                                   {sub.start_time}-{sub.end_time}
                                 </div>
                                 {sub.is_published ? (
-                                  <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest px-1.5 py-0.5 bg-emerald-50 rounded-md">LIVE</span>
+                                  <span className="text-[8px] font-black text-emerald-500  tracking-widest px-1.5 py-0.5 bg-emerald-50 rounded-md">LIVE</span>
                                 ) : (
-                                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest px-1.5 py-0.5 bg-slate-50 rounded-md">DRAFT</span>
+                                  <span className="text-[8px] font-black text-slate-400  tracking-widest px-1.5 py-0.5 bg-slate-50 rounded-md">DRAFT</span>
                                 )}
                               </div>
                             </div>
@@ -769,22 +769,22 @@ const Exams = () => {
                   <div className="p-8 lg:w-64 bg-slate-50/50 flex flex-col justify-between">
                     {(authUtils.isAdmin() || (authUtils.isCollegeAdmin() && item.exam_type != 2)) ? (
                       <div>
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Orchestration</h4>
+                        <h4 className="text-[12px] font-black text-slate-400  tracking-[0.2em] mb-6">Orchestration</h4>
                         <div className="space-y-3">
                             <button 
                               onClick={() => handleTogglePublish(item)}
-                              className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-xs ${item.subjects[0].is_published ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'}`}
+                              className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-[13px] ${item.subjects[0].is_published ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'}`}
                             >
-                              <span className="uppercase tracking-widest">{item.subjects[0].is_published ? 'Published' : 'Publish All'}</span>
+                              <span className=" tracking-widest">{item.subjects[0].is_published ? 'Published' : 'Publish All'}</span>
                               <Globe size={16} />
                             </button>
                             {/* Open Enrollment: only for external exams — internal exams need no registration */}
                             {item.exam_type !== 1 && (
                               <button 
                                 onClick={() => handleToggleApplications(item)}
-                                className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-xs ${item.subjects[0].student_application_open ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'}`}
+                                className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-[13px] ${item.subjects[0].student_application_open ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'}`}
                               >
-                                <span className="uppercase tracking-widest">{item.subjects[0].student_application_open ? 'Enrolling' : 'Open Enrollment'}</span>
+                                <span className=" tracking-widest">{item.subjects[0].student_application_open ? 'Enrolling' : 'Open Enrollment'}</span>
                                 <Users size={16} />
                               </button>
                             )}
@@ -792,9 +792,9 @@ const Exams = () => {
                               onClick={() => handleToggleResultsPublish(item)}
                               disabled={!item.subjects.every(s => s.marks_submitted) && !item.subjects[0].results_published}
                               title={!item.subjects.every(s => s.marks_submitted) && !item.subjects[0].results_published ? "All internal marks must be 'Locked' by colleges and external marks must be 'Submitted' before publishing." : ""}
-                              className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-xs ${item.subjects[0].results_published ? 'bg-amber-50 border-amber-200 text-amber-700' : (!item.subjects.every(s => s.marks_submitted) ? 'bg-slate-50 border-slate-200 text-slate-300 cursor-not-allowed grayscale' : 'bg-white border-slate-200 text-slate-600 hover:border-amber-400 hover:text-amber-600')}`}
+                              className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-[13px] ${item.subjects[0].results_published ? 'bg-amber-50 border-amber-200 text-amber-700' : (!item.subjects.every(s => s.marks_submitted) ? 'bg-slate-50 border-slate-200 text-slate-300 cursor-not-allowed grayscale' : 'bg-white border-slate-200 text-slate-600 hover:border-amber-400 hover:text-amber-600')}`}
                             >
-                              <span className="uppercase tracking-widest">{item.subjects[0].results_published ? 'Results Live' : 'Publish Results'}</span>
+                              <span className=" tracking-widest">{item.subjects[0].results_published ? 'Results Live' : 'Publish Results'}</span>
                               <Check size={16} />
                             </button>
                         </div>
@@ -802,7 +802,7 @@ const Exams = () => {
                     ) : (
                       <div className="flex flex-col items-center justify-center flex-1 text-center opacity-50 py-8">
                         <Globe size={40} className="text-slate-300 mb-4" />
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">Managed By<br/>University</p>
+                        <p className="text-[12px] font-black text-slate-400  tracking-widest leading-relaxed">Managed By<br/>University</p>
                       </div>
                     )}
 
@@ -810,7 +810,7 @@ const Exams = () => {
                       <div className="flex items-center gap-2 mt-8 pt-6 border-t border-slate-200">
                         <button 
                           onClick={() => navigate(`/exams/edit/${item.id}`)}
-                          className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm hover:shadow-indigo-500/10"
+                          className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all font-black text-[12px]  tracking-widest shadow-sm hover:shadow-indigo-500/10"
                         >
                           <Pencil size={14} />
                           Modify
@@ -832,11 +832,11 @@ const Exams = () => {
               <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-300 mx-auto mb-6">
                 <FileText size={40} />
               </div>
-              <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tighter">No Schedules Found</h3>
+              <h3 className="text-xl font-black text-slate-900 mb-2  tracking-tighter">No Schedules Found</h3>
               <p className="text-slate-500 mb-8 max-w-xs mx-auto font-medium">Capture institutional assessments by establishing a new examination schedule.</p>
               <button 
                 onClick={() => { setSearchQuery(''); handleClearAllFilters(); }}
-                className="px-8 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all"
+                className="px-8 py-3 bg-white border border-slate-200 rounded-2xl text-[13px] font-black  tracking-widest text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all"
               >
                 Clear Filters
               </button>

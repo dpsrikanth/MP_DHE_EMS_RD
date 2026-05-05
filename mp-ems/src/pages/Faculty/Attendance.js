@@ -227,20 +227,20 @@ const Attendance = () => {
                     </div>
                     <div>
                         <h1 className="text-3xl font-black text-slate-900 tracking-tight italic">Faculty <span className="text-emerald-500 not-italic">Attendance</span></h1>
-                        <p className="text-xs text-slate-400 font-black tracking-[0.2em] mt-1 uppercase">Track & Analyze engagement in real-time</p>
+                        <p className="text-[13px] text-slate-400 font-black tracking-[0.2em] mt-1 ">Track & Analyze engagement in real-time</p>
                     </div>
                 </div>
                 
                 <div className="flex bg-slate-100 p-1.5 rounded-2xl shadow-inner border border-slate-200">
                     <button 
                         onClick={() => setActiveTab('mark')}
-                        className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'mark' ? 'bg-white text-emerald-600 shadow-lg' : 'text-slate-500'}`}
+                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black  tracking-widest transition-all ${activeTab === 'mark' ? 'bg-white text-emerald-600 shadow-lg' : 'text-slate-500'}`}
                     >
                         Mark Attendance
                     </button>
                     <button 
                         onClick={() => setActiveTab('analytics')}
-                        className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'analytics' ? 'bg-white text-emerald-600 shadow-lg' : 'text-slate-500'}`}
+                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black  tracking-widest transition-all ${activeTab === 'analytics' ? 'bg-white text-emerald-600 shadow-lg' : 'text-slate-500'}`}
                     >
                         Attendance Analytics
                     </button>
@@ -250,7 +250,7 @@ const Attendance = () => {
             {/* Selector Card */}
             <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50 grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
                 <div className="md:col-span-12 lg:col-span-5 space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Assigned Subject & Section</label>
+                    <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1 italic">Assigned Subject & Section</label>
                     <Select
                         options={options}
                         value={selectedAssignment}
@@ -271,7 +271,7 @@ const Attendance = () => {
                 {activeTab === 'mark' ? (
                     <>
                         <div className="md:col-span-6 lg:col-span-4 space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Attendance Date</label>
+                            <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1 italic">Attendance Date</label>
                             <input 
                                 type="date"
                                 value={attendanceDate}
@@ -280,7 +280,7 @@ const Attendance = () => {
                             />
                         </div>
                         <div className="md:col-span-6 lg:col-span-3 space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Period Number</label>
+                            <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1 italic">Period Number</label>
                             <input 
                                 type="number"
                                 min="1"
@@ -292,7 +292,7 @@ const Attendance = () => {
                     </>
                 ) : (
                     <div className="md:col-span-12 lg:col-span-7 space-y-2">
-                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Time Range Analytics</label>
+                         <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1 italic">Time Range Analytics</label>
                          <div className="flex gap-2">
                             {[
                                 { id: 'all', label: 'All-Time' },
@@ -303,7 +303,7 @@ const Attendance = () => {
                                 <button
                                     key={filter.id}
                                     onClick={() => setAnalyticsFilter(filter.id)}
-                                    className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${analyticsFilter === filter.id ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                                    className={`flex-1 py-3 rounded-2xl text-[12px] font-black  tracking-widest transition-all ${analyticsFilter === filter.id ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
                                 >
                                     {filter.label}
                                 </button>
@@ -322,17 +322,17 @@ const Attendance = () => {
                     {/* Top Analytics Bar (Unified) */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Total Students</h4>
+                            <h4 className="text-[12px] font-black text-slate-400  tracking-[0.2em] mb-2">Total Students</h4>
                             <p className="text-2xl font-black text-slate-900 tracking-tighter">{students.length}</p>
                          </div>
                          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Sessions Held</h4>
+                            <h4 className="text-[12px] font-black text-slate-400  tracking-[0.2em] mb-2">Sessions Held</h4>
                             <p className="text-2xl font-black text-emerald-600 tracking-tighter">{summaryStats.totalSessions}</p>
                          </div>
                          <div className="bg-slate-900 p-6 rounded-3xl shadow-xl shadow-slate-900/10 text-white md:col-span-2 flex items-center justify-between">
                             <div>
-                                <h4 className="text-[10px] font-black opacity-50 uppercase tracking-[0.2em] mb-2 italic">Engagement Alert</h4>
-                                <p className="text-xs font-bold leading-relaxed">System identifies students with <span className="text-red-400 font-black underline decoration-red-400/50 underline-offset-4">below 75% attendance</span> in the selected period.</p>
+                                <h4 className="text-[12px] font-black opacity-50  tracking-[0.2em] mb-2 italic">Engagement Alert</h4>
+                                <p className="text-[13px] font-bold leading-relaxed">System identifies students with <span className="text-red-400 font-black underline decoration-red-400/50 underline-offset-4">below 75% attendance</span> in the selected period.</p>
                             </div>
                             <Info className="text-slate-700" size={32} />
                          </div>
@@ -342,7 +342,7 @@ const Attendance = () => {
                         <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
                             <div className="flex items-center gap-3">
                                 <Users size={20} className="text-emerald-500" />
-                                <h2 className="text-lg font-black text-slate-900 tracking-tight uppercase tracking-tighter italic">
+                                <h2 className="text-lg font-black text-slate-900 tracking-tight  tracking-tighter italic">
                                     {activeTab === 'mark' ? 'Daily Attendance Registry' : 'Period Analytics Report'}
                                 </h2>
                             </div>
@@ -354,7 +354,7 @@ const Attendance = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead className="bg-slate-50">
-                                    <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    <tr className="text-[12px] font-black text-slate-400  tracking-widest">
                                         <th className="px-8 py-5">Student Identity</th>
                                         <th className="px-6 py-5 text-center">{activeTab === 'mark' ? 'Status' : 'Sessions Attended'}</th>
                                         <th className="px-8 py-5 text-right">{activeTab === 'mark' ? 'Cumulative' : 'Period %'}</th>
@@ -374,13 +374,13 @@ const Attendance = () => {
                                                         </div>
                                                         <div>
                                                             <p className="text-sm font-black text-slate-900">{st.name}</p>
-                                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{st.rollnumber || 'ID:' + st.id}</p>
+                                                            <p className="text-[12px] font-bold text-slate-400  tracking-widest">{st.rollnumber || 'ID:' + st.id}</p>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-5 text-center">
                                                     {activeTab === 'mark' ? (
-                                                        <div className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl font-black uppercase text-[10px] shadow-sm transition-all ${
+                                                        <div className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl font-black  text-[12px] shadow-sm transition-all ${
                                                             attendanceDraft[st.id] === 'Present' ? 'bg-emerald-500 text-white shadow-emerald-500/20' : 'bg-red-500 text-white shadow-red-500/20'
                                                         }`}>
                                                             {attendanceDraft[st.id] === 'Present' ? <CheckCircle size={12} /> : <XCircle size={12} />}
@@ -389,7 +389,7 @@ const Attendance = () => {
                                                     ) : (
                                                         <div className="flex flex-col items-center">
                                                             <span className="text-sm font-black text-slate-900 tracking-tighter italic">{presentCount}</span>
-                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] -mt-1">Presence Log</span>
+                                                            <span className="text-[9px] font-black text-slate-400  tracking-[0.2em] -mt-1">Presence Log</span>
                                                         </div>
                                                     )}
                                                 </td>
@@ -413,17 +413,17 @@ const Attendance = () => {
                         {activeTab === 'mark' && (
                             <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center">
                                 <div className="flex items-center gap-6">
-                                    <div className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                                    <div className="text-[13px] font-black text-slate-400  tracking-widest">
                                         Present: <span className="text-emerald-600 text-sm ml-1">{Object.values(attendanceDraft).filter(v => v === 'Present').length}</span>
                                     </div>
-                                    <div className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                                    <div className="text-[13px] font-black text-slate-400  tracking-widest">
                                         Absent: <span className="text-red-500 text-sm ml-1">{Object.values(attendanceDraft).filter(v => v === 'Absent').length}</span>
                                     </div>
                                 </div>
                                 <button
                                     onClick={handleSaveAttendance}
                                     disabled={isSaving}
-                                    className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-slate-900/20 transition-all active:scale-[0.98] disabled:bg-slate-400 flex items-center gap-3"
+                                    className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-[13px]  tracking-[0.2em] shadow-xl shadow-slate-900/20 transition-all active:scale-[0.98] disabled:bg-slate-400 flex items-center gap-3"
                                 >
                                     {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Save size={18} />}
                                     {isSaving ? 'Processing...' : 'Commit Session Log'}
@@ -435,7 +435,7 @@ const Attendance = () => {
             ) : (
                 <div className="py-20 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-100">
                     <BarChart3 className="mx-auto text-slate-200 mb-4" size={48} />
-                    <h3 className="text-lg font-black text-slate-900 uppercase italic tracking-tighter">Class Identification Required</h3>
+                    <h3 className="text-lg font-black text-slate-900  italic tracking-tighter">Class Identification Required</h3>
                     <p className="text-sm text-slate-400 mt-2">Please select a subject and section from the menu above to begin.</p>
                 </div>
             )}

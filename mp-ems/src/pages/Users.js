@@ -115,14 +115,14 @@ const Users = () => {
             </div>
             <div>
               <h1 className="text-3xl font-black text-slate-900 tracking-tight">User Management</h1>
-              <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">Access Control & Identities</p>
+              <p className="text-[13px] text-slate-500 mt-1 font-bold  tracking-widest">Access Control & Identities</p>
             </div>
           </div>
           <div className="flex flex-col md:flex-row md:items-center gap-4">
             <TableSearch value={searchQuery} onChange={setSearchQuery} placeholder="Search users..." />
             <button 
               onClick={() => navigate('/users/add')}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap text-sm uppercase tracking-widest"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap text-sm  tracking-widest"
             >
               <UserPlus size={20} />
               <span>Add User</span>
@@ -138,9 +138,9 @@ const Users = () => {
                 <SortHeader label="ID" field="id" currentSort={sortConfig} onSort={handleSort} className="px-8 py-5" visible={visibleColumns.id} />
                 <SortHeader label="User Info" field="name" currentSort={sortConfig} onSort={handleSort} className="px-4 py-5" visible={visibleColumns.name} />
                 <SortHeader label="Role" field="role_name" currentSort={sortConfig} onSort={handleSort} className="px-4 py-5" visible={visibleColumns.role_name} />
-                <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Institution</th>
-                <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Status</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
+                <th className="px-4 py-5 text-[13px] font-black  tracking-widest text-slate-400">Institution</th>
+                <th className="px-4 py-5 text-[13px] font-black  tracking-widest text-slate-400 text-center">Status</th>
+                <th className="px-8 py-5 text-[13px] font-black  tracking-widest text-slate-400 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -149,12 +149,12 @@ const Users = () => {
                   <td className="px-8 py-5 text-sm font-bold text-slate-400">#{user.id}</td>
                   <td className="px-4 py-5">
                     <div className="flex flex-col">
-                      <span className="text-[15px] font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{user.name}</span>
+                      <span className="text-[15px] font-black text-slate-900 group-hover:text-indigo-600 transition-colors  tracking-tight">{user.name}</span>
                       <span className="text-[13px] font-bold text-indigo-500/80">{user.email}</span>
                     </div>
                   </td>
                   <td className="px-4 py-5">
-                    <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-[11px] font-black uppercase tracking-wider border border-indigo-100">
+                    <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-[11px] font-black  tracking-wider border border-indigo-100">
                       <Shield size={12} />
                       {user.role_name}
                     </span>
@@ -174,7 +174,7 @@ const Users = () => {
                         </div>
                       )}
                       {!user.university_name && !user.college_name && (
-                        <span className="text-[11px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-50/50 px-2 py-0.5 rounded w-fit">Global Admin</span>
+                        <span className="text-[11px] font-black text-indigo-400  tracking-widest bg-indigo-50/50 px-2 py-0.5 rounded w-fit">Global Admin</span>
                       )}
                     </div>
                   </td>

@@ -136,7 +136,7 @@ const StudentResults = () => {
     <div className="p-6 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-4 border-b border-slate-100">
         <div>
-          <div className="flex items-center gap-2 text-emerald-600 font-extrabold text-[10px] uppercase tracking-[0.2em] mb-1">
+          <div className="flex items-center gap-2 text-emerald-600 font-extrabold text-[12px]  tracking-[0.2em] mb-1">
             <Award size={14} /> Official Academic Record
           </div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Performance <span className="text-emerald-500 italic">Statement</span></h1>
@@ -149,7 +149,7 @@ const StudentResults = () => {
                   placeholder="Filter results..."
                 />
              </div>
-             <a href="/student/dashboard" className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20 whitespace-nowrap">
+             <a href="/student/dashboard" className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-[13px] hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20 whitespace-nowrap">
                 <LayoutDashboard size={16} /> Return to Home
              </a>
         </div>
@@ -160,7 +160,7 @@ const StudentResults = () => {
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
           <button
             onClick={() => setResultTypeFilter('external')}
-            className={`px-6 py-3 text-xs font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 whitespace-nowrap ${
+            className={`px-6 py-3 text-[13px] font-black  tracking-widest rounded-t-xl transition-all border-b-2 whitespace-nowrap ${
               resultTypeFilter === 'external'
                 ? 'border-emerald-500 text-emerald-600 bg-emerald-50/50'
                 : 'border-transparent text-slate-400 hover:text-slate-700'
@@ -170,7 +170,7 @@ const StudentResults = () => {
           </button>
           <button
             onClick={() => setResultTypeFilter('internal')}
-            className={`px-6 py-3 text-xs font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 whitespace-nowrap ${
+            className={`px-6 py-3 text-[13px] font-black  tracking-widest rounded-t-xl transition-all border-b-2 whitespace-nowrap ${
               resultTypeFilter === 'internal'
                 ? 'border-violet-500 text-violet-600 bg-violet-50/50'
                 : 'border-transparent text-slate-400 hover:text-slate-700'
@@ -182,11 +182,11 @@ const StudentResults = () => {
 
         {availableSemesters.length > 0 && (
           <div className="flex items-center gap-3 pb-3 sm:pb-0 pr-2">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Semester:</span>
+            <span className="text-[12px] font-black text-slate-400  tracking-widest whitespace-nowrap">Semester:</span>
             <select
               value={selectedSemester}
               onChange={(e) => setSelectedSemester(e.target.value)}
-              className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm cursor-pointer transition-all hover:bg-white min-w-[140px]"
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-[13px] font-bold rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm cursor-pointer transition-all hover:bg-white min-w-[140px]"
             >
               <option value="All">All Semesters</option>
               {availableSemesters.map(sem => (
@@ -201,7 +201,7 @@ const StudentResults = () => {
       {filteredSeriesResults.length === 0 ? (
         <div className="py-20 text-center bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200 shadow-sm">
            <Search size={40} className="text-slate-300 mx-auto mb-4" />
-           <h3 className="text-lg font-black text-slate-900 mb-1 uppercase tracking-tighter">
+           <h3 className="text-lg font-black text-slate-900 mb-1  tracking-tighter">
              {searchQuery ? "No matching records" : "No Published Statements"}
            </h3>
            <p className="text-slate-500 max-w-xs mx-auto text-sm font-medium">
@@ -210,7 +210,7 @@ const StudentResults = () => {
            {searchQuery && (
              <button 
                onClick={() => setSearchQuery('')}
-               className="mt-6 text-xs font-black text-emerald-600 hover:text-emerald-700 underline uppercase tracking-widest"
+               className="mt-6 text-[13px] font-black text-emerald-600 hover:text-emerald-700 underline  tracking-widest"
              >
                Clear All Filters
              </button>
@@ -231,22 +231,22 @@ const StudentResults = () => {
                        <GraduationCap size={24} />
                     </div>
                     <div>
-                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Associated Institution</p>
-                       <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight">{series.college_name}</h2>
+                       <p className="text-[9px] font-black text-slate-400  tracking-widest mb-0.5">Associated Institution</p>
+                       <h2 className="text-sm font-black text-slate-900  tracking-tight">{series.college_name}</h2>
                     </div>
                  </div>
                   <div className="flex items-center gap-4 text-right">
                     <div>
                       {series.exam_type === 1 ? (
-                        <span className="px-3 py-1 bg-violet-100 text-violet-700 rounded-full text-[10px] font-black uppercase tracking-widest">Internal Assessment</span>
+                        <span className="px-3 py-1 bg-violet-100 text-violet-700 rounded-full text-[12px] font-black  tracking-widest">Internal Assessment</span>
                       ) : (
-                        <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">OFFICIALLY FINALIZED</span>
+                        <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[12px] font-black  tracking-widest shadow-sm">OFFICIALLY FINALIZED</span>
                       )}
                     </div>
                     {series.exam_type !== 1 && (
                       <button 
                         onClick={() => window.open(`/student/result-sheet/${encodeURIComponent(series.exam_name)}`, '_blank')}
-                        className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all flex items-center gap-2 group"
+                        className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[12px] font-black  tracking-widest shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all flex items-center gap-2 group"
                       >
                         <Download size={14} className="group-hover:translate-y-0.5 transition-transform" /> 
                         Download Statement
@@ -260,7 +260,7 @@ const StudentResults = () => {
                 <div className="p-0">
                   <table className="w-full border-collapse">
                     <thead className="bg-violet-50/60">
-                      <tr className="text-left text-[10px] font-extrabold text-slate-500 uppercase tracking-widest border-b border-violet-100">
+                      <tr className="text-left text-[12px] font-extrabold text-slate-500  tracking-widest border-b border-violet-100">
                         <th className="px-6 py-4">Sl. No.</th>
                         <th className="px-4 py-4">Subject</th>
                         {internalComponents.length > 0 ? (
@@ -283,10 +283,10 @@ const StudentResults = () => {
                     <tbody className="divide-y divide-slate-100">
                       {series.subjects.map((sub, sIdx) => (
                         <tr key={sIdx} className="hover:bg-violet-50/30 transition-colors">
-                          <td className="px-6 py-4 font-bold text-slate-400 text-xs">{sIdx + 1}</td>
+                          <td className="px-6 py-4 font-bold text-slate-400 text-[13px]">{sIdx + 1}</td>
                           <td className="px-4 py-4">
                             <p className="text-sm font-black text-slate-900">{sub.subject_name}</p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{sub.subject_code}</p>
+                            <p className="text-[12px] font-bold text-slate-400  tracking-wider">{sub.subject_code}</p>
                           </td>
                           {internalComponents.length > 0 ? (
                             internalComponents.map(compName => {
@@ -330,7 +330,7 @@ const StudentResults = () => {
                     </tbody>
                   </table>
                   <div className="px-6 py-4 bg-violet-50/30 border-t border-violet-100">
-                    <p className="text-[10px] text-slate-400 font-medium italic">
+                    <p className="text-[12px] text-slate-400 font-medium italic">
                       Internal assessment marks are for informational purposes. These do not reflect final semester results. No pass/fail is determined at this stage.
                     </p>
                   </div>
@@ -341,7 +341,7 @@ const StudentResults = () => {
               <div className="p-0">
                 <table className="w-full border-collapse border-spacing-0">
                   <thead className="bg-slate-200/30">
-                    <tr className="text-left text-[10px] font-extrabold text-slate-500 uppercase tracking-widest border-b border-slate-200">
+                    <tr className="text-left text-[12px] font-extrabold text-slate-500  tracking-widest border-b border-slate-200">
                       <th className="px-6 py-4">Sl. No.</th>
                       <th className="px-4 py-4">Course Code</th>
                       <th className="px-4 py-4">Title of the Course Registered</th>
@@ -355,20 +355,20 @@ const StudentResults = () => {
                   <tbody className="divide-y divide-slate-100">
                     {series.subjects.map((sub, sIdx) => (
                       <tr key={sIdx} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4 font-bold text-slate-400 text-xs">{sIdx + 1}</td>
-                        <td className="px-4 py-4 font-black text-slate-900 text-xs uppercase tracking-wider">{sub.subject_code}</td>
-                        <td className="px-4 py-4 text-xs font-bold text-slate-700">{sub.subject_name}</td>
-                        <td className="px-4 py-4 text-center font-black text-slate-600 text-xs">{sub.creditsAssigned}</td>
-                        <td className="px-4 py-4 text-center font-black text-emerald-600 text-xs">{sub.creditsEarned}</td>
+                        <td className="px-6 py-4 font-bold text-slate-400 text-[13px]">{sIdx + 1}</td>
+                        <td className="px-4 py-4 font-black text-slate-900 text-[13px]  tracking-wider">{sub.subject_code}</td>
+                        <td className="px-4 py-4 text-[13px] font-bold text-slate-700">{sub.subject_name}</td>
+                        <td className="px-4 py-4 text-center font-black text-slate-600 text-[13px]">{sub.creditsAssigned}</td>
+                        <td className="px-4 py-4 text-center font-black text-emerald-600 text-[13px]">{sub.creditsEarned}</td>
                         <td className="px-4 py-4 text-center font-black text-slate-900 text-sm italic">
                           {sub.total_marks}{parseFloat(sub.grace_marks || 0) > 0 ? '*' : ''}
                         </td>
                         <td className="px-4 py-4 text-center">
-                           <span className={`px-2 py-0.5 rounded text-[10px] font-black ${sub.isPass ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100' : 'bg-red-50 text-red-600 ring-1 ring-red-100'} uppercase tracking-tight`}>
+                           <span className={`px-2 py-0.5 rounded text-[12px] font-black ${sub.isPass ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100' : 'bg-red-50 text-red-600 ring-1 ring-red-100'}  tracking-tight`}>
                              {sub.grade}
                            </span>
                         </td>
-                        <td className="px-6 py-4 text-right font-black text-slate-700 text-xs">{sub.gradePoint}</td>
+                        <td className="px-6 py-4 text-right font-black text-slate-700 text-[13px]">{sub.gradePoint}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -379,27 +379,27 @@ const StudentResults = () => {
               <div className="p-8 bg-slate-50/30 border-t border-slate-200">
                  <div className="grid grid-cols-2 md:grid-cols-7 border border-slate-300 rounded-xl overflow-hidden shadow-lg shadow-slate-200/20">
                     <div className="p-4 border-r border-b border-slate-200 bg-white text-center">
-                       <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Credits Reg.</p>
+                       <p className="text-[9px] font-black text-slate-400  mb-2">Credits Reg.</p>
                        <p className="text-xl font-black text-slate-900 tracking-tight">{series.totalCreditsAssigned}</p>
                     </div>
                     <div className="p-4 border-r border-b border-slate-200 bg-white text-center">
-                       <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Credits Earned</p>
+                       <p className="text-[9px] font-black text-slate-400  mb-2">Credits Earned</p>
                        <p className="text-xl font-black text-emerald-600 tracking-tight">{series.totalCreditsEarned}</p>
                     </div>
                     <div className="p-4 border-r border-b border-slate-200 bg-white text-center">
-                       <p className="text-[9px] font-black text-slate-400 uppercase mb-2 italic">Cumulative Credits</p>
+                       <p className="text-[9px] font-black text-slate-400  mb-2 italic">Cumulative Credits</p>
                        <p className="text-xl font-black text-slate-400 tracking-tight">N/A</p>
                     </div>
                     <div className="p-4 border-r border-b border-slate-200 bg-emerald-500 text-white text-center">
-                       <p className="text-[9px] font-black opacity-80 uppercase mb-2">Σ(Ci x Gi)</p>
+                       <p className="text-[9px] font-black opacity-80  mb-2">Σ(Ci x Gi)</p>
                        <p className="text-xl font-black tracking-tighter">{series.totalCiGi}</p>
                     </div>
                     <div className="p-4 border-r border-b border-slate-200 bg-slate-900 text-white text-center">
-                       <p className="text-[9px] font-black opacity-60 uppercase mb-2 italic">Semester SGPA</p>
+                       <p className="text-[9px] font-black opacity-60  mb-2 italic">Semester SGPA</p>
                        <p className="text-2xl font-black text-emerald-400 tracking-tight">{series.sgpa}</p>
                     </div>
                     <div className="p-4 border-r border-b border-slate-200 bg-slate-900 text-white text-center">
-                       <p className="text-[9px] font-black opacity-60 uppercase mb-2 italic tracking-widest">CGPA</p>
+                       <p className="text-[9px] font-black opacity-60  mb-2 italic tracking-widest">CGPA</p>
                        <p className="text-2xl font-black text-slate-500 tracking-tight">N/A</p>
                     </div>
                     <div className={`p-4 border-b border-slate-200 text-center col-span-2 md:col-span-1 ${
@@ -407,14 +407,14 @@ const StudentResults = () => {
                       series.overallStatus === 'PASS (GRACE)' ? 'bg-amber-500 text-white' : 
                       'bg-emerald-600 text-white'
                     }`}>
-                       <p className="text-[9px] font-black opacity-80 uppercase mb-2">Final Result</p>
-                       <p className="text-xl font-black tracking-tight uppercase">{series.overallStatus}</p>
+                       <p className="text-[9px] font-black opacity-80  mb-2">Final Result</p>
+                       <p className="text-xl font-black tracking-tight ">{series.overallStatus}</p>
                     </div>
                  </div>
 
                  <div className="mt-8 pt-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border-t border-slate-100 border-dashed">
                     <div className="max-w-md">
-                       <p className="text-[10px] text-slate-400 font-medium italic leading-relaxed">
+                       <p className="text-[12px] text-slate-400 font-medium italic leading-relaxed">
                           Note: This Performance Statement is for informational purposes only. Official Degree Certificates are issued upon successful completion of the academic program. 
                           An asterisk (*) indicates that the subject marks include grace marks to reach the passing threshold.
                           Σ(Ci x Gi) indicates Sum of (Credits Assigned x Grade Points Secured).
@@ -423,9 +423,9 @@ const StudentResults = () => {
                     <div className="flex flex-col items-center">
                        <div className="w-24 h-24 bg-slate-100 rounded-2xl flex items-center justify-center mb-2 border border-slate-200 relative overflow-hidden">
                           <CheckCircle2 size={48} className="text-emerald-500/20" />
-                          <div className="absolute inset-0 flex items-center justify-center italic font-black text-[8px] text-slate-300 uppercase tracking-widest -rotate-45">Digital Sign</div>
+                          <div className="absolute inset-0 flex items-center justify-center italic font-black text-[8px] text-slate-300  tracking-widest -rotate-45">Digital Sign</div>
                        </div>
-                       <p className="text-[10px] text-slate-900 font-black uppercase tracking-widest">Controller of Exams</p>
+                       <p className="text-[12px] text-slate-900 font-black  tracking-widest">Controller of Exams</p>
                     </div>
                  </div>
                </div>

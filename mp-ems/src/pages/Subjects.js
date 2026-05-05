@@ -239,7 +239,7 @@ const Subjects = () => {
                 <SortHeader label="Credits" field="credit" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.credit} className="text-center" />
                 <SortHeader label="Faculty" field="teacher_name" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.teacher_name} />
                 <SortHeader label="PPW" field="periods_per_week" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.periods_per_week} className="text-center" />
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Settings</th>
+                <th className="px-8 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Settings</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -247,19 +247,19 @@ const Subjects = () => {
                 <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
                   {visibleColumns.id && <td className="px-8 py-5 text-sm font-bold text-slate-400">#{item.id}</td>}
                   {visibleColumns.program_name && <td className="px-4 py-5 text-sm font-semibold text-slate-900">{item.program_name || '—'}</td>}
-                  {visibleColumns.class_name && <td className="px-4 py-5 font-bold"><span className={`px-3 py-1.5 rounded-xl border text-xs ${item.program_name ? 'text-amber-600 bg-amber-50 border-amber-100' : 'text-slate-400 bg-slate-50 border-slate-100'}`}>{item.class_name}</span></td>}
+                  {visibleColumns.class_name && <td className="px-4 py-5 font-bold"><span className={`px-3 py-1.5 rounded-xl border text-[13px] ${item.program_name ? 'text-amber-600 bg-amber-50 border-amber-100' : 'text-slate-400 bg-slate-50 border-slate-100'}`}>{item.class_name}</span></td>}
                   {visibleColumns.batch && <td className="px-4 py-5 text-sm font-bold text-slate-500 text-center">{item.batch || '—'}</td>}
                   {visibleColumns.name && (
                     <td className="px-4 py-5">
                       <div className="flex flex-col">
                         <span className="text-sm font-bold text-slate-900">{item.name}</span>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{item.subject_code}</span>
+                        <span className="text-[12px] font-black text-slate-400  tracking-tighter">{item.subject_code}</span>
                       </div>
                     </td>
                   )}
                   {visibleColumns.mapping_type && (
                     <td className="px-4 py-5">
-                      <span className={`inline-flex px-2 py-1 rounded-md text-[10px] font-black uppercase border ${
+                      <span className={`inline-flex px-2 py-1 rounded-md text-[12px] font-black  border ${
                         item.is_mandatory === 'M' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'
                       }`}>
                         {item.mapping_type} {item.is_mandatory === 'M' ? '(M)' : '(E)'}

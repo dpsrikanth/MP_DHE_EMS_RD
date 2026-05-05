@@ -134,7 +134,7 @@ const ProgramsForm = () => {
             </div>
           </div>
           <div className="form-header__right">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+              <span className="text-[12px] font-black text-slate-400  tracking-[0.2em] bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
                 Curriculum Module v2.5
               </span>
           </div>
@@ -153,7 +153,7 @@ const ProgramsForm = () => {
                     {isEditing && (
                       <div className="p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] flex items-center justify-between">
                          <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Registry Reference</p>
+                            <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-2">Registry Reference</p>
                             <p className="text-sm font-black text-slate-900 font-mono tracking-tighter">PRG-SPEC-{id.padStart(4, '0')}</p>
                          </div>
                          <div className="w-10 h-10 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-300 shadow-sm"><Hash size={18} /></div>
@@ -186,7 +186,7 @@ const ProgramsForm = () => {
                           <Hash size={18} className="form-input-wrap__icon" />
                           <input type="text" placeholder="e.g. BTECH-CS" value={form.code} 
                             onChange={(e) => setForm({ ...form, code: e.target.value })}
-                            className="form-input form-input--with-icon font-mono uppercase" />
+                            className="form-input form-input--with-icon font-mono " />
                         </div>
                       </div>
                     </div>
@@ -197,7 +197,7 @@ const ProgramsForm = () => {
                    <div className="absolute bottom-0 right-0 w-40 h-40 bg-indigo-500/10 rounded-full -mr-20 -mb-20 blur-3xl group-hover:bg-indigo-500/20 transition-all duration-700" />
                    <div className="relative z-10 space-y-4">
                       <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-white"><Settings size={28} /></div>
-                      <h4 className="text-xl font-black tracking-tight uppercase">Academic Logic</h4>
+                      <h4 className="text-xl font-black tracking-tight ">Academic Logic</h4>
                       <p className="text-sm text-slate-400 font-medium leading-relaxed">
                         Defining program duration and grading systems will establish the base evaluation metrics for all students enrolled in this curriculum series.
                       </p>
@@ -241,7 +241,7 @@ const ProgramsForm = () => {
                      <div className="form-field">
                         <label className="form-label flex items-center gap-2">
                            Curriculum Section Designation
-                           <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">(Optional Branching)</span>
+                           <span className="text-[12px] font-black text-slate-300  tracking-widest">(Optional Branching)</span>
                         </label>
                         <div className="form-input-wrap">
                           <Layers size={18} className="form-input-wrap__icon" />

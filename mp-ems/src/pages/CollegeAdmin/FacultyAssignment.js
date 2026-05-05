@@ -233,12 +233,12 @@ const FacultyAssignment = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-y border-slate-100">
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Faculty</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Academic Year & Sem</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Subject</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Section</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Status</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Actions</th>
+                                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 ">Faculty</th>
+                                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 ">Academic Year & Sem</th>
+                                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 ">Subject</th>
+                                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 ">Section</th>
+                                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 ">Status</th>
+                                <th className="px-6 py-4 text-[13px] font-bold text-slate-500  text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -250,13 +250,13 @@ const FacultyAssignment = () => {
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col">
                                             <span className="text-sm font-semibold text-slate-700">{assignment.academic_year || '-'}</span>
-                                            <span className="text-xs font-bold text-slate-400 mt-0.5">{assignment.semester || '-'}</span>
+                                            <span className="text-[13px] font-bold text-slate-400 mt-0.5">{assignment.semester || '-'}</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-slate-600">{assignment.subject_name}</td>
                                     <td className="px-6 py-4 text-sm text-slate-600 font-bold">{assignment.section}</td>
                                     <td className="px-6 py-4">
-                                        <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full uppercase">
+                                        <span className="bg-green-100 text-green-700 text-[13px] font-bold px-2 py-1 rounded-full ">
                                             {assignment.status}
                                         </span>
                                     </td>
@@ -306,7 +306,7 @@ const FacultyAssignment = () => {
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div>
                                 <h3 className="text-lg font-bold text-slate-900">Edit Faculty Assignment</h3>
-                                <p className="text-xs text-slate-500 font-medium">Update the subject and section details</p>
+                                <p className="text-[13px] text-slate-500 font-medium">Update the subject and section details</p>
                             </div>
                             <button onClick={() => setShowEditModal(false)} className="p-2 bg-white hover:bg-slate-200 text-slate-400 rounded-xl transition-colors border border-slate-200 shadow-sm">
                                 <X size={16} />
@@ -315,7 +315,7 @@ const FacultyAssignment = () => {
                         <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2 lg:col-span-2">
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Faculty Member</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Faculty Member</label>
                                     <Select
                                         options={faculties.map(f => ({ value: f.id, label: f.name || f.email || `Teacher ID: ${f.id}` }))}
                                         value={faculties.map(f => ({ value: f.id, label: f.name || f.email || `Teacher ID: ${f.id}` })).find(o => o.value === editingAssignment.teacher_id)}
@@ -327,7 +327,7 @@ const FacultyAssignment = () => {
                                 </div>
                                 
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Academic Year</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Academic Year</label>
                                     <Select
                                         options={academicYears.map(ay => ({ value: ay.id, label: ay.year_name }))}
                                         value={academicYears.map(ay => ({ value: ay.id, label: ay.year_name })).find(o => o.value === editingAssignment.academic_year_id)}
@@ -339,7 +339,7 @@ const FacultyAssignment = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Semester</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Semester</label>
                                     <Select
                                         options={semesters.map(s => ({ value: s.id, label: s.semester_name }))}
                                         value={semesters.map(s => ({ value: s.id, label: s.semester_name })).find(o => o.value === editingAssignment.semester_id)}
@@ -351,7 +351,7 @@ const FacultyAssignment = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Subject</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Subject</label>
                                     <Select
                                         options={subjects.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}` }))}
                                         value={subjects.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}` })).find(o => o.value === editingAssignment.subject_id)}
@@ -363,7 +363,7 @@ const FacultyAssignment = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Section</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Section</label>
                                     <input
                                         type="text"
                                         placeholder="e.g. A, B, C"

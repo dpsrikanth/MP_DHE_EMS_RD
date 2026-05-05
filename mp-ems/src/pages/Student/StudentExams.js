@@ -120,7 +120,7 @@ const StudentExams = () => {
           {searchQuery && (
             <button 
               onClick={() => setSearchQuery('')}
-              className="mt-4 text-xs font-black text-sky-600 hover:text-sky-700 underline uppercase tracking-tighter"
+              className="mt-4 text-[13px] font-black text-sky-600 hover:text-sky-700 underline  tracking-tighter"
             >
               Clear Search
             </button>
@@ -135,26 +135,26 @@ const StudentExams = () => {
                 <div>
                    <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-1">{group.exam_name}</h2>
                    <div className="flex items-center gap-3">
-                     <span className="text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em]">{group.semester_name}</span>
+                     <span className="text-indigo-600 text-[12px] font-black  tracking-[0.2em]">{group.semester_name}</span>
                      <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                     <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{group.subjects.length} Total Papers</span>
+                     <span className="text-slate-400 text-[12px] font-black  tracking-widest">{group.subjects.length} Total Papers</span>
                      {/* Internal exam badge */}
                      {group.exam_type === 1 && (
-                       <span className="px-2 py-0.5 rounded-full bg-violet-100 text-violet-600 text-[9px] font-black uppercase tracking-widest border border-violet-200">Internal</span>
+                       <span className="px-2 py-0.5 rounded-full bg-violet-100 text-violet-600 text-[9px] font-black  tracking-widest border border-violet-200">Internal</span>
                      )}
                    </div>
                 </div>
                 
                 {/* Action: Internal = view-only notice | External = Register / Hall Ticket */}
                 {group.exam_type === 1 ? (
-                  <div className="mt-4 md:mt-0 flex items-center gap-2 px-5 py-3 bg-violet-50 border border-violet-200 rounded-2xl text-violet-700 font-bold text-xs">
+                  <div className="mt-4 md:mt-0 flex items-center gap-2 px-5 py-3 bg-violet-50 border border-violet-200 rounded-2xl text-violet-700 font-bold text-[13px]">
                     <BookOpen size={14} />
                     <span>Timetable View Only — No registration required</span>
                   </div>
                 ) : !group.allRegistered ? (
                   <button
                     onClick={() => handleRegister(group.ids)}
-                    className="mt-4 md:mt-0 group relative inline-flex items-center gap-3 bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
+                    className="mt-4 md:mt-0 group relative inline-flex items-center gap-3 bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-black text-[13px]  tracking-widest shadow-2xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <CreditCard size={16} className="relative z-10" />
@@ -163,7 +163,7 @@ const StudentExams = () => {
                 ) : (
                   <button
                     onClick={() => window.open(`/student/hall-ticket/${group.exam_name}/${group.subjects[0].semester_id}`, '_blank')}
-                    className="mt-4 md:mt-0 group relative inline-flex items-center gap-3 bg-emerald-600 text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
+                    className="mt-4 md:mt-0 group relative inline-flex items-center gap-3 bg-emerald-600 text-white px-8 py-3.5 rounded-2xl font-black text-[13px]  tracking-widest shadow-2xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <Printer size={16} className="relative z-10" />
@@ -179,17 +179,17 @@ const StudentExams = () => {
                     {/* Status Badge: Internal exams don't have registration */}
                     <div className="absolute top-6 right-6">
                       {group.exam_type === 1 ? (
-                        <div className="flex items-center gap-1.5 bg-violet-50 text-violet-600 px-3 py-1 rounded-full border border-violet-100 font-black text-[8px] uppercase tracking-widest">
+                        <div className="flex items-center gap-1.5 bg-violet-50 text-violet-600 px-3 py-1 rounded-full border border-violet-100 font-black text-[8px]  tracking-widest">
                           <BookOpen size={10} />
                           Internal
                         </div>
                       ) : exam.payment_status === 'Paid' ? (
-                        <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full border border-emerald-100 font-black text-[8px] uppercase tracking-widest">
+                        <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full border border-emerald-100 font-black text-[8px]  tracking-widest">
                           <CheckCircle size={10} />
                           Enrolled
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1.5 bg-amber-50 text-amber-600 px-3 py-1 rounded-full border border-amber-100 font-black text-[8px] uppercase tracking-widest">
+                        <div className="flex items-center gap-1.5 bg-amber-50 text-amber-600 px-3 py-1 rounded-full border border-amber-100 font-black text-[8px]  tracking-widest">
                           <Clock size={10} />
                           Pending
                         </div>
@@ -203,19 +203,19 @@ const StudentExams = () => {
                       <h3 className="text-lg font-black text-slate-900 leading-tight mb-1 group-hover:text-indigo-600 transition-colors line-clamp-2 min-h-[2.5rem]">
                         {exam.subject_name}
                       </h3>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Code: {exam.subject_code || 'N/A'}</p>
+                      <p className="text-[12px] font-black text-slate-400  tracking-widest">Code: {exam.subject_code || 'N/A'}</p>
                     </div>
 
                     <div className="space-y-4 pt-6 border-t border-slate-50">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex flex-col items-center justify-center border border-indigo-100">
-                             <span className="text-xs font-black">{new Date(exam.exam_date).getDate()}</span>
-                             <span className="text-[7px] font-bold uppercase">{new Date(exam.exam_date).toLocaleString('default', { month: 'short' })}</span>
+                             <span className="text-[13px] font-black">{new Date(exam.exam_date).getDate()}</span>
+                             <span className="text-[7px] font-bold ">{new Date(exam.exam_date).toLocaleString('default', { month: 'short' })}</span>
                           </div>
                           <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Examination Date</p>
-                            <p className="text-xs font-bold text-slate-700">{formatDate(exam.exam_date)}</p>
+                            <p className="text-[12px] font-black text-slate-400  tracking-widest mb-0.5">Examination Date</p>
+                            <p className="text-[13px] font-bold text-slate-700">{formatDate(exam.exam_date)}</p>
                           </div>
                         </div>
                       </div>
@@ -226,8 +226,8 @@ const StudentExams = () => {
                              <Clock size={16} />
                           </div>
                           <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Session Timing</p>
-                            <p className="text-xs font-bold text-slate-700">{exam.start_time} - {exam.end_time}</p>
+                            <p className="text-[12px] font-black text-slate-400  tracking-widest mb-0.5">Session Timing</p>
+                            <p className="text-[13px] font-bold text-slate-700">{exam.start_time} - {exam.end_time}</p>
                           </div>
                         </div>
                       </div>
@@ -241,7 +241,7 @@ const StudentExams = () => {
       )}
 
       <div className="mt-12 text-center border-t border-slate-100 pt-8 opacity-40">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+        <p className="text-[12px] font-black  tracking-[0.2em] text-slate-500">
           Generated by Examination Management System • Modern Portal Architecture
         </p>
       </div>

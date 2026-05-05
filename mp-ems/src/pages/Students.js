@@ -316,8 +316,8 @@ const Students = () => {
                   onSort={handleSort}
                   visible={visibleColumns.semister}
                 />
-                {/* <th className={`${visibleColumns.status ? '' : 'hidden'} px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center`}>Status</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Settings</th> */}
+                {/* <th className={`${visibleColumns.status ? '' : 'hidden'} px-8 py-4 text-[12px] font-black  tracking-widest text-slate-400 text-center`}>Status</th>
+                <th className="px-8 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Settings</th> */}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -326,7 +326,7 @@ const Students = () => {
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
                     {visibleColumns.id && (
                       <td className="px-8 py-5 text-center">
-                        <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                        <span className="text-[12px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
                           ID-{item.id.toString().padStart(4, '0')}
                         </span>
                       </td>
@@ -344,7 +344,7 @@ const Students = () => {
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-bold text-slate-900 truncate leading-none mb-1">{item.name?.trim() || '—'}</p>
-                            <p className="text-[11px] font-black text-emerald-500 uppercase tracking-widest leading-none flex items-center gap-1"><FileText size={10} /> {item.policies || '—'}</p>
+                            <p className="text-[11px] font-black text-emerald-500  tracking-widest leading-none flex items-center gap-1"><FileText size={10} /> {item.policies || '—'}</p>
                           </div>
                         </div>
                       </td>
@@ -399,10 +399,10 @@ const Students = () => {
                 <tr>
                   <td colSpan="7" className="px-8 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No students found matching your query</p>
+                      <p className="text-sm font-bold text-slate-400  tracking-widest">No students found matching your query</p>
                       <button
                         onClick={() => setSearchQuery('')}
-                        className="text-xs font-black text-emerald-500 hover:text-emerald-600 underline uppercase tracking-tighter"
+                        className="text-[13px] font-black text-emerald-500 hover:text-emerald-600 underline  tracking-tighter"
                       >
                         Reset Results
                       </button>
@@ -442,7 +442,7 @@ const Students = () => {
               </p>
 
               {deleteError && (
-                <div className="mb-6 p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-xs font-bold flex items-center gap-2 w-full text-left">
+                <div className="mb-6 p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-[13px] font-bold flex items-center gap-2 w-full text-left">
                   <ShieldAlert size={16} className="shrink-0" /> {deleteError}
                 </div>
               )}

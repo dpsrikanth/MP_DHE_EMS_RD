@@ -152,7 +152,7 @@ const ExamsForm = () => {
           </div>
           <div className="form-header__right">
              <div className="flex items-center gap-3">
-               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+               <span className="text-[12px] font-black text-slate-400  tracking-[0.2em] bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
                  Assess-X Pro v2
                </span>
              </div>
@@ -298,13 +298,13 @@ const ExamsForm = () => {
                     <div className="flex items-center gap-3">
                        <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600"><Calendar size={20} /></div>
                        <div>
-                          <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Timeline & Subject Mappings</h3>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Construct the assessment series</p>
+                          <h3 className="text-sm font-black text-slate-900  tracking-tight">Timeline & Subject Mappings</h3>
+                          <p className="text-[12px] text-slate-400 font-bold  tracking-widest">Construct the assessment series</p>
                        </div>
                     </div>
                     <button type="button"
                       onClick={() => setFormData({ ...formData, subjects: [...formData.subjects, { id: 'new-' + Date.now(), subject_id: '', exam_date: '', start_time: '', end_time: '' }] })}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-slate-100 text-indigo-600 font-black rounded-2xl hover:bg-indigo-50 hover:border-indigo-100 transition-all text-[11px] uppercase tracking-widest shadow-sm">
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-slate-100 text-indigo-600 font-black rounded-2xl hover:bg-indigo-50 hover:border-indigo-100 transition-all text-[11px]  tracking-widest shadow-sm">
                       <Plus size={16} /> Add Subject Row
                     </button>
                   </div>
@@ -371,7 +371,7 @@ const ExamsForm = () => {
 
                   {formData.subjects.length === 0 && (
                      <div className="py-20 text-center border-4 border-dashed border-slate-50 rounded-[3rem]">
-                        <p className="text-sm font-black text-slate-300 uppercase tracking-widest">No subjects defined in schedule</p>
+                        <p className="text-sm font-black text-slate-300  tracking-widest">No subjects defined in schedule</p>
                      </div>
                   )}
                 </div>
@@ -381,7 +381,7 @@ const ExamsForm = () => {
                    <div className="relative z-10 flex items-center justify-between">
                       <div className="space-y-4 max-w-md">
                          <div className="w-14 h-14 bg-indigo-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/40"><AlertCircle size={30} /></div>
-                         <h4 className="text-xl font-black tracking-tight uppercase">Operational Readiness</h4>
+                         <h4 className="text-xl font-black tracking-tight ">Operational Readiness</h4>
                          <p className="text-sm text-slate-400 font-medium leading-relaxed">
                            Finalizing this schedule will push these assessments into academic registries. Ensure all dates and subject-mappings are validated against institutional calendars.
                          </p>

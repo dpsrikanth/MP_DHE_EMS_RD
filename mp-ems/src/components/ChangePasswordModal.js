@@ -90,7 +90,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
             </div>
             <div>
               <h2 className="text-xl font-bold leading-none">Change Password</h2>
-              <p className="text-sky-100 text-xs mt-1 font-medium">Secure your account credentials</p>
+              <p className="text-sky-100 text-[13px] mt-1 font-medium">Secure your account credentials</p>
             </div>
           </div>
           <button 
@@ -119,7 +119,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Old Password */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5 ml-1">Current Password</label>
+              <label className="block text-[13px] font-bold text-slate-700  tracking-widest mb-1.5 ml-1">Current Password</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                   <Lock size={18} className="text-slate-400 group-focus-within:text-sky-500 transition-colors" />
@@ -145,7 +145,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
 
             {/* New Password */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5 ml-1">New Password</label>
+              <label className="block text-[13px] font-bold text-slate-700  tracking-widest mb-1.5 ml-1">New Password</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                   <ShieldCheck size={18} className="text-slate-400 group-focus-within:text-sky-500 transition-colors" />
@@ -171,7 +171,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
 
             {/* Confirm New Password */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5 ml-1">Confirm New Password</label>
+              <label className="block text-[13px] font-bold text-slate-700  tracking-widest mb-1.5 ml-1">Confirm New Password</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                   <ShieldCheck size={18} className="text-slate-400 group-focus-within:text-sky-500 transition-colors" />

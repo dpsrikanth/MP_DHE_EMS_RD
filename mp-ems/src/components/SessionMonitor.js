@@ -116,13 +116,13 @@ const SessionMonitor = ({ children }) => {
             
             <button 
               onClick={handleExtend}
-              className="w-full py-4 bg-sky-600 hover:bg-sky-700 text-white font-black rounded-xl shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] tracking-widest uppercase text-sm"
+              className="w-full py-4 bg-sky-600 hover:bg-sky-700 text-white font-black rounded-xl shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] tracking-widest  text-sm"
             >
               Extend Session
             </button>
             <button 
               onClick={() => setShowWarning(false)}
-              className="mt-3 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors"
+              className="mt-3 text-[13px] font-bold text-slate-400 hover:text-slate-600 transition-colors"
             >
               Ignore
             </button>

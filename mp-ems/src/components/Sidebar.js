@@ -338,7 +338,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
       {/* Navigation Menu */}
       <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-        <p className="px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Main Menu</p>
+        <p className="px-4 text-[12px] font-black text-slate-500  tracking-[0.2em] mb-4">Main Menu</p>
         
         {menuItems.map((item) => {
           if (item.type === 'parent') {
@@ -379,7 +379,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                           <span className={`shrink-0 transition-colors ${isChildActive ? 'text-indigo-400' : 'text-slate-600 group-hover:text-slate-400'}`}>
                             {child.icon}
                           </span>
-                          <span className="text-xs font-bold text-left">{child.name}</span>
+                          <span className="text-[13px] font-bold text-left">{child.name}</span>
                           {isChildActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500/50" />}
                         </button>
                       );

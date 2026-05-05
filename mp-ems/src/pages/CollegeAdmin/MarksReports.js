@@ -95,7 +95,7 @@ const MarksReports = () => {
             {/* Filters - Hidden on Print */}
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 md:p-8 flex flex-col md:flex-row gap-6 items-end print:hidden">
                 <div className="flex-1 min-w-[200px] space-y-2">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Semester</label>
+                    <label className="text-[13px] font-black text-slate-500  tracking-widest ml-1">Semester</label>
                     <Select
                         options={semesters}
                         value={selectedSemester}
@@ -106,7 +106,7 @@ const MarksReports = () => {
                     />
                 </div>
                 <div className="flex-1 min-w-[200px] space-y-2">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Subject (Optional)</label>
+                    <label className="text-[13px] font-black text-slate-500  tracking-widest ml-1">Subject (Optional)</label>
                     <Select
                         options={filteredSubjects}
                         value={selectedSubject}
@@ -135,7 +135,7 @@ const MarksReports = () => {
                 <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
                     {/* Report Header for Print */}
                     <div className="hidden print:block p-8 border-b-2 border-slate-900 text-center space-y-2">
-                        <h1 className="text-2xl font-black uppercase">Internal Assessment Summary Report</h1>
+                        <h1 className="text-2xl font-black ">Internal Assessment Summary Report</h1>
                         <p className="text-sm font-bold text-slate-600">
                             Semester: {selectedSemester.label} | Academic Year: {reportData[0].academic_year}
                         </p>
@@ -145,25 +145,25 @@ const MarksReports = () => {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-slate-50 border-b border-slate-200">
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">S.No</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Enrollment No</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student Name</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject</th>
-                                    <th className="px-12 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center bg-indigo-50/30">IA (Best of 2)</th>
-                                    <th className="px-12 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center bg-indigo-50/50">Practical</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Total (IA+P)</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-400  tracking-widest">S.No</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-400  tracking-widest">Enrollment No</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-400  tracking-widest">Student Name</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-400  tracking-widest">Subject</th>
+                                    <th className="px-12 py-4 text-[13px] font-black text-slate-400  tracking-widest text-center bg-indigo-50/30">IA (Best of 2)</th>
+                                    <th className="px-12 py-4 text-[13px] font-black text-slate-400  tracking-widest text-center bg-indigo-50/50">Practical</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-400  tracking-widest text-center">Total (IA+P)</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-400  tracking-widest text-center">Status</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {reportData.map((row, idx) => (
                                     <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-6 py-4 text-xs font-bold text-slate-500">{idx + 1}</td>
-                                        <td className="px-6 py-4 text-xs font-black text-slate-900">{row.enrollmentNo || row.rollnumber}</td>
-                                        <td className="px-6 py-4 text-xs font-bold text-slate-700">{row.student_name}</td>
+                                        <td className="px-6 py-4 text-[13px] font-bold text-slate-500">{idx + 1}</td>
+                                        <td className="px-6 py-4 text-[13px] font-black text-slate-900">{row.enrollmentNo || row.rollnumber}</td>
+                                        <td className="px-6 py-4 text-[13px] font-bold text-slate-700">{row.student_name}</td>
                                         <td className="px-6 py-4">
-                                            <p className="text-xs font-black text-slate-900">{row.subject_code}</p>
-                                            <p className="text-[10px] font-medium text-slate-500 truncate max-w-[150px]">{row.subject_name}</p>
+                                            <p className="text-[13px] font-black text-slate-900">{row.subject_code}</p>
+                                            <p className="text-[12px] font-medium text-slate-500 truncate max-w-[150px]">{row.subject_name}</p>
                                         </td>
                                         <td className="px-12 py-4 text-sm font-black text-center bg-indigo-50/30 text-indigo-700">{row.best_of_3_score}</td>
                                         <td className="px-12 py-4 text-sm font-black text-center bg-indigo-50/50 text-indigo-700">{row.practical_score}</td>
@@ -173,7 +173,7 @@ const MarksReports = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className={`text-[10px] font-black uppercase tracking-widest ${row.passing_status === 'Pass' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                            <span className={`text-[12px] font-black  tracking-widest ${row.passing_status === 'Pass' ? 'text-emerald-600' : 'text-rose-600'}`}>
                                                 {row.passing_status}
                                             </span>
                                         </td>

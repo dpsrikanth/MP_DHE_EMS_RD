@@ -290,18 +290,18 @@ const MarksReview = () => {
                         <table className="w-full text-left border-collapse whitespace-nowrap">
                             <thead>
                                 <tr className="bg-slate-50 border-y border-slate-200">
-                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest sticky left-0 bg-slate-50 border-r border-slate-200 z-10">Student</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-500  tracking-widest sticky left-0 bg-slate-50 border-r border-slate-200 z-10">Student</th>
                                     {marksStructure.map(comp => (
-                                        <th key={comp.id} className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">
+                                        <th key={comp.id} className="px-6 py-4 text-[13px] font-black text-slate-500  tracking-widest text-center">
                                             {comp.component_name}
                                         </th>
                                     ))}
-                                    <th className="px-6 py-4 text-xs font-black text-indigo-500 bg-indigo-50 uppercase tracking-widest text-center border-l-2 border-indigo-100">Calculated Best 2/3</th>
-                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Practical</th>
-                                    <th className="px-6 py-4 text-xs font-black text-slate-800 uppercase tracking-widest text-center border-l border-slate-200">Total</th>
-                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Result Status</th>
-                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Grace Marks</th>
-                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Action / Status</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-indigo-500 bg-indigo-50  tracking-widest text-center border-l-2 border-indigo-100">Calculated Best 2/3</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-500  tracking-widest text-center">Practical</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-800  tracking-widest text-center border-l border-slate-200">Total</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-500  tracking-widest text-center">Result Status</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-500  tracking-widest text-center">Grace Marks</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-500  tracking-widest text-center">Action / Status</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -312,7 +312,7 @@ const MarksReview = () => {
                                         <tr key={student.student_id} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-6 py-4 sticky left-0 bg-white border-r border-slate-100 z-10 w-64">
                                                 <p className="text-sm font-bold text-slate-800 truncate">{student.student_name}</p>
-                                                <p className="text-xs text-slate-500">{student.rollnumber || `ID: ${student.student_id}`}</p>
+                                                <p className="text-[13px] text-slate-500">{student.rollnumber || `ID: ${student.student_id}`}</p>
                                             </td>
 
                                             {marksStructure.map(comp => {
@@ -345,7 +345,7 @@ const MarksReview = () => {
                                             </td>
 
                                             <td className="px-6 py-4 text-center">
-                                                <span className={`text-xs font-black uppercase tracking-widest ${preview.isPass ? 'text-green-500' : 'text-red-500'}`}>
+                                                <span className={`text-[13px] font-black  tracking-widest ${preview.isPass ? 'text-green-500' : 'text-red-500'}`}>
                                                     {preview.isPass ? 'PASS' : 'FAIL'}
                                                 </span>
                                             </td>
@@ -401,7 +401,7 @@ const MarksReview = () => {
                                 <button
                                     disabled={isRejecting}
                                     onClick={handleRejectWorkflow}
-                                    className="inline-flex items-center gap-2 text-red-500 font-bold text-xs hover:underline"
+                                    className="inline-flex items-center gap-2 text-red-500 font-bold text-[13px] hover:underline"
                                 >
                                     <AlertCircle size={14} />
                                     Reject Section & Send Back to Faculty
@@ -413,7 +413,7 @@ const MarksReview = () => {
                                 <button
                                     disabled={isRejecting}
                                     onClick={handleSendBackToCollege}
-                                    className="inline-flex items-center gap-2 px-6 py-4 bg-amber-600 text-white font-black rounded-xl shadow-lg shadow-amber-600/20 hover:bg-amber-700 transition-all uppercase tracking-widest text-xs"
+                                    className="inline-flex items-center gap-2 px-6 py-4 bg-amber-600 text-white font-black rounded-xl shadow-lg shadow-amber-600/20 hover:bg-amber-700 transition-all  tracking-widest text-[13px]"
                                     title="Send back to college (Scenario 2)"
                                 >
                                     <Send size={18} />
@@ -422,7 +422,7 @@ const MarksReview = () => {
                                 <button
                                     disabled={isRejecting}
                                     onClick={handleRejectWorkflow}
-                                    className="inline-flex items-center gap-2 px-10 py-4 bg-indigo-600 text-white font-black rounded-xl shadow-xl shadow-indigo-600/20 hover:bg-indigo-700 hover:scale-[1.02] transition-all uppercase tracking-widest text-sm"
+                                    className="inline-flex items-center gap-2 px-10 py-4 bg-indigo-600 text-white font-black rounded-xl shadow-xl shadow-indigo-600/20 hover:bg-indigo-700 hover:scale-[1.02] transition-all  tracking-widest text-sm"
                                     title="Approve request and let faculty edit (Scenario 1)"
                                 >
                                     <Lock size={18} />
@@ -434,7 +434,7 @@ const MarksReview = () => {
                                 <button
                                     disabled={isLocking}
                                     onClick={handleApproveSection}
-                                    className={`inline-flex items-center gap-2 px-10 py-4 text-white font-black rounded-xl shadow-xl transition-all uppercase tracking-widest text-sm
+                                    className={`inline-flex items-center gap-2 px-10 py-4 text-white font-black rounded-xl shadow-xl transition-all  tracking-widest text-sm
                                         ${isLocking ? 'bg-amber-400 cursor-not-allowed shadow-none' : 'bg-emerald-500 hover:bg-emerald-600 hover:scale-[1.02] shadow-emerald-500/20 active:scale-[0.98]'}`}
                                 >
                                     {isLocking ? (
@@ -447,7 +447,7 @@ const MarksReview = () => {
                                 <button
                                     disabled={isRejecting}
                                     onClick={handleRejectWorkflow}
-                                    className="text-red-500 font-bold text-xs hover:underline flex items-center gap-1"
+                                    className="text-red-500 font-bold text-[13px] hover:underline flex items-center gap-1"
                                 >
                                     <AlertCircle size={14} />
                                     Reject Section & Send Back to Faculty
@@ -457,7 +457,7 @@ const MarksReview = () => {
                             <button
                                 disabled={isLocking}
                                 onClick={handleLockMarks}
-                                className={`inline-flex items-center gap-2 px-10 py-4 text-white font-black rounded-xl shadow-xl transition-all uppercase tracking-widest text-sm
+                                className={`inline-flex items-center gap-2 px-10 py-4 text-white font-black rounded-xl shadow-xl transition-all  tracking-widest text-sm
                                     ${isLocking ? 'bg-amber-400 cursor-not-allowed shadow-none' : 'bg-amber-500 hover:bg-amber-600 hover:scale-[1.02] shadow-amber-500/20 active:scale-[0.98]'}`}
                             >
                                 {isLocking ? (
@@ -487,7 +487,7 @@ const MarksReview = () => {
                             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                                 <p className="text-sm text-slate-500 font-medium">Student Details</p>
                                 <p className="text-lg font-bold text-slate-900">{selectedStudent.student_name}</p>
-                                <p className="text-xs text-slate-500">Roll No: {selectedStudent.rollnumber}</p>
+                                <p className="text-[13px] text-slate-500">Roll No: {selectedStudent.rollnumber}</p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
@@ -495,7 +495,7 @@ const MarksReview = () => {
                                     const struct = marksStructure.find(s => s.id === m.component_id);
                                     return (
                                         <div key={m.component_id} className="p-3 bg-white border border-slate-200 rounded-xl">
-                                            <span className="text-[10px] uppercase font-bold text-slate-400 block">{struct?.component_name}</span>
+                                            <span className="text-[12px]  font-bold text-slate-400 block">{struct?.component_name}</span>
                                             <span className={`text-sm font-black ${m.is_absent ? 'text-red-500' : 'text-slate-800'}`}>
                                                 {m.is_absent ? 'AB' : m.marks_obtained}
                                             </span>
@@ -521,14 +521,14 @@ const MarksReview = () => {
                             <button
                                 onClick={() => handleSaveReview('Rejected')}
                                 disabled={isSavingReview}
-                                className="flex-1 py-3.5 bg-white border-2 border-red-500 text-red-600 font-black rounded-xl hover:bg-red-50 transition-all uppercase tracking-widest text-xs"
+                                className="flex-1 py-3.5 bg-white border-2 border-red-500 text-red-600 font-black rounded-xl hover:bg-red-50 transition-all  tracking-widest text-[13px]"
                             >
                                 {isSavingReview ? 'Saving...' : 'Reject Marks'}
                             </button>
                             <button
                                 onClick={() => handleSaveReview('Approved')}
                                 disabled={isSavingReview}
-                                className="flex-1 py-3.5 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all uppercase tracking-widest text-xs flex items-center justify-center gap-2"
+                                className="flex-1 py-3.5 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all  tracking-widest text-[13px] flex items-center justify-center gap-2"
                             >
                                 <CheckCircle size={16} />
                                 {isSavingReview ? 'Saving...' : 'Approve Marks'}
@@ -552,7 +552,7 @@ const MarksReview = () => {
                                 <ShieldCheck size={24} />
                                 <div>
                                     <p className="text-sm font-bold">Applying Grace Marks for {selectedStudent.student_name}</p>
-                                    <p className="text-xs opacity-80">These marks will be added to the final internal total.</p>
+                                    <p className="text-[13px] opacity-80">These marks will be added to the final internal total.</p>
                                 </div>
                             </div>
 
@@ -580,13 +580,13 @@ const MarksReview = () => {
                         <div className="p-6 bg-slate-50 flex gap-3">
                             <button
                                 onClick={() => setIsGraceOpen(false)}
-                                className="flex-1 py-3.5 bg-white border-2 border-slate-200 text-slate-600 font-black rounded-xl hover:bg-slate-50 transition-all uppercase tracking-widest text-xs"
+                                className="flex-1 py-3.5 bg-white border-2 border-slate-200 text-slate-600 font-black rounded-xl hover:bg-slate-50 transition-all  tracking-widest text-[13px]"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleSaveGrace}
-                                className="flex-1 py-3.5 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all uppercase tracking-widest text-xs"
+                                className="flex-1 py-3.5 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all  tracking-widest text-[13px]"
                             >
                                 Apply Grace Marks
                             </button>

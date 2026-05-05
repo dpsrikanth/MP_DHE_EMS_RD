@@ -161,7 +161,7 @@ const CollegesForm = () => {
             </div>
           </div>
           <div className="form-header__right">
-              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 shadow-sm">
+              <span className="text-[12px] font-black text-indigo-400  tracking-widest bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 shadow-sm">
                 Infrastructure Module v3.1
               </span>
           </div>
@@ -202,7 +202,7 @@ const CollegesForm = () => {
                       <div className="flex items-center justify-between mb-2">
                         <label className="form-label m-0">Institutional Address</label>
                         <button type="button" onClick={handleGeocode} disabled={geocoding || !form.address} 
-                          className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-emerald-100 transition-colors">
+                          className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[12px] font-black  tracking-widest hover:bg-emerald-100 transition-colors">
                           <Search size={10} className="inline mr-1" /> {geocoding ? "Resolving..." : "Geocode Address"}
                         </button>
                       </div>
@@ -211,7 +211,7 @@ const CollegesForm = () => {
 
                    <div className="bg-slate-50/50 p-6 rounded-[2rem] border-2 border-slate-100 space-y-6">
                       <div className="flex items-center justify-between">
-                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Geolocation Engine</h4>
+                         <h4 className="text-[12px] font-black text-slate-400  tracking-[0.2em]">Geolocation Engine</h4>
                          <div className="flex gap-2">
                             <button type="button" onClick={handleDetectLocation} disabled={detectingLocation} className="p-2 bg-white border border-slate-200 text-indigo-500 rounded-lg hover:bg-indigo-50 transition-all shadow-sm">
                                <MapPin size={14} />
@@ -223,12 +223,12 @@ const CollegesForm = () => {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="form-field">
-                          <label className="form-label text-[10px]">Latitude</label>
-                          <input type="text" placeholder="0.000000" value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })} className="form-input bg-white font-mono text-xs" />
+                          <label className="form-label text-[12px]">Latitude</label>
+                          <input type="text" placeholder="0.000000" value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })} className="form-input bg-white font-mono text-[13px]" />
                         </div>
                         <div className="form-field">
-                          <label className="form-label text-[10px]">Longitude</label>
-                          <input type="text" placeholder="0.000000" value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })} className="form-input bg-white font-mono text-xs" />
+                          <label className="form-label text-[12px]">Longitude</label>
+                          <input type="text" placeholder="0.000000" value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })} className="form-input bg-white font-mono text-[13px]" />
                         </div>
                       </div>
                    </div>
@@ -247,14 +247,14 @@ const CollegesForm = () => {
                       <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-200">
                         <GraduationCap size={40} />
                       </div>
-                      <p className="text-sm font-black text-slate-300 uppercase tracking-widest leading-relaxed">
+                      <p className="text-sm font-black text-slate-300  tracking-widest leading-relaxed">
                         Designate a University to<br/>Synchronize Available Configs
                       </p>
                     </div>
                   ) : isConfigLoading ? (
                     <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
                       <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                      <p className="mt-4 text-[10px] font-black text-indigo-400 uppercase tracking-widest">Bridging Models...</p>
+                      <p className="mt-4 text-[12px] font-black text-indigo-400  tracking-widest">Bridging Models...</p>
                     </div>
                   ) : (
                     <div className="space-y-10 py-4">
@@ -309,8 +309,8 @@ const CollegesForm = () => {
 
                       <div className="p-8 bg-indigo-900 rounded-[2rem] text-white relative overflow-hidden group">
                          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-all duration-700"></div>
-                         <p className="relative z-10 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300 mb-2">Notice</p>
-                         <p className="relative z-10 text-xs font-medium leading-relaxed opacity-80">
+                         <p className="relative z-10 text-[12px] font-black  tracking-[0.2em] text-indigo-300 mb-2">Notice</p>
+                         <p className="relative z-10 text-[13px] font-medium leading-relaxed opacity-80">
                            Selected configurations must align with the governing University's master framework to maintain institutional synchronization.
                          </p>
                       </div>
@@ -370,7 +370,7 @@ const MapPickerModal = ({ onClose, onConfirm, initialLat, initialLon }) => {
             <div className="form-header__icon" style={{ width: '2.5rem', height: '2.5rem' }}><Map size={18} /></div>
             <div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>Interactive Map Picker</h3>
-              <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0.15rem 0 0' }}>Select college location precisely</p>
+              <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#94a3b8', textTransform: '', letterSpacing: '0.08em', margin: '0.15rem 0 0' }}>Select college location precisely</p>
             </div>
           </div>
           <button onClick={onClose} className="form-header__back" style={{ width: '2.25rem', height: '2.25rem' }}><X size={16} /></button>
@@ -385,9 +385,9 @@ const MapPickerModal = ({ onClose, onConfirm, initialLat, initialLon }) => {
           <div id="map-container" style={{ width: '100%', height: '100%' }}></div>
           <div style={{ position: 'absolute', bottom: '1.5rem', left: '1.5rem', right: '1.5rem', zIndex: 1000, display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)', padding: '0.85rem 1.25rem', borderRadius: '14px', boxShadow: '0 4px 16px rgba(0,0,0,.08)', display: 'flex', gap: '1.5rem' }}>
-              <div><p style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Latitude</p><p style={{ fontSize: '0.82rem', fontFamily: 'monospace', fontWeight: 700, color: '#0f172a', margin: '2px 0 0' }}>{markerCoords.lat.toFixed(8)}</p></div>
+              <div><p style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94a3b8', textTransform: '', letterSpacing: '0.1em', margin: 0 }}>Latitude</p><p style={{ fontSize: '0.82rem', fontFamily: 'monospace', fontWeight: 700, color: '#0f172a', margin: '2px 0 0' }}>{markerCoords.lat.toFixed(8)}</p></div>
               <div style={{ width: '1px', height: '2rem', background: '#e2e8f0', alignSelf: 'center' }}></div>
-              <div><p style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Longitude</p><p style={{ fontSize: '0.82rem', fontFamily: 'monospace', fontWeight: 700, color: '#0f172a', margin: '2px 0 0' }}>{markerCoords.lon.toFixed(8)}</p></div>
+              <div><p style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94a3b8', textTransform: '', letterSpacing: '0.1em', margin: 0 }}>Longitude</p><p style={{ fontSize: '0.82rem', fontFamily: 'monospace', fontWeight: 700, color: '#0f172a', margin: '2px 0 0' }}>{markerCoords.lon.toFixed(8)}</p></div>
             </div>
             <button onClick={() => onConfirm(markerCoords.lat.toFixed(8), markerCoords.lon.toFixed(8))} className="form-btn-submit" style={{ padding: '0.85rem 2rem' }}>
               Confirm Location

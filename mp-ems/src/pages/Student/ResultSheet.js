@@ -125,14 +125,14 @@ const ResultSheet = () => {
         <div className="flex gap-4">
           <button 
             onClick={handlePrint}
-            className="flex items-center gap-2 bg-white text-slate-900 px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest border border-slate-200 shadow-sm hover:bg-slate-50 transition-all"
+            className="flex items-center gap-2 bg-white text-slate-900 px-6 py-2.5 rounded-xl font-black text-[13px]  tracking-widest border border-slate-200 shadow-sm hover:bg-slate-50 transition-all"
           >
             <Printer size={16} />
             Print Result
           </button>
           <button 
             onClick={handlePrint}
-            className="flex items-center gap-2 bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all"
+            className="flex items-center gap-2 bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-black text-[13px]  tracking-widest shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all"
           >
             <Download size={16} />
             Download PDF
@@ -152,21 +152,21 @@ const ResultSheet = () => {
                   <Award size={40} className="text-emerald-400" />
                 </div>
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-none mb-1 uppercase">
+                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-none mb-1 ">
                     {university}
                   </h1>
-                  <p className="text-emerald-400 font-black text-xs uppercase tracking-[0.3em]">Official Performance Statement</p>
+                  <p className="text-emerald-400 font-black text-[13px]  tracking-[0.3em]">Official Performance Statement</p>
                 </div>
               </div>
-              <div className="inline-block px-4 py-1.5 bg-emerald-500/20 rounded-full border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-widest">
+              <div className="inline-block px-4 py-1.5 bg-emerald-500/20 rounded-full border border-emerald-500/30 text-emerald-400 text-[12px] font-black  tracking-widest">
                 Semester Examination - {subjects[0]?.semester_name}
               </div>
             </div>
             
             <div className="text-center sm:text-right">
                 <div className="p-4 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl">
-                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Statement No.</p>
-                    <p className="text-xl font-black text-white leading-none uppercase tracking-tighter">EMS-RES-{student.rollnumber.slice(-6)}-{new Date().getFullYear()}</p>
+                    <p className="text-[12px] font-black text-white/40  tracking-widest mb-1">Statement No.</p>
+                    <p className="text-xl font-black text-white leading-none  tracking-tighter">EMS-RES-{student.rollnumber.slice(-6)}-{new Date().getFullYear()}</p>
                 </div>
             </div>
           </div>
@@ -192,7 +192,7 @@ const ResultSheet = () => {
         <div className="p-0">
           <table className="w-full border-collapse border-spacing-0">
             <thead>
-              <tr className="bg-slate-900/5 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest border-y border-slate-100">
+              <tr className="bg-slate-900/5 text-left text-[12px] font-black text-slate-500  tracking-widest border-y border-slate-100">
                 <th className="px-8 py-5">Sl. No.</th>
                 <th className="px-4 py-5 font-black">Course Code</th>
                 <th className="px-4 py-5">Title of the Course</th>
@@ -206,14 +206,14 @@ const ResultSheet = () => {
             <tbody className="divide-y divide-slate-50">
               {subjects.map((sub, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-8 py-4 font-bold text-slate-400 text-xs">{String(idx + 1).padStart(2, '0')}</td>
+                  <td className="px-8 py-4 font-bold text-slate-400 text-[13px]">{String(idx + 1).padStart(2, '0')}</td>
                   <td className="px-4 py-4">
-                    <span className="font-black text-slate-900 text-xs uppercase tracking-wider bg-slate-100 px-2 py-1 rounded">
+                    <span className="font-black text-slate-900 text-[13px]  tracking-wider bg-slate-100 px-2 py-1 rounded">
                       {sub.subject_code}
                     </span>
                   </td>
                   <td className="px-4 py-4">
-                    <p className="text-xs font-black text-slate-700 leading-tight">{sub.subject_name}</p>
+                    <p className="text-[13px] font-black text-slate-700 leading-tight">{sub.subject_name}</p>
                   </td>
                   <td className="px-4 py-4 text-center">
                     {sub.total_marks !== undefined && sub.total_marks !== null ? (
@@ -224,7 +224,7 @@ const ResultSheet = () => {
                       <div className="flex flex-col items-center gap-1">
                         {sub.assessment_components?.map((comp, cIdx) => (
                            <div key={cIdx} className="flex items-center gap-2 text-[9px] whitespace-nowrap">
-                              <span className="font-bold text-slate-400 uppercase tracking-tighter">{comp.name}:</span>
+                              <span className="font-bold text-slate-400  tracking-tighter">{comp.name}:</span>
                               <span className="font-black text-slate-700">{comp.marks}</span>
                            </div>
                         ))}
@@ -234,18 +234,18 @@ const ResultSheet = () => {
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-4 text-center font-bold text-slate-600 text-xs">
+                  <td className="px-4 py-4 text-center font-bold text-slate-600 text-[13px]">
                     {sub.creditsAssigned}
                   </td>
-                  <td className="px-4 py-4 text-center font-black text-slate-700 text-xs">
+                  <td className="px-4 py-4 text-center font-black text-slate-700 text-[13px]">
                     {sub.gradePoint}
                   </td>
                   <td className="px-4 py-4 text-center">
-                    <span className={`px-2.5 py-1 rounded text-[10px] font-black ${sub.isPass ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100' : 'bg-red-50 text-red-600 ring-1 ring-red-100'} uppercase tracking-tight`}>
+                    <span className={`px-2.5 py-1 rounded text-[12px] font-black ${sub.isPass ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100' : 'bg-red-50 text-red-600 ring-1 ring-red-100'}  tracking-tight`}>
                       {sub.grade}
                     </span>
                   </td>
-                  <td className="px-8 py-4 text-right font-black text-slate-900 text-xs italic">
+                  <td className="px-8 py-4 text-right font-black text-slate-900 text-[13px] italic">
                     {sub.ciGi}
                   </td>
                 </tr>
@@ -261,7 +261,7 @@ const ResultSheet = () => {
                 <SummaryItem label="Total Credits Earned" value={totalCreditsEarned} />
                 <SummaryItem label="Σ(Credits x Grade Points)" value={totalCiGi} />
                 <div className="flex flex-col items-center justify-center p-6 bg-slate-800 rounded-[1.5rem] border border-white/10">
-                    <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Semester SGPA</p>
+                    <p className="text-[12px] font-black text-white/60  tracking-widest mb-1">Semester SGPA</p>
                     <p className="text-4xl font-black tracking-tight text-emerald-400">{sgpa}</p>
                 </div>
                 <div className={`flex flex-col items-center justify-center p-6 rounded-[1.5rem] shadow-xl ${
@@ -269,8 +269,8 @@ const ResultSheet = () => {
                   overallStatus === 'PASS (GRACE)' ? 'bg-amber-500 shadow-amber-500/20' : 
                   'bg-emerald-500 shadow-emerald-500/20'
                 }`}>
-                    <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Final Result</p>
-                    <p className="text-2xl font-black tracking-tight uppercase whitespace-nowrap">{overallStatus}</p>
+                    <p className="text-[12px] font-black text-white/60  tracking-widest mb-1">Final Result</p>
+                    <p className="text-2xl font-black tracking-tight  whitespace-nowrap">{overallStatus}</p>
                 </div>
             </div>
         </div>
@@ -281,20 +281,20 @@ const ResultSheet = () => {
                 <div className="text-center w-full md:w-auto">
                     <div className="w-64 h-24 border border-slate-100 rounded-2xl flex items-center justify-center mb-4 relative overflow-hidden bg-slate-50/50">
                         <CheckCircle2 size={64} className="text-emerald-500/10" />
-                        <div className="absolute inset-0 flex items-center justify-center italic font-black text-[10px] text-slate-300 uppercase tracking-widest -rotate-12">Digital Verified Record</div>
+                        <div className="absolute inset-0 flex items-center justify-center italic font-black text-[12px] text-slate-300  tracking-widest -rotate-12">Digital Verified Record</div>
                     </div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Office of the Controller of Examinations</p>
+                    <p className="text-[12px] font-black text-slate-400  tracking-widest">Office of the Controller of Examinations</p>
                 </div>
                 
                 <div className="text-center w-full md:w-auto">
                     <div className="w-64 h-24 border-b-2 border-slate-200 mb-4 flex items-end justify-center pb-2 italic text-slate-300 text-lg">
                         University Seal
                     </div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Madhya Pradesh University of Excellence</p>
+                    <p className="text-[12px] font-black text-slate-400  tracking-widest">Madhya Pradesh University of Excellence</p>
                 </div>
             </div>
 
-            <div className="mt-12 pt-8 border-t border-slate-50 italic text-[9px] text-slate-400 leading-relaxed text-center uppercase tracking-widest font-black">
+            <div className="mt-12 pt-8 border-t border-slate-50 italic text-[9px] text-slate-400 leading-relaxed text-center  tracking-widest font-black">
                 Classification of Grades: {gradingConfig?.grade_scale?.map(g => `${g.grade} ≥ ${g.min}%`).join(', ')}.
                 <br/>
                 An asterisk (*) indicates that the subject marks include grace marks to reach the passing threshold.
@@ -316,7 +316,7 @@ const ResultSheet = () => {
       </div>
 
       <div className="max-w-5xl mx-auto mt-8 text-center opacity-40">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+        <p className="text-[12px] font-black  tracking-[0.2em] text-slate-500">
           Generated via MP-EMS Portal • {formatDate(data.generatedAt, true)} • Secure Verification ID: EMS-{Math.random().toString(36).substring(2, 10).toUpperCase()}
         </p>
       </div>
@@ -328,7 +328,7 @@ const InfoItem = ({ label, value, icon, bold = false }) => (
   <div className="flex items-start gap-4">
     {icon && <div className="mt-1 text-slate-200">{icon}</div>}
     <div>
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">{label}</p>
+      <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1.5">{label}</p>
       <p className={`text-slate-900 leading-tight ${bold ? 'text-lg font-black' : 'font-bold'}`}>{value}</p>
     </div>
   </div>
@@ -336,7 +336,7 @@ const InfoItem = ({ label, value, icon, bold = false }) => (
 
 const SummaryItem = ({ label, value }) => (
   <div className="flex flex-col items-center justify-center">
-    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-2">{label}</p>
+    <p className="text-[9px] font-black text-white/40  tracking-widest mb-2">{label}</p>
     <p className="text-3xl font-black italic tracking-tighter">{value}</p>
   </div>
 );

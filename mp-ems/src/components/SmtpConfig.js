@@ -77,7 +77,7 @@ const SmtpConfig = () => {
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 bg-sky-50 rounded-xl border border-sky-100">
           <Server size={14} className="text-sky-500" />
-          <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest">Server Settings</span>
+          <span className="text-[12px] font-black text-sky-600  tracking-widest">Server Settings</span>
         </div>
       </div>
 
@@ -85,7 +85,7 @@ const SmtpConfig = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* SMTP Host */}
           <div className="space-y-2.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">SMTP Host</label>
+            <label className="text-[12px] font-black text-slate-400  tracking-[0.15em] ml-1">SMTP Host</label>
             <div className="relative group">
               <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
                 <Server size={18} />
@@ -104,7 +104,7 @@ const SmtpConfig = () => {
 
           {/* SMTP Port */}
           <div className="space-y-2.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">SMTP Port</label>
+            <label className="text-[12px] font-black text-slate-400  tracking-[0.15em] ml-1">SMTP Port</label>
             <div className="relative group">
               <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
                 <Hash size={18} />
@@ -123,7 +123,7 @@ const SmtpConfig = () => {
 
           {/* SMTP User */}
           <div className="space-y-2.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">SMTP User (Email)</label>
+            <label className="text-[12px] font-black text-slate-400  tracking-[0.15em] ml-1">SMTP User (Email)</label>
             <div className="relative group">
               <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
                 <Mail size={18} />
@@ -142,7 +142,7 @@ const SmtpConfig = () => {
 
           {/* SMTP Password */}
           <div className="space-y-2.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">SMTP Password</label>
+            <label className="text-[12px] font-black text-slate-400  tracking-[0.15em] ml-1">SMTP Password</label>
             <div className="relative group">
               <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
                 <Lock size={18} />
@@ -170,7 +170,7 @@ const SmtpConfig = () => {
         {/* Sender Display Name */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-2.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">Sender Display Name</label>
+            <label className="text-[12px] font-black text-slate-400  tracking-[0.15em] ml-1">Sender Display Name</label>
             <div className="relative group">
               <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
                 <User size={18} />
@@ -188,7 +188,7 @@ const SmtpConfig = () => {
           </div>
 
           <div className="space-y-2.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">From Email Address</label>
+            <label className="text-[12px] font-black text-slate-400  tracking-[0.15em] ml-1">From Email Address</label>
             <div className="relative group">
               <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
                 <Mail size={18} />
@@ -218,7 +218,7 @@ const SmtpConfig = () => {
           <button
             type="submit"
             disabled={isSaving}
-            className="w-full md:w-auto px-10 group relative overflow-hidden bg-slate-900 text-white rounded-2xl py-4 font-black text-sm uppercase tracking-[0.15em] shadow-xl shadow-slate-900/10 hover:shadow-sky-500/20 active:scale-[0.98] transition-all disabled:opacity-70"
+            className="w-full md:w-auto px-10 group relative overflow-hidden bg-slate-900 text-white rounded-2xl py-4 font-black text-sm  tracking-[0.15em] shadow-xl shadow-slate-900/10 hover:shadow-sky-500/20 active:scale-[0.98] transition-all disabled:opacity-70"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-sky-400 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="relative flex items-center justify-center gap-2">

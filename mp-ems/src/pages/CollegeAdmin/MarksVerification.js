@@ -185,7 +185,7 @@ const MarksVerification = () => {
                                 
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="flex items-center gap-2">
-                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-lg ${statusConfig.bg} ${statusConfig.color} border ${statusConfig.border} ${statusConfig.pulse ? 'animate-pulse shadow-lg shadow-indigo-500/20' : ''}`}>
+                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-[13px] font-bold  tracking-wider rounded-lg ${statusConfig.bg} ${statusConfig.color} border ${statusConfig.border} ${statusConfig.pulse ? 'animate-pulse shadow-lg shadow-indigo-500/20' : ''}`}>
                                             <StatusIcon size={14} />
                                             {statusConfig.label}
                                         </span>
@@ -210,14 +210,14 @@ const MarksVerification = () => {
                                         <div className="flex gap-1.5">
                                             <button 
                                                 onClick={() => handleUnlockMarks(item)}
-                                                className="text-white hover:bg-indigo-700 bg-indigo-600 p-2 rounded-xl transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-3"
+                                                className="text-white hover:bg-indigo-700 bg-indigo-600 p-2 rounded-xl transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-1 text-[12px] font-black  tracking-widest px-3"
                                                 title="Approve Correction Request – Unlock for Faculty"
                                             >
                                                 <Lock size={14} /> Allow Edit
                                             </button>
                                             <button 
                                                 onClick={() => handleSendBackToCollege(item)}
-                                                className="text-white hover:bg-amber-700 bg-amber-600 p-2 rounded-xl transition-all shadow-lg shadow-amber-600/30 flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-3"
+                                                className="text-white hover:bg-amber-700 bg-amber-600 p-2 rounded-xl transition-all shadow-lg shadow-amber-600/30 flex items-center gap-1 text-[12px] font-black  tracking-widest px-3"
                                                 title="Send to College Admin for review (when marks are already approved)"
                                             >
                                                 <Send size={14} /> Send to College
@@ -250,7 +250,7 @@ const MarksVerification = () => {
                                     <h3 className="text-lg font-bold text-slate-900 leading-tight">{item.subject_name}</h3>
                                     <div className="flex flex-col gap-1">
                                         <p className="text-sm font-medium text-slate-500">Section: {item.section}</p>
-                                        <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 bg-indigo-50/50 w-fit px-2 py-0.5 rounded-md">
+                                        <div className="flex items-center gap-1.5 text-[13px] font-bold text-indigo-600 bg-indigo-50/50 w-fit px-2 py-0.5 rounded-md">
                                             <Building size={12} />
                                             {item.college_name || `College ID: ${item.college_id}`}
                                         </div>
@@ -258,13 +258,13 @@ const MarksVerification = () => {
                                 </div>
 
 
-                                <div className="mt-6 pt-4 border-t border-slate-100 grid grid-cols-2 gap-4 text-xs font-medium text-slate-500">
+                                <div className="mt-6 pt-4 border-t border-slate-100 grid grid-cols-2 gap-4 text-[13px] font-medium text-slate-500">
                                     <div>
-                                        <span className="block text-[10px] text-slate-400 uppercase tracking-widest mb-0.5">Program</span>
+                                        <span className="block text-[12px] text-slate-400  tracking-widest mb-0.5">Program</span>
                                         {item.program_name}
                                     </div>
                                     <div>
-                                        <span className="block text-[10px] text-slate-400 uppercase tracking-widest mb-0.5">Semester</span>
+                                        <span className="block text-[12px] text-slate-400  tracking-widest mb-0.5">Semester</span>
                                         {item.semester}
                                     </div>
                                 </div>
@@ -306,7 +306,7 @@ const MarksVerification = () => {
                                 <div className="overflow-x-auto rounded-xl border border-slate-200">
                                     <table className="w-full text-left border-collapse bg-white">
                                         <thead>
-                                            <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                            <tr className="bg-slate-50 border-b border-slate-200 text-[13px] font-bold text-slate-500  tracking-wider">
                                                 <th className="px-5 py-3">Revision</th>
                                                 <th className="px-5 py-3">Action</th>
                                                 <th className="px-5 py-3">Performed By</th>
@@ -329,25 +329,25 @@ const MarksVerification = () => {
                                                 return (
                                                     <tr key={index} className="hover:bg-slate-50/50 transition-colors">
                                                         <td className="px-5 py-3.5 whitespace-nowrap">
-                                                            <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                                            <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full text-[13px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
                                                                 {log.revision}
                                                             </span>
                                                         </td>
                                                         <td className="px-5 py-3.5">
-                                                            <span className={`inline-flex items-center px-2.5 py-1 text-xs font-bold rounded-lg whitespace-nowrap ${badgeColor}`}>
+                                                            <span className={`inline-flex items-center px-2.5 py-1 text-[13px] font-bold rounded-lg whitespace-nowrap ${badgeColor}`}>
                                                                 {log.action.replace(/_/g, ' ')}
                                                             </span>
                                                         </td>
                                                         <td className="px-5 py-3.5">
                                                             <div className="flex flex-col">
                                                                 <span className="text-sm font-semibold text-slate-900">{log.user_name}</span>
-                                                                <span className="text-xs text-slate-500">{log.role_name}</span>
+                                                                <span className="text-[13px] text-slate-500">{log.role_name}</span>
                                                             </div>
                                                         </td>
                                                         <td className="px-5 py-3.5 whitespace-nowrap">
                                                             <div className="flex flex-col">
                                                                 <span className="text-sm text-slate-700 font-medium">{formatDate(date)}</span>
-                                                                <span className="text-xs text-slate-400 font-mono">{date.toLocaleTimeString()}</span>
+                                                                <span className="text-[13px] text-slate-400 font-mono">{date.toLocaleTimeString()}</span>
                                                             </div>
                                                         </td>
                                                     </tr>

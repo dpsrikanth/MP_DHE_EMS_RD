@@ -120,7 +120,7 @@ const Dashboard = () => {
         </div>
         <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-2xl border border-slate-200 shadow-sm transition-transform hover:scale-105 duration-300">
           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Live Status</span>
+          <span className="text-[12px] font-black text-slate-400  tracking-widest leading-none">Live Status</span>
         </div>
       </div>
 
@@ -136,14 +136,14 @@ const Dashboard = () => {
                 {stat.icon}
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{stat.label}</p>
+                <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">{stat.label}</p>
                 <p className="text-2xl font-black text-slate-900 leading-none tracking-tighter">{stat.value}</p>
               </div>
             </div>
             
             {/* <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-50">
               <TrendingUp size={14} className="text-emerald-500" /> */}
-              {/* <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Growing Performance</span> */}
+              {/* <span className="text-[12px] font-black text-emerald-600  tracking-widest">Growing Performance</span> */}
             {/* </div> */}
           </div>
         ))}
@@ -158,9 +158,9 @@ const Dashboard = () => {
                 <h4 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
                   <Users size={20} className="text-blue-500" /> Personnel Overview
                 </h4>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Teaching Faculty Roster</p>
+                <p className="text-[12px] font-black text-slate-400  tracking-widest mt-1">Teaching Faculty Roster</p>
               </div>
-              <button className="text-[10px] font-black text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-xl uppercase tracking-widest transition-colors">See all</button>
+              <button className="text-[12px] font-black text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-xl  tracking-widest transition-colors">See all</button>
             </div>
             
             <div className="flex-1 overflow-y-auto pr-2 space-y-3 scrollbar-hide">

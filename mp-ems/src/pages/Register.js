@@ -165,7 +165,7 @@ const Register = () => {
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors font-bold text-xs tracking-widest uppercase group"
+            className="flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors font-bold text-[13px] tracking-widest  group"
           >
             <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
             <span>Login</span>
@@ -182,7 +182,7 @@ const Register = () => {
           <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">
             {step === 1 ? 'First Access' : step === 2 ? 'Identity Check' : 'Create Access'}
           </h2>
-          <p className="text-slate-500 font-medium text-xs leading-relaxed">
+          <p className="text-slate-500 font-medium text-[13px] leading-relaxed">
             {step === 1 
               ? 'Enter your institutional email to claim your profile' 
               : step === 2 
@@ -204,7 +204,7 @@ const Register = () => {
           {step === 1 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Institutional Email</label>
+                <label className="text-[13px] font-black text-slate-400  tracking-widest ml-1">Institutional Email</label>
                 <div className="relative group">
                   <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
                     <Mail size={18} />
@@ -218,7 +218,7 @@ const Register = () => {
                     className={`w-full bg-slate-50 border-2 rounded-2xl py-4 pl-14 pr-6 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm ${errors.email ? 'border-red-100 bg-red-50/30' : 'border-slate-100'}`}
                   />
                 </div>
-                {errors.email && <p className="text-[10px] font-bold text-red-500 ml-1 uppercase">{errors.email}</p>}
+                {errors.email && <p className="text-[12px] font-bold text-red-500 ml-1 ">{errors.email}</p>}
               </div>
               
               <div className="p-4 bg-sky-50 text-sky-700 rounded-2xl border border-sky-100 text-sm font-medium">
@@ -230,7 +230,7 @@ const Register = () => {
           {step === 2 && (
             <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500 py-4">
               <div className="space-y-2 text-center">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Enter Activation Code</label>
+                <label className="text-[13px] font-black text-slate-400  tracking-widest">Enter Activation Code</label>
                 <div className="relative group mt-4">
                   <div className="absolute left-6 top-1/2 -translate-y-1/2 text-sky-500 transition-colors pointer-events-none">
                     <ShieldCheck size={24} />
@@ -244,14 +244,14 @@ const Register = () => {
                     className="w-full bg-slate-50 border-4 border-sky-50 rounded-3xl py-6 pl-16 pr-6 text-4xl tracking-[0.6em] text-slate-800 placeholder:text-slate-100 focus:bg-white focus:border-sky-500 outline-none transition-all font-black shadow-inner text-center"
                   />
                 </div>
-                <p className="text-[10px] font-bold text-slate-400 mt-4 uppercase">
+                <p className="text-[12px] font-bold text-slate-400 mt-4 ">
                   Code sent to: <span className="text-slate-900">{formData.email}</span>
                 </p>
               </div>
 
               <div className="flex justify-center my-4">
                 {timer > 0 ? (
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <p className="text-[13px] font-bold text-slate-400  tracking-wider">
                     Resend in <span className="text-slate-700 font-extrabold">{Math.floor(timer / 60).toString().padStart(2, '0')}:{(timer % 60).toString().padStart(2, '0')}</span>
                   </p>
                 ) : (
@@ -259,7 +259,7 @@ const Register = () => {
                     type="button"
                     onClick={sendOtp}
                     disabled={loading}
-                    className="text-xs font-black text-sky-500 hover:text-sky-600 transition-colors underline underline-offset-4 decoration-sky-200 uppercase tracking-wider"
+                    className="text-[13px] font-black text-sky-500 hover:text-sky-600 transition-colors underline underline-offset-4 decoration-sky-200  tracking-wider"
                   >
                     Resend Code
                   </button>
@@ -269,7 +269,7 @@ const Register = () => {
               <button 
                 type="button" 
                 onClick={() => setStep(1)} 
-                className="text-xs font-bold text-sky-500 hover:text-sky-600 flex items-center justify-center gap-2 w-full transition-colors group"
+                className="text-[13px] font-bold text-sky-500 hover:text-sky-600 flex items-center justify-center gap-2 w-full transition-colors group"
               >
                 <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-1" />
                 Change Email
@@ -280,7 +280,7 @@ const Register = () => {
           {step === 3 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">New Password</label>
+                <label className="text-[13px] font-black text-slate-400  tracking-widest ml-1">New Password</label>
                 <div className="relative group">
                   <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
                     <Lock size={18} />
@@ -297,11 +297,11 @@ const Register = () => {
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-                {errors.password && <p className="text-[10px] font-bold text-red-500 ml-1 uppercase">{errors.password}</p>}
+                {errors.password && <p className="text-[12px] font-bold text-red-500 ml-1 ">{errors.password}</p>}
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Confirm Password</label>
+                <label className="text-[13px] font-black text-slate-400  tracking-widest ml-1">Confirm Password</label>
                 <div className="relative group">
                   <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
                     <ShieldCheck size={18} />
@@ -318,7 +318,7 @@ const Register = () => {
                     {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-                {errors.confirmPassword && <p className="text-[10px] font-bold text-red-500 ml-1 uppercase">{errors.confirmPassword}</p>}
+                {errors.confirmPassword && <p className="text-[12px] font-bold text-red-500 ml-1 ">{errors.confirmPassword}</p>}
               </div>
             </div>
           )}
@@ -327,7 +327,7 @@ const Register = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full group relative overflow-hidden bg-slate-900 text-white rounded-[1.5rem] py-4 font-black text-sm uppercase tracking-[0.15em] shadow-xl shadow-slate-900/10 hover:shadow-sky-500/20 active:scale-[0.98] transition-all disabled:opacity-70"
+              className="w-full group relative overflow-hidden bg-slate-900 text-white rounded-[1.5rem] py-4 font-black text-sm  tracking-[0.15em] shadow-xl shadow-slate-900/10 hover:shadow-sky-500/20 active:scale-[0.98] transition-all disabled:opacity-70"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-sky-400 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative flex items-center justify-center gap-2">
@@ -356,7 +356,7 @@ const Register = () => {
 
         <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-center gap-2 opacity-50 hover:opacity-100 transition-all duration-500">
           <CheckCircle2 size={16} className="text-sky-500" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Institutional Security Grade</span>
+          <span className="text-[12px] font-black  tracking-widest text-slate-400">Institutional Security Grade</span>
         </div>
       </div>
     </div>

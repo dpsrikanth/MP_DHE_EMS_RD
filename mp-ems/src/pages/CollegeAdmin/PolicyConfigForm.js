@@ -246,7 +246,7 @@ const PolicyConfigForm = () => {
                             
                             {selectedPolicy && selectedProgram && selectedSemester && selectedDepartment && (
                                 <div className="pt-6 border-t border-slate-100 space-y-6">
-                                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <h3 className="text-sm font-bold text-slate-400  tracking-widest flex items-center gap-2">
                                         <span className="w-4 h-px bg-slate-200"></span> Map Subjects
                                     </h3>
                                     <div className="space-y-2">
@@ -267,7 +267,7 @@ const PolicyConfigForm = () => {
                         <div className="space-y-6">
                             <div className="grid grid-cols-2 gap-6">
                                 <div>
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Policy</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Policy</label>
                                     <select 
                                         value={editingMapping.policy_id} 
                                         onChange={(e) => setEditingMapping({...editingMapping, policy_id: e.target.value})}
@@ -278,7 +278,7 @@ const PolicyConfigForm = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Department</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Department</label>
                                     <select 
                                         value={editingMapping.department_id} 
                                         onChange={(e) => setEditingMapping({...editingMapping, department_id: e.target.value})}
@@ -289,7 +289,7 @@ const PolicyConfigForm = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Program</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Program</label>
                                     <select 
                                         value={editingMapping.program_id} 
                                         onChange={(e) => setEditingMapping({...editingMapping, program_id: e.target.value})}
@@ -300,7 +300,7 @@ const PolicyConfigForm = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Semester</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Semester</label>
                                     <select 
                                         value={editingMapping.semester_id} 
                                         onChange={(e) => setEditingMapping({...editingMapping, semester_id: e.target.value})}
@@ -312,7 +312,7 @@ const PolicyConfigForm = () => {
                                 </div>
                             </div>
                             <div>
-                                <label className="text-xs font-bold text-slate-500 ml-1">Subject</label>
+                                <label className="text-[13px] font-bold text-slate-500 ml-1">Subject</label>
                                 <select 
                                     value={editingMapping.subject_id} 
                                     onChange={(e) => setEditingMapping({...editingMapping, subject_id: e.target.value})}

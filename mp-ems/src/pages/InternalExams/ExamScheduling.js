@@ -377,8 +377,8 @@ const ExamScheduling = () => {
                             <Clock size={20} />
                         </div>
                         <div>
-                            <h3 className="text-sm font-black text-red-600 uppercase tracking-tight">{closedResult.reason || 'Scheduling is closed'}</h3>
-                            <p className="text-[10px] font-bold text-red-500/70 uppercase tracking-widest">
+                            <h3 className="text-sm font-black text-red-600  tracking-tight">{closedResult.reason || 'Scheduling is closed'}</h3>
+                            <p className="text-[12px] font-bold text-red-500/70  tracking-widest">
                                 {closedResult.reason === 'Window not yet open'
                                     ? `Opens: ${formatDate(scheduleWindow?.startFull, true)}`
                                     : `Closed: ${formatDate(scheduleWindow?.endFull, true)}`}
@@ -389,7 +389,7 @@ const ExamScheduling = () => {
 
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-wrap gap-4 items-end mb-8">
                     <div className="flex-1 min-w-[200px]">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Academic Year</label>
+                        <label className="block text-[12px] font-bold text-slate-400  tracking-widest mb-2 ml-1">Academic Year</label>
                         <select name="academic_year_id" value={filters.academic_year_id} onChange={handleFilterChange} className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-700">
                             <option value="">Select Year</option>
                             {academicYears.map(y => (
@@ -400,14 +400,14 @@ const ExamScheduling = () => {
                         </select>
                     </div>
                     <div className="flex-1 min-w-[200px]">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Exam Round</label>
+                        <label className="block text-[12px] font-bold text-slate-400  tracking-widest mb-2 ml-1">Exam Round</label>
                         <select name="round_id" value={filters.round_id} onChange={handleFilterChange} className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-700">
                             <option value="">Select Round</option>
                             {rounds.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                         </select>
                     </div>
                     <div className="flex-1 min-w-[200px]">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Program</label>
+                        <label className="block text-[12px] font-bold text-slate-400  tracking-widest mb-2 ml-1">Program</label>
                         <select name="program_id" value={filters.program_id} onChange={handleFilterChange} className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-700">
                             <option value="">Select Program</option>
                             {programs
@@ -420,7 +420,7 @@ const ExamScheduling = () => {
                         </select>
                     </div>
                     <div className="flex-1 min-w-[200px]">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Semester</label>
+                        <label className="block text-[12px] font-bold text-slate-400  tracking-widest mb-2 ml-1">Semester</label>
                         <select name="semester_id" value={filters.semester_id} onChange={handleFilterChange} className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-700">
                             <option value="">Select Semester</option>
                             {semesters
@@ -463,7 +463,7 @@ const ExamScheduling = () => {
                                 <Flag size={20} />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Active Milestone</p>
+                                <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">Active Milestone</p>
                                 <p className="text-sm font-black text-slate-900 leading-none">{active.name}</p>
                             </div>
                         </div>
@@ -475,7 +475,7 @@ const ExamScheduling = () => {
                                 <Calendar size={20} />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Exam Round Dates</p>
+                                <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">Exam Round Dates</p>
                                 <p className="text-sm font-black text-blue-600 leading-none italic">
                                     {formatDate(active.start)} - {formatDate(active.end)}
                                 </p>
@@ -489,7 +489,7 @@ const ExamScheduling = () => {
                                 <Clock size={20} />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none mb-1 text-left">Scheduling Window</p>
+                                <p className="text-[12px] font-black text-amber-500  tracking-widest leading-none mb-1 text-left">Scheduling Window</p>
                                 <p className="text-sm font-black text-amber-600 leading-none italic text-left">
                                     {scheduleWindow ? `${formatDate(scheduleWindow.startFull, true)} to ${formatDate(scheduleWindow.endFull, true)}` : 'Open / No Deadline'}
                                 </p>
@@ -503,10 +503,10 @@ const ExamScheduling = () => {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-slate-50 border-b border-slate-100">
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject Details</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Exam Date</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Start Time</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">End Time</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-400  tracking-widest">Subject Details</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-400  tracking-widest text-center">Exam Date</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-400  tracking-widest text-center">Start Time</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-400  tracking-widest text-center">End Time</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -519,7 +519,7 @@ const ExamScheduling = () => {
                                                 </div>
                                                 <div>
                                                     <div className="text-sm font-bold text-slate-800">{sub.name}</div>
-                                                    <div className="text-[10px] text-slate-400 font-mono uppercase">{sub.subject_code}</div>
+                                                    <div className="text-[12px] text-slate-400 font-mono ">{sub.subject_code}</div>
                                                 </div>
                                             </div>
                                         </td>

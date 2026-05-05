@@ -125,13 +125,13 @@ const Login = () => {
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight italic">Intense</h1>
-            <p className="text-[10px] text-sky-500 font-black tracking-[0.2em] uppercase mt-1">Institution Portal</p>
+            <p className="text-[12px] text-sky-500 font-black tracking-[0.2em]  mt-1">Institution Portal</p>
           </div>
         </div>
 
         <div className="mb-8 text-center">
           <h2 className="text-2xl font-black text-slate-900 mb-1 tracking-tight">Portal Access</h2>
-          <p className="text-slate-500 font-medium text-xs">Please enter your administrative credentials</p>
+          <p className="text-slate-500 font-medium text-[13px]">Please enter your administrative credentials</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -143,7 +143,7 @@ const Login = () => {
           )}
 
           <div className="space-y-2">
-            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+            <label className="text-[13px] font-black text-slate-400  tracking-widest ml-1">Email Address</label>
             <div className="relative group">
               <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
                 <Mail size={18} />
@@ -161,7 +161,7 @@ const Login = () => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
+            <label className="text-[13px] font-black text-slate-400  tracking-widest ml-1">Password</label>
             <div className="relative group">
               <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
                 <Lock size={18} />
@@ -184,7 +184,7 @@ const Login = () => {
               </button>
             </div>
             <div className="flex justify-end pr-1">
-              <button type="button" onClick={() => navigate("/forgot-password", { state: { email: formData.email } })} className="text-xs font-bold text-sky-500 hover:text-sky-600 hover:underline transition-colors mt-1">Forgot Password?</button>
+              <button type="button" onClick={() => navigate("/forgot-password", { state: { email: formData.email } })} className="text-[13px] font-bold text-sky-500 hover:text-sky-600 hover:underline transition-colors mt-1">Forgot Password?</button>
             </div>
           </div>
 
@@ -202,7 +202,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full group relative overflow-hidden bg-slate-900 text-white rounded-2xl py-4 font-black text-sm uppercase tracking-[0.15em] shadow-xl shadow-slate-900/10 hover:shadow-sky-500/20 active:scale-[0.98] transition-all disabled:opacity-70"
+            className="w-full group relative overflow-hidden bg-slate-900 text-white rounded-2xl py-4 font-black text-sm  tracking-[0.15em] shadow-xl shadow-slate-900/10 hover:shadow-sky-500/20 active:scale-[0.98] transition-all disabled:opacity-70"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-sky-400 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="relative flex items-center justify-center gap-2">
@@ -231,7 +231,7 @@ const Login = () => {
         {/* Security Badge */}
         <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
           <CheckCircle2 size={16} className="text-sky-500" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center leading-tight">Secured by Intense-Cloud Architecture</span>
+          <span className="text-[12px] font-black  tracking-widest text-slate-400 text-center leading-tight">Secured by Intense-Cloud Architecture</span>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 body {
   margin: 0;
-  font-family: inherit;
+  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* Premium Theme Variables */
@@ -263,7 +263,7 @@ th, td {
   font-weight: 600;
   color: #333;
   margin-bottom: 8px;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.5px;
 }
 
@@ -309,7 +309,7 @@ th, td {
   cursor: pointer;
   transition: all 0.3s ease;
   margin-top: 10px;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 1px;
 }
 
@@ -577,7 +577,7 @@ th, td {
   font-weight: 600;
   color: #333;
   margin-bottom: 8px;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.5px;
 }
 
@@ -623,7 +623,7 @@ th, td {
   cursor: pointer;
   transition: all 0.3s ease;
   margin-top: 10px;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 1px;
 }
 

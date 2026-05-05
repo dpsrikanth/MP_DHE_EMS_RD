@@ -266,7 +266,7 @@ const MarksConfigForm = () => {
                             {selectedSubject && selectedDepartment && (
                                 <div className="pt-6 border-t border-slate-100 space-y-6">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                        <h3 className="text-sm font-bold text-slate-500  tracking-widest flex items-center gap-2">
                                             <span className="w-4 h-px bg-slate-200"></span> Marks Components
                                         </h3>
                                         <button
@@ -280,7 +280,7 @@ const MarksConfigForm = () => {
                                         {components.map((comp) => (
                                             <div key={comp.id} className="flex flex-col md:flex-row gap-4 items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
                                                 <div className="flex-1 w-full space-y-1">
-                                                    <label className="text-xs font-bold text-slate-500 uppercase">Component Name</label>
+                                                    <label className="text-[13px] font-bold text-slate-500 ">Component Name</label>
                                                     <input
                                                         type="text"
                                                         placeholder="e.g. IA1, Assignment, Practical"
@@ -290,7 +290,7 @@ const MarksConfigForm = () => {
                                                     />
                                                 </div>
                                                 <div className="w-full md:w-48 space-y-1">
-                                                    <label className="text-xs font-bold text-slate-500 uppercase">Max Marks</label>
+                                                    <label className="text-[13px] font-bold text-slate-500 ">Max Marks</label>
                                                     <input
                                                         type="number"
                                                         placeholder="00"
@@ -300,7 +300,7 @@ const MarksConfigForm = () => {
                                                     />
                                                 </div>
                                                 <div className="w-full md:w-48 space-y-1">
-                                                    <label className="text-xs font-bold text-slate-500 uppercase">Passing Marks</label>
+                                                    <label className="text-[13px] font-bold text-slate-500 ">Passing Marks</label>
                                                     <input
                                                         type="number"
                                                         placeholder="00"
@@ -327,7 +327,7 @@ const MarksConfigForm = () => {
                         <div className="space-y-6">
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Component Name</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Component Name</label>
                                     <input 
                                         type="text"
                                         value={editingStructure.component_name} 
@@ -338,7 +338,7 @@ const MarksConfigForm = () => {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="text-xs font-bold text-slate-500 ml-1">Max Marks</label>
+                                        <label className="text-[13px] font-bold text-slate-500 ml-1">Max Marks</label>
                                         <input 
                                             type="number"
                                             value={editingStructure.max_marks} 
@@ -347,7 +347,7 @@ const MarksConfigForm = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-xs font-bold text-slate-500 ml-1">Passing Marks</label>
+                                        <label className="text-[13px] font-bold text-slate-500 ml-1">Passing Marks</label>
                                         <input 
                                             type="number"
                                             value={editingStructure.passing_marks} 

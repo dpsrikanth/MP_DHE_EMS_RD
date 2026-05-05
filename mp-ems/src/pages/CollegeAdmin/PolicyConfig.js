@@ -258,7 +258,7 @@ const PolicyConfig = () => {
 
                 {selectedPolicy && selectedProgram && selectedSemester && selectedDepartment && (
                     <div className="pt-6 border-t border-slate-100 space-y-6">
-                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-slate-400  tracking-widest flex items-center gap-2">
                             <span className="w-4 h-px bg-slate-200"></span> Map Subjects
                         </h3>
                         <div className="space-y-2">
@@ -305,11 +305,11 @@ const PolicyConfig = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-y border-slate-100/60">
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Policy</th>
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Department</th>
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Program & Sem</th>
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Subject</th>
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                                <th className="py-4 px-6 text-[13px] font-bold text-slate-400  tracking-widest">Policy</th>
+                                <th className="py-4 px-6 text-[13px] font-bold text-slate-400  tracking-widest">Department</th>
+                                <th className="py-4 px-6 text-[13px] font-bold text-slate-400  tracking-widest">Program & Sem</th>
+                                <th className="py-4 px-6 text-[13px] font-bold text-slate-400  tracking-widest">Subject</th>
+                                <th className="py-4 px-6 text-[13px] font-bold text-slate-400  tracking-widest text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -321,13 +321,13 @@ const PolicyConfig = () => {
                                         <td className="py-4 px-6">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-semibold text-sky-700">{map.program_name}</span>
-                                                <span className="text-xs font-bold text-slate-400 uppercase mt-0.5">{map.semester_name}</span>
+                                                <span className="text-[13px] font-bold text-slate-400  mt-0.5">{map.semester_name}</span>
                                             </div>
                                         </td>
                                         <td className="py-4 px-6">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-semibold text-slate-800">{map.subject_name}</span>
-                                                <span className="text-xs font-bold text-slate-400 mt-0.5">{map.subject_code}</span>
+                                                <span className="text-[13px] font-bold text-slate-400 mt-0.5">{map.subject_code}</span>
                                             </div>
                                         </td>
                                         <td className="py-4 px-6 text-right">
@@ -362,13 +362,13 @@ const PolicyConfig = () => {
                                     <td colSpan="5" className="py-12 px-6 text-center">
                                         <div className="flex flex-col items-center gap-2">
                                             <ShieldCheck size={32} className="text-slate-200" />
-                                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">
+                                            <p className="text-sm font-bold text-slate-400  tracking-widest mt-2">
                                                 {searchQuery ? "No mappings found matching your search" : "No mappings found"}
                                             </p>
                                             {searchQuery && (
                                                 <button 
                                                     onClick={() => setSearchQuery('')}
-                                                    className="text-xs font-black text-sky-600 hover:text-sky-700 underline uppercase tracking-tighter mt-2"
+                                                    className="text-[13px] font-black text-sky-600 hover:text-sky-700 underline  tracking-tighter mt-2"
                                                 >
                                                     Clear Search
                                                 </button>
@@ -390,7 +390,7 @@ const PolicyConfig = () => {
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div>
                                 <h3 className="text-lg font-bold text-slate-900">Edit Policy Mapping</h3>
-                                <p className="text-xs text-slate-500 font-medium">Update the subject to policy relationship</p>
+                                <p className="text-[13px] text-slate-500 font-medium">Update the subject to policy relationship</p>
                             </div>
                             <button onClick={() => setShowEditModal(false)} className="p-2 bg-white hover:bg-slate-200 text-slate-400 rounded-xl transition-colors border border-slate-200 shadow-sm">
                                 <X size={16} />
@@ -399,7 +399,7 @@ const PolicyConfig = () => {
                         <div className="p-6 space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Policy</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Policy</label>
                                     <select 
                                         value={editingMapping.policy_id} 
                                         onChange={(e) => setEditingMapping({...editingMapping, policy_id: e.target.value})}
@@ -410,7 +410,7 @@ const PolicyConfig = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Department</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Department</label>
                                     <select 
                                         value={editingMapping.department_id} 
                                         onChange={(e) => setEditingMapping({...editingMapping, department_id: e.target.value})}
@@ -421,7 +421,7 @@ const PolicyConfig = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Program</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Program</label>
                                     <select 
                                         value={editingMapping.program_id} 
                                         onChange={(e) => setEditingMapping({...editingMapping, program_id: e.target.value})}
@@ -432,7 +432,7 @@ const PolicyConfig = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Semester</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Semester</label>
                                     <select 
                                         value={editingMapping.semester_id} 
                                         onChange={(e) => setEditingMapping({...editingMapping, semester_id: e.target.value})}
@@ -444,7 +444,7 @@ const PolicyConfig = () => {
                                 </div>
                             </div>
                             <div>
-                                <label className="text-xs font-bold text-slate-500 ml-1">Subject</label>
+                                <label className="text-[13px] font-bold text-slate-500 ml-1">Subject</label>
                                 <select 
                                     value={editingMapping.subject_id} 
                                     onChange={(e) => setEditingMapping({...editingMapping, subject_id: e.target.value})}

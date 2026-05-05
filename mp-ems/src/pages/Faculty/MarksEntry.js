@@ -431,7 +431,7 @@ const MarksEntry = () => {
                     <div className="flex items-center gap-3 mt-1.5">
                         <p className="text-sm text-slate-500 font-medium">Select a subject to enter student internal assessment marks.</p>
                         {selectedAssignment && (
-                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${normalizedStatus === 'Pending' ? 'bg-slate-50 text-slate-500 border-slate-200' :
+                            <span className={`px-2.5 py-0.5 rounded-full text-[12px] font-black  tracking-widest border ${normalizedStatus === 'Pending' ? 'bg-slate-50 text-slate-500 border-slate-200' :
                                 normalizedStatus === 'Submitted' ? 'bg-amber-50 text-amber-600 border-amber-200' :
                                     normalizedStatus === 'Rejected' ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' :
                                     normalizedStatus === 'Correction Requested' ? 'bg-indigo-50 text-indigo-600 border-indigo-200 animate-pulse' :
@@ -451,7 +451,7 @@ const MarksEntry = () => {
                             <Search size={20} />
                         </div>
                         <div>
-                            <p className="text-xs font-black uppercase tracking-widest opacity-70">Internal Exam Schedule Detected</p>
+                            <p className="text-[13px] font-black  tracking-widest opacity-70">Internal Exam Schedule Detected</p>
                             <div className="flex gap-4 mt-1">
                                 {subjectSchedules.map((s, idx) => (
                                     <div key={idx} className="text-sm font-bold">
@@ -508,15 +508,15 @@ const MarksEntry = () => {
                         <table className="w-full text-left border-collapse whitespace-nowrap">
                             <thead>
                                 <tr className="bg-slate-50 border-y border-slate-200">
-                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest sticky left-0 bg-slate-50 z-10 border-r border-slate-200">Student Name / ID</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-500  tracking-widest sticky left-0 bg-slate-50 z-10 border-r border-slate-200">Student Name / ID</th>
                                     {marksStructure.map(comp => (
-                                        <th key={comp.id} className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">
+                                        <th key={comp.id} className="px-6 py-4 text-[13px] font-black text-slate-500  tracking-widest text-center">
                                             {comp.component_name} <br />
-                                            <span className="text-[10px] text-slate-400 font-medium">Max: {comp.max_marks} | Min: {comp.passing_marks}</span>
+                                            <span className="text-[12px] text-slate-400 font-medium">Max: {comp.max_marks} | Min: {comp.passing_marks}</span>
                                         </th>
                                     ))}
-                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center border-l border-slate-200">Total</th>
-                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Status</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-500  tracking-widest text-center border-l border-slate-200">Total</th>
+                                    <th className="px-6 py-4 text-[13px] font-black text-slate-500  tracking-widest text-center">Status</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -535,12 +535,12 @@ const MarksEntry = () => {
                                                 <div className="flex items-center gap-2">
                                                     <div>
                                                         <p className="text-sm font-bold text-slate-800">{student.name || `Student ${student.id}`}</p>
-                                                        <p className="text-xs text-slate-500">Reg: {student.rollnumber || student.id}</p>
+                                                        <p className="text-[13px] text-slate-500">Reg: {student.rollnumber || student.id}</p>
                                                     </div>
                                                     {review?.status === 'Rejected' && (
                                                         <div className="relative group/tooltip">
                                                             <ShieldAlert size={16} className="text-red-500 animate-pulse" />
-                                                            <div className="absolute left-full ml-2 top-0 invisible group-hover/tooltip:visible bg-red-600 text-white p-2 rounded-lg text-[10px] w-48 z-50 shadow-xl">
+                                                            <div className="absolute left-full ml-2 top-0 invisible group-hover/tooltip:visible bg-red-600 text-white p-2 rounded-lg text-[12px] w-48 z-50 shadow-xl">
                                                                 <p className="font-bold border-b border-red-500 mb-1">REJECTED BY ADMIN</p>
                                                                 {review.comment || "Please correct and re-submit."}
                                                             </div>
@@ -579,7 +579,7 @@ const MarksEntry = () => {
                                                                     disabled={isStudentReadOnly}
                                                                     className="w-3.5 h-3.5 rounded text-red-500 focus:ring-red-500 border-slate-300"
                                                                 />
-                                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Absent</span>
+                                                                <span className="text-[12px] font-bold text-slate-500  tracking-widest">Absent</span>
                                                             </label>
                                                         </div>
                                                     </td>
@@ -592,7 +592,7 @@ const MarksEntry = () => {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-center">
-                                                <span className={`text-xs font-black uppercase tracking-widest ${status.style}`}>
+                                                <span className={`text-[13px] font-black  tracking-widest ${status.style}`}>
                                                     {status.label}
                                                 </span>
                                             </td>
@@ -603,11 +603,11 @@ const MarksEntry = () => {
                                         <td colSpan={marksStructure.length + 3} className="px-6 py-20 text-center">
                                             <div className="flex flex-col items-center gap-3">
                                                 <Search size={40} className="text-slate-200" />
-                                                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">No matching students found</h3>
+                                                <h3 className="text-lg font-black text-slate-900  tracking-tighter">No matching students found</h3>
                                                 <p className="text-slate-400 font-medium text-sm">Try searching with a different name or roll number.</p>
                                                 <button 
                                                     onClick={() => setSearchQuery('')}
-                                                    className="mt-4 text-xs font-black text-indigo-600 hover:text-indigo-700 underline uppercase tracking-widest"
+                                                    className="mt-4 text-[13px] font-black text-indigo-600 hover:text-indigo-700 underline  tracking-widest"
                                                 >
                                                     Clear search
                                                 </button>
@@ -634,7 +634,7 @@ const MarksEntry = () => {
                                     <button
                                         onClick={handleRequestCorrection}
                                         disabled={isSaving}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/20"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-[12px] font-black  tracking-widest rounded-lg hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/20"
                                     >
                                         <ShieldAlert size={14} />
                                         Request Correction
@@ -654,7 +654,7 @@ const MarksEntry = () => {
                         <button
                             disabled={isSaving || (isReadOnly && normalizedStatus !== 'Rejected')}
                             onClick={handleSubmitMarks}
-                            className={`inline-flex items-center gap-2 px-10 py-3.5 text-white font-black rounded-xl shadow-xl transition-all uppercase tracking-widest text-sm
+                            className={`inline-flex items-center gap-2 px-10 py-3.5 text-white font-black rounded-xl shadow-xl transition-all  tracking-widest text-sm
                                 ${isSaving || (isReadOnly && normalizedStatus !== 'Rejected') ? 'bg-slate-400 cursor-not-allowed shadow-none' : 'bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] shadow-indigo-600/20 active:scale-[0.98]'}`}
                         >
                             {isSaving ? (

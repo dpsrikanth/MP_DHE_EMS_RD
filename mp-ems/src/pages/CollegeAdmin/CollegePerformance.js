@@ -34,7 +34,7 @@ const CollegePerformance = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {loading ? (
-          <div className="col-span-full py-20 text-center text-slate-400 font-bold uppercase tracking-widest animate-pulse">Analyzing Statistics...</div>
+          <div className="col-span-full py-20 text-center text-slate-400 font-bold  tracking-widest animate-pulse">Analyzing Statistics...</div>
         ) : data.length === 0 ? (
           <div className="col-span-full py-20 bg-white rounded-2xl border border-dashed border-slate-300 text-center text-slate-400">
             No examination results found for this institution yet.
@@ -63,7 +63,7 @@ const CollegePerformance = () => {
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-2xl font-bold text-slate-800">{passRate}%</span>
-                  <span className="text-[8px] text-slate-400 uppercase font-black tracking-tighter">Pass Rate</span>
+                  <span className="text-[8px] text-slate-400  font-black tracking-tighter">Pass Rate</span>
                 </div>
               </div>
 
@@ -72,20 +72,20 @@ const CollegePerformance = () => {
                   <h3 className="font-bold text-slate-800 text-lg leading-tight group-hover:text-blue-600 transition-colors">
                     {item.subject_name}
                   </h3>
-                  <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">{item.program_name}</p>
+                  <p className="text-[13px] text-slate-400 font-medium  tracking-wider">{item.program_name}</p>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
                   <div className="bg-slate-50 p-3 rounded-xl text-center shadow-sm">
-                    <span className="block text-[10px] text-slate-400 uppercase font-bold mb-1">Total</span>
+                    <span className="block text-[12px] text-slate-400  font-bold mb-1">Total</span>
                     <span className="block text-xl font-black text-slate-700">{item.total_appeared}</span>
                   </div>
                   <div className="bg-emerald-50 p-3 rounded-xl text-center shadow-sm">
-                    <span className="block text-[10px] text-emerald-600 uppercase font-bold mb-1">Passed</span>
+                    <span className="block text-[12px] text-emerald-600  font-bold mb-1">Passed</span>
                     <span className="block text-xl font-black text-emerald-700">{item.passed}</span>
                   </div>
                   <div className="bg-rose-50 p-3 rounded-xl text-center shadow-sm">
-                    <span className="block text-[10px] text-rose-600 uppercase font-bold mb-1">Failed</span>
+                    <span className="block text-[12px] text-rose-600  font-bold mb-1">Failed</span>
                     <span className="block text-xl font-black text-rose-700">{item.failed}</span>
                   </div>
                 </div>

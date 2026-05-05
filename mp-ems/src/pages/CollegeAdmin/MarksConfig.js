@@ -328,7 +328,7 @@ const MarksConfig = () => {
                 {selectedSubject && selectedDepartment && (
                     <div className="pt-6 border-t border-slate-100 space-y-6">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-slate-500  tracking-widest flex items-center gap-2">
                                 <span className="w-4 h-px bg-slate-200"></span> Marks Components
                             </h3>
                             <button
@@ -344,9 +344,9 @@ const MarksConfig = () => {
                                 <div key={comp.id} className="flex flex-col md:flex-row gap-4 items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
                                     <div className="flex-1 w-full space-y-1">
                                         <div className="flex items-center justify-between">
-                                            <label className="text-xs font-bold text-slate-500 uppercase">Component Name</label>
+                                            <label className="text-[13px] font-bold text-slate-500 ">Component Name</label>
                                             {comp.isExisting && (
-                                                <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">Saved</span>
+                                                <span className="text-[12px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold  tracking-tighter">Saved</span>
                                             )}
                                         </div>
                                         <input
@@ -358,7 +358,7 @@ const MarksConfig = () => {
                                         />
                                     </div>
                                     <div className="w-full md:w-48 space-y-1">
-                                        <label className="text-xs font-bold text-slate-500 uppercase">Max Marks</label>
+                                        <label className="text-[13px] font-bold text-slate-500 ">Max Marks</label>
                                         <input
                                             type="number"
                                             placeholder="00"
@@ -368,7 +368,7 @@ const MarksConfig = () => {
                                         />
                                     </div>
                                     <div className="w-full md:w-48 space-y-1">
-                                        <label className="text-xs font-bold text-slate-500 uppercase">Passing Marks</label>
+                                        <label className="text-[13px] font-bold text-slate-500 ">Passing Marks</label>
                                         <input
                                             type="number"
                                             placeholder="00"
@@ -421,13 +421,13 @@ const MarksConfig = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-y border-slate-100/60">
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Department</th>
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Program & Sem</th>
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Subject</th>
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Component Name</th>
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Max Marks</th>
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Passing Marks</th>
-                                <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                                <th className="py-4 px-6 text-[13px] font-bold text-slate-400  tracking-widest">Department</th>
+                                <th className="py-4 px-6 text-[13px] font-bold text-slate-400  tracking-widest">Program & Sem</th>
+                                <th className="py-4 px-6 text-[13px] font-bold text-slate-400  tracking-widest">Subject</th>
+                                <th className="py-4 px-6 text-[13px] font-bold text-slate-400  tracking-widest">Component Name</th>
+                                <th className="py-4 px-6 text-[13px] font-bold text-slate-400  tracking-widest">Max Marks</th>
+                                <th className="py-4 px-6 text-[13px] font-bold text-slate-400  tracking-widest">Passing Marks</th>
+                                <th className="py-4 px-6 text-[13px] font-bold text-slate-400  tracking-widest text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -438,13 +438,13 @@ const MarksConfig = () => {
                                         <td className="py-4 px-6">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-semibold text-sky-700">{struct.program_name}</span>
-                                                <span className="text-xs font-bold text-slate-400 uppercase mt-0.5">{struct.semester_name}</span>
+                                                <span className="text-[13px] font-bold text-slate-400  mt-0.5">{struct.semester_name}</span>
                                             </div>
                                         </td>
                                         <td className="py-4 px-6">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-semibold text-slate-800">{struct.subject_name}</span>
-                                                <span className="text-xs font-bold text-slate-400 mt-0.5">{struct.subject_code}</span>
+                                                <span className="text-[13px] font-bold text-slate-400 mt-0.5">{struct.subject_code}</span>
                                             </div>
                                         </td>
                                         <td className="py-4 px-6 text-sm font-bold text-indigo-600">{struct.component_name}</td>
@@ -485,13 +485,13 @@ const MarksConfig = () => {
                                     <td colSpan="7" className="py-12 px-6 text-center">
                                         <div className="flex flex-col items-center gap-2">
                                             <BarChart3 size={32} className="text-slate-200" />
-                                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">
+                                            <p className="text-sm font-bold text-slate-400  tracking-widest mt-2">
                                                 {searchQuery ? "No structures found matching your search" : "No structures found"}
                                             </p>
                                             {searchQuery && (
                                                 <button 
                                                     onClick={() => setSearchQuery('')}
-                                                    className="text-xs font-black text-indigo-600 hover:text-indigo-700 underline uppercase tracking-tighter mt-2"
+                                                    className="text-[13px] font-black text-indigo-600 hover:text-indigo-700 underline  tracking-tighter mt-2"
                                                 >
                                                     Clear Search
                                                 </button>
@@ -513,7 +513,7 @@ const MarksConfig = () => {
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div>
                                 <h3 className="text-lg font-bold text-slate-900">Edit Marks Structure</h3>
-                                <p className="text-xs text-slate-500 font-medium">Update the component details</p>
+                                <p className="text-[13px] text-slate-500 font-medium">Update the component details</p>
                             </div>
                             <button onClick={() => setShowEditModal(false)} className="p-2 bg-white hover:bg-slate-200 text-slate-400 rounded-xl transition-colors border border-slate-200 shadow-sm">
                                 <X size={16} />
@@ -522,7 +522,7 @@ const MarksConfig = () => {
                         <div className="p-6 space-y-4">
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Component Name</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Component Name</label>
                                     <input 
                                         type="text"
                                         value={editingStructure.component_name} 
@@ -533,7 +533,7 @@ const MarksConfig = () => {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="text-xs font-bold text-slate-500 ml-1">Max Marks</label>
+                                        <label className="text-[13px] font-bold text-slate-500 ml-1">Max Marks</label>
                                         <input 
                                             type="number"
                                             value={editingStructure.max_marks} 
@@ -542,7 +542,7 @@ const MarksConfig = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-xs font-bold text-slate-500 ml-1">Passing Marks</label>
+                                        <label className="text-[13px] font-bold text-slate-500 ml-1">Passing Marks</label>
                                         <input 
                                             type="number"
                                             value={editingStructure.passing_marks} 

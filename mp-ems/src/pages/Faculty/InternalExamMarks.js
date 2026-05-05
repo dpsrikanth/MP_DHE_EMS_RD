@@ -231,7 +231,7 @@ const InternalExamMarks = () => {
             {/* Context Selectors */}
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 <div className="space-y-1.5">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Academic Year</label>
+                    <label className="text-[13px] font-black text-slate-500  tracking-widest ml-1">Academic Year</label>
                     <Select 
                         options={academicYears.map(y => ({ value: y.id, label: y.year_name }))}
                         value={selectedYear}
@@ -241,7 +241,7 @@ const InternalExamMarks = () => {
                     />
                 </div>
                 <div className="space-y-1.5">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Semester</label>
+                    <label className="text-[13px] font-black text-slate-500  tracking-widest ml-1">Semester</label>
                     <Select 
                         options={semesters.map(s => ({ value: s.id, label: s.semester_name || `Semester ${s.semester_number}` }))}
                         value={selectedSem}
@@ -251,7 +251,7 @@ const InternalExamMarks = () => {
                     />
                 </div>
                 <div className="space-y-1.5">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Exam Round</label>
+                    <label className="text-[13px] font-black text-slate-500  tracking-widest ml-1">Exam Round</label>
                     <Select 
                         options={rounds.map(r => ({ value: r.id, label: r.name }))}
                         value={selectedRound}
@@ -285,7 +285,7 @@ const InternalExamMarks = () => {
                                         <BookOpen size={24} />
                                     </div>
                                     {schedule && (
-                                        <div className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
+                                        <div className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[12px] font-black  tracking-widest flex items-center gap-1.5">
                                             <Calendar size={12} />
                                             {new Date(schedule.exam_date).toLocaleDateString()}
                                         </div>
@@ -300,7 +300,7 @@ const InternalExamMarks = () => {
                                 <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-50">
                                     <div className="flex items-center gap-2 text-slate-400">
                                         <Users size={16} />
-                                        <span className="text-xs font-bold uppercase tracking-wider">Students</span>
+                                        <span className="text-[13px] font-bold  tracking-wider">Students</span>
                                     </div>
                                     <ChevronRight className="text-slate-300 group-hover:translate-x-1 transition-transform" />
                                 </div>
@@ -309,7 +309,7 @@ const InternalExamMarks = () => {
                     }) : (
                         <div className="col-span-full py-20 bg-white rounded-3xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400">
                             <AlertCircle size={48} strokeWidth={1} />
-                            <p className="mt-4 font-bold text-lg text-slate-600 uppercase tracking-tighter">No subjects assigned for this context</p>
+                            <p className="mt-4 font-bold text-lg text-slate-600  tracking-tighter">No subjects assigned for this context</p>
                             <p className="text-sm">Change your filters or contact administrator.</p>
                         </div>
                     )}
@@ -329,10 +329,10 @@ const InternalExamMarks = () => {
                         </button>
                         <div>
                             <div className="flex items-center gap-3">
-                                <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase tracking-tighter">
+                                <h2 className="text-xl font-black text-slate-900 tracking-tight  tracking-tighter">
                                     {selectedSubject.subject_name} — {selectedRound.label}
                                 </h2>
-                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm
+                                <span className={`px-3 py-1 rounded-full text-[12px] font-black  tracking-widest shadow-sm
                                     ${workflowStatus === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 
                                       workflowStatus === 'Submitted' ? 'bg-blue-100 text-blue-700' :
                                       workflowStatus === 'Locked' ? 'bg-slate-200 text-slate-700' :
@@ -360,11 +360,11 @@ const InternalExamMarks = () => {
                             </div>
                             <div className="flex items-center gap-10">
                                 <div className="text-right">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Max Marks</p>
+                                    <p className="text-[12px] font-black text-slate-400  tracking-widest">Max Marks</p>
                                     <p className="text-sm font-bold text-slate-900">{componentInfo?.max_marks || 'N/A'}</p>
                                 </div>
                                 <div className="text-right border-l border-slate-200 pl-10">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pass Marks</p>
+                                    <p className="text-[12px] font-black text-slate-400  tracking-widest">Pass Marks</p>
                                     <p className="text-sm font-bold text-slate-900">{componentInfo?.passing_marks || 'N/A'}</p>
                                 </div>
                             </div>
@@ -374,11 +374,11 @@ const InternalExamMarks = () => {
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-100 italic">
-                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">#</th>
-                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student Information</th>
-                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Marks Obtained</th>
-                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Attendance</th>
-                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Result Status</th>
+                                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest">#</th>
+                                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest">Student Information</th>
+                                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Marks Obtained</th>
+                                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Attendance</th>
+                                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Result Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50 font-medium">
@@ -388,15 +388,15 @@ const InternalExamMarks = () => {
 
                                         return (
                                             <tr key={student.id} className="group hover:bg-slate-50/50 transition-colors">
-                                                <td className="px-8 py-4 text-xs font-bold text-slate-300">{idx + 1}</td>
+                                                <td className="px-8 py-4 text-[13px] font-bold text-slate-300">{idx + 1}</td>
                                                 <td className="px-8 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600 font-black text-[10px]">
+                                                        <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600 font-black text-[12px]">
                                                             {student.name ? student.name.charAt(0) : '?'}
                                                         </div>
                                                         <div>
                                                             <p className="text-sm font-bold text-slate-800">{student.name}</p>
-                                                            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Reg: {student.rollnumber}</p>
+                                                            <p className="text-[12px]  font-bold text-slate-400 tracking-wider">Reg: {student.rollnumber}</p>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -428,7 +428,7 @@ const InternalExamMarks = () => {
                                                     <button 
                                                         disabled={['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
                                                         onClick={() => handleMarkChange(student.id, 'isAbsent', !entry.isAbsent)}
-                                                        className={`px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all
+                                                        className={`px-4 py-2 rounded-xl font-black text-[12px]  tracking-widest transition-all
                                                             ${entry.isAbsent ? 'bg-red-500 text-white shadow-lg shadow-red-200' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}
                                                             ${['Submitted', 'Approved', 'Locked'].includes(workflowStatus) ? 'opacity-50 cursor-not-allowed' : ''}
                                                         `}
@@ -438,13 +438,13 @@ const InternalExamMarks = () => {
                                                 </td>
                                                 <td className="px-8 py-4 text-center">
                                                     {entry.isAbsent ? (
-                                                        <span className="text-[10px] font-black text-red-500 uppercase italic">Not Applicable</span>
+                                                        <span className="text-[12px] font-black text-red-500  italic">Not Applicable</span>
                                                     ) : isFailed ? (
-                                                        <span className="text-[10px] font-black text-red-500 uppercase tracking-widest bg-red-50 px-3 py-1 rounded-full">Below Passing</span>
+                                                        <span className="text-[12px] font-black text-red-500  tracking-widest bg-red-50 px-3 py-1 rounded-full">Below Passing</span>
                                                     ) : entry.marks !== '' ? (
-                                                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full">Qualified</span>
+                                                        <span className="text-[12px] font-black text-emerald-600  tracking-widest bg-emerald-50 px-3 py-1 rounded-full">Qualified</span>
                                                     ) : (
-                                                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Pending</span>
+                                                        <span className="text-[12px] font-black text-slate-300  tracking-widest">Pending</span>
                                                     )}
                                                 </td>
                                             </tr>
@@ -470,7 +470,7 @@ const InternalExamMarks = () => {
                                 <button 
                                     onClick={() => handleSave(false)}
                                     disabled={isSaving || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
-                                    className={`px-10 py-3 rounded-xl font-black uppercase tracking-widest text-sm transition-all flex items-center gap-2
+                                    className={`px-10 py-3 rounded-xl font-black  tracking-widest text-sm transition-all flex items-center gap-2
                                         ${isSaving || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm active:scale-95'}
                                     `}
                                 >
@@ -480,7 +480,7 @@ const InternalExamMarks = () => {
                                 <button 
                                     onClick={handleSubmit}
                                     disabled={isSaving || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
-                                    className={`px-10 py-3 rounded-xl font-black uppercase tracking-widest text-sm shadow-xl transition-all flex items-center gap-2
+                                    className={`px-10 py-3 rounded-xl font-black  tracking-widest text-sm shadow-xl transition-all flex items-center gap-2
                                         ${isSaving || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus) ? 'bg-slate-400 text-white cursor-not-allowed shadow-none' : 'bg-indigo-600 text-white shadow-indigo-200 hover:bg-indigo-700 active:scale-95'}
                                     `}
                                 >

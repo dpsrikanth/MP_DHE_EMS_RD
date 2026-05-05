@@ -53,11 +53,11 @@ const InstitutionalRanking = () => {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="px-6 py-4 text-xs font-bold uppercase text-slate-500 tracking-wider w-20">Rank</th>
-              <th className="px-6 py-4 text-xs font-bold uppercase text-slate-500 tracking-wider">Institution Name</th>
-              <th className="px-6 py-4 text-xs font-bold uppercase text-slate-500 tracking-wider">Total Marks Entries</th>
-              <th className="px-6 py-4 text-xs font-bold uppercase text-slate-500 tracking-wider">Passed Count</th>
-              <th className="px-6 py-4 text-xs font-bold uppercase text-slate-500 tracking-wider">Performance (Pass %)</th>
+              <th className="px-6 py-4 text-[13px] font-bold  text-slate-500 tracking-wider w-20">Rank</th>
+              <th className="px-6 py-4 text-[13px] font-bold  text-slate-500 tracking-wider">Institution Name</th>
+              <th className="px-6 py-4 text-[13px] font-bold  text-slate-500 tracking-wider">Total Marks Entries</th>
+              <th className="px-6 py-4 text-[13px] font-bold  text-slate-500 tracking-wider">Passed Count</th>
+              <th className="px-6 py-4 text-[13px] font-bold  text-slate-500 tracking-wider">Performance (Pass %)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -117,7 +117,7 @@ const InstitutionalRanking = () => {
           </div>
           <div>
             <h4 className="text-emerald-800 font-bold">Top Performing</h4>
-            <p className="text-emerald-600 text-xs mt-1">Institutions with Pass Rate {'>'} 75%</p>
+            <p className="text-emerald-600 text-[13px] mt-1">Institutions with Pass Rate {'>'} 75%</p>
             <div className="text-2xl font-black text-emerald-800 mt-2">
               {ranking.filter(r => r.pass_percentage >= 75).length}
             </div>
@@ -130,7 +130,7 @@ const InstitutionalRanking = () => {
           </div>
           <div>
             <h4 className="text-blue-800 font-bold">Average Efficiency</h4>
-            <p className="text-blue-600 text-xs mt-1">Institutions with Pass Rate 50-75%</p>
+            <p className="text-blue-600 text-[13px] mt-1">Institutions with Pass Rate 50-75%</p>
             <div className="text-2xl font-black text-blue-800 mt-2">
               {ranking.filter(r => r.pass_percentage >= 50 && r.pass_percentage < 75).length}
             </div>
@@ -143,7 +143,7 @@ const InstitutionalRanking = () => {
           </div>
           <div>
             <h4 className="text-amber-800 font-bold">Needs Support</h4>
-            <p className="text-amber-600 text-xs mt-1">Institutions with Pass Rate {'<'} 50%</p>
+            <p className="text-amber-600 text-[13px] mt-1">Institutions with Pass Rate {'<'} 50%</p>
             <div className="text-2xl font-black text-amber-800 mt-2">
               {ranking.filter(r => r.pass_percentage < 50).length}
             </div>

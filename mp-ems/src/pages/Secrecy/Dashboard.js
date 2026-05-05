@@ -44,7 +44,7 @@ const SecrecyDashboard = () => {
     return (
       <div className="flex flex-col items-center justify-center p-20 space-y-4 min-h-[60vh]">
         <div className="w-12 h-12 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
-        <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Synchronizing Secrecy Data...</p>
+        <p className="text-slate-400 font-black  tracking-widest text-[13px]">Synchronizing Secrecy Data...</p>
       </div>
     );
   }
@@ -71,7 +71,7 @@ const SecrecyDashboard = () => {
           ].map((item, idx) => (
             <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between group hover:shadow-md transition-shadow">
               <div>
-                <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">{item.label}</p>
+                <p className="text-sm font-bold text-slate-500  tracking-wider">{item.label}</p>
                 <h3 className="text-3xl font-black text-slate-800 mt-1">{item.value}</h3>
               </div>
               <div className={`${item.bg} p-4 rounded-2xl`}>
@@ -100,10 +100,10 @@ const SecrecyDashboard = () => {
                     <p className="text-sm text-slate-500 font-medium">{activity.detail}</p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-slate-400 capitalize whitespace-nowrap">{new Date(activity.activity_date).toLocaleString()}</span>
+                <span className="text-[13px] font-bold text-slate-400 capitalize whitespace-nowrap">{new Date(activity.activity_date).toLocaleString()}</span>
               </div>
             )) : (
-              <div className="p-10 text-center text-slate-400 font-medium font-bold uppercase text-xs tracking-widest">No recent activity found.</div>
+              <div className="p-10 text-center text-slate-400 font-medium font-bold  text-[13px] tracking-widest">No recent activity found.</div>
             )}
           </div>
         </div>

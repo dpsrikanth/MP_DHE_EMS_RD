@@ -257,7 +257,7 @@ const Colleges = () => {
                   onSort={handleSort} 
                   visible={visibleColumns.university_name}
                 />
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Settings</th>
+                <th className="px-8 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Settings</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -281,7 +281,7 @@ const Colleges = () => {
                     )}
                     {visibleColumns.university_name && (
                       <td className="px-4 py-5">
-                        <span className="text-[13px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full uppercase tracking-tighter shadow-sm border border-slate-200">
+                        <span className="text-[13px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full  tracking-tighter shadow-sm border border-slate-200">
                           {item.university_name || universities.find(u => u.id === item.university_id)?.name || 'Standalone'}
                         </span>
                       </td>
@@ -310,10 +310,10 @@ const Colleges = () => {
                 <tr>
                   <td colSpan="5" className="px-8 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No colleges match your search</p>
+                      <p className="text-sm font-bold text-slate-400  tracking-widest">No colleges match your search</p>
                       <button 
                         onClick={() => setSearchQuery('')}
-                        className="text-xs font-black text-indigo-500 hover:text-indigo-600 underline uppercase tracking-tighter"
+                        className="text-[13px] font-black text-indigo-500 hover:text-indigo-600 underline  tracking-tighter"
                       >
                         Clear Search
                       </button>

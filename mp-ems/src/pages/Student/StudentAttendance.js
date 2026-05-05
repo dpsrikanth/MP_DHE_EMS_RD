@@ -58,14 +58,14 @@ const AttendanceDetail = ({ subjectId, dateFilter }) => {
     }
 
     if (filteredDetails.length === 0) {
-        return <div className="py-4 text-center text-xs text-slate-400 font-bold uppercase italic">No session history found for this period</div>;
+        return <div className="py-4 text-center text-[13px] text-slate-400 font-bold  italic">No session history found for this period</div>;
     }
 
     return (
         <div className="mt-4 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/50">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-[13px]">
                 <thead>
-                    <tr className="bg-slate-100/50 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    <tr className="bg-slate-100/50 text-[12px] font-black text-slate-500  tracking-widest">
                         <th className="px-5 py-3">Date</th>
                         <th className="px-4 py-3">Period</th>
                         <th className="px-4 py-3">Section</th>
@@ -81,7 +81,7 @@ const AttendanceDetail = ({ subjectId, dateFilter }) => {
                             <td className="px-4 py-3 font-black text-slate-400">P{row.period_number}</td>
                             <td className="px-4 py-3 font-bold text-slate-500 italic">{row.section || 'N/A'}</td>
                             <td className="px-5 py-3 text-right">
-                                <span className={`px-2 py-0.5 rounded-full font-black uppercase text-[9px] ${
+                                <span className={`px-2 py-0.5 rounded-full font-black  text-[9px] ${
                                     row.status === 'Present' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
                                 }`}>
                                     {row.status}
@@ -157,7 +157,7 @@ const CombinedHistory = ({ dateFilter }) => {
         <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
             <table className="w-full text-left">
                 <thead className="bg-slate-50 border-b border-slate-100">
-                    <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <tr className="text-[12px] font-black text-slate-400  tracking-widest">
                         <th className="px-8 py-5">Date & Time</th>
                         <th className="px-6 py-5">Subject</th>
                         <th className="px-6 py-5">Section & Period</th>
@@ -170,7 +170,7 @@ const CombinedHistory = ({ dateFilter }) => {
                             <td className="px-8 py-5">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-slate-100 flex flex-col items-center justify-center font-black group-hover:bg-sky-500 group-hover:text-white transition-colors duration-300">
-                                        <div className="text-[10px] italic">{formatDate(row.attendance_date)}</div>
+                                        <div className="text-[12px] italic">{formatDate(row.attendance_date)}</div>
                                     </div>
                                     <div>
                                         <p className="text-sm font-black text-slate-900 leading-none">Session Entry</p>
@@ -178,17 +178,17 @@ const CombinedHistory = ({ dateFilter }) => {
                                 </div>
                             </td>
                             <td className="px-6 py-5">
-                                <p className="text-xs font-black text-slate-900 group-hover:text-sky-600 transition-colors">{row.subject_name}</p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{row.subject_code}</p>
+                                <p className="text-[13px] font-black text-slate-900 group-hover:text-sky-600 transition-colors">{row.subject_name}</p>
+                                <p className="text-[12px] font-bold text-slate-400  tracking-widest">{row.subject_code}</p>
                             </td>
                             <td className="px-6 py-5">
                                 <div className="flex items-center gap-2">
-                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-black uppercase">Period {row.period_number}</span>
-                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-black uppercase italic">{row.section || 'N/A'}</span>
+                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-black ">Period {row.period_number}</span>
+                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-black  italic">{row.section || 'N/A'}</span>
                                 </div>
                             </td>
                             <td className="px-8 py-5 text-right">
-                                <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-black uppercase text-[10px] shadow-sm ${
+                                <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-black  text-[12px] shadow-sm ${
                                     row.status === 'Present' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
                                 }`}>
                                     {row.status === 'Present' ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
@@ -263,19 +263,19 @@ const StudentAttendance = () => {
                     </div>
                     <div>
                         <h1 className="text-3xl font-black text-slate-900 tracking-tight italic">Attendance <span className="text-sky-500 not-italic">Analytics</span></h1>
-                        <p className="text-xs text-slate-400 font-black tracking-[0.2em] mt-1 uppercase">Advanced academic engagement tracking</p>
+                        <p className="text-[13px] text-slate-400 font-black tracking-[0.2em] mt-1 ">Advanced academic engagement tracking</p>
                     </div>
                 </div>
                 <div className="flex bg-slate-100 p-1.5 rounded-2xl shadow-inner border border-slate-200">
                     <button 
                         onClick={() => setActiveTab('subject')}
-                        className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'subject' ? 'bg-white text-sky-600 shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black  tracking-widest transition-all duration-300 ${activeTab === 'subject' ? 'bg-white text-sky-600 shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         By Subject
                     </button>
                     <button 
                         onClick={() => setActiveTab('history')}
-                        className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'history' ? 'bg-white text-sky-600 shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black  tracking-widest transition-all duration-300 ${activeTab === 'history' ? 'bg-white text-sky-600 shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         Combined History
                     </button>
@@ -285,7 +285,7 @@ const StudentAttendance = () => {
             {/* Filter Bar */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-sm">
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-2 whitespace-nowrap">Time Filter:</p>
+                    <p className="text-[12px] font-black text-slate-400  tracking-widest mr-2 whitespace-nowrap">Time Filter:</p>
                     {[
                         { id: 'all', label: 'All Time' },
                         { id: 'week', label: 'This Week' },
@@ -295,7 +295,7 @@ const StudentAttendance = () => {
                         <button
                             key={f.id}
                             onClick={() => setDateFilter(f.id)}
-                            className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                            className={`px-4 py-1.5 rounded-full text-[12px] font-black  tracking-widest transition-all whitespace-nowrap ${
                                 dateFilter === f.id ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
                             }`}
                         >
@@ -303,7 +303,7 @@ const StudentAttendance = () => {
                         </button>
                     ))}
                 </div>
-                <div className="flex items-center gap-2 text-sky-600 text-[10px] font-black uppercase tracking-widest italic animate-pulse">
+                <div className="flex items-center gap-2 text-sky-600 text-[12px] font-black  tracking-widest italic animate-pulse">
                     <Info size={12} /> Live synchronization enabled
                 </div>
             </div>
@@ -315,10 +315,10 @@ const StudentAttendance = () => {
                         <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50 relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500 rounded-full blur-[60px] opacity-10 group-hover:opacity-20 transition-opacity" />
                             <BarChart3 className="text-sky-500 mb-4" size={32} />
-                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Overall Percentage</h3>
+                            <h3 className="text-sm font-black text-slate-400  tracking-widest mb-1">Overall Percentage</h3>
                             <div className="flex items-baseline gap-2">
                                 <span className="text-4xl font-black text-slate-900 tracking-tighter">{overallAttendance}%</span>
-                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${parseFloat(overallAttendance) >= 75 ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                                <span className={`text-[12px] font-black  px-2 py-0.5 rounded-full ${parseFloat(overallAttendance) >= 75 ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
                                     {parseFloat(overallAttendance) >= 75 ? 'On Track' : 'Below Target'}
                                 </span>
                             </div>
@@ -326,23 +326,23 @@ const StudentAttendance = () => {
 
                         <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50">
                             <BookOpen className="text-indigo-500 mb-4" size={32} />
-                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Courses Enrolled</h3>
+                            <h3 className="text-sm font-black text-slate-400  tracking-widest mb-1">Courses Enrolled</h3>
                             <span className="text-4xl font-black text-slate-900 tracking-tighter">{attendance.length} Subjects</span>
                         </div>
 
                         <div className="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden group">
                              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500 rounded-full blur-[60px] opacity-20" />
                              <AlertCircle className="text-amber-400 mb-4" size={32} />
-                             <h3 className="text-sm font-black opacity-60 uppercase tracking-widest mb-1 italic">Exam Eligibility</h3>
-                             <p className="text-xs font-bold leading-relaxed">Ensure a minimum of <span className="text-amber-400 font-black">75%</span> engagement per course for hall ticket validation.</p>
+                             <h3 className="text-sm font-black opacity-60  tracking-widest mb-1 italic">Exam Eligibility</h3>
+                             <p className="text-[13px] font-bold leading-relaxed">Ensure a minimum of <span className="text-amber-400 font-black">75%</span> engagement per course for hall ticket validation.</p>
                         </div>
                     </div>
 
                     {/* Attendance List */}
                     <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/40 overflow-hidden">
                         <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
-                            <h2 className="text-lg font-black text-slate-900 tracking-tight uppercase tracking-tighter">Subject-wise Summary</h2>
-                            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                            <h2 className="text-lg font-black text-slate-900 tracking-tight  tracking-tighter">Subject-wise Summary</h2>
+                            <div className="flex items-center gap-2 text-[12px] font-black text-slate-400  tracking-widest">
                                 <Clock size={12} /> Refreshed: Just now
                             </div>
                         </div>
@@ -364,12 +364,12 @@ const StudentAttendance = () => {
                                                 </div>
                                                 <div>
                                                     <div className="flex items-center gap-2 mb-1">
-                                                        <span className="text-[10px] font-black text-sky-600 bg-sky-50 px-2 py-0.5 rounded uppercase tracking-wider border border-sky-100">
+                                                        <span className="text-[12px] font-black text-sky-600 bg-sky-50 px-2 py-0.5 rounded  tracking-wider border border-sky-100">
                                                             {sub.subject_code}
                                                         </span>
                                                     </div>
-                                                    <h3 className="text-xl font-black text-slate-900 leading-tight tracking-tight uppercase">{sub.subject_name}</h3>
-                                                    <div className="flex items-center gap-4 mt-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                                    <h3 className="text-xl font-black text-slate-900 leading-tight tracking-tight ">{sub.subject_name}</h3>
+                                                    <div className="flex items-center gap-4 mt-2 text-[12px] font-black text-slate-400  tracking-widest">
                                                         <div className="flex items-center gap-1.5 underline decoration-emerald-500/30 underline-offset-4">
                                                             <CheckCircle2 size={12} className="text-emerald-500" /> {sub.attended_sessions} Attended
                                                         </div>
@@ -384,7 +384,7 @@ const StudentAttendance = () => {
                                                 <div className="flex flex-col items-end gap-3 min-w-[200px]">
                                                     <div className="flex items-baseline gap-1">
                                                         <span className="text-2xl font-black text-slate-900 italic tracking-tighter">{sub.attendance_percentage}%</span>
-                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Presence</span>
+                                                        <span className="text-[12px] font-black text-slate-400  tracking-widest">Presence</span>
                                                     </div>
                                                     <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden shadow-inner relative">
                                                         <div 
@@ -419,7 +419,7 @@ const StudentAttendance = () => {
             
             <div className="flex items-center justify-center gap-2 p-6 bg-slate-100/50 rounded-[2rem] border border-slate-200/50">
                 <Info size={14} className="text-slate-400" />
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] italic">
+                <p className="text-[12px] font-black text-slate-400  tracking-[0.2em] italic">
                     Contact your department HOD for any attendance discrepancies in the log.
                 </p>
             </div>

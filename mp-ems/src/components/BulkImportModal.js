@@ -283,7 +283,7 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
               <h4 className="text-lg font-bold text-slate-800 mb-2">Drag & Drop your CSV or Excel file here</h4>
               <p className="text-sm text-slate-500 mb-6">Or click to browse your files. Supports .csv, .xlsx, .xls (Max 5MB)</p>
               
-              <div className="text-xs font-medium text-slate-400 flex flex-col items-center justify-center gap-1">
+              <div className="text-[13px] font-medium text-slate-400 flex flex-col items-center justify-center gap-1">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 size={14} className="text-emerald-500" />
                   Required columns: <span className="text-slate-700">{Object.entries(expectedColumns).filter(([k]) => !optionalColumns.includes(k)).map(([,v]) => v).join(', ')}</span>
@@ -311,7 +311,7 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-800">{file.name}</h4>
-                    <p className="text-xs text-slate-500 font-medium">Ready for validation and import</p>
+                    <p className="text-[13px] text-slate-500 font-medium">Ready for validation and import</p>
                   </div>
                 </div>
                 <button 

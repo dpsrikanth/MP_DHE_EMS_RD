@@ -35,7 +35,7 @@ export const ColumnVisibilitySelector = ({ columns, visibleColumns, onToggle }) 
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
           <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="p-4 border-b border-slate-50 bg-slate-50/50">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Toggle Column Visibility</h3>
+              <h3 className="text-[12px] font-black text-slate-400  tracking-widest">Toggle Column Visibility</h3>
             </div>
             <div className="p-2 max-h-80 overflow-y-auto">
               {columns.map(col => (
@@ -60,7 +60,7 @@ export const ColumnVisibilitySelector = ({ columns, visibleColumns, onToggle }) 
               <button 
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="text-[10px] font-black text-indigo-500 hover:text-indigo-600 uppercase tracking-widest"
+                className="text-[12px] font-black text-indigo-500 hover:text-indigo-600  tracking-widest"
               >
                 Close Selector
               </button>
@@ -129,7 +129,7 @@ export const TablePagination = ({
   return (
     <div className="flex flex-col lg:flex-row items-center justify-between gap-6 px-8 py-6 bg-slate-50/50 border-t border-slate-100">
       <div className="flex flex-col sm:flex-row items-center gap-6">
-        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] flex items-center gap-2">
+        <div className="text-[12px] font-black text-slate-400  tracking-[0.15em] flex items-center gap-2">
           <span>Displaying</span>
           <span className="text-slate-900 bg-white px-2 py-1 rounded-lg border border-slate-200">
             {totalItems > 0 ? (currentPage - 1) * pageSize + 1 : 0} - {Math.min(currentPage * pageSize, totalItems)}
@@ -141,11 +141,11 @@ export const TablePagination = ({
 
         {onPageSizeChange && (
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Show</span>
+            <span className="text-[12px] font-black text-slate-400  tracking-widest">Show</span>
             <select 
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="bg-white border-2 border-slate-100 rounded-xl px-3 py-1.5 text-xs font-black text-slate-700 focus:border-indigo-500 outline-none transition-all cursor-pointer shadow-sm"
+              className="bg-white border-2 border-slate-100 rounded-xl px-3 py-1.5 text-[13px] font-black text-slate-700 focus:border-indigo-500 outline-none transition-all cursor-pointer shadow-sm"
             >
               {[5, 10, 25, 50, 100].map(size => (
                 <option key={size} value={size}>{size}</option>
@@ -178,7 +178,7 @@ export const TablePagination = ({
             <button
               key={page}
               onClick={() => onPageChange(page)}
-              className={`w-10 h-10 flex items-center justify-center rounded-xl text-xs font-black transition-all ${
+              className={`w-10 h-10 flex items-center justify-center rounded-xl text-[13px] font-black transition-all ${
                 currentPage === page 
                   ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20 scale-110 z-10' 
                   : 'text-slate-500 hover:bg-white hover:text-indigo-600 border border-transparent hover:border-slate-100'
@@ -231,7 +231,7 @@ export const SortHeader = ({
         className="flex items-center gap-2 cursor-pointer group w-fit"
         onClick={() => onSort(field)}
       >
-        <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 group-hover:text-indigo-500 transition-colors">
+        <span className="text-[13px] font-black  tracking-[0.15em] text-slate-400 group-hover:text-indigo-500 transition-colors">
           {label}
         </span>
         <span className={`${isActive ? 'text-indigo-600' : 'text-slate-300'} group-hover:text-indigo-400 transition-colors`}>

@@ -158,7 +158,7 @@ const UniversitiesForm = () => {
             </div>
           </div>
           <div className="form-header__right">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+              <span className="text-[12px] font-black text-slate-400  tracking-[0.2em] bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
                 Governance Central v4.0
               </span>
           </div>
@@ -189,7 +189,7 @@ const UniversitiesForm = () => {
                       <option value="Night">Night (Evening Classes)</option>
                       <option value="Distance">Distance (Remote Learning)</option>
                     </select>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase mt-2">Determines the mode of delivery for academic programs</p>
+                    <p className="text-[12px] text-slate-400 font-bold  mt-2">Determines the mode of delivery for academic programs</p>
                   </div>
                   <div className="form-field">
                     <label className="form-label">Administrative Headquarters</label>
@@ -208,8 +208,8 @@ const UniversitiesForm = () => {
                         {form.status ? <ShieldCheck size={18} /> : <ShieldAlert size={18} />}
                       </div>
                       <div>
-                         <span className="form-toggle__label text-sm uppercase tracking-widest">{form.status ? 'Authority Active' : 'Authority Restricted'}</span>
-                         <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Control visibility and access across the ecosystem</p>
+                         <span className="form-toggle__label text-sm  tracking-widest">{form.status ? 'Authority Active' : 'Authority Restricted'}</span>
+                         <p className="text-[12px] text-slate-400 font-bold  mt-1">Control visibility and access across the ecosystem</p>
                       </div>
                     </div>
                     <button type="button" onClick={() => setForm({ ...form, status: !form.status })} 
@@ -222,7 +222,7 @@ const UniversitiesForm = () => {
 
               <div className="p-10 bg-indigo-950 rounded-[3rem] text-white relative overflow-hidden group">
                  <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-400/10 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-indigo-400/20 transition-all duration-700" />
-                 <h4 className="relative z-10 text-lg font-black uppercase tracking-tight mb-4">Governance Notice</h4>
+                 <h4 className="relative z-10 text-lg font-black  tracking-tight mb-4">Governance Notice</h4>
                  <p className="relative z-10 text-sm font-medium leading-relaxed text-indigo-200/80">
                    Changes to top-level university profiles may impact all affiliated collegiate institutions and their mapped academic frameworks.
                  </p>
@@ -237,7 +237,7 @@ const UniversitiesForm = () => {
                   {configLoading ? (
                     <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
                       <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                      <p className="mt-4 text-[10px] font-black text-indigo-400 uppercase tracking-widest">Synchronizing Configuration...</p>
+                      <p className="mt-4 text-[12px] font-black text-indigo-400  tracking-widest">Synchronizing Configuration...</p>
                     </div>
                   ) : (
                     <div className="space-y-10 py-4">
@@ -286,7 +286,7 @@ const UniversitiesForm = () => {
                       </div>
 
                       <div className="py-12 px-10 border-4 border-dashed border-slate-50 rounded-[3rem] text-center">
-                         <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Institutional Configuration Matrix</p>
+                         <p className="text-[12px] font-black text-slate-300  tracking-[0.3em]">Institutional Configuration Matrix</p>
                       </div>
                     </div>
                   )}

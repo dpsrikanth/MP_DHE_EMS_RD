@@ -261,7 +261,7 @@ const Marks = () => {
           </div>
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Marks <span className="text-indigo-600">Management</span></h1>
-            <p className="text-slate-500 font-bold text-sm tracking-widest uppercase flex items-center gap-2">
+            <p className="text-slate-500 font-bold text-sm tracking-widest  flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
               60/40 Split & Approvals
             </p>
@@ -295,14 +295,14 @@ const Marks = () => {
               <button
                 onClick={() => saveSelectedMarks('Draft')}
                 disabled={saving}
-                className="px-6 py-3 bg-white text-indigo-600 border-2 border-indigo-100 rounded-xl font-black text-sm uppercase tracking-widest hover:border-indigo-600 transition-all disabled:opacity-50"
+                className="px-6 py-3 bg-white text-indigo-600 border-2 border-indigo-100 rounded-xl font-black text-sm  tracking-widest hover:border-indigo-600 transition-all disabled:opacity-50"
               >
                 Save Drafts
               </button>
               <button
                 onClick={() => saveSelectedMarks('Pending Approval')}
                 disabled={saving}
-                className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
+                className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-sm  tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
               >
                 Submit to HOD
               </button>
@@ -314,7 +314,7 @@ const Marks = () => {
       {/* Filter Section */}
       <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">College</label>
+          <label className="block text-[13px] font-bold text-slate-500  tracking-widest mb-2">College</label>
           <select
             value={selectedCollege} onChange={(e) => setSelectedCollege(e.target.value)}
             disabled={authUtils.isHOD() || authUtils.isCollegeAdmin() || authUtils.isFaculty()}
@@ -325,7 +325,7 @@ const Marks = () => {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Department</label>
+          <label className="block text-[13px] font-bold text-slate-500  tracking-widest mb-2">Department</label>
           <select
             value={selectedDepartment} onChange={(e) => setSelectedDepartment(e.target.value)}
             disabled={authUtils.isHOD()}
@@ -338,7 +338,7 @@ const Marks = () => {
         {activeTab === 'teacher' && (
           <>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Program</label>
+              <label className="block text-[13px] font-bold text-slate-500  tracking-widest mb-2">Program</label>
               <select
                 value={selectedProgram} onChange={(e) => setSelectedProgram(e.target.value)}
                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
@@ -348,7 +348,7 @@ const Marks = () => {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Academic Year</label>
+              <label className="block text-[13px] font-bold text-slate-500  tracking-widest mb-2">Academic Year</label>
               <select
                 value={selectedAcademicYear} onChange={(e) => setSelectedAcademicYear(e.target.value)}
                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
@@ -358,7 +358,7 @@ const Marks = () => {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Semester</label>
+              <label className="block text-[13px] font-bold text-slate-500  tracking-widest mb-2">Semester</label>
               <select
                 value={selectedSemester} onChange={(e) => setSelectedSemester(e.target.value)}
                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
@@ -368,7 +368,7 @@ const Marks = () => {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Subject</label>
+              <label className="block text-[13px] font-bold text-slate-500  tracking-widest mb-2">Subject</label>
               <select
                 value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)}
                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
@@ -378,7 +378,7 @@ const Marks = () => {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Exam</label>
+              <label className="block text-[13px] font-bold text-slate-500  tracking-widest mb-2">Exam</label>
               <select
                 value={selectedExam} onChange={(e) => setSelectedExam(e.target.value)}
                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 transition-colors"
@@ -399,7 +399,7 @@ const Marks = () => {
         <div className="flex items-end">
           <button
             onClick={fetchData}
-            className="w-full bg-indigo-600 text-white px-8 py-3.5 rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+            className="w-full bg-indigo-600 text-white px-8 py-3.5 rounded-xl font-black text-sm  tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
           >
             <Search size={18} />
             <span>Load Data</span>
@@ -427,7 +427,7 @@ const Marks = () => {
               <Filter size={20} />
             </button>
             <div className="h-10 w-px bg-slate-200 mx-2"></div>
-            <p className="text-sm font-bold text-slate-500 uppercase tracking-tighter">Total {totalItems} Records</p>
+            <p className="text-sm font-bold text-slate-500  tracking-tighter">Total {totalItems} Records</p>
           </div>
         </div>
 
@@ -436,7 +436,7 @@ const Marks = () => {
           {loading ? (
             <div className="py-32 flex flex-col items-center justify-center gap-4">
               <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
-              <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Accessing Secure Records...</p>
+              <p className="text-slate-400 font-bold  tracking-widest text-[13px]">Accessing Secure Records...</p>
             </div>
           ) : error ? (
             <div className="py-24 flex flex-col items-center justify-center text-center px-6">
@@ -445,7 +445,7 @@ const Marks = () => {
               </div>
               <h3 className="text-2xl font-black text-slate-900 mb-2">Sync Connection Failed</h3>
               <p className="text-slate-500 font-medium max-w-md mb-8">{error}</p>
-              <button onClick={fetchData} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-slate-800 transition-all">Retry Synchronization</button>
+              <button onClick={fetchData} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold  tracking-widest text-[13px] hover:bg-slate-800 transition-all">Retry Synchronization</button>
             </div>
           ) : (
             <table className="w-full border-collapse">
@@ -456,7 +456,7 @@ const Marks = () => {
                     field="enrollment_number"
                     currentSort={sortConfig}
                     onSort={handleSort}
-                    className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-100"
+                    className="px-8 py-6 text-[12px] font-black  tracking-[0.2em] border-b border-slate-100"
                     visible={visibleColumns.id}
                   />
                   <SortHeader
@@ -464,23 +464,23 @@ const Marks = () => {
                     field="student_name"
                     currentSort={sortConfig}
                     onSort={handleSort}
-                    className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-100"
+                    className="px-8 py-6 text-[12px] font-black  tracking-[0.2em] border-b border-slate-100"
                     visible={visibleColumns.student}
                   />
                   {activeTab === 'teacher' ? (
                     <>
-                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Internal (40)</th>
-                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">External (60)</th>
-                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Total (100)</th>
+                      <th className="px-8 py-6 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Internal (40)</th>
+                      <th className="px-8 py-6 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">External (60)</th>
+                      <th className="px-8 py-6 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Total (100)</th>
                     </>
                   ) : (
                     <>
-                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Subject</th>
-                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Total Marks</th>
-                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Submitted By</th>
+                      <th className="px-8 py-6 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Subject</th>
+                      <th className="px-8 py-6 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Total Marks</th>
+                      <th className="px-8 py-6 text-left text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Submitted By</th>
                     </>
                   )}
-                  <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Status</th>
+                  <th className="px-8 py-6 text-right text-[13px] font-black text-slate-400  tracking-[0.2em] border-b border-slate-100">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -501,7 +501,7 @@ const Marks = () => {
                           </div>
                           <div>
                             <p className="text-sm font-black text-slate-900">{item.student_name}</p>
-                            <p className="text-xs font-bold text-slate-500">ID: {item.student_id}</p>
+                            <p className="text-[13px] font-bold text-slate-500">ID: {item.student_id}</p>
                           </div>
                         </div>
                       </td>
@@ -549,7 +549,7 @@ const Marks = () => {
 
                     <td className="px-8 py-6 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-3">
-                        <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-md border
+                        <span className={`px-3 py-1 text-[12px] font-black  tracking-wider rounded-md border
                           ${item.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                             item.status === 'Pending Approval' ? 'bg-amber-50 text-amber-600 border-amber-100' :
                               'bg-slate-100 text-slate-500 border-slate-200'}`}>
@@ -593,7 +593,7 @@ const Marks = () => {
             <p className="text-slate-500 font-medium max-w-sm mb-10 leading-relaxed">No marks records found in the system for the current criteria. Start by recording a new evaluation.</p>
             <button
               onClick={() => setSearchQuery('')}
-              className="flex items-center gap-2 px-8 py-4 bg-indigo-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-600 transition-all transform hover:-translate-y-1"
+              className="flex items-center gap-2 px-8 py-4 bg-indigo-500 text-white rounded-2xl font-black text-sm  tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-600 transition-all transform hover:-translate-y-1"
             >
               <Plus size={20} />
               Reset Filters
@@ -608,20 +608,20 @@ const Marks = () => {
           <div className="absolute top-0 right-0 p-8 text-white opacity-10 group-hover:scale-150 transition-transform duration-700">
             <CheckCircle2 size={120} />
           </div>
-          <h4 className="text-xl font-black mb-4 uppercase tracking-tighter">Record Verification</h4>
+          <h4 className="text-xl font-black mb-4  tracking-tighter">Record Verification</h4>
           <p className="text-indigo-100 font-medium mb-8 leading-relaxed max-w-sm">All academic records are signed and synchronized across the institutional blockchain for integrity.</p>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-            <span className="text-xs font-black uppercase tracking-widest">Secure Ledger Active</span>
+            <span className="text-[13px] font-black  tracking-widest">Secure Ledger Active</span>
           </div>
         </div>
         <div className="bg-slate-900 p-10 rounded-[3rem] text-white shadow-2xl shadow-slate-900/20 relative overflow-hidden group border border-slate-800">
           <div className="absolute top-0 right-0 p-8 text-sky-500 opacity-20 group-hover:scale-150 transition-transform duration-700">
             <TrendingUp size={120} />
           </div>
-          <h4 className="text-xl font-black mb-4 uppercase tracking-tighter">Trend Insights</h4>
+          <h4 className="text-xl font-black mb-4  tracking-tighter">Trend Insights</h4>
           <p className="text-slate-400 font-medium mb-8 leading-relaxed max-w-sm">Use our advanced AI engines to predict student outcomes based on historical performance data.</p>
-          <button className="text-sm font-black text-sky-400 hover:text-sky-300 transition-colors uppercase tracking-widest flex items-center gap-2">
+          <button className="text-sm font-black text-sky-400 hover:text-sky-300 transition-colors  tracking-widest flex items-center gap-2">
             Explore Analytics
             <ArrowUpRight size={16} />
           </button>

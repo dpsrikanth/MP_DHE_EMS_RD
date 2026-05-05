@@ -81,7 +81,7 @@ const HODDashboard = () => {
                 </div>
                 <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-2xl border border-slate-200 shadow-sm">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Admin Active</span>
+                    <span className="text-[12px] font-black text-slate-400  tracking-widest leading-none">Admin Active</span>
                 </div>
             </div>
 
@@ -97,7 +97,7 @@ const HODDashboard = () => {
                                 {stat.icon}
                             </div>
                             <div className="text-right">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{stat.label}</p>
+                                <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">{stat.label}</p>
                                 <p className="text-3xl font-black text-slate-900 leading-none tracking-tighter">{stat.value}</p>
                             </div>
                         </div>
@@ -144,14 +144,14 @@ const HODDashboard = () => {
                             <AlertCircle size={20} className="text-amber-500 mt-1" />
                             <div>
                                 <p className="text-sm font-bold text-slate-900">Marks Submission Overdue</p>
-                                <p className="text-xs text-slate-500">Physics 1st Sem Internal marks are still pending from Prof. Sharma.</p>
+                                <p className="text-[13px] text-slate-500">Physics 1st Sem Internal marks are still pending from Prof. Sharma.</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-4 p-4 rounded-2xl bg-sky-50 border border-sky-100">
                             <FileText size={20} className="text-sky-500 mt-1" />
                             <div>
                                 <p className="text-sm font-bold text-slate-900">New Result Template</p>
-                                <p className="text-xs text-slate-500">A new template for marksheets has been uploaded by College Admin.</p>
+                                <p className="text-[13px] text-slate-500">A new template for marksheets has been uploaded by College Admin.</p>
                             </div>
                         </div>
                     </div>

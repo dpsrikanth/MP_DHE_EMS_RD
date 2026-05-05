@@ -212,7 +212,7 @@ const FacultyAssignmentForm = () => {
                         <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2 lg:col-span-2">
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Faculty Member</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Faculty Member</label>
                                     <Select
                                         options={faculties.map(f => ({ value: f.id, label: f.name || f.email || `Teacher ID: ${f.id}` }))}
                                         value={faculties.map(f => ({ value: f.id, label: f.name || f.email || `Teacher ID: ${f.id}` })).find(o => o.value === editingAssignment.teacher_id)}
@@ -223,7 +223,7 @@ const FacultyAssignmentForm = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Academic Year</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Academic Year</label>
                                     <Select
                                         options={academicYears.map(ay => ({ value: ay.id, label: ay.year_name }))}
                                         value={academicYears.map(ay => ({ value: ay.id, label: ay.year_name })).find(o => o.value === editingAssignment.academic_year_id)}
@@ -234,7 +234,7 @@ const FacultyAssignmentForm = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Semester</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Semester</label>
                                     <Select
                                         options={semesters.map(s => ({ value: s.id, label: s.semester_name }))}
                                         value={semesters.map(s => ({ value: s.id, label: s.semester_name })).find(o => o.value === editingAssignment.semester_id)}
@@ -245,7 +245,7 @@ const FacultyAssignmentForm = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Subject</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Subject</label>
                                     <Select
                                         options={subjects.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}` }))}
                                         value={subjects.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}` })).find(o => o.value === editingAssignment.subject_id)}
@@ -256,7 +256,7 @@ const FacultyAssignmentForm = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-500 ml-1">Section</label>
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Section</label>
                                     <input
                                         type="text"
                                         placeholder="e.g. A, B, C"

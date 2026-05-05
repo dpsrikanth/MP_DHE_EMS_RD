@@ -50,7 +50,7 @@ const ResetPassword = () => {
             </div>
             <div>
               <h1 className="text-3xl font-black text-white tracking-tight italic">Intense</h1>
-              <p className="text-sky-400/80 font-bold text-sm tracking-widest uppercase">Institution Portal</p>
+              <p className="text-sky-400/80 font-bold text-sm tracking-widest ">Institution Portal</p>
             </div>
           </div>
           <h2 className="text-4xl xl:text-5xl font-black text-white leading-[1.1] mb-6 tracking-tight">
@@ -90,7 +90,7 @@ const ResetPassword = () => {
             )}
 
             <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">New Password</label>
+              <label className="text-[13px] font-black text-slate-400  tracking-widest ml-1">New Password</label>
               <div className="relative group">
                 <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
                   <Lock size={18} />
@@ -114,7 +114,7 @@ const ResetPassword = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Confirm Password</label>
+              <label className="text-[13px] font-black text-slate-400  tracking-widest ml-1">Confirm Password</label>
               <div className="relative group">
                 <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
                   <Lock size={18} />
@@ -140,7 +140,7 @@ const ResetPassword = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full group relative overflow-hidden bg-slate-900 text-white rounded-[1.5rem] py-4 font-black text-sm uppercase tracking-[0.15em] shadow-xl shadow-slate-900/10 hover:shadow-sky-500/20 active:scale-[0.98] transition-all disabled:opacity-70 mt-4"
+              className="w-full group relative overflow-hidden bg-slate-900 text-white rounded-[1.5rem] py-4 font-black text-sm  tracking-[0.15em] shadow-xl shadow-slate-900/10 hover:shadow-sky-500/20 active:scale-[0.98] transition-all disabled:opacity-70 mt-4"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-sky-400 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative flex items-center justify-center gap-2">
@@ -158,7 +158,7 @@ const ResetPassword = () => {
 
           <div className="mt-8 xl:mt-12 pt-6 xl:pt-8 border-t border-slate-50 flex items-center justify-center gap-2 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
             <CheckCircle2 size={16} className="text-sky-500" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Secured by Intense-Cloud Architecture</span>
+            <span className="text-[12px] font-black  tracking-widest text-slate-500">Secured by Intense-Cloud Architecture</span>
           </div>
         </div>
       </div>

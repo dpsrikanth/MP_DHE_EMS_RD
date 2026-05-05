@@ -192,7 +192,7 @@ const ExternalMarksEntry = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 text-indigo-500">
         <Loader2 className="w-12 h-12 animate-spin" />
-        <p className="font-black uppercase tracking-widest text-xs">Initializing Evaluation Space...</p>
+        <p className="font-black  tracking-widest text-[13px]">Initializing Evaluation Space...</p>
       </div>
     );
   }
@@ -206,7 +206,7 @@ const ExternalMarksEntry = () => {
           </div>
           <div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none italic">External Portal</h1>
-            <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-2">Subject-Wise Evaluation Hub</p>
+            <p className="text-[12px] text-slate-400 font-black  tracking-[0.2em] mt-2">Subject-Wise Evaluation Hub</p>
           </div>
         </div>
 
@@ -227,7 +227,7 @@ const ExternalMarksEntry = () => {
           <div key={examIdx} className="space-y-8">
             <div className="flex items-center gap-4 px-2">
               <div className="h-px flex-1 bg-slate-100"></div>
-              <h2 className="text-sm font-black text-slate-400 uppercase tracking-[0.3em] italic">{exam.exam_name}</h2>
+              <h2 className="text-sm font-black text-slate-400  tracking-[0.3em] italic">{exam.exam_name}</h2>
               <div className="h-px flex-1 bg-slate-100"></div>
             </div>
 
@@ -251,13 +251,13 @@ const ExternalMarksEntry = () => {
                           <h3 className="text-2xl font-black tracking-tight">{subject.subject_name}</h3>
                         </div>
                         <div className="flex items-center gap-4">
-                          <span className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border ${
+                          <span className={`text-[12px] font-black  tracking-widest px-4 py-1.5 rounded-full border ${
                             subject.assignment_status === 'Submitted' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20' : 
                             'bg-amber-500/20 text-amber-400 border-amber-500/20'
                           }`}>
                             {subject.assignment_status === 'Evaluated' ? 'Draft Saved' : subject.assignment_status}
                           </span>
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                          <span className="text-[12px] font-black text-slate-500  tracking-widest">
                             {filteredStudents.length} Students Registered
                           </span>
                         </div>
@@ -268,7 +268,7 @@ const ExternalMarksEntry = () => {
                           <button 
                             onClick={() => handleUnlockSubject(subject, exam.exam_name)}
                             disabled={submitting}
-                            className="h-14 px-8 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-amber-900/20 flex items-center gap-3 transition-all disabled:opacity-30"
+                            className="h-14 px-8 bg-amber-500 hover:bg-amber-600 text-white text-[12px] font-black  tracking-[0.2em] rounded-2xl shadow-xl shadow-amber-900/20 flex items-center gap-3 transition-all disabled:opacity-30"
                           >
                             <Unlock size={16} /> Enable / Unlock
                           </button>
@@ -277,14 +277,14 @@ const ExternalMarksEntry = () => {
                             <button 
                               onClick={() => handleSaveSubjectDraft(subject, exam.exam_name)}
                               disabled={submitting || subject.assignment_status === 'Submitted'}
-                              className="h-14 px-8 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl border border-white/10 flex items-center gap-3 transition-all disabled:opacity-30"
+                              className="h-14 px-8 bg-white/5 hover:bg-white/10 text-white text-[12px] font-black  tracking-[0.2em] rounded-2xl border border-white/10 flex items-center gap-3 transition-all disabled:opacity-30"
                             >
                               <Save size={16} /> Save Draft
                             </button>
                             <button 
                               onClick={() => handleFinalizeSubject(subject, exam.exam_name)}
                               disabled={submitting || subject.assignment_status === 'Submitted'}
-                              className="h-14 px-8 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-indigo-900/40 flex items-center gap-3 transition-all disabled:opacity-30"
+                              className="h-14 px-8 bg-indigo-600 hover:bg-indigo-700 text-white text-[12px] font-black  tracking-[0.2em] rounded-2xl shadow-xl shadow-indigo-900/40 flex items-center gap-3 transition-all disabled:opacity-30"
                             >
                               <Send size={16} /> Finalize Subject
                             </button>
@@ -297,10 +297,10 @@ const ExternalMarksEntry = () => {
                       <table className="w-full text-left">
                         <thead>
                           <tr className="bg-slate-50/50 border-b">
-                            <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest w-48">Roll Number</th>
-                            <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student Information</th>
-                            <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-64">External Marks (Max: 70)</th>
-                            <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-40">Status</th>
+                            <th className="px-10 py-5 text-[13px] font-black text-slate-400  tracking-widest w-48">Roll Number</th>
+                            <th className="px-10 py-5 text-[13px] font-black text-slate-400  tracking-widest">Student Information</th>
+                            <th className="px-10 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center w-64">External Marks (Max: 70)</th>
+                            <th className="px-10 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center w-40">Status</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
@@ -316,7 +316,7 @@ const ExternalMarksEntry = () => {
                                 </td>
                                 <td className="px-10 py-5">
                                   <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 font-bold text-xs uppercase">
+                                    <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 font-bold text-[13px] ">
                                       {item.student_name.split(' ').map(n => n[0]).join('')}
                                     </div>
                                     <p className="font-black text-slate-700 text-sm tracking-tight">{item.student_name}</p>
@@ -338,18 +338,18 @@ const ExternalMarksEntry = () => {
                                       placeholder="00"
                                       className="w-24 h-11 bg-white border-2 border-slate-100 rounded-xl px-4 text-center text-lg font-black text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all disabled:opacity-30"
                                     />
-                                    <p className="text-[8px] font-black text-slate-300 mt-1 uppercase tracking-tighter">Subject Pass: 28</p>
+                                    <p className="text-[8px] font-black text-slate-300 mt-1  tracking-tighter">Subject Pass: 28</p>
                                   </div>
                                 </td>
                                 <td className="px-10 py-5 text-center">
                                   {modifiedMarks[key] !== "" ? (
-                                    <div className={`inline-flex items-center gap-2 text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider ${
+                                    <div className={`inline-flex items-center gap-2 text-[12px] font-black px-3 py-1.5 rounded-full  tracking-wider ${
                                       isPass ? 'text-emerald-500 bg-emerald-50' : 'text-rose-500 bg-rose-50'
                                     }`}>
                                       {isPass ? (<><CheckCircle2 size={12} /> Pass</>) : (<><AlertCircle size={12} /> Fail</>)}
                                     </div>
                                   ) : (
-                                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-wider">Pending</span>
+                                    <span className="text-[12px] font-black text-slate-300  tracking-wider">Pending</span>
                                   )}
                                 </td>
                               </tr>
@@ -370,7 +370,7 @@ const ExternalMarksEntry = () => {
             <AlertCircle size={48} />
           </div>
           <div className="space-y-3">
-            <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter italic">Awaiting Assignments</h3>
+            <h3 className="text-3xl font-black text-slate-900  tracking-tighter italic">Awaiting Assignments</h3>
             <p className="text-slate-400 font-medium max-w-md mx-auto">Your evaluation dashboard will populate automatically once the University Administrator assigns exams to your profile.</p>
           </div>
         </div>

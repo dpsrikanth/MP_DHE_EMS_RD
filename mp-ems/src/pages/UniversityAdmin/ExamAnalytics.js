@@ -134,7 +134,7 @@ const ExamAnalytics = () => {
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-3xl font-bold text-indigo-600">{passRate}%</span>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Passing Rate</span>
+              <span className="text-[12px] text-slate-400 font-bold  tracking-widest">Passing Rate</span>
             </div>
           </div>
 
@@ -154,11 +154,11 @@ const ExamAnalytics = () => {
 
             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100 font-medium">
               <div className="flex flex-col">
-                <span className="text-xs text-slate-400 uppercase tracking-wider">Successful Candidates</span>
+                <span className="text-[13px] text-slate-400  tracking-wider">Successful Candidates</span>
                 <span className="text-xl text-slate-800">{stats.total_passed}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-xs text-slate-400 uppercase tracking-wider">Unsuccessful Candidates</span>
+                <span className="text-[13px] text-slate-400  tracking-wider">Unsuccessful Candidates</span>
                 <span className="text-xl text-slate-800">{stats.total_failed}</span>
               </div>
             </div>

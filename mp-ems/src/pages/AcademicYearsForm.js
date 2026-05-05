@@ -83,7 +83,7 @@ const AcademicYearsForm = () => {
             </div>
           </div>
           <div className="form-header__right">
-              <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest bg-sky-50 px-4 py-2 rounded-xl border border-sky-100 shadow-sm">
+              <span className="text-[12px] font-black text-sky-400  tracking-widest bg-sky-50 px-4 py-2 rounded-xl border border-sky-100 shadow-sm">
                 Chronos Module v1.0
               </span>
           </div>
@@ -102,7 +102,7 @@ const AcademicYearsForm = () => {
                     {isEditing && (
                       <div className="p-8 bg-slate-50 border-2 border-slate-100 rounded-[2.5rem] flex items-center justify-between shadow-inner">
                          <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Chronological Hash</p>
+                            <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-2">Chronological Hash</p>
                             <p className="text-sm font-black text-slate-900 font-mono tracking-tighter">SEC-CYCLE-{id.padStart(3, '0')}</p>
                          </div>
                          <div className="w-12 h-12 bg-white rounded-2xl border border-slate-200 flex items-center justify-center text-slate-300 shadow-sm"><Hash size={20} /></div>
@@ -126,7 +126,7 @@ const AcademicYearsForm = () => {
                       <div className="mt-4 p-4 bg-sky-50 border border-sky-100 rounded-2xl flex items-start gap-3">
                          <div className="w-6 h-6 bg-white rounded-lg flex items-center justify-center text-sky-600 shadow-sm mt-0.5"><Calendar size={12} /></div>
                          <p className="text-[11px] font-medium text-sky-700 leading-relaxed">
-                            <span className="font-extrabold uppercase">Standard Format:</span> YYYY-YYYY (e.g., 2023-2024). This identifier represents the full academic lifecycle across all mapped semesters.
+                            <span className="font-extrabold ">Standard Format:</span> YYYY-YYYY (e.g., 2023-2024). This identifier represents the full academic lifecycle across all mapped semesters.
                          </p>
                       </div>
                     </div>
@@ -148,7 +148,7 @@ const AcademicYearsForm = () => {
                     </div>
 
                     <div className="relative z-10 pt-10 border-t border-white/5 mt-10">
-                       <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.2em] text-sky-400 opacity-60">
+                       <div className="flex items-center gap-4 text-[12px] font-black  tracking-[0.2em] text-sky-400 opacity-60">
                           <span className="w-1 h-1 bg-sky-400 rounded-full"></span>
                           Chronological Consistency Control active
                        </div>

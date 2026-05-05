@@ -113,7 +113,7 @@ const UsersForm = () => {
           </div>
           <div className="form-header__right">
              <div className="flex items-center gap-3">
-               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+               <span className="text-[12px] font-black text-slate-400  tracking-[0.2em] bg-white px-3 py-1.5 rounded-lg border border-slate-200">
                  {isEditing ? `User ID: #${id}` : 'New Profile'}
                </span>
              </div>
@@ -185,7 +185,7 @@ const UsersForm = () => {
                       <option value="">Global Administration / Select University</option>
                       {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                     </select>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2">Determines top-level data visibility</p>
+                    <p className="text-[12px] text-slate-400 font-bold  tracking-widest mt-2">Determines top-level data visibility</p>
                   </div>
                   <div className="form-field">
                     <label className="form-label">Affiliated College (Optional)</label>
@@ -193,15 +193,15 @@ const UsersForm = () => {
                       <option value="">None / Specific College Placement</option>
                       {colleges.filter(c => !form.university_id || c.university_id.toString() === form.university_id.toString()).map(c => <option key={c.id} value={c.id}>{c.college_name}</option>)}
                     </select>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2">Narrows access to institutional data</p>
+                    <p className="text-[12px] text-slate-400 font-bold  tracking-widest mt-2">Narrows access to institutional data</p>
                   </div>
                 </div>
               </div>
 
               <div className="p-8 bg-indigo-50 border border-indigo-100 rounded-[2rem] space-y-4">
                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm"><ShieldCheck size={24} /></div>
-                 <h4 className="text-sm font-black text-indigo-900 uppercase tracking-tight">Access Control Warning</h4>
-                 <p className="text-xs text-indigo-600/80 leading-relaxed font-bold">
+                 <h4 className="text-sm font-black text-indigo-900  tracking-tight">Access Control Warning</h4>
+                 <p className="text-[13px] text-indigo-600/80 leading-relaxed font-bold">
                    Changing organizational mapping will immediately alter this user's data scope. Ensure roles and institutions are correctly paired to prevent security breaches.
                  </p>
               </div>

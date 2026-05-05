@@ -169,11 +169,11 @@ const MarksApproval = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-y border-slate-100">
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Subject ID</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Semester / Sec</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Status</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Last Updated</th>
-                                <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase">Actions</th>
+                                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 ">Subject ID</th>
+                                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 ">Semester / Sec</th>
+                                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 ">Status</th>
+                                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 ">Last Updated</th>
+                                <th className="px-6 py-4 text-right text-[13px] font-bold text-slate-500 ">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -186,7 +186,7 @@ const MarksApproval = () => {
                                         {wf.semester || `Sem ${wf.semester_id}`} <span className="text-slate-400">|</span> Sec {wf.section}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase ${getStatusStyle(getDisplayStatus(wf.status))}`}>
+                                        <span className={`text-[13px] font-bold px-3 py-1 rounded-full  ${getStatusStyle(getDisplayStatus(wf.status))}`}>
                                             {getDisplayStatus(wf.status)}
                                         </span>
                                     </td>
@@ -200,7 +200,7 @@ const MarksApproval = () => {
                                             </span>
                                         ) : wf.status === 'Approved' && isHOD ? (
                                             // HOD: already approved — show badge only, no action needed
-                                            <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-bold border border-green-200">
+                                            <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-[13px] font-bold border border-green-200">
                                                 <CheckCircle2 size={12} /> Approved
                                             </span>
                                         ) : (
@@ -214,7 +214,7 @@ const MarksApproval = () => {
                                                                 academic_year_id: wf.academic_year_id
                                                             }
                                                         })}
-                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors"
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-[13px] font-bold transition-colors"
                                                     >
                                                         <Eye size={12} /> Verify
                                                     </button>
@@ -224,7 +224,7 @@ const MarksApproval = () => {
                                                 {isHOD && wf.status === 'Submitted' && (
                                                     <button
                                                         onClick={() => updateStatus(wf.id, 'Pending')}
-                                                        className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold transition-colors"
+                                                        className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-[13px] font-bold transition-colors"
                                                     >
                                                         Reject
                                                     </button>
@@ -239,7 +239,7 @@ const MarksApproval = () => {
                                                                 academic_year_id: wf.academic_year_id
                                                             }
                                                         })}
-                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors"
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-[13px] font-bold transition-colors"
                                                     >
                                                         <Eye size={12} /> Review
                                                     </button>
@@ -249,7 +249,7 @@ const MarksApproval = () => {
                                                 {isCollegeAdmin && wf.status === 'Approved' && (
                                                     <button
                                                         onClick={() => updateStatus(wf.id, 'Locked')}
-                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-800 text-white hover:bg-slate-900 rounded-lg text-xs font-bold shadow-md shadow-slate-900/20 transition-all"
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-800 text-white hover:bg-slate-900 rounded-lg text-[13px] font-bold shadow-md shadow-slate-900/20 transition-all"
                                                     >
                                                         <Lock size={12} /> Lock Marks
                                                     </button>
@@ -264,13 +264,13 @@ const MarksApproval = () => {
                                     <td colSpan="5" className="text-center py-12 text-slate-500">
                                         <div className="flex flex-col items-center gap-2">
                                             <CheckCircle2 size={32} className="text-slate-300" />
-                                            <p className="text-sm font-bold uppercase tracking-widest mt-2">
+                                            <p className="text-sm font-bold  tracking-widest mt-2">
                                                 {searchQuery ? "No matching workflows found" : "No workflows found"}
                                             </p>
                                             {searchQuery && (
                                                 <button 
                                                     onClick={() => setSearchQuery('')}
-                                                    className="text-xs font-black text-indigo-600 hover:text-indigo-700 underline uppercase tracking-tighter mt-2"
+                                                    className="text-[13px] font-black text-indigo-600 hover:text-indigo-700 underline  tracking-tighter mt-2"
                                                 >
                                                     Clear Search
                                                 </button>

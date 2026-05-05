@@ -101,15 +101,15 @@ const FacultyDashboard = () => {
             {/* Quick Stats or Info */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Total Assignments</p>
+                    <p className="text-[13px] font-black text-slate-400  tracking-widest mb-1">Total Assignments</p>
                     <p className="text-3xl font-black text-slate-900">{assignedSubjects.length}</p>
                 </div>
                 <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-amber-600">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Pending Submissions</p>
+                    <p className="text-[13px] font-black text-slate-400  tracking-widest mb-1">Pending Submissions</p>
                     <p className="text-3xl font-black">{assignedSubjects.filter(a => (workflowStatus[`${a.subject_id}_${a.section}`] || 'Pending') === 'Pending').length}</p>
                 </div>
                 <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-emerald-600">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Completed / Locked</p>
+                    <p className="text-[13px] font-black text-slate-400  tracking-widest mb-1">Completed / Locked</p>
                     <p className="text-3xl font-black">{assignedSubjects.filter(a => workflowStatus[`${a.subject_id}_${a.section}`] === 'Locked').length}</p>
                 </div>
             </div>
@@ -148,7 +148,7 @@ const FacultyDashboard = () => {
                         {searchQuery && (
                             <button 
                                 onClick={() => setSearchQuery('')}
-                                className="mt-6 px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/20"
+                                className="mt-6 px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold text-[13px]  tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/20"
                             >
                                 Clear All Searches
                             </button>
@@ -165,17 +165,17 @@ const FacultyDashboard = () => {
                                     <div className={`absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 rounded-full opacity-5 ${statusConfig.bg}`}></div>
                                     
                                     <div className="flex justify-between items-start mb-6">
-                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl ${statusConfig.bg} ${statusConfig.color} border ${statusConfig.border}`}>
+                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-black  tracking-widest rounded-xl ${statusConfig.bg} ${statusConfig.color} border ${statusConfig.border}`}>
                                             <StatusIcon size={14} />
                                             {statusConfig.label}
                                         </span>
-                                        <div className="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-lg uppercase tracking-widest">
+                                        <div className="text-[12px] font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-lg  tracking-widest">
                                             SEC: {item.section}
                                         </div>
                                     </div>
 
                                     <div className="space-y-2 mb-6">
-                                        <div className="text-xs font-bold text-indigo-500 uppercase tracking-wider">{item.subject_code}</div>
+                                        <div className="text-[13px] font-bold text-indigo-500  tracking-wider">{item.subject_code}</div>
                                         <h3 className="text-xl font-black text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors line-clamp-2 min-h-[3.5rem]">{item.subject_name}</h3>
                                     </div>
 

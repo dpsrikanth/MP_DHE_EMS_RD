@@ -12,7 +12,7 @@ const Guidelines = () => {
             </div>
             <div>
               <h1 className="text-2xl font-black text-slate-800 tracking-tight">Paper Setter <span className="text-sky-500">Portal</span></h1>
-              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Guidelines</p>
+              <p className="text-slate-400 text-[12px] font-bold  tracking-widest">Guidelines</p>
             </div>
           </div>
         </div>
@@ -29,7 +29,7 @@ const Guidelines = () => {
               
               <div className="space-y-8 max-w-2xl">
                 <section className="space-y-4">
-                  <h3 className="text-sm font-black text-sky-600 uppercase tracking-[0.2em] flex items-center gap-2">General Instructions</h3>
+                  <h3 className="text-sm font-black text-sky-600  tracking-[0.2em] flex items-center gap-2">General Instructions</h3>
                   <ul className="space-y-3">
                     {[
                       'Each subject requires minimum 3 question paper sets (A, B, C)',
@@ -46,7 +46,7 @@ const Guidelines = () => {
                 </section>
 
                 <section className="space-y-4">
-                  <h3 className="text-sm font-black text-emerald-600 uppercase tracking-[0.2em] flex items-center gap-2">Format Requirements</h3>
+                  <h3 className="text-sm font-black text-emerald-600  tracking-[0.2em] flex items-center gap-2">Format Requirements</h3>
                   <ul className="space-y-3">
                     {[
                       'Use official university letterhead',
@@ -63,7 +63,7 @@ const Guidelines = () => {
                 </section>
 
                 <section className="space-y-4">
-                  <h3 className="text-sm font-black text-purple-600 uppercase tracking-[0.2em] flex items-center gap-2">Quality Standards</h3>
+                  <h3 className="text-sm font-black text-purple-600  tracking-[0.2em] flex items-center gap-2">Quality Standards</h3>
                   <ul className="space-y-3">
                     {[
                       'Questions should cover entire syllabus appropriately',
@@ -84,7 +84,7 @@ const Guidelines = () => {
         </div>
       </div>
       
-      <footer className="pt-12 pb-8 text-center text-slate-400 font-bold text-[10px] uppercase tracking-widest">
+      <footer className="pt-12 pb-8 text-center text-slate-400 font-bold text-[12px]  tracking-widest">
         {new Date().getFullYear()} Secure EMS Portal • End-to-End Encryption Enabled
       </footer>
     </div>

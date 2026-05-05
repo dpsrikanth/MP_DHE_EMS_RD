@@ -104,19 +104,19 @@ const InfrastructureAnalytics = () => {
       {!loading && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Capacity</p>
+            <p className="text-[12px] font-black text-slate-400  tracking-widest mb-1">Total Capacity</p>
             <p className="text-xl font-black text-slate-800">{stats.totalSeats.toLocaleString()}</p>
           </div>
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Students</p>
+            <p className="text-[12px] font-black text-slate-400  tracking-widest mb-1">Total Students</p>
             <p className="text-xl font-black text-slate-800">{stats.totalStudents.toLocaleString()}</p>
           </div>
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Overall Shortage</p>
+            <p className="text-[12px] font-black text-slate-400  tracking-widest mb-1">Overall Shortage</p>
             <p className="text-xl font-black text-rose-600">{stats.shortages.toLocaleString()}</p>
           </div>
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
+            <p className="text-[12px] font-black text-slate-400  tracking-widest mb-1">Status</p>
             <p className="text-xl font-black text-emerald-600">{stats.shortages === 0 ? 'Optimal' : 'Shortage'}</p>
           </div>
         </div>
@@ -138,7 +138,7 @@ const InfrastructureAnalytics = () => {
                   <h3 className="font-semibold text-slate-800 truncate" title={item.college_name}>
                     {item.college_name}
                   </h3>
-                  <span className="text-xs text-slate-400 uppercase font-medium tracking-wider">Institution ID: {item.id}</span>
+                  <span className="text-[13px] text-slate-400  font-medium tracking-wider">Institution ID: {item.id}</span>
                 </div>
                 {isDeficit && (
                   <div className="bg-rose-50 text-rose-600 p-2 rounded-lg" title="Seat Deficit Detected">
@@ -159,7 +159,7 @@ const InfrastructureAnalytics = () => {
                   <div className="flex justify-between items-center px-1">
                     <div className="flex items-center gap-2 text-slate-600">
                       <Building2 size={16} />
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Total Infrastructure</span>
+                      <span className="text-[13px] font-black  tracking-widest text-slate-400">Total Infrastructure</span>
                     </div>
                     <span className="font-bold text-slate-800">{item.approved_capacity} seats</span>
                   </div>
@@ -168,7 +168,7 @@ const InfrastructureAnalytics = () => {
                     <div className="space-y-1.5 p-2 bg-slate-50/50 rounded-xl border border-slate-200/60">
                       {(expandedIds[item.id] ? item.approved_halls_details : item.approved_halls_details.slice(0, 3)).map((h, idx) => (
                         <div key={idx} className="flex items-center justify-between px-3 py-1.5 bg-white rounded-lg border border-slate-100 shadow-sm animate-in fade-in duration-300">
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{h.code}</span>
+                          <span className="text-[12px] font-black text-slate-500  tracking-wider">{h.code}</span>
                           <span className="text-[11px] font-black text-slate-800 tabular-nums">{h.capacity}</span>
                         </div>
                       ))}
@@ -176,7 +176,7 @@ const InfrastructureAnalytics = () => {
                       {item.approved_halls_details.length > 3 && (
                         <button
                           onClick={() => toggleExpansion(item.id)}
-                          className="w-full py-1.5 text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5"
+                          className="w-full py-1.5 text-[12px] font-black text-blue-600 hover:text-blue-700  tracking-widest transition-colors flex items-center justify-center gap-1.5"
                         >
                           {expandedIds[item.id] ? (
                             <>Show Less <ChevronUp size={12} /></>
@@ -190,7 +190,7 @@ const InfrastructureAnalytics = () => {
                 </div>
 
                 <div className="pt-2">
-                  <div className="flex justify-between text-xs mb-1">
+                  <div className="flex justify-between text-[13px] mb-1">
                     <span className="text-slate-500 font-medium">Capacity Coverage</span>
                     <span className={isDeficit ? 'text-rose-600 font-bold' : 'text-blue-600 font-bold'}>
                       {occupancy}%
@@ -207,7 +207,7 @@ const InfrastructureAnalytics = () => {
                 {isDeficit && (
                   <div className="mt-4 p-3 bg-rose-50 border border-rose-100 rounded-lg flex gap-2 items-center">
                     <TrendingUp className="text-rose-500" size={16} />
-                    <span className="text-xs text-rose-700 font-medium">
+                    <span className="text-[13px] text-rose-700 font-medium">
                       Requires {item.total_students - item.approved_capacity} additional seats
                     </span>
                   </div>

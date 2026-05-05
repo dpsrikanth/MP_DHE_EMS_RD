@@ -88,7 +88,7 @@ const RolesForm = () => {
           </div>
           <div className="form-header__right">
              <div className="flex items-center gap-3">
-               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+               <span className="text-[12px] font-black text-slate-400  tracking-[0.2em] bg-white px-3 py-1.5 rounded-lg border border-slate-200">
                  System Profile
                </span>
              </div>
@@ -116,14 +116,14 @@ const RolesForm = () => {
                         placeholder="e.g. Dean, Registrar, HOD" 
                       />
                     </div>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2">Maximum clarity for administrative logging</p>
+                    <p className="text-[12px] text-slate-400 font-bold  tracking-widest mt-2">Maximum clarity for administrative logging</p>
                   </div>
                 </div>
 
                 <div className="p-8 bg-amber-50 border border-amber-100 rounded-[2rem] space-y-4">
                   <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-amber-600 shadow-sm"><ShieldCheck size={24} /></div>
-                  <h4 className="text-sm font-black text-amber-900 uppercase tracking-tight">Security Implications</h4>
-                  <p className="text-xs text-amber-600/80 leading-relaxed font-bold">
+                  <h4 className="text-sm font-black text-amber-900  tracking-tight">Security Implications</h4>
+                  <p className="text-[13px] text-amber-600/80 leading-relaxed font-bold">
                     Roles act as the root for all user permissions. Removing or renaming roles could impact access for hundreds of users simultaneously.
                   </p>
                 </div>
@@ -138,15 +138,15 @@ const RolesForm = () => {
                           <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white"><ShieldCheck size={20} /></div>
                           <div>
                              <h4 className="text-lg font-black tracking-tight">{form.role_name || 'Designation Pending'}</h4>
-                             <p className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest">Global Administrative Role</p>
+                             <p className="text-[12px] text-indigo-300 font-bold  tracking-widest">Global Administrative Role</p>
                           </div>
                        </div>
                        <div className="space-y-2 border-t border-slate-800 pt-6">
-                          <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                          <div className="flex items-center justify-between text-[11px] font-bold text-slate-400  tracking-widest">
                              <span>Default Status</span>
                              <span className="text-emerald-400">Authorized</span>
                           </div>
-                          <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                          <div className="flex items-center justify-between text-[11px] font-bold text-slate-400  tracking-widest">
                              <span>Inheritance</span>
                              <span className="text-slate-500">None</span>
                           </div>

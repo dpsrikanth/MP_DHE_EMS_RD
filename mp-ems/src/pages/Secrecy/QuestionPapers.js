@@ -162,7 +162,7 @@ const SecrecyQuestionPapers = () => {
     return (
       <div className="flex flex-col items-center justify-center p-20 space-y-4 min-h-[60vh]">
         <div className="w-12 h-12 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
-        <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Loading Question Papers...</p>
+        <p className="text-slate-400 font-black  tracking-widest text-[13px]">Loading Question Papers...</p>
       </div>
     );
   }
@@ -179,7 +179,7 @@ const SecrecyQuestionPapers = () => {
         </div>
         {/* Exam Filter */}
         <div className="flex items-center gap-2">
-          <label className="text-xs font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Exam</label>
+          <label className="text-[13px] font-black text-slate-400  tracking-widest whitespace-nowrap">Exam</label>
           <select
             value={examFilter}
             onChange={(e) => setExamFilter(e.target.value)}
@@ -210,13 +210,13 @@ const SecrecyQuestionPapers = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-black text-slate-800">{paper.subject_name} — Set {paper.set_name}</h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                    <p className="text-[13px] font-bold text-slate-400  tracking-widest mt-0.5">
                       Exam: {paper.exam_name || `EX00${paper.exam_id}`}
                       {paper.exam_type_name && <span className="ml-2 px-2 py-0.5 bg-sky-50 text-sky-600 rounded-md">{paper.exam_type_name}</span>}
                       {' '}| Semester: {paper.semester || 'N/A'}
                     </p>
                   </div>
-                  <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest ${
+                  <span className={`px-3 py-1 rounded-lg text-[13px] font-black  tracking-widest ${
                     paper.status === 'Finalized' ? 'bg-emerald-100 text-emerald-700' : 
                     paper.status === 'Uploaded' ? 'bg-orange-100 text-orange-700' : 
                     paper.status === 'Rejected' ? 'bg-rose-100 text-rose-700' :
@@ -233,25 +233,25 @@ const SecrecyQuestionPapers = () => {
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-y border-slate-50">
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Paper Setter</p>
+                    <p className="text-[12px] font-black text-slate-400 ">Paper Setter</p>
                     <p className="font-bold text-slate-700 text-sm mt-0.5">{paper.setter_name || 'Unassigned'}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Question Sets</p>
+                    <p className="text-[12px] font-black text-slate-400 ">Question Sets</p>
                     <p className="font-bold text-slate-700 text-sm mt-0.5">{paper.paper_id ? 1 : 0}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Submitted Date</p>
+                    <p className="text-[12px] font-black text-slate-400 ">Submitted Date</p>
                     <p className="font-bold text-slate-700 text-sm mt-0.5">{paper.updated_at ? formatDate(paper.updated_at) : 'N/A'}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Exam Date</p>
+                    <p className="text-[12px] font-black text-slate-400 ">Exam Date</p>
                     <p className="font-bold text-slate-700 text-sm mt-0.5">{paper.exam_date && !isNaN(new Date(paper.exam_date)) ? formatDate(paper.exam_date) : 'TBD'}</p>
                   </div>
                 </div>
 
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <p className="text-xs font-bold text-slate-400 uppercase mb-1">Feedback:</p>
+                  <p className="text-[13px] font-bold text-slate-400  mb-1">Feedback:</p>
                   <p className="text-sm text-slate-600 font-medium italic">{paper.feedback || 'None provided'}</p>
                 </div>
 
@@ -260,19 +260,19 @@ const SecrecyQuestionPapers = () => {
                     <>
                       <button 
                         onClick={() => handleUpdateStatus(paper.assignment_id, 'Finalized')}
-                        className="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2 px-6 rounded-lg text-xs uppercase tracking-widest transition-all"
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2 px-6 rounded-lg text-[13px]  tracking-widest transition-all"
                       >
                         Approve
                       </button>
                       <button 
                          onClick={() => handleUpdateStatus(paper.assignment_id, 'Rejected', 'Insufficient quality')}
-                         className="bg-rose-500 hover:bg-rose-600 text-white font-black py-2 px-6 rounded-lg text-xs uppercase tracking-widest transition-all"
+                         className="bg-rose-500 hover:bg-rose-600 text-white font-black py-2 px-6 rounded-lg text-[13px]  tracking-widest transition-all"
                       >
                         Reject
                       </button>
                       <button 
                          onClick={() => handleUpdateStatus(paper.assignment_id, 'Revision', 'Needs more variety')}
-                         className="bg-amber-500 hover:bg-amber-600 text-white font-black py-2 px-6 rounded-lg text-xs uppercase tracking-widest transition-all"
+                         className="bg-amber-500 hover:bg-amber-600 text-white font-black py-2 px-6 rounded-lg text-[13px]  tracking-widest transition-all"
                       >
                         Request Revision
                       </button>
@@ -284,7 +284,7 @@ const SecrecyQuestionPapers = () => {
                         setSelectedPaperForSets(paper);
                         setShowSelectSetsModal(true);
                       }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-black py-2.5 px-6 rounded-lg text-xs uppercase tracking-widest transition-all shadow-md shadow-blue-500/20"
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-black py-2.5 px-6 rounded-lg text-[13px]  tracking-widest transition-all shadow-md shadow-blue-500/20"
                     >
                       Select Sets for Printing
                     </button>
@@ -317,13 +317,13 @@ const SecrecyQuestionPapers = () => {
                  <Search size={48} />
              </div>
              <div className="space-y-1">
-                <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">
+                <p className="text-slate-400 font-bold  tracking-widest text-[13px]">
                     {searchQuery || examFilter ? "No matching records found" : "No question papers found"}
                 </p>
                 {(searchQuery || examFilter) && (
                     <button 
                         onClick={() => { setSearchQuery(''); setExamFilter(''); }}
-                        className="text-xs font-black text-sky-500 hover:text-sky-600 underline uppercase tracking-widest"
+                        className="text-[13px] font-black text-sky-500 hover:text-sky-600 underline  tracking-widest"
                     >
                         Reset All Filters
                     </button>
@@ -343,30 +343,30 @@ const SecrecyQuestionPapers = () => {
              
              <div className="p-8 space-y-6">
                 <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100/50">
-                   <h4 className="text-xs font-black text-blue-600 uppercase mb-4">Exam Details</h4>
+                   <h4 className="text-[13px] font-black text-blue-600  mb-4">Exam Details</h4>
                    <div className="grid grid-cols-2 gap-y-4 gap-x-10">
                      <div>
-                       <span className="text-xs font-bold text-slate-400">Subject: </span>
+                       <span className="text-[13px] font-bold text-slate-400">Subject: </span>
                        <span className="text-sm font-black text-slate-700">{selectedPaperForSets?.subject_name}</span>
                      </div>
                      <div>
-                       <span className="text-xs font-bold text-slate-400">Exam Date: </span>
+                       <span className="text-[13px] font-bold text-slate-400">Exam Date: </span>
                        <span className="text-sm font-black text-slate-700">{selectedPaperForSets?.exam_date && !isNaN(new Date(selectedPaperForSets.exam_date)) ? formatDate(selectedPaperForSets.exam_date) : 'TBD'}</span>
                      </div>
                      <div>
-                       <span className="text-xs font-bold text-slate-400">Semester: </span>
+                       <span className="text-[13px] font-bold text-slate-400">Semester: </span>
                        <span className="text-sm font-black text-slate-700">{selectedPaperForSets?.semester || 'N/A'}</span>
                      </div>
                      <div>
-                       <span className="text-xs font-bold text-slate-400">Students: </span>
+                       <span className="text-[13px] font-bold text-slate-400">Students: </span>
                        <span className="text-sm font-black text-slate-700">Not Set</span>
                      </div>
                    </div>
                 </div>
 
                 <div className="bg-amber-50/50 p-6 rounded-2xl border border-amber-100">
-                   <h4 className="text-xs font-black text-amber-600 uppercase mb-2">Selection Instructions</h4>
-                   <ul className="text-xs font-bold text-amber-700 space-y-1 ml-4 list-disc">
+                   <h4 className="text-[13px] font-black text-amber-600  mb-2">Selection Instructions</h4>
+                   <ul className="text-[13px] font-bold text-amber-700 space-y-1 ml-4 list-disc">
                      <li>Select exactly {Math.min(3, availableSets.length)} question sets for this examination</li>
                      <li>Selected sets will be used for printing and distribution</li>
                      <li>Ensure sets cover the complete syllabus appropriately</li>
@@ -391,16 +391,16 @@ const SecrecyQuestionPapers = () => {
                            </div>
                            <div>
                               <span className="text-sm font-bold text-slate-700 block">Question Set {p.set_name}</span>
-                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{p.setter_name}</span>
+                              <span className="text-[12px] text-slate-400 font-bold  tracking-widest">{p.setter_name}</span>
                            </div>
                         </div>
-                        <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded-md uppercase tracking-tighter">
+                        <span className="text-[12px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded-md  tracking-tighter">
                           Uploaded • {p.updated_at ? formatDate(p.updated_at) : 'N/A'}
                         </span>
                       </div>
                     ))}
                     {availableSets.length === 0 && (
-                      <div className="p-10 text-center text-slate-400 font-bold uppercase tracking-widest text-xs italic">
+                      <div className="p-10 text-center text-slate-400 font-bold  tracking-widest text-[13px] italic">
                         No approved sets available for this subject.
                       </div>
                     )}
@@ -408,11 +408,11 @@ const SecrecyQuestionPapers = () => {
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">
-                   <button onClick={() => { setShowSelectSetsModal(false); setSelectedSets([]); }} className="px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all">Cancel</button>
+                   <button onClick={() => { setShowSelectSetsModal(false); setSelectedSets([]); }} className="px-8 py-3 rounded-xl font-black text-[13px]  tracking-widest text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all">Cancel</button>
                    <button 
                      onClick={handleApproveSelectedSets}
                      disabled={selectedSets.length !== Math.min(3, availableSets.length)}
-                     className={`px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-sm ${
+                     className={`px-8 py-3 rounded-xl font-black text-[13px]  tracking-widest transition-all shadow-sm ${
                        selectedSets.length === Math.min(3, availableSets.length) ? 'bg-sky-500 hover:bg-sky-600 text-white cursor-pointer' : 'bg-slate-300 text-white cursor-not-allowed'
                      }`}
                    >

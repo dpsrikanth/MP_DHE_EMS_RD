@@ -131,8 +131,8 @@ const ExternalAssignment = () => {
           <div className="lg:col-span-8 space-y-4">
             <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
               <div className="px-8 py-6 border-b bg-slate-50/30 flex justify-between items-center">
-                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Available Exams</h3>
-                <span className="text-xs font-black text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full uppercase tracking-widest">{selectedExams.length} selected</span>
+                <h3 className="text-lg font-black text-slate-900  tracking-tight">Available Exams</h3>
+                <span className="text-[13px] font-black text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full  tracking-widest">{selectedExams.length} selected</span>
               </div>
               <div className="divide-y divide-slate-50 max-h-[600px] overflow-y-auto">
                 {filteredPending.map((ex) => (
@@ -143,11 +143,11 @@ const ExternalAssignment = () => {
                         <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 font-black"><Building size={20} /></div>
                         <div>
                           <p className="font-black text-slate-900 leading-tight">{ex.exam_name}</p>
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">ID: {ex.exam_id}</p>
+                          <p className="text-[12px] font-black text-slate-400  tracking-widest mt-1">ID: {ex.exam_id}</p>
                         </div>
                       </div>
                       <div>
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Subjects</p>
+                        <p className="text-[13px] font-black text-slate-400  tracking-widest mb-1">Subjects</p>
                         <div className="flex items-center gap-2">
                           <BookOpen size={14} className="text-slate-400" />
                           <p className="text-sm font-bold text-slate-700">{ex.subject_count} assigned subjects</p>
@@ -159,7 +159,7 @@ const ExternalAssignment = () => {
                                 <Users size={12} />
                                 <p className="text-sm font-black">{ex.student_count}</p>
                             </div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase mt-1 tracking-widest">Registered Students</p>
+                            <p className="text-[9px] font-black text-slate-400  mt-1 tracking-widest">Registered Students</p>
                          </div>
                       </div>
                     </div>
@@ -171,10 +171,10 @@ const ExternalAssignment = () => {
 
           <div className="lg:col-span-4 space-y-6 sticky top-8">
             <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl overflow-hidden">
-               <div className="p-8 bg-slate-900 text-white"><h3 className="text-xl font-black uppercase tracking-tight">Assign Evaluator</h3></div>
+               <div className="p-8 bg-slate-900 text-white"><h3 className="text-xl font-black  tracking-tight">Assign Evaluator</h3></div>
                <div className="p-8 space-y-6">
                   <div className="space-y-3">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest">External Faculty</label>
+                    <label className="text-[13px] font-black text-slate-400  tracking-widest">External Faculty</label>
                     <select value={selectedFaculty} onChange={(e) => setSelectedFaculty(e.target.value)} className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl px-5 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10">
                       <option value="">Select Faculty...</option>
                       {faculties.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
@@ -182,7 +182,7 @@ const ExternalAssignment = () => {
                   </div>
                   <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 flex gap-3 text-amber-700">
                     <Info size={18} className="shrink-0" />
-                    <p className="text-[10px] font-bold leading-relaxed tracking-tight">
+                    <p className="text-[12px] font-bold leading-relaxed tracking-tight">
                       Selected faculty will evaluate ALL subjects for all {selectedExams.reduce((acc, id) => acc + (pendingExams.find(e => e.exam_id === id)?.student_count || 0), 0)} registered students across the selected exams.
                     </p>
                   </div>
@@ -199,10 +199,10 @@ const ExternalAssignment = () => {
           <table className="w-full text-left font-medium">
             <thead>
               <tr className="bg-slate-50 border-b">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Evaluator</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Scope</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Exam</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Students</th>
+                <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest">Evaluator</th>
+                <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest">Scope</th>
+                <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest">Exam</th>
+                <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Students</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -210,7 +210,7 @@ const ExternalAssignment = () => {
                 <tr key={row.assignment_id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-8 py-6">
                     <p className="text-sm font-black text-slate-900">{row.faculty_name}</p>
-                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded w-fit mt-1">External Faculty</p>
+                    <p className="text-[12px] font-black text-indigo-500  tracking-widest bg-indigo-50 px-2 py-0.5 rounded w-fit mt-1">External Faculty</p>
                   </td>
                   <td className="px-8 py-6">
                     <p className="text-sm font-bold text-slate-900">{row.subject_name}</p>

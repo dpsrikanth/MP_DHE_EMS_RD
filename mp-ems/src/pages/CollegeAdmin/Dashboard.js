@@ -151,10 +151,10 @@ const Dashboard = () => {
                 </div>
                 
                 <div className="relative z-10">
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">{kpi.label}</p>
+                  <p className="text-[13px] font-black text-slate-400  tracking-widest mb-1">{kpi.label}</p>
                   <div className="flex items-baseline gap-2">
                     <h3 className="text-3xl font-black text-slate-800">{kpi.value}</h3>
-                    {kpi.subValue && <span className="text-xs font-bold text-slate-400">{kpi.subValue}</span>}
+                    {kpi.subValue && <span className="text-[13px] font-bold text-slate-400">{kpi.subValue}</span>}
                   </div>
                 </div>
               </div>
@@ -174,17 +174,17 @@ const Dashboard = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className={`p-6 rounded-3xl border ${stats.pendingApprovals > 0 ? 'bg-amber-50 border-amber-100' : 'bg-slate-50 border-slate-100'} transition-all`}>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Marks Approval Status</p>
+                    <p className="text-[12px] font-black text-slate-400  tracking-widest mb-3">Marks Approval Status</p>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className={`text-2xl font-black ${stats.pendingApprovals > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
                           {stats.pendingApprovals}
                         </p>
-                        <p className="text-xs font-bold text-slate-500 mt-1">Pending verification</p>
+                        <p className="text-[13px] font-bold text-slate-500 mt-1">Pending verification</p>
                       </div>
                       <button 
                         onClick={() => navigate('/college-admin/marks-approval')}
-                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${stats.pendingApprovals > 0 ? 'bg-amber-200 text-amber-800' : 'bg-emerald-100 text-emerald-700'}`}
+                        className={`px-4 py-2 rounded-xl text-[12px] font-black  tracking-widest transition-all ${stats.pendingApprovals > 0 ? 'bg-amber-200 text-amber-800' : 'bg-emerald-100 text-emerald-700'}`}
                       >
                         Action Required
                       </button>
@@ -192,11 +192,11 @@ const Dashboard = () => {
                   </div>
 
                   <div className="p-6 rounded-3xl border bg-slate-50 border-slate-100 hover:bg-slate-100 transition-all cursor-pointer" onClick={() => navigate('/college-admin/examination-halls')}>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Infrastructure Overview</p>
+                    <p className="text-[12px] font-black text-slate-400  tracking-widest mb-3">Infrastructure Overview</p>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-2xl font-black text-slate-800">{stats.totalHalls}</p>
-                        <p className="text-xs font-bold text-slate-500 mt-1">Total Approved Halls</p>
+                        <p className="text-[13px] font-bold text-slate-500 mt-1">Total Approved Halls</p>
                       </div>
                       <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-400 shadow-sm">
                         <Building2 size={18} />
@@ -226,7 +226,7 @@ const Dashboard = () => {
                   </div>
                   <button 
                     onClick={() => navigate('/college-admin/performance')}
-                    className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-blue-600/20"
+                    className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-2xl font-black text-[13px]  tracking-widest transition-all shadow-xl shadow-blue-600/20"
                   >
                     View Report
                   </button>
@@ -234,19 +234,19 @@ const Dashboard = () => {
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 relative z-10">
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Efficiency</p>
+                    <p className="text-[9px] font-black text-slate-500  tracking-[0.2em] mb-1">Efficiency</p>
                     <p className="text-xl font-black">94%</p>
                   </div>
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Avg Pass %</p>
+                    <p className="text-[9px] font-black text-slate-500  tracking-[0.2em] mb-1">Avg Pass %</p>
                     <p className="text-xl font-black">82.5%</p>
                   </div>
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Active Labs</p>
+                    <p className="text-[9px] font-black text-slate-500  tracking-[0.2em] mb-1">Active Labs</p>
                     <p className="text-xl font-black">12</p>
                   </div>
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Completion</p>
+                    <p className="text-[9px] font-black text-slate-500  tracking-[0.2em] mb-1">Completion</p>
                     <p className="text-xl font-black">100%</p>
                   </div>
                 </div>
@@ -255,7 +255,7 @@ const Dashboard = () => {
 
             {/* Quick Actions Sidebar */}
             <div className="space-y-6">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Quick Access</h4>
+              <h4 className="text-[12px] font-black text-slate-400  tracking-[0.3em] ml-2">Quick Access</h4>
               <div className="grid grid-cols-1 gap-4">
                 {quickLinks.map((link, idx) => (
                   <button 
@@ -272,7 +272,7 @@ const Dashboard = () => {
               </div>
               
               <div className="p-6 rounded-[2rem] bg-indigo-50 border border-indigo-100 mt-10">
-                <h4 className="font-black text-indigo-900 text-sm uppercase tracking-widest mb-3">Correction Requests</h4>
+                <h4 className="font-black text-indigo-900 text-sm  tracking-widest mb-3">Correction Requests</h4>
                 <div className="space-y-4">
                   {notifications.length > 0 ? (
                     notifications.map(notif => (
@@ -282,22 +282,22 @@ const Dashboard = () => {
                             <Clock size={16} />
                           </div>
                           <div className="flex-1">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                            <p className="text-[12px] font-black text-slate-400  tracking-widest mb-1">
                               {notif.subject_code} - Section {notif.section}
                             </p>
-                            <p className="text-xs text-slate-700 font-bold leading-tight">
+                            <p className="text-[13px] text-slate-700 font-bold leading-tight">
                               {notif.message}
                             </p>
                             <div className="mt-3 flex gap-2">
                               <button 
                                 onClick={() => navigate('/admin/marks-verification')}
-                                className="text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors"
+                                className="text-[9px] font-black text-indigo-600  tracking-widest bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors"
                               >
                                 Review & Reject
                               </button>
                               <button 
                                 onClick={() => markAsRead(notif.id)}
-                                className="text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 px-3 py-1.5 rounded-lg transition-colors"
+                                className="text-[9px] font-black text-slate-400  tracking-widest hover:text-slate-600 px-3 py-1.5 rounded-lg transition-colors"
                               >
                                 Dismiss
                               </button>
@@ -308,7 +308,7 @@ const Dashboard = () => {
                     ))
                   ) : (
                     <div className="py-6 text-center">
-                      <p className="text-xs text-indigo-400 font-medium">No pending correction requests from HODs.</p>
+                      <p className="text-[13px] text-indigo-400 font-medium">No pending correction requests from HODs.</p>
                     </div>
                   )}
                 </div>

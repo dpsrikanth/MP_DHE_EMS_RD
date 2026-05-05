@@ -98,7 +98,7 @@ const PaperSetterDashboard = () => {
             </div>
             <div>
               <h1 className="text-2xl font-black text-slate-800 tracking-tight">Paper Setter <span className="text-sky-500">Portal</span></h1>
-              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Assigned Exams Dashboard</p>
+              <p className="text-slate-400 text-[12px] font-bold  tracking-widest">Assigned Exams Dashboard</p>
             </div>
           </div>
           <div className="w-full md:w-80">
@@ -115,7 +115,7 @@ const PaperSetterDashboard = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-40 gap-4">
             <Loader2 className="text-sky-500 animate-spin" size={48} />
-            <p className="text-slate-400 font-black uppercase tracking-widest text-sm animate-pulse">Syncing Secure Data...</p>
+            <p className="text-slate-400 font-black  tracking-widest text-sm animate-pulse">Syncing Secure Data...</p>
           </div>
         ) : (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -125,13 +125,13 @@ const PaperSetterDashboard = () => {
                   <div className="bg-white w-16 h-16 rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 text-slate-300">
                      {searchQuery ? <Search size={32} /> : <FileText size={32} />}
                   </div>
-                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-2">
+                  <p className="text-slate-400 font-bold  tracking-widest text-[12px] mb-2">
                     {searchQuery ? "No matching assignments" : "No active assignments found"}
                   </p>
                   {searchQuery && (
                     <button 
                       onClick={() => setSearchQuery('')}
-                      className="text-[10px] font-black text-sky-600 hover:text-sky-700 underline uppercase tracking-widest"
+                      className="text-[12px] font-black text-sky-600 hover:text-sky-700 underline  tracking-widest"
                     >
                       Clear Search
                     </button>
@@ -146,20 +146,20 @@ const PaperSetterDashboard = () => {
                       <div>
                          <div className="flex items-center gap-2 mb-1">
                            <h3 className="text-2xl font-black text-slate-800 tracking-tight">{exam.subject_name}</h3>
-                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${exam.latest_status === 'Revision' ? 'bg-rose-100 text-rose-600' : exam.sets_submitted > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                           <span className={`px-3 py-1 rounded-full text-[12px] font-black  tracking-wider ${exam.latest_status === 'Revision' ? 'bg-rose-100 text-rose-600' : exam.sets_submitted > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
                              {exam.latest_status === 'Revision' ? 'Revision Needed' : exam.sets_submitted > 0 ? 'Completed' : 'Pending'}
                            </span>
                          </div>
-                         <p className="text-slate-400 text-sm font-bold uppercase tracking-tighter">Exam ID: {exam.exam_name || `EX${exam.exam_id}`} | Semester: {exam.semester || 'N/A'}</p>
+                         <p className="text-slate-400 text-sm font-bold  tracking-tighter">Exam ID: {exam.exam_name || `EX${exam.exam_id}`} | Semester: {exam.semester || 'N/A'}</p>
                       </div>
 
                       <div className="grid grid-cols-2 gap-6 mt-4">
                         <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Exam Date</label>
+                          <label className="text-[12px] font-black text-slate-400  tracking-widest block mb-1">Exam Date</label>
                           <p className="font-bold text-slate-700 flex items-center gap-1.5"><Calendar size={14} className="text-slate-300" /> {exam.exam_date && !isNaN(new Date(exam.exam_date)) ? formatDate(exam.exam_date) : 'TBD'}</p>
                         </div>
                         <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Deadline</label>
+                          <label className="text-[12px] font-black text-slate-400  tracking-widest block mb-1">Deadline</label>
                           <p className="font-bold text-rose-500 flex items-center gap-1.5"><Clock size={14} className="text-rose-300" /> {
                              exam.exam_date && !isNaN(new Date(exam.exam_date)) 
                                ? formatDate(new Date(new Date(exam.exam_date).getTime() - 20 * 24 * 60 * 60 * 1000)) 
@@ -207,7 +207,7 @@ const PaperSetterDashboard = () => {
                          <button 
                           onClick={() => handleUpload(exam)}
                           disabled={uploading === exam.subject_id || !selectedFiles[exam.subject_id]}
-                          className="flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-600 disabled:bg-slate-200 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-lg shadow-sky-500/20 active:scale-95 text-sm uppercase tracking-widest min-w-[200px]"
+                          className="flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-600 disabled:bg-slate-200 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-lg shadow-sky-500/20 active:scale-95 text-sm  tracking-widest min-w-[200px]"
                          >
                            {uploading === exam.subject_id ? <Loader2 className="animate-spin" size={18} /> : <FileUp size={18} />}
                            {uploading === exam.subject_id ? 'Encrypting...' : 'Upload Question Paper'}
@@ -217,7 +217,7 @@ const PaperSetterDashboard = () => {
                   </div>
                   
                   <div className="px-8 pb-4">
-                     <p className="text-[10px] text-slate-400 font-bold italic tracking-tight">Accepted formats: PDF, DOC, DOCX (Max size: 10MB)</p>
+                     <p className="text-[12px] text-slate-400 font-bold italic tracking-tight">Accepted formats: PDF, DOC, DOCX (Max size: 10MB)</p>
                   </div>
                 </div>
               ))}
@@ -226,7 +226,7 @@ const PaperSetterDashboard = () => {
         )}
       </div>
 
-      <footer className="pt-12 pb-8 text-center text-slate-400 font-bold text-[10px] uppercase tracking-widest">
+      <footer className="pt-12 pb-8 text-center text-slate-400 font-bold text-[12px]  tracking-widest">
         {new Date().getFullYear()} Secure EMS Portal • End-to-End Encryption Enabled
       </footer>
     </div>

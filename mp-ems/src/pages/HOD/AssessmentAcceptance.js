@@ -116,14 +116,14 @@ const AssessmentAcceptance = () => {
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-32 space-y-4">
                     <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Loading pending assessments...</p>
+                    <p className="text-slate-400 font-black  tracking-widest text-[12px]">Loading pending assessments...</p>
                 </div>
             ) : groupedData.length === 0 ? (
                 <div className="bg-white rounded-[2.5rem] p-20 text-center border-2 border-dashed border-slate-200 shadow-sm">
                     <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
                         <ShieldCheck size={40} className="text-slate-300" />
                     </div>
-                    <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Everything is up to date</h3>
+                    <h3 className="text-xl font-black text-slate-900 mb-2  tracking-tight">Everything is up to date</h3>
                     <p className="text-slate-500 max-w-xs mx-auto text-sm font-medium">
                         No pending assessments require your acceptance at this time.
                     </p>
@@ -140,19 +140,19 @@ const AssessmentAcceptance = () => {
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2 mb-0.5">
-                                            <span className="px-2 py-0.5 bg-slate-900 text-white text-[9px] font-black rounded uppercase tracking-widest">
+                                            <span className="px-2 py-0.5 bg-slate-900 text-white text-[9px] font-black rounded  tracking-widest">
                                                 {batch.subject_code}
                                             </span>
-                                            <span className="text-slate-400 text-xs font-bold">•</span>
-                                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Section {batch.section}</span>
+                                            <span className="text-slate-400 text-[13px] font-bold">•</span>
+                                            <span className="text-[13px] font-black text-slate-400  tracking-widest">Section {batch.section}</span>
                                         </div>
                                         <h3 className="text-lg font-black text-slate-900 tracking-tight">{batch.subject_name}</h3>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-6">
                                     <div className="text-right">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Program & Semester</p>
-                                        <p className="text-xs font-bold text-slate-700 uppercase tracking-tight">{batch.semester_name} • {batch.year_name}</p>
+                                        <p className="text-[12px] font-black text-slate-400  tracking-widest mb-0.5">Program & Semester</p>
+                                        <p className="text-[13px] font-bold text-slate-700  tracking-tight">{batch.semester_name} • {batch.year_name}</p>
                                     </div>
                                     <button 
                                         onClick={() => navigate(`/admin/marks-review/${batch.subject_id}/${batch.section}`, {
@@ -179,7 +179,7 @@ const AssessmentAcceptance = () => {
                                                         {comp.is_accepted ? <ShieldCheck size={20} /> : <AlertCircle size={20} />}
                                                     </div>
                                                     {comp.is_accepted && (
-                                                        <span className="text-[9px] font-black text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                                                        <span className="text-[9px] font-black text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full  tracking-widest">
                                                             Authorized
                                                         </span>
                                                     )}
@@ -187,13 +187,13 @@ const AssessmentAcceptance = () => {
                                                 
                                                 <h4 className="font-black text-slate-900 text-base leading-tight mb-1">{comp.component_name}</h4>
                                                 <div className="flex items-center gap-2 mb-4">
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Weightage: {comp.max_marks} Marks</span>
+                                                    <span className="text-[12px] font-bold text-slate-400  tracking-widest">Weightage: {comp.max_marks} Marks</span>
                                                 </div>
 
                                                 <div className="space-y-3 mb-6">
                                                     <div className="flex justify-between items-end">
-                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Marks Entered</span>
-                                                        <span className="text-xs font-black text-slate-900">{comp.student_count} Students</span>
+                                                        <span className="text-[12px] font-black text-slate-400  tracking-widest">Marks Entered</span>
+                                                        <span className="text-[13px] font-black text-slate-900">{comp.student_count} Students</span>
                                                     </div>
                                                     <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                                         <div 
@@ -205,7 +205,7 @@ const AssessmentAcceptance = () => {
                                             </div>
 
                                             {comp.is_accepted ? (
-                                                <div className="flex items-center gap-2 text-emerald-600 text-[10px] font-black uppercase tracking-widest bg-emerald-100/50 p-2.5 rounded-xl border border-emerald-100">
+                                                <div className="flex items-center gap-2 text-emerald-600 text-[12px] font-black  tracking-widest bg-emerald-100/50 p-2.5 rounded-xl border border-emerald-100">
                                                     <CheckCircle size={14} />
                                                     Accepted {formatDate(comp.accepted_at, true)}
                                                 </div>
@@ -213,7 +213,7 @@ const AssessmentAcceptance = () => {
                                                 <button 
                                                     onClick={() => handleAccept(comp)}
                                                     disabled={isProcessing}
-                                                    className="w-full py-3 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                                    className="w-full py-3 bg-emerald-500 text-white text-[12px] font-black  tracking-[0.2em] rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                                                 >
                                                     {isProcessing ? (
                                                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -232,7 +232,7 @@ const AssessmentAcceptance = () => {
 
                             {/* Section Footer */}
                             <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
+                                <span className="text-[12px] font-black text-slate-400  tracking-[0.15em]">
                                     {batch.components.filter(c => c.is_accepted).length} of {batch.components.length} Assessments Accepted
                                 </span>
                                 <div className="flex -space-x-2">

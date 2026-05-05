@@ -104,8 +104,8 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
             className="flex items-center gap-3 p-1.5 pl-3 pr-2 hover:bg-slate-100 rounded-2xl transition-all duration-200 border border-transparent hover:border-slate-200 group"
           >
             <div className="flex flex-col items-end mr-1">
-              <p className="text-xs font-bold text-slate-900 leading-none mb-1">{displayName}</p>
-              <p className="text-[10px] font-semibold text-sky-500 uppercase tracking-wider leading-none">
+              <p className="text-[13px] font-bold text-slate-900 leading-none mb-1">{displayName}</p>
+              <p className="text-[12px] font-semibold text-sky-500  tracking-wider leading-none">
                 {roleName.replace('_', ' ')}
               </p>
             </div>
@@ -130,7 +130,7 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
                     </div>
                     <div className="flex-1 overflow-hidden">
                       <p className="text-sm font-bold text-slate-900 truncate">{displayName}</p>
-                      <p className="text-xs text-slate-500 truncate">{roleName.replace('_', ' ')} Profile</p>
+                      <p className="text-[13px] text-slate-500 truncate">{roleName.replace('_', ' ')} Profile</p>
                     </div>
                   </div>
                 </div>

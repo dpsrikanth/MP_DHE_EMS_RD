@@ -260,7 +260,7 @@ const UniversityMarksView = () => {
           </div>
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Result <span className="text-indigo-600">Hub</span></h1>
-            <p className="text-slate-500 font-bold text-sm tracking-widest uppercase flex items-center gap-2">
+            <p className="text-slate-500 font-bold text-sm tracking-widest  flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
               Official Results • Locked Records Only
             </p>
@@ -272,7 +272,7 @@ const UniversityMarksView = () => {
             <>
               <button
                 onClick={exportCSV}
-                className="flex items-center gap-2 px-5 py-3 bg-white border-2 border-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm"
+                className="flex items-center gap-2 px-5 py-3 bg-white border-2 border-slate-100 text-slate-600 rounded-xl font-bold text-[13px]  tracking-widest hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm"
               >
                 <Download size={16} />
                 Export CSV
@@ -281,7 +281,7 @@ const UniversityMarksView = () => {
                 onClick={togglePublish}
                 disabled={publishing || (!summary?.canPublish && !summary?.resultsPublished)}
                 title={!summary?.canPublish && !summary?.resultsPublished ? "Results cannot be published until all subjects are 'Locked' by colleges and external marks are submitted." : ""}
-                className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-lg disabled:opacity-50 ${summary?.resultsPublished
+                className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-[13px]  tracking-widest transition-all shadow-lg disabled:opacity-50 ${summary?.resultsPublished
                   ? 'bg-emerald-500 text-white shadow-emerald-500/20 hover:bg-emerald-600'
                   : 'bg-slate-900 text-white shadow-slate-900/20 hover:bg-slate-800'
                   }`}
@@ -298,7 +298,7 @@ const UniversityMarksView = () => {
       <div className="stitch-card p-6 rounded-[2rem]">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Exam Series *</label>
+            <label className="block text-[12px] font-black text-slate-400  tracking-widest mb-2">Exam Series *</label>
             <select
               value={selectedExam}
               onChange={(e) => { setSelectedExam(e.target.value); setMarks([]); setSummary(null); setActiveSubject(null); }}
@@ -309,7 +309,7 @@ const UniversityMarksView = () => {
             </select>
           </div>
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">College (Optional)</label>
+            <label className="block text-[12px] font-black text-slate-400  tracking-widest mb-2">College (Optional)</label>
             <select
               value={selectedCollege}
               onChange={(e) => setSelectedCollege(e.target.value)}
@@ -320,7 +320,7 @@ const UniversityMarksView = () => {
             </select>
           </div>
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Program (Optional)</label>
+            <label className="block text-[12px] font-black text-slate-400  tracking-widest mb-2">Program (Optional)</label>
             <select
               value={selectedProgram}
               onChange={(e) => setSelectedProgram(e.target.value)}
@@ -333,7 +333,7 @@ const UniversityMarksView = () => {
           <button
             onClick={fetchData}
             disabled={loading || !selectedExam}
-            className="h-[50px] bg-indigo-600 text-white px-8 rounded-xl font-bold text-sm uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-[50px] bg-indigo-600 text-white px-8 rounded-xl font-bold text-sm  tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
             <span>Load Results</span>
@@ -347,29 +347,29 @@ const UniversityMarksView = () => {
           <div className="stitch-card p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center text-sky-500 transition-transform group-hover:scale-110"><Users size={20} /></div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Students</p>
+              <p className="text-[9px] font-black text-slate-400  tracking-widest">Students</p>
             </div>
             <p className="text-3xl font-black text-slate-900 tracking-tight">{summary.totalStudents}</p>
           </div>
           <div className="stitch-card p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-violet-50 rounded-xl flex items-center justify-center text-violet-500"><BookOpen size={20} /></div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Subjects</p>
+              <p className="text-[9px] font-black text-slate-400  tracking-widest">Subjects</p>
             </div>
             <p className="text-3xl font-black text-slate-900 tracking-tight">{summary.totalSubjects}</p>
           </div>
           <div className="stitch-card p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500"><CheckCircle2 size={20} /></div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pass Rate</p>
+              <p className="text-[9px] font-black text-slate-400  tracking-widest">Pass Rate</p>
             </div>
             <p className="text-3xl font-black text-emerald-600 tracking-tight">{passRate}%</p>
-            <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">{summary.passCount} pass / {summary.failCount} fail</p>
+            <p className="text-[9px] font-bold text-slate-400 mt-1  tracking-tighter">{summary.passCount} pass / {summary.failCount} fail</p>
           </div>
           <div className="stitch-card p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-500"><TrendingUp size={20} /></div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Avg Marks</p>
+              <p className="text-[9px] font-black text-slate-400  tracking-widest">Avg Marks</p>
             </div>
             <p className="text-3xl font-black text-slate-900 tracking-tight">{summary.avgMarks}</p>
           </div>
@@ -378,7 +378,7 @@ const UniversityMarksView = () => {
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${summary.resultsPublished ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-100 text-slate-400'}`}>
                 {summary.resultsPublished ? <Eye size={20} /> : <EyeOff size={20} />}
               </div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Status</p>
+              <p className="text-[9px] font-black text-slate-400  tracking-widest">Status</p>
             </div>
             <p className={`text-lg font-black tracking-tight ${summary.resultsPublished ? 'text-emerald-600' : 'text-slate-500'}`}>
               {summary.resultsPublished ? 'Published' : 'Unpublished'}
@@ -407,7 +407,7 @@ const UniversityMarksView = () => {
       {loading && (
         <div className="flex flex-col items-center justify-center min-h-[300px] space-y-4 text-indigo-500">
           <Loader2 className="w-12 h-12 animate-spin" />
-          <p className="font-black uppercase tracking-widest text-xs">Aggregating Result Data...</p>
+          <p className="font-black  tracking-widest text-[13px]">Aggregating Result Data...</p>
         </div>
       )}
 
@@ -419,13 +419,13 @@ const UniversityMarksView = () => {
             <div className="flex bg-slate-100 p-1.5 rounded-xl w-full md:w-auto">
               <button
                 onClick={() => setViewMode("subject")}
-                className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'subject' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg text-[12px] font-black  tracking-widest transition-all ${viewMode === 'subject' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
               >
                 By Subject
               </button>
               <button
                 onClick={() => setViewMode("student")}
-                className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'student' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg text-[12px] font-black  tracking-widest transition-all ${viewMode === 'student' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
               >
                 By Student
               </button>
@@ -452,7 +452,7 @@ const UniversityMarksView = () => {
                   <button
                     key={name}
                     onClick={() => setActiveSubject(name)}
-                    className={`h-10 px-6 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeSubject === name
+                    className={`h-10 px-6 rounded-full text-[12px] font-black  tracking-widest transition-all ${activeSubject === name
                       ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20 scale-105'
                       : 'bg-white text-slate-400 border-2 border-slate-50 hover:border-indigo-200 hover:text-indigo-500'
                       }`}
@@ -471,16 +471,16 @@ const UniversityMarksView = () => {
                     </div>
                     <div>
                       <h2 className="text-2xl font-black tracking-tight">{activeSubject}</h2>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400/80 mt-1">Subject-wise Result Ledger</p>
+                      <p className="text-[12px] font-black  tracking-[0.2em] text-indigo-400/80 mt-1">Subject-wise Result Ledger</p>
                     </div>
                   </div>
                   <div className="flex gap-3">
                     <div className="bg-white/5 border border-white/10 px-5 py-3 rounded-2xl text-center">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Students</p>
+                      <p className="text-[9px] font-black  tracking-widest text-slate-500">Students</p>
                       <p className="text-xl font-black">{subjectWiseData[activeSubject]?.length || 0}</p>
                     </div>
                     <div className="bg-white/5 border border-white/10 px-5 py-3 rounded-2xl text-center">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Pass</p>
+                      <p className="text-[9px] font-black  tracking-widest text-slate-500">Pass</p>
                       <p className="text-xl font-black text-emerald-400">
                         {subjectWiseData[activeSubject]?.filter(s => s.result_status === 'Pass').length || 0}
                       </p>
@@ -492,21 +492,21 @@ const UniversityMarksView = () => {
                   <table className="w-full text-left border-collapse">
                     <thead className="sticky top-0 z-10 bg-white">
                       <tr className="bg-slate-50/80 backdrop-blur-md border-b border-slate-100">
-                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest w-36">Roll No</th>
-                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</th>
-                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Int</th>
+                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest w-36">Roll No</th>
+                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest">Student</th>
+                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Int</th>
                         {summary?.examType !== 1 && (
-                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Ext</th>
+                          <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Ext</th>
                         )}
-                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Total</th>
+                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Total</th>
                         {summary?.isGraceEnabled && (
-                          <th className="px-8 py-5 text-[10px] font-black text-indigo-500 uppercase tracking-widest text-center">Grace {subjectWiseData[activeSubject]?.[0]?.grace_budget ? `(${subjectWiseData[activeSubject][0].grace_budget})` : ''}</th>
+                          <th className="px-8 py-5 text-[13px] font-black text-indigo-500  tracking-widest text-center">Grace {subjectWiseData[activeSubject]?.[0]?.grace_budget ? `(${subjectWiseData[activeSubject][0].grace_budget})` : ''}</th>
                         )}
-                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Grade</th>
-                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">GP</th>
-                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Credits</th>
-                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Cr. Pts</th>
-                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Result</th>
+                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Grade</th>
+                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">GP</th>
+                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Credits</th>
+                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Cr. Pts</th>
+                        <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Result</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -524,7 +524,7 @@ const UniversityMarksView = () => {
                             </td>
                             <td className="px-8 py-5">
                               <p className="font-black text-slate-800 text-sm tracking-tight">{item.student_name}</p>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase">{item.college_name}</p>
+                              <p className="text-[9px] font-bold text-slate-400 ">{item.college_name}</p>
                             </td>
                             <td className="px-8 py-5 text-center font-bold text-slate-400">{item.internal_marks || 0}</td>
                             {summary?.examType !== 1 && (
@@ -535,17 +535,17 @@ const UniversityMarksView = () => {
                             </td>
                             {summary?.isGraceEnabled && (
                               <td className="px-8 py-5 text-center">
-                                <span className={`text-xs font-black ${Number(item.grace_marks) > 0 ? 'text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md' : 'text-slate-300 opacity-30'}`}>
+                                <span className={`text-[13px] font-black ${Number(item.grace_marks) > 0 ? 'text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md' : 'text-slate-300 opacity-30'}`}>
                                   {item.grace_marks > 0 ? `+${item.grace_marks}` : '—'}
                                 </span>
                               </td>
                             )}
                             <td className="px-8 py-5 text-center font-black text-slate-700">{item.grade}</td>
-                            <td className="px-8 py-5 text-center font-bold text-slate-500 text-xs italic">{item.grade_point}</td>
+                            <td className="px-8 py-5 text-center font-bold text-slate-500 text-[13px] italic">{item.grade_point}</td>
                             <td className="px-8 py-5 text-center font-bold text-slate-600">{item.credits || 0}</td>
                             <td className="px-8 py-5 text-center font-black text-indigo-500">{item.credit_points || 0}</td>
                             <td className="px-8 py-5 text-center">
-                              <div className={`inline-flex items-center gap-1.5 text-[8px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider border ${item.result_status?.includes('Pass')
+                              <div className={`inline-flex items-center gap-1.5 text-[8px] font-black px-2.5 py-1 rounded-full  tracking-wider border ${item.result_status?.includes('Pass')
                                 ? 'text-emerald-500 bg-emerald-50 border-emerald-100'
                                 : 'text-rose-500 bg-rose-50 border-rose-100'
                                 }`}>
@@ -572,11 +572,11 @@ const UniversityMarksView = () => {
                   </div>
                   <div>
                     <h2 className="text-2xl font-black tracking-tight">Student Ledger</h2>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70 mt-1">Consolidated Performance & SGPA</p>
+                    <p className="text-[12px] font-black  tracking-[0.2em] text-white/70 mt-1">Consolidated Performance & SGPA</p>
                   </div>
                 </div>
                 <div className="bg-white/10 border border-white/20 px-6 py-3 rounded-2xl backdrop-blur-md">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-indigo-200">Total Students</p>
+                  <p className="text-[9px] font-black  tracking-widest text-indigo-200">Total Students</p>
                   <p className="text-xl font-black">{studentList.length}</p>
                 </div>
               </div>
@@ -585,11 +585,11 @@ const UniversityMarksView = () => {
                 <table className="w-full text-left border-collapse">
                   <thead className="sticky top-0 z-10 bg-white">
                     <tr className="bg-slate-50/80 backdrop-blur-md border-b border-slate-100">
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">College / Program</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Subjects</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Credits</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-indigo-600 uppercase tracking-widest text-center bg-indigo-50">SGPA</th>
+                      <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest">Student</th>
+                      <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest">College / Program</th>
+                      <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Subjects</th>
+                      <th className="px-8 py-5 text-[13px] font-black text-slate-400  tracking-widest text-center">Credits</th>
+                      <th className="px-8 py-5 text-[13px] font-black text-indigo-600  tracking-widest text-center bg-indigo-50">SGPA</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -602,24 +602,24 @@ const UniversityMarksView = () => {
                         <tr key={student.student_id} className="hover:bg-indigo-50/20 transition-all group">
                           <td className="px-8 py-5">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-slate-900 rounded-[1rem] flex items-center justify-center text-white text-xs font-black group-hover:bg-indigo-600 transition-all shadow-md">
+                              <div className="w-10 h-10 bg-slate-900 rounded-[1rem] flex items-center justify-center text-white text-[13px] font-black group-hover:bg-indigo-600 transition-all shadow-md">
                                 <GraduationCap size={16} />
                               </div>
                               <div>
                                 <p className="font-black text-slate-800 text-sm tracking-tight capitalize">{student.student_name}</p>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Roll: {student.rollnumber}</p>
+                                <p className="text-[9px] font-black text-slate-400  tracking-widest">Roll: {student.rollnumber}</p>
                               </div>
                             </div>
                           </td>
                           <td className="px-8 py-5">
                             <div className="flex items-center gap-2 mb-0.5">
                               <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                              <p className="text-[10px] font-bold text-slate-600 truncate max-w-[220px]">{student.college_name || "N/A"}</p>
+                              <p className="text-[12px] font-bold text-slate-600 truncate max-w-[220px]">{student.college_name || "N/A"}</p>
                             </div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter ml-3.5 italic">{student.program_name || "Unassigned"}</p>
+                            <p className="text-[9px] font-black text-slate-400  tracking-tighter ml-3.5 italic">{student.program_name || "Unassigned"}</p>
                           </td>
                           <td className="px-8 py-5 text-center">
-                            <span className="px-3 py-1 bg-slate-100 rounded-lg text-xs font-black text-slate-500 border border-slate-200">
+                            <span className="px-3 py-1 bg-slate-100 rounded-lg text-[13px] font-black text-slate-500 border border-slate-200">
                               {student.subjects.length}
                             </span>
                           </td>

@@ -178,8 +178,8 @@ const Departments = () => {
                   onSort={handleSort} 
                   visible={visibleColumns.college_id}
                 />
-                <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center`}>Status</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Settings</th>
+                <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400 text-center`}>Status</th>
+                <th className="px-8 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Settings</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -188,7 +188,7 @@ const Departments = () => {
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
                     {visibleColumns.id && (
                       <td className="px-8 py-5">
-                        <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                        <span className="text-[12px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                           #{item.id}
                         </span>
                       </td>
@@ -216,11 +216,11 @@ const Departments = () => {
                     {visibleColumns.status && (
                       <td className="px-4 py-5 text-center">
                         {(item.status === 'Active' || item.status === true) ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase border border-emerald-100 tracking-tighter shadow-sm">
+                          <span className="inline-flex items-center gap-1 text-[12px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full  border border-emerald-100 tracking-tighter shadow-sm">
                             <ShieldCheck size={12} /> Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase border border-slate-200 tracking-tighter">
+                          <span className="inline-flex items-center gap-1 text-[12px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full  border border-slate-200 tracking-tighter">
                             <ShieldAlert size={12} /> Inactive
                           </span>
                         )}
@@ -250,10 +250,10 @@ const Departments = () => {
                 <tr>
                   <td colSpan="6" className="px-8 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No departments found matching your criteria</p>
+                      <p className="text-sm font-bold text-slate-400  tracking-widest">No departments found matching your criteria</p>
                       <button 
                         onClick={() => setSearchQuery('')}
-                        className="text-xs font-black text-indigo-500 hover:text-indigo-600 underline uppercase tracking-tighter"
+                        className="text-[13px] font-black text-indigo-500 hover:text-indigo-600 underline  tracking-tighter"
                       >
                         Reset Results
                       </button>

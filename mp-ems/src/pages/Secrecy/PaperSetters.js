@@ -171,33 +171,33 @@ const SecrecyPaperSetters = () => {
         <div className="p-8 space-y-6 overflow-y-auto max-h-[85vh]">
           {/* Personal Information */}
           <div className="bg-blue-50/30 p-6 rounded-2xl border border-blue-100/50 space-y-4">
-            <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest">Personal Information</h4>
+            <h4 className="text-[13px] font-black text-blue-600  tracking-widest">Personal Information</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-white rounded-lg shadow-sm text-blue-500"><Users size={18} /></div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase">Full Name</p>
+                  <p className="text-[12px] font-black text-slate-400 ">Full Name</p>
                   <p className="font-bold text-slate-700">{selectedSetter?.name}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-white rounded-lg shadow-sm text-blue-500"><FileText size={18} /></div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase">Email</p>
+                  <p className="text-[12px] font-black text-slate-400 ">Email</p>
                   <p className="font-bold text-slate-700">{selectedSetter?.email}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-white rounded-lg shadow-sm text-blue-500"><Smartphone size={18} /></div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase">Phone</p>
+                  <p className="text-[12px] font-black text-slate-400 ">Phone</p>
                   <p className="font-bold text-slate-700">{selectedSetter?.phone || 'Not provided'}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-white rounded-lg shadow-sm text-blue-500"><HardDrive size={18} /></div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase">Employee ID</p>
+                  <p className="text-[12px] font-black text-slate-400 ">Employee ID</p>
                   <p className="font-bold text-slate-700">EMP{String(selectedSetter?.id).padStart(3, '0')}</p>
                 </div>
               </div>
@@ -206,23 +206,23 @@ const SecrecyPaperSetters = () => {
 
           {/* Professional Information */}
           <div className="bg-emerald-50/30 p-6 rounded-2xl border border-emerald-100/50 space-y-4">
-            <h4 className="text-xs font-black text-emerald-600 uppercase tracking-widest">Professional Information</h4>
+            <h4 className="text-[13px] font-black text-emerald-600  tracking-widest">Professional Information</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase">Department</p>
+                <p className="text-[12px] font-black text-slate-400 ">Department</p>
                 <p className="font-bold text-emerald-700">{selectedSetter?.department || 'General'}</p>
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase">Designation</p>
+                <p className="text-[12px] font-black text-slate-400 ">Designation</p>
                 <p className="font-bold text-emerald-700">{selectedSetter?.designation || 'Faculty'}</p>
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase">Experience</p>
+                <p className="text-[12px] font-black text-slate-400 ">Experience</p>
                 <p className="font-bold text-emerald-700">{selectedSetter?.experience || 0} years</p>
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase">Status</p>
-                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${selectedSetter?.teacher_status ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                <p className="text-[12px] font-black text-slate-400 ">Status</p>
+                <span className={`px-2 py-0.5 rounded-md text-[12px] font-black  ${selectedSetter?.teacher_status ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                   {selectedSetter?.teacher_status ? 'Active' : 'Inactive'}
                 </span>
               </div>
@@ -231,7 +231,7 @@ const SecrecyPaperSetters = () => {
 
           {/* Qualification */}
           <div className="bg-purple-50/30 p-6 rounded-2xl border border-purple-100/50 space-y-4">
-            <h4 className="text-xs font-black text-purple-600 uppercase tracking-widest">Qualification</h4>
+            <h4 className="text-[13px] font-black text-purple-600  tracking-widest">Qualification</h4>
             <div className="flex items-center gap-3">
                <GraduationCap size={20} className="text-purple-500" />
                <p className="font-bold text-slate-700">{selectedSetter?.qualification || 'Not specified'}</p>
@@ -240,10 +240,10 @@ const SecrecyPaperSetters = () => {
 
           {/* Assigned Subjects */}
           <div className="bg-amber-50/30 p-6 rounded-2xl border border-amber-100/50 space-y-4">
-            <h4 className="text-xs font-black text-amber-600 uppercase tracking-widest">Assigned Subjects</h4>
+            <h4 className="text-[13px] font-black text-amber-600  tracking-widest">Assigned Subjects</h4>
             <div className="flex flex-wrap gap-2">
               {selectedSetter?.subjects && selectedSetter.subjects[0] ? selectedSetter.subjects.map((sub, i) => (
-                <span key={i} className="text-xs font-bold bg-amber-100 text-amber-700 px-3 py-1 rounded-full">{sub}</span>
+                <span key={i} className="text-[13px] font-bold bg-amber-100 text-amber-700 px-3 py-1 rounded-full">{sub}</span>
               )) : <p className="text-slate-400 italic text-sm font-medium">No subjects assigned yet.</p>}
             </div>
           </div>
@@ -266,7 +266,7 @@ const SecrecyPaperSetters = () => {
         <div className="p-8 space-y-6 overflow-y-auto max-h-[85vh]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Full Name</label>
+              <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Full Name</label>
               <input 
                 type="text" 
                 value={editSetterForm.name}
@@ -275,7 +275,7 @@ const SecrecyPaperSetters = () => {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Email Address</label>
+              <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Email Address</label>
               <input 
                 type="email" 
                 value={editSetterForm.email}
@@ -284,7 +284,7 @@ const SecrecyPaperSetters = () => {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Phone Number</label>
+              <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Phone Number</label>
               <input 
                 type="text" 
                 value={editSetterForm.phone}
@@ -293,7 +293,7 @@ const SecrecyPaperSetters = () => {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Department</label>
+              <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Department</label>
               <select 
                 value={editSetterForm.department}
                 onChange={(e) => setEditSetterForm({ ...editSetterForm, department: e.target.value })}
@@ -304,7 +304,7 @@ const SecrecyPaperSetters = () => {
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Designation</label>
+              <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Designation</label>
               <select 
                 value={editSetterForm.designation}
                 onChange={(e) => setEditSetterForm({ ...editSetterForm, designation: e.target.value })}
@@ -315,7 +315,7 @@ const SecrecyPaperSetters = () => {
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Experience (Years)</label>
+              <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Experience (Years)</label>
               <input 
                 type="number" 
                 value={editSetterForm.experience}
@@ -324,7 +324,7 @@ const SecrecyPaperSetters = () => {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Status</label>
+              <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Status</label>
               <select 
                 value={editSetterForm.status}
                 onChange={(e) => setEditSetterForm({ ...editSetterForm, status: e.target.value })}
@@ -335,7 +335,7 @@ const SecrecyPaperSetters = () => {
               </select>
             </div>
             <div className="space-y-1.5 col-span-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Qualification</label>
+              <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Qualification</label>
               <input 
                 type="text" 
                 value={editSetterForm.qualification}
@@ -346,7 +346,7 @@ const SecrecyPaperSetters = () => {
           </div>
 
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Subjects</label>
+            <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Subjects</label>
             <div className="grid grid-cols-2 gap-3 p-4 bg-slate-50 border border-slate-100 rounded-2xl max-h-40 overflow-y-auto">
                {availableSubjects.filter(sub => !editSetterForm.department || (sub.department_ids && sub.department_ids.includes(parseInt(editSetterForm.department)))).length > 0 ? 
                  availableSubjects.filter(sub => !editSetterForm.department || (sub.department_ids && sub.department_ids.includes(parseInt(editSetterForm.department)))).map((sub, i) => (
@@ -357,17 +357,17 @@ const SecrecyPaperSetters = () => {
                       onChange={() => handleEditSubjectToggle(sub.id)}
                       className="w-4 h-4 rounded text-sky-500 focus:ring-sky-500 border-slate-300 transition-all" 
                     />
-                    <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors uppercase tracking-tight">{sub.name}</span>
+                    <span className="text-[13px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors  tracking-tight">{sub.name}</span>
                  </label>
                )) : (
-                 <p className="col-span-2 text-center py-4 text-xs font-bold text-slate-400 uppercase italic">Select a department first</p>
+                 <p className="col-span-2 text-center py-4 text-[13px] font-bold text-slate-400  italic">Select a department first</p>
                )}
             </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <button onClick={() => setShowEditSetterModal(false)} className="px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all">Cancel</button>
-            <button onClick={handleEditSave} className="px-10 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20">Update Paper Setter</button>
+            <button onClick={() => setShowEditSetterModal(false)} className="px-8 py-3 rounded-xl font-black text-[13px]  tracking-widest text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all">Cancel</button>
+            <button onClick={handleEditSave} className="px-10 py-3 rounded-xl font-black text-[13px]  tracking-widest text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20">Update Paper Setter</button>
           </div>
         </div>
       </div>
@@ -378,7 +378,7 @@ const SecrecyPaperSetters = () => {
     return (
       <div className="flex flex-col items-center justify-center p-20 space-y-4 min-h-[60vh]">
         <div className="w-12 h-12 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
-        <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Loading Paper Setters...</p>
+        <p className="text-slate-400 font-black  tracking-widest text-[13px]">Loading Paper Setters...</p>
       </div>
     );
   }
@@ -415,11 +415,11 @@ const SecrecyPaperSetters = () => {
         <table className="w-full text-left">
           <thead className="bg-slate-50 border-b border-slate-100">
             <tr>
-              <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase">Name</th>
-              <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase">Role</th>
-              <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase">Subjects</th>
-              <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase">Status</th>
-              <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase">Actions</th>
+              <th className="px-6 py-4 text-[13px] font-black text-slate-500 ">Name</th>
+              <th className="px-6 py-4 text-[13px] font-black text-slate-500 ">Role</th>
+              <th className="px-6 py-4 text-[13px] font-black text-slate-500 ">Subjects</th>
+              <th className="px-6 py-4 text-[13px] font-black text-slate-500 ">Status</th>
+              <th className="px-6 py-4 text-[13px] font-black text-slate-500 ">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -427,18 +427,18 @@ const SecrecyPaperSetters = () => {
               <tr key={setter.id} className="hover:bg-slate-50/50 transition-colors group">
                 <td className="px-6 py-4">
                   <div className="font-bold text-slate-800">{setter.name}</div>
-                  <div className="text-xs text-slate-500 font-medium">{setter.email}</div>
+                  <div className="text-[13px] text-slate-500 font-medium">{setter.email}</div>
                 </td>
                 <td className="px-6 py-4 text-sm font-bold text-slate-600">{setter.role_name}</td>
                 <td className="px-6 py-4">
                   <div className="flex flex-wrap gap-1">
                     {setter.subjects && setter.subjects[0] ? setter.subjects.map((sub, i) => (
-                      <span key={i} className="text-[10px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md uppercase tracking-tighter">{sub}</span>
-                    )) : <span className="text-slate-400 italic text-xs">No subjects assigned</span>}
+                      <span key={i} className="text-[12px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md  tracking-tighter">{sub}</span>
+                    )) : <span className="text-slate-400 italic text-[13px]">No subjects assigned</span>}
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Active</span>
+                  <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[13px] font-bold  tracking-wider">Active</span>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
@@ -480,7 +480,7 @@ const SecrecyPaperSetters = () => {
                 <td colSpan="5" className="px-6 py-20 text-center">
                    <div className="flex flex-col items-center gap-3">
                      <Search size={40} className="text-slate-200" />
-                     <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">
+                     <h3 className="text-lg font-black text-slate-900  tracking-tighter">
                        {searchQuery ? "No matching setters found" : "No paper setters found"}
                      </h3>
                      <p className="text-slate-400 font-medium text-sm">
@@ -489,7 +489,7 @@ const SecrecyPaperSetters = () => {
                      {searchQuery && (
                        <button 
                          onClick={() => setSearchQuery('')}
-                         className="mt-4 text-xs font-black text-sky-600 hover:text-sky-700 underline uppercase tracking-widest"
+                         className="mt-4 text-[13px] font-black text-sky-600 hover:text-sky-700 underline  tracking-widest"
                        >
                          Reset Filters
                        </button>
@@ -511,7 +511,7 @@ const SecrecyPaperSetters = () => {
              </div>
              <div className="p-8 space-y-6 overflow-y-auto max-h-[85vh]">
                <div className="space-y-4">
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Paper Setter Selection</p>
+                 <p className="text-[12px] font-black text-slate-400  tracking-widest px-1">Paper Setter Selection</p>
                  <div className="flex gap-6">
                    <label className="flex items-center gap-2 cursor-pointer group">
                       <input 
@@ -539,7 +539,7 @@ const SecrecyPaperSetters = () => {
                {setterType === 'existing' ? (
                  <div className="space-y-6 animate-in slide-in-from-left-4 duration-300">
                    <div className="space-y-2">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Select Paper Setter</label>
+                     <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Select Paper Setter</label>
                      <div className="relative">
                        <select className="w-full bg-slate-100 border border-transparent focus:border-sky-500 focus:bg-white rounded-2xl px-5 py-4 font-bold text-slate-700 appearance-none outline-none transition-all">
                          <option>Select a paper setter</option>
@@ -556,7 +556,7 @@ const SecrecyPaperSetters = () => {
                ) : (
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-right-4 duration-300">
                     <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Full Name</label>
+                      <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Full Name</label>
                       <input 
                         type="text" 
                         name="name"
@@ -567,7 +567,7 @@ const SecrecyPaperSetters = () => {
                       />
                     </div>
                     <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Email Address</label>
+                      <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Email Address</label>
                       <input 
                         type="email" 
                         name="email"
@@ -578,7 +578,7 @@ const SecrecyPaperSetters = () => {
                       />
                     </div>
                     <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Phone Number</label>
+                      <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Phone Number</label>
                       <input 
                         type="text" 
                         name="phone"
@@ -589,7 +589,7 @@ const SecrecyPaperSetters = () => {
                       />
                     </div>
                     <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Department</label>
+                      <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Department</label>
                       <select 
                         value={newSetterForm.department}
                         onChange={(e) => handleDepartmentChange(e.target.value)}
@@ -600,7 +600,7 @@ const SecrecyPaperSetters = () => {
                       </select>
                     </div>
                     <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Designation</label>
+                      <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Designation</label>
                       <select 
                         name="designation"
                         value={newSetterForm.designation}
@@ -614,7 +614,7 @@ const SecrecyPaperSetters = () => {
                       </select>
                     </div>
                     <div className="space-y-1.5 col-span-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Experience (years)</label>
+                      <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Experience (years)</label>
                       <input 
                         type="number" 
                         name="experience"
@@ -625,7 +625,7 @@ const SecrecyPaperSetters = () => {
                       />
                     </div>
                     <div className="space-y-1.5 col-span-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Qualification</label>
+                      <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Qualification</label>
                       <input 
                         type="text" 
                         name="qualification"
@@ -636,7 +636,7 @@ const SecrecyPaperSetters = () => {
                       />
                     </div>
                     <div className="space-y-3 col-span-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Subjects</label>
+                      <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Subjects</label>
                       <div className="grid grid-cols-2 gap-3 p-4 bg-slate-50 border border-slate-100 rounded-2xl max-h-40 overflow-y-auto">
                          {filteredSubjects.length > 0 ? filteredSubjects.map((sub, i) => (
                            <label key={i} className="flex items-center gap-2 cursor-pointer group">
@@ -646,20 +646,20 @@ const SecrecyPaperSetters = () => {
                                 onChange={() => handleSubjectToggle(sub.id)}
                                 className="w-4 h-4 rounded text-sky-500 focus:ring-sky-500 border-slate-300 transition-all" 
                               />
-                              <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors uppercase tracking-tight">{sub.name}</span>
+                              <span className="text-[13px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors  tracking-tight">{sub.name}</span>
                            </label>
                          )) : (
-                           <p className="col-span-2 text-center py-4 text-xs font-bold text-slate-400 uppercase italic">
+                           <p className="col-span-2 text-center py-4 text-[13px] font-bold text-slate-400  italic">
                              {newSetterForm.department ? 'No subjects found for this department' : 'Select a department first'}
                            </p>
                          )}
                       </div>
                     </div>
                     <div className="col-span-2 flex justify-end gap-3 pt-4">
-                      <button onClick={() => setShowAddSetterModal(false)} className="px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all">Cancel</button>
+                      <button onClick={() => setShowAddSetterModal(false)} className="px-6 py-3 rounded-xl font-black text-[13px]  tracking-widest text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all">Cancel</button>
                       <button 
                         onClick={handleSaveNewSetter}
-                        className="px-10 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+                        className="px-10 py-3 rounded-xl font-black text-[13px]  tracking-widest text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
                       >
                         Submit
                       </button>

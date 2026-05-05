@@ -25,7 +25,7 @@ import { masterDataApi } from '../api/masterDataApi';
 
 const InfoItem = ({ label, value, isMono = false, className = "" }) => (
   <div className={`space-y-1.5 ${className}`}>
-    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none ml-0.5">{label}</p>
+    <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none ml-0.5">{label}</p>
     <div className={`bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl ${isMono ? 'font-mono' : 'font-bold'} text-slate-700 text-sm`}>
       {value || '-'}
     </div>
@@ -180,9 +180,9 @@ const Batches = () => {
                 <SortHeader label="End Date" field="end_date" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.end_date} />
                 <SortHeader label="Policy" field="policy_name" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.policy_name} />
                 <SortHeader label="Program" field="program_name" currentSort={sortConfig} onSort={handleSort} visible={visibleColumns.program_name} />
-                <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center`}>Status</th>
-                <th className={`${visibleColumns.created_at ? '' : 'hidden'} px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>Created On</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
+                <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400 text-center`}>Status</th>
+                <th className={`${visibleColumns.created_at ? '' : 'hidden'} px-4 py-4 text-[12px] font-black  tracking-widest text-slate-400`}>Created On</th>
+                <th className="px-8 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -198,13 +198,13 @@ const Batches = () => {
                     {visibleColumns.status && (
                       <td className="px-4 py-5 text-center">
                         {item.status === 'Active' ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase border border-emerald-100 tracking-tighter shadow-sm"><ShieldCheck size={12} /> Active</span>
+                          <span className="inline-flex items-center gap-1 text-[12px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full  border border-emerald-100 tracking-tighter shadow-sm"><ShieldCheck size={12} /> Active</span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase border border-slate-200 tracking-tighter"><ShieldAlert size={12} /> Inactive</span>
+                          <span className="inline-flex items-center gap-1 text-[12px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full  border border-slate-200 tracking-tighter"><ShieldAlert size={12} /> Inactive</span>
                         )}
                       </td>
                     )}
-                    {visibleColumns.created_at && <td className="px-4 py-5 text-xs font-medium text-slate-400">{formatDate(item.created_at)}</td>}
+                    {visibleColumns.created_at && <td className="px-4 py-5 text-[13px] font-medium text-slate-400">{formatDate(item.created_at)}</td>}
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button onClick={() => { setViewData(item); setShowViewModal(true); }} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all" title="View Details"><Eye size={18} /></button>
@@ -215,7 +215,7 @@ const Batches = () => {
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan="7" className="px-8 py-12 text-center text-sm font-bold text-slate-400 uppercase tracking-widest">No batches found</td></tr>
+                <tr><td colSpan="7" className="px-8 py-12 text-center text-sm font-bold text-slate-400  tracking-widest">No batches found</td></tr>
               )}
             </tbody>
           </table>
@@ -251,7 +251,7 @@ const Batches = () => {
             <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
               <div>
                 <h2 className="text-2xl font-black tracking-tight leading-none mb-1">Batch Profile</h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70 flex items-center gap-2"><Calendar size={12} /> Academic Management System</p>
+                <p className="text-[12px] font-black text-slate-400  tracking-widest opacity-70 flex items-center gap-2"><Calendar size={12} /> Academic Management System</p>
               </div>
               <button onClick={() => setShowViewModal(false)} className="p-3 bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-2xl transition-all"><X size={20} /></button>
             </div>
@@ -268,7 +268,7 @@ const Batches = () => {
               </div>
             </div>
             <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex justify-end">
-              <button onClick={() => setShowViewModal(false)} className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm uppercase tracking-widest">Close Details</button>
+              <button onClick={() => setShowViewModal(false)} className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm  tracking-widest">Close Details</button>
             </div>
           </div>
         </div>

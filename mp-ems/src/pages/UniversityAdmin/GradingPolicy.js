@@ -181,7 +181,7 @@ const GradingPolicy = () => {
                 <div className="flex items-center gap-4">
                     {(isSuperOrAdmin || isUniversityAdmin) && universities.length > 0 && (
                         <div className="flex flex-col">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                            <label className="text-[12px] font-black text-slate-400  tracking-widest mb-1.5 ml-1">
                                 {isSuperOrAdmin ? 'Select University' : 'University'}
                             </label>
                             <select
@@ -213,13 +213,13 @@ const GradingPolicy = () => {
                 <div className="lg:col-span-8 space-y-6">
                     <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
                         <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <h3 className="text-sm font-black text-slate-400  tracking-widest flex items-center gap-2">
                                 <BarChart3 size={16} />
                                 Grade Scale Definitions
                             </h3>
                             <button
                                 onClick={handleAddRow}
-                                className="inline-flex items-center gap-2 text-xs font-black text-sky-600 bg-sky-50 hover:bg-sky-100 px-4 py-2 rounded-xl transition-colors border border-sky-100"
+                                className="inline-flex items-center gap-2 text-[13px] font-black text-sky-600 bg-sky-50 hover:bg-sky-100 px-4 py-2 rounded-xl transition-colors border border-sky-100"
                             >
                                 <Plus size={14} />
                                 Add Grade
@@ -228,7 +228,7 @@ const GradingPolicy = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
-                                    <tr className="bg-slate-50/30 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                                    <tr className="bg-slate-50/30 text-[12px] font-black  tracking-widest text-slate-400 border-b border-slate-100">
                                         <th className="px-8 py-4">Min. Marks (%)</th>
                                         <th className="px-8 py-4">Letter Grade</th>
                                         <th className="px-8 py-4">Grade Points</th>
@@ -252,7 +252,7 @@ const GradingPolicy = () => {
                                                     value={row.grade}
                                                     onChange={(e) => handleScaleChange(index, 'grade', e.target.value)}
                                                     placeholder="A+, O, F etc."
-                                                    className="w-24 h-10 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-black text-slate-700 focus:bg-white focus:border-sky-500 outline-none transition-all uppercase"
+                                                    className="w-24 h-10 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-black text-slate-700 focus:bg-white focus:border-sky-500 outline-none transition-all "
                                                 />
                                             </td>
                                             <td className="px-8 py-4">
@@ -284,7 +284,7 @@ const GradingPolicy = () => {
                 <div className="lg:col-span-4 space-y-6">
                     <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden p-8 space-y-8">
                         <div className="space-y-6">
-                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <h3 className="text-sm font-black text-slate-400  tracking-widest flex items-center gap-2">
                                 <Settings size={16} />
                                 Result Parameters
                             </h3>
@@ -300,7 +300,7 @@ const GradingPolicy = () => {
                                     />
                                     <div className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-black">PERCENT</div>
                                 </div>
-                                <p className="text-[10px] text-slate-400 uppercase tracking-widest leading-relaxed px-2">
+                                <p className="text-[12px] text-slate-400  tracking-widest leading-relaxed px-2">
                                     Students scoring below this cumulative percentage will be marked as "FAIL".
                                 </p>
                             </div>
@@ -308,7 +308,7 @@ const GradingPolicy = () => {
                             <div className="pt-6 border-t border-slate-100 flex items-center justify-between gap-4">
                                 <div className="space-y-1 flex-1">
                                     <h4 className="text-sm font-bold text-slate-900">Exclude Fails from SGPA</h4>
-                                    <p className="text-[10px] text-slate-500 font-medium">Calculate SGPA only using earned credits (Pass subjects).</p>
+                                    <p className="text-[12px] text-slate-500 font-medium">Calculate SGPA only using earned credits (Pass subjects).</p>
                                 </div>
                                 <button
                                     onClick={() => setConfig({ ...config, calculate_sgpa_on_earned_only: !config.calculate_sgpa_on_earned_only })}
@@ -322,8 +322,8 @@ const GradingPolicy = () => {
                         <div className="bg-amber-50 rounded-2xl p-5 border border-amber-100 flex gap-4">
                             <AlertTriangle size={24} className="text-amber-500 shrink-0" />
                             <div className="space-y-1">
-                                <p className="text-xs font-black text-amber-900 uppercase tracking-tight">Important Notice</p>
-                                <p className="text-[10px] font-bold text-amber-700 leading-relaxed tracking-tight uppercase">
+                                <p className="text-[13px] font-black text-amber-900  tracking-tight">Important Notice</p>
+                                <p className="text-[12px] font-bold text-amber-700 leading-relaxed tracking-tight ">
                                     Changes to these settings will immediately affect all student results, including those already generated and finalized.
                                 </p>
                             </div>
@@ -333,18 +333,18 @@ const GradingPolicy = () => {
                     <div className="bg-sky-900 rounded-[2rem] p-8 text-white space-y-4 shadow-xl shadow-sky-900/20">
                         <div className="flex items-center gap-3">
                             <Info size={20} className="text-sky-400" />
-                            <h4 className="font-black text-sm uppercase tracking-widest">Logic Guide</h4>
+                            <h4 className="font-black text-sm  tracking-widest">Logic Guide</h4>
                         </div>
                         <div className="space-y-4">
                             <div className="flex gap-4 group">
-                                <div className="w-8 h-8 rounded-full bg-sky-800 flex items-center justify-center text-xs font-black text-sky-400 group-hover:bg-sky-500 group-hover:text-white transition-colors">1</div>
-                                <p className="text-[10px] font-medium leading-relaxed opacity-80 flex-1">
+                                <div className="w-8 h-8 rounded-full bg-sky-800 flex items-center justify-center text-[13px] font-black text-sky-400 group-hover:bg-sky-500 group-hover:text-white transition-colors">1</div>
+                                <p className="text-[12px] font-medium leading-relaxed opacity-80 flex-1">
                                     Grades are assigned by checking which range the student's marks fall into, starting from highest to lowest threshold.
                                 </p>
                             </div>
                             <div className="flex gap-4 group">
-                                <div className="w-8 h-8 rounded-full bg-sky-800 flex items-center justify-center text-xs font-black text-sky-400 group-hover:bg-sky-500 group-hover:text-white transition-colors">2</div>
-                                <p className="text-[10px] font-medium leading-relaxed opacity-80 flex-1">
+                                <div className="w-8 h-8 rounded-full bg-sky-800 flex items-center justify-center text-[13px] font-black text-sky-400 group-hover:bg-sky-500 group-hover:text-white transition-colors">2</div>
+                                <p className="text-[12px] font-medium leading-relaxed opacity-80 flex-1">
                                     Grade points are used in the calculation of SGPA: Total (Points × Credits) / Total Credits.
                                 </p>
                             </div>

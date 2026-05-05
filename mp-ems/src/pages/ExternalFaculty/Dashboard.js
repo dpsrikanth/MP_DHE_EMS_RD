@@ -69,7 +69,7 @@ const ExternalFacultyDashboard = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
         <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-slate-400 font-bold text-xs uppercase tracking-tighter animate-pulse">Synchronizing Dashboard...</p>
+        <p className="text-slate-400 font-bold text-[13px]  tracking-tighter animate-pulse">Synchronizing Dashboard...</p>
       </div>
     );
   }
@@ -79,7 +79,7 @@ const ExternalFacultyDashboard = () => {
       {/* Welcome Banner */}
       <div className="bg-indigo-600 rounded-[2.5rem] p-8 md:p-12 text-white shadow-2xl relative overflow-hidden group">
         <div className="relative z-10 space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-xs font-black uppercase tracking-widest text-indigo-100">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-[13px] font-black  tracking-widest text-indigo-100">
             <LayoutDashboard size={14} />
             Faculty Portal
           </div>
@@ -123,7 +123,7 @@ const ExternalFacultyDashboard = () => {
             `}>
               {React.cloneElement(stat.icon, { size: 24 })}
             </div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">{stat.label}</p>
+            <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1.5">{stat.label}</p>
             <p className="text-3xl font-black text-slate-900">{stat.value}</p>
           </div>
         ))}
@@ -142,7 +142,7 @@ const ExternalFacultyDashboard = () => {
           </div>
           <button 
             onClick={() => navigate('/external-faculty/marks-entry')}
-            className="text-xs font-black text-indigo-600 hover:text-indigo-700 underline uppercase tracking-tighter"
+            className="text-[13px] font-black text-indigo-600 hover:text-indigo-700 underline  tracking-tighter"
           >
             View All Assignments
           </button>
@@ -151,10 +151,10 @@ const ExternalFacultyDashboard = () => {
           <table className="w-full text-left">
             <thead className="bg-slate-50/50">
               <tr>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</th>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Exam & Subject</th>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                <th className="px-8 py-4 text-[13px] font-black text-slate-400  tracking-widest">Student</th>
+                <th className="px-8 py-4 text-[13px] font-black text-slate-400  tracking-widest">Exam & Subject</th>
+                <th className="px-8 py-4 text-[13px] font-black text-slate-400  tracking-widest text-center">Status</th>
+                <th className="px-8 py-4 text-[13px] font-black text-slate-400  tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -168,22 +168,22 @@ const ExternalFacultyDashboard = () => {
                         </div>
                         <div>
                           <p className="text-sm font-bold text-slate-900">{row.student_name}</p>
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{row.rollnumber}</p>
+                          <p className="text-[12px] font-black text-slate-400  tracking-widest">{row.rollnumber}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-2 text-indigo-600 mb-1">
                         <FileText size={14} />
-                        <p className="text-xs font-black uppercase tracking-tight">{row.subject_name}</p>
+                        <p className="text-[13px] font-black  tracking-tight">{row.subject_name}</p>
                       </div>
                       <div className="flex items-center gap-2 text-slate-400">
                         <Calendar size={12} />
-                        <p className="text-[10px] font-bold">{row.exam_name}</p>
+                        <p className="text-[12px] font-bold">{row.exam_name}</p>
                       </div>
                     </td>
                     <td className="px-8 py-6 text-center">
-                      <span className={`inline-block px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border
+                      <span className={`inline-block px-3 py-1 rounded-full text-[9px] font-black  tracking-widest border
                         ${row.assignment_status === 'Submitted' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
                           row.assignment_status === 'Evaluated' ? 'bg-blue-50 text-blue-600 border-blue-100' : 
                           'bg-amber-50 text-amber-600 border-amber-100'}
@@ -206,13 +206,13 @@ const ExternalFacultyDashboard = () => {
                 <tr>
                   <td colSpan="4" className="px-8 py-16 text-center">
                     <div className="flex flex-col items-center gap-2">
-                       <p className="text-slate-400 text-sm font-bold uppercase tracking-widest text-center">
+                       <p className="text-slate-400 text-sm font-bold  tracking-widest text-center">
                         {searchQuery ? "No matching assignments found" : "No recent assignments found"}
                       </p>
                       {searchQuery && (
                         <button 
                           onClick={() => setSearchQuery('')}
-                          className="text-xs font-black text-indigo-600 hover:text-indigo-700 underline uppercase mt-2"
+                          className="text-[13px] font-black text-indigo-600 hover:text-indigo-700 underline  mt-2"
                         >
                           Clear Search
                         </button>

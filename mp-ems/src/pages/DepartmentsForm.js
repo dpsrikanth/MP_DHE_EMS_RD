@@ -107,7 +107,7 @@ const DepartmentsForm = () => {
             </div>
           </div>
           <div className="form-header__right">
-              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100 shadow-sm">
+              <span className="text-[12px] font-black text-emerald-400  tracking-widest bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100 shadow-sm">
                 Structural Module v1.2
               </span>
           </div>
@@ -126,7 +126,7 @@ const DepartmentsForm = () => {
                     {isEditing && (
                       <div className="p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] flex items-center justify-between">
                          <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Entity Reference</p>
+                            <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-2">Entity Reference</p>
                             <p className="text-sm font-black text-slate-900 font-mono tracking-tighter">DEPT-REF-{id.padStart(3, '0')}</p>
                          </div>
                          <div className="w-10 h-10 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-300 shadow-sm"><Hash size={18} /></div>
@@ -147,14 +147,14 @@ const DepartmentsForm = () => {
                       <label className="form-label">Departmental Alpha Code</label>
                       <input type="text" placeholder="e.g. CSE" value={form.department_code} 
                         onChange={(e) => setForm({ ...form, department_code: e.target.value })}
-                        className="form-input font-bold tracking-widest uppercase" />
+                        className="form-input font-bold tracking-widest " />
                     </div>
                   </div>
                 </div>
 
                 <div className="p-10 bg-emerald-950 rounded-[3rem] text-white relative overflow-hidden group shadow-xl shadow-emerald-900/10">
                    <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-400/10 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-emerald-400/20 transition-all duration-700" />
-                   <h4 className="relative z-10 text-xl font-black tracking-tight uppercase mb-4">Institutional Logic</h4>
+                   <h4 className="relative z-10 text-xl font-black tracking-tight  mb-4">Institutional Logic</h4>
                    <p className="relative z-10 text-sm font-medium leading-relaxed text-emerald-200/80">
                      Establishing dedicated departments allows for granular curriculum management and precise student categorization within the broader institutional framework.
                    </p>
@@ -186,8 +186,8 @@ const DepartmentsForm = () => {
                           {form.status === 'Active' ? <ShieldCheck size={20} /> : <ShieldAlert size={20} />}
                         </div>
                         <div>
-                           <span className="form-toggle__label text-sm uppercase tracking-widest">{form.status === 'Active' ? 'Operational' : 'Restricted'}</span>
-                           <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Control visibility for program mapping and enrollments</p>
+                           <span className="form-toggle__label text-sm  tracking-widest">{form.status === 'Active' ? 'Operational' : 'Restricted'}</span>
+                           <p className="text-[12px] text-slate-400 font-bold  mt-1">Control visibility for program mapping and enrollments</p>
                         </div>
                       </div>
                       <button type="button" onClick={() => setForm({...form, status: form.status === 'Active' ? 'Inactive' : 'Active'})} 
@@ -201,7 +201,7 @@ const DepartmentsForm = () => {
                 <div className="py-12 px-10 border-4 border-dashed border-slate-50 rounded-[3rem] flex items-center justify-center text-center">
                    <div>
                       <Building size={32} className="mx-auto text-slate-100 mb-4" />
-                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Structural Integrity Framework</p>
+                      <p className="text-[12px] font-black text-slate-300  tracking-[0.3em]">Structural Integrity Framework</p>
                    </div>
                 </div>
               </div>

@@ -179,7 +179,7 @@ const InternalCalendar = () => {
             <ChevronLeft size={24} />
           </button>
           <div className="px-6 text-center min-w-[200px]">
-            <span className="text-lg font-black text-slate-800 uppercase tracking-widest">{monthNames[currentDate.getMonth()]}</span>
+            <span className="text-lg font-black text-slate-800  tracking-widest">{monthNames[currentDate.getMonth()]}</span>
             <span className="text-lg font-bold text-sky-500 ml-2">{currentDate.getFullYear()}</span>
           </div>
           <button onClick={nextMonth} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-sky-500">
@@ -195,7 +195,7 @@ const InternalCalendar = () => {
             {/* Days of week header */}
             <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/50">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-                <div key={d} className="py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{d}</div>
+                <div key={d} className="py-4 text-center text-[12px] font-black text-slate-400  tracking-[0.2em]">{d}</div>
               ))}
             </div>
 
@@ -223,7 +223,7 @@ const InternalCalendar = () => {
                   <div className="space-y-1">
                     {/* Render Milestones as bars */}
                     {day.milestones && day.milestones.slice(0, 2).map((m, mIdx) => (
-                      <div key={mIdx} className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase truncate border 
+                      <div key={mIdx} className={`px-2 py-0.5 rounded-lg text-[8px] font-black  truncate border 
                         ${m.type === 'Internal' ? 'bg-sky-500 text-white border-sky-600' : 
                           m.type === 'External' ? 'bg-amber-500 text-white border-amber-600' : 
                           'bg-indigo-600 text-white border-indigo-700'}`}>
@@ -233,20 +233,20 @@ const InternalCalendar = () => {
                     
                     {/* Render University Exams */}
                     {day.exams && day.exams.slice(0, 2).map((exam, eIdx) => (
-                      <div key={eIdx} className="px-2 py-0.5 bg-slate-900 text-white rounded-lg text-[8px] font-black uppercase tracking-wider truncate shadow-sm">
+                      <div key={eIdx} className="px-2 py-0.5 bg-slate-900 text-white rounded-lg text-[8px] font-black  tracking-wider truncate shadow-sm">
                         {exam.subject_name}
                       </div>
                     ))}
 
                     {/* Render Internal Exams */}
                     {day.internalExams && day.internalExams.slice(0, 1).map((s, sIdx) => (
-                      <div key={sIdx} className="px-2 py-0.5 bg-emerald-600 text-white rounded-lg text-[8px] font-black uppercase tracking-wider truncate shadow-sm">
+                      <div key={sIdx} className="px-2 py-0.5 bg-emerald-600 text-white rounded-lg text-[8px] font-black  tracking-wider truncate shadow-sm">
                         {s.subject_name} (INT)
                       </div>
                     ))}
                     
                     {(day.exams?.length + day.internalExams?.length + day.milestones?.length > 4) && (
-                      <div className="text-[7px] font-black text-slate-400 pl-2 uppercase tracking-widest">
+                      <div className="text-[7px] font-black text-slate-400 pl-2  tracking-widest">
                         + {day.exams.length + day.internalExams.length + day.milestones.length - 4} More
                       </div>
                     )}
@@ -275,20 +275,20 @@ const InternalCalendar = () => {
                 {/* Milestones in Detail */}
                 {selectedDayEvents.milestones?.length > 0 && (
                   <div className="space-y-3">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Institutional Milestones</p>
+                    <p className="text-[9px] font-black text-slate-400  tracking-widest ml-1">Institutional Milestones</p>
                     {selectedDayEvents.milestones.map((m, idx) => (
                       <div key={idx} className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-indigo-200 transition-all group">
                         <div className="flex items-center justify-between mb-2">
                            <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border 
                              ${m.type === 'Internal' ? 'bg-sky-50 text-sky-600 border-sky-100' : 
-                               m.type === 'External' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'} uppercase`}>
+                               m.type === 'External' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'} `}>
                              {m.type}
                            </span>
                            <Flag size={14} className="text-slate-300" />
                         </div>
                         <h4 className="text-sm font-black text-slate-900 mb-3">{m.name}</h4>
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-tight">
+                          <div className="flex items-center gap-2 text-[12px] font-bold text-slate-500  tracking-tight">
                             <div className="w-5 h-5 bg-slate-50 rounded-lg flex items-center justify-center text-indigo-500">
                               <User size={12} />
                             </div>
@@ -303,7 +303,7 @@ const InternalCalendar = () => {
                 {/* Internal Exams in Detail */}
                 {selectedDayEvents.internalExams?.length > 0 && (
                   <div className="space-y-3">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Internal Assessments</p>
+                    <p className="text-[9px] font-black text-slate-400  tracking-widest ml-1">Internal Assessments</p>
                     {selectedDayEvents.internalExams.map((s, idx) => (
                       <div key={idx} className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl shadow-sm hover:border-emerald-200 transition-all group relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-2 text-emerald-100 group-hover:text-emerald-200 transition-colors">
@@ -314,10 +314,10 @@ const InternalCalendar = () => {
                              <div className="w-5 h-5 bg-emerald-600 rounded-md flex items-center justify-center text-white">
                                <CalendarIcon size={12} />
                              </div>
-                             <span className="text-[10px] font-black text-emerald-700 uppercase tracking-tight">Scheduled</span>
+                             <span className="text-[12px] font-black text-emerald-700  tracking-tight">Scheduled</span>
                           </div>
                           <h4 className="text-sm font-black text-slate-900 mb-2">{s.subject_name}</h4>
-                          <div className="flex items-center gap-3 text-[10px] font-bold text-slate-500 uppercase">
+                          <div className="flex items-center gap-3 text-[12px] font-bold text-slate-500 ">
                              <div className="flex items-center gap-1">
                                <Clock size={12} className="text-emerald-600" />
                                <span>{s.start_time} - {s.end_time}</span>
@@ -332,16 +332,16 @@ const InternalCalendar = () => {
                 {/* University Exams in Detail */}
                 {selectedDayEvents.exams?.length > 0 && (
                   <div className="space-y-3">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Scheduled Exams</p>
+                    <p className="text-[9px] font-black text-slate-400  tracking-widest ml-1">Scheduled Exams</p>
                     {selectedDayEvents.exams.map((exam, idx) => (
                       <div key={idx} className="p-4 bg-slate-900 text-white rounded-2xl shadow-sm group">
                         <h4 className="text-sm font-black mb-3">{exam.subject_name}</h4>
                         <div className="space-y-2">
-                           <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
+                           <div className="flex items-center gap-2 text-[12px] font-bold text-slate-400 ">
                              <Clock size={12} className="text-sky-400" />
                              <span>{exam.start_time} - {exam.end_time}</span>
                            </div>
-                           <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
+                           <div className="flex items-center gap-2 text-[12px] font-bold text-slate-400 ">
                              <Layers size={12} className="text-sky-400" />
                              <span>{exam.exam_name}</span>
                            </div>
@@ -354,7 +354,7 @@ const InternalCalendar = () => {
 
               <button 
                 onClick={() => setSelectedDayEvents(null)}
-                className="w-full mt-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors"
+                className="w-full mt-6 py-3 bg-slate-900 text-white rounded-xl text-[12px] font-black  tracking-widest hover:bg-slate-800 transition-colors"
               >
                 Close Panel
               </button>
@@ -365,8 +365,8 @@ const InternalCalendar = () => {
               
               <div className="relative z-10">
                 <Globe className="text-sky-400 mb-6" size={32} />
-                <h3 className="text-xl font-black mb-4 tracking-tight leading-tight italic uppercase">Institutional<br/>Roadmap</h3>
-                <p className="text-slate-400 text-[10px] leading-relaxed font-medium mb-8">
+                <h3 className="text-xl font-black mb-4 tracking-tight leading-tight italic ">Institutional<br/>Roadmap</h3>
+                <p className="text-slate-400 text-[12px] leading-relaxed font-medium mb-8">
                   Visualize the high-level academic cycle including marks entry windows, commencement dates, and final assessment timelines.
                 </p>
                 
@@ -376,7 +376,7 @@ const InternalCalendar = () => {
                       <Flag size={20} />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-0.5">Active Milestones</p>
+                      <p className="text-[12px] font-black  tracking-widest text-slate-500 mb-0.5">Active Milestones</p>
                       <p className="text-sm font-bold text-white">{milestones.length} Events</p>
                     </div>
                   </div>
@@ -384,7 +384,7 @@ const InternalCalendar = () => {
                   {authUtils.isUniversityAdmin() && (
                     <button 
                       onClick={() => navigate('/milestones')}
-                      className="w-full mt-4 flex items-center justify-center gap-2 py-4 bg-sky-500 hover:bg-sky-400 text-white rounded-2xl transition-all font-black text-xs uppercase tracking-widest shadow-xl shadow-sky-500/20"
+                      className="w-full mt-4 flex items-center justify-center gap-2 py-4 bg-sky-500 hover:bg-sky-400 text-white rounded-2xl transition-all font-black text-[13px]  tracking-widest shadow-xl shadow-sky-500/20"
                     >
                       <Plus size={18} />
                       Manage Roadmap
@@ -398,8 +398,8 @@ const InternalCalendar = () => {
           {/* Legend */}
           {!selectedDayEvents && (
             <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Color Legend</h4>
-              <div className="space-y-3 text-[9px] font-black uppercase tracking-wide">
+              <h4 className="text-[12px] font-black text-slate-400  tracking-widest mb-4">Color Legend</h4>
+              <div className="space-y-3 text-[9px] font-black  tracking-wide">
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 bg-indigo-600 rounded-full" />
                   <span className="text-slate-600">General Milestone</span>
