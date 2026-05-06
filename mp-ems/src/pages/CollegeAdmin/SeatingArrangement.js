@@ -183,11 +183,11 @@ const SeatingArrangement = () => {
 
 
             {/* Quick Stats & Controls */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div className="lg:col-span-3 space-y-6">
-                    <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-10">
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-end">
-                            <div className="md:col-span-12 lg:col-span-5 space-y-3">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-9 xl:col-span-10 space-y-6">
+                    <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-6 md:p-10">
+                        <div className="flex flex-col xl:flex-row items-stretch xl:items-end gap-6">
+                            <div className="flex-[2] min-w-[280px] space-y-3">
                                 <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1 block">Selected Examination Context</label>
                                 <select
                                     value={selectedExam}
@@ -202,7 +202,7 @@ const SeatingArrangement = () => {
                                     })}
                                 </select>
                             </div>
-                            <div className="md:col-span-6 lg:col-span-3 space-y-3">
+                            <div className="flex-1 min-w-[180px] space-y-3">
                                 <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1 block">Seating Pattern</label>
                                 <select
                                     value={seatingPattern}
@@ -214,11 +214,11 @@ const SeatingArrangement = () => {
                                     <option value="random">Randomized</option>
                                 </select>
                             </div>
-                            <div className="md:col-span-6 lg:col-span-4 flex items-center gap-3">
+                            <div className="flex-1 min-w-[320px] flex items-center gap-2">
                                 <button
                                     onClick={handleAutoAllocate}
                                     disabled={loading || !selectedExam || isLocked}
-                                    className="flex-1 flex items-center justify-center gap-2 h-[56px] bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95  tracking-widest text-[12px] disabled:opacity-50 disabled:grayscale whitespace-nowrap px-4"
+                                    className="flex-[1.5] flex items-center justify-center gap-2 h-[56px] bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95  tracking-widest text-[11px] disabled:opacity-50 disabled:grayscale whitespace-nowrap px-3"
                                 >
                                     <Play size={14} fill="currentColor" />
                                     Run Allocation
@@ -227,7 +227,7 @@ const SeatingArrangement = () => {
                                     <button
                                         onClick={handleLockSeating}
                                         disabled={loading || !selectedExam || arrangements.length === 0}
-                                        className="flex-1 flex items-center justify-center gap-2 h-[56px] bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95  tracking-widest text-[12px] disabled:opacity-50 whitespace-nowrap px-4"
+                                        className="flex-1 flex items-center justify-center gap-2 h-[56px] bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95  tracking-widest text-[11px] disabled:opacity-50 whitespace-nowrap px-3"
                                     >
                                         <CheckCircle2 size={14} />
                                         Approve
@@ -299,21 +299,21 @@ const SeatingArrangement = () => {
                 </div>
 
                 {/* Status Card */}
-                <div className="bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl flex flex-col justify-between relative overflow-hidden group">
+                <div className="lg:col-span-3 xl:col-span-2 bg-slate-900 rounded-[2.5rem] p-6 shadow-2xl flex flex-col justify-between relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 blur-3xl rounded-full" />
                     <div className="relative z-10">
                         <h3 className="text-xl font-black text-white">Allocation Status</h3>
                         <p className="text-indigo-400 text-[12px] font-black  tracking-widest mt-1">Real-time mapping progress</p>
                     </div>
 
-                    <div className="relative z-10 space-y-6 mt-8">
+                    <div className="relative z-10 space-y-4 mt-6">
                         <div className="flex items-end justify-between">
-                            <span className="text-5xl font-black text-white">
+                            <span className="text-3xl font-black text-white">
                                 {stats.totalStudents > 0 ? ((arrangements.length / stats.totalStudents) * 100).toFixed(0) : 0}%
                             </span>
                             <div className="text-right">
-                                <p className="text-white/40 text-[12px] font-bold  tracking-widest">Assigned</p>
-                                <p className="text-lg font-black text-white">{arrangements.length} / {stats.totalStudents}</p>
+                                <p className="text-white/40 text-[10px] font-bold  tracking-widest">Assigned</p>
+                                <p className="text-md font-black text-white">{arrangements.length} / {stats.totalStudents}</p>
                             </div>
                         </div>
                         <div className="h-2 bg-white/10 rounded-full overflow-hidden">
