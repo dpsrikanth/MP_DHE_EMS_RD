@@ -2718,6 +2718,85 @@ const saveTeacherMarks = async (req, res) => {
   }
 };
 
+const bulkUploadMarks = async (req, res) => {
+  const dbClient = await client.connect();
+  try {
+    const { subject_id, exam_id, academic_year_id, marks } = req.body;
+    
+    if (!subject_id || !marks || !Array.isArray(marks)) {
+      return res.status(400).json({ message: "Invalid payload. Subject and Marks data are required." });
+    }
+
+    const teacherCheck = await dbClient.query('SELECT id FROM teachers WHERE user_id = $1', [req.user.id]);
+    const actual_teacher_id = teacherCheck.rows.length > 0 ? teacherCheck.rows[0].id : null;
+
+    await dbClient.query("BEGIN");
+    
+    let errors = [];
+    for (let i = 0; i < marks.length; i++) {
+      const record = marks[i];
+      const rowNum = i + 1;
+      
+      const enrollmentNo = record.enrollment_number || record.rollnumber;
+      if (!enrollmentNo) {
+        errors.push({ row: rowNum, message: "Missing Enrollment No / Roll Number" });
+        continue;
+      }
+
+      // Lookup student_id by enrollment_number or rollnumber
+      const studentRes = await dbClient.query('SELECT id FROM students WHERE TRIM(rollnumber) = $1 OR TRIM(enrollment_number) = $1', [enrollmentNo.toString().trim()]);
+      if (studentRes.rows.length === 0) {
+        errors.push({ row: rowNum, message: `Student with Enrollment No ${enrollmentNo} not found.` });
+        continue;
+      }
+      const student_id = studentRes.rows[0].id;
+
+      const internal = record.internal_marks !== undefined && record.internal_marks !== '' ? parseFloat(record.internal_marks) : null;
+      const external = record.external_marks !== undefined && record.external_marks !== '' ? parseFloat(record.external_marks) : null;
+      const computedTotal = (internal || 0) + (external || 0);
+      const rowStatus = 'Draft';
+
+      // Upsert logic
+      const checkResult = await dbClient.query(
+        `SELECT id FROM marks 
+         WHERE student_id = $1 AND subject_id = $2 
+         AND (exam_id = $3 OR ($3 IS NULL AND exam_id IS NULL))
+         AND (academic_year_id = $4 OR ($4 IS NULL AND academic_year_id IS NULL))`,
+        [student_id, subject_id, exam_id || null, academic_year_id || null]
+      );
+
+      if (checkResult.rows.length > 0) {
+        await dbClient.query(
+          `UPDATE marks 
+           SET internal_marks = $1, external_marks = $2, total_marks = $3, status = $4, teacher_id = $5 
+           WHERE id = $6 AND status != 'Approved'`,
+          [internal, external, computedTotal, rowStatus, actual_teacher_id, checkResult.rows[0].id]
+        );
+      } else {
+        await dbClient.query(
+          `INSERT INTO marks (student_id, subject_id, exam_id, academic_year_id, internal_marks, external_marks, total_marks, status, teacher_id) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [student_id, subject_id, exam_id || null, academic_year_id || null, internal, external, computedTotal, rowStatus, actual_teacher_id]
+        );
+      }
+    }
+
+    if (errors.length > 0) {
+      await dbClient.query("ROLLBACK");
+      return res.status(400).json({ message: "Bulk upload failed due to validation errors.", errors });
+    }
+
+    await dbClient.query("COMMIT");
+    res.json({ message: "Marks uploaded and upserted successfully." });
+  } catch (error) {
+    await dbClient.query("ROLLBACK");
+    console.error("Bulk upload marks error:", error);
+    res.status(500).json({ message: "Failed to upload marks", error: error.message });
+  } finally {
+    dbClient.release();
+  }
+};
+
 const getMarksForApproval = async (req, res) => {
   try {
     const { college_id, department_id } = req.query;
@@ -4862,6 +4941,7 @@ module.exports = {
   // mark module additions
   getStudentsForMarks,
   saveTeacherMarks,
+  bulkUploadMarks,
   getMarksForApproval,
   approveRejectMarks,
   // Subject Mapping

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BarChart3,
   Plus,
@@ -11,8 +11,14 @@ import {
   FileText,
   TrendingUp,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  ChevronDown,
+  Download,
+  FileSpreadsheet,
+  FileUp
 } from "lucide-react";
+import Papa from 'papaparse';
+import BulkImportModal from '../components/BulkImportModal';
 import { toast } from 'react-toastify';
 import authUtils from '../utils/authUtils';
 import { useDataTable } from '../hooks/useDataTable';
@@ -52,6 +58,8 @@ const Marks = () => {
   const [selectedExam, setSelectedExam] = useState('');
 
   const [saving, setSaving] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showBulkDropdown, setShowBulkDropdown] = useState(false);
 
   // Clear selected exam and data if parent filters change
   useEffect(() => {
@@ -159,6 +167,38 @@ const Marks = () => {
     } catch (err) {
       console.error("Error fetching filters", err);
     }
+  };
+
+  const downloadTemplate = () => {
+    const headers = ['Enrollment No', 'Internal Marks', 'External Marks'];
+    const csv = Papa.unparse([headers]);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'marks_import_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToCSV = () => {
+    if (data.length === 0) return toast.warning('No data to export');
+    const csv = Papa.unparse(data.map(item => ({
+      'Enrollment No': item.enrollment_number || item.student_id,
+      'Student Name': item.student_name,
+      'Subject': item.subject_name,
+      'Internal Marks': item.internal_marks,
+      'External Marks': item.external_marks,
+      'Total': item.total_marks,
+      'Status': item.status
+    })));
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `marks_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const availableColumns = [
@@ -289,7 +329,52 @@ const Marks = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 relative">
+          <div className="relative">
+            <button
+              onClick={() => setShowBulkDropdown(!showBulkDropdown)}
+              className="flex items-center gap-2 px-6 py-3 bg-white text-slate-700 border-2 border-slate-100 rounded-xl font-black text-sm tracking-widest hover:border-indigo-600 transition-all"
+            >
+              <FileSpreadsheet size={18} />
+              <span>Bulk Actions</span>
+              <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showBulkDropdown && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-[100] animate-in slide-in-from-top-2">
+                <button
+                  onClick={() => {
+                    if (!selectedSubject || !selectedExam) {
+                      toast.warning('Please select Subject and Exam first');
+                      return;
+                    }
+                    setShowImportModal(true);
+                    setShowBulkDropdown(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                >
+                  <FileUp size={18} />
+                  Import Marks CSV
+                </button>
+                <button
+                  onClick={() => { downloadTemplate(); setShowBulkDropdown(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                >
+                  <Download size={18} />
+                  Download Template
+                </button>
+                <div className="h-px bg-slate-100 my-1"></div>
+                <button
+                  onClick={() => { exportToCSV(); setShowBulkDropdown(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                >
+                  <Download size={18} />
+                  Export Current View
+                </button>
+              </div>
+            )}
+          </div>
+
           {activeTab === 'teacher' && data.length > 0 && (
             <>
               <button
@@ -627,6 +712,28 @@ const Marks = () => {
           </button>
         </div>
       </div>
+      {/* Bulk Import Modal */}
+      <BulkImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onUploadSuccess={() => {
+          fetchData();
+          setShowImportModal(false);
+        }}
+        endpoint="/marks/bulk-upload"
+        entityName="marks"
+        expectedColumns={{
+          enrollment_number: 'Enrollment No',
+          internal_marks: 'Internal Marks',
+          external_marks: 'External Marks'
+        }}
+        optionalColumns={['internal_marks', 'external_marks']}
+        extraPayload={{
+          subject_id: selectedSubject,
+          exam_id: selectedExam,
+          academic_year_id: selectedAcademicYear
+        }}
+      />
     </div>
   );
 };

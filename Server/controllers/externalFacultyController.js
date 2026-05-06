@@ -212,3 +212,103 @@ exports.unlockExternalMarks = async (req, res) => {
         client.release();
     }
 };
+
+exports.bulkUploadExternalMarks = async (req, res) => {
+    const { marks, subject_id, exam_id, academic_year_id } = req.body;
+    const faculty_user_id = req.user.id;
+
+    if (!marks || !Array.isArray(marks) || !subject_id) {
+        return res.status(400).json({ error: "Invalid payload. Marks data and Subject ID are required." });
+    }
+
+    const client = await db.connect();
+    try {
+        await client.query('BEGIN');
+
+        let errors = [];
+        let successCount = 0;
+
+        for (let i = 0; i < marks.length; i++) {
+            const record = marks[i];
+            const rowNum = i + 1;
+            const enrollmentNo = record.enrollment_number || record.rollnumber;
+
+            if (!enrollmentNo) {
+                errors.push({ row: rowNum, message: "Missing Enrollment No / Roll Number" });
+                continue;
+            }
+
+            // Lookup student_id by rollnumber
+            const studentRes = await client.query(
+                'SELECT id FROM students WHERE TRIM(rollnumber) = $1',
+                [enrollmentNo.toString().trim()]
+            );
+
+            if (studentRes.rows.length === 0) {
+                errors.push({ row: rowNum, message: `Student with Roll Number ${enrollmentNo} not found.` });
+                continue;
+            }
+
+            const studentId = studentRes.rows[0].id;
+            const extMarks = record.external_marks !== undefined && record.external_marks !== '' ? parseFloat(record.external_marks) : 0;
+            const isAbsent = record.is_absent === true || record.is_absent === 'true' || record.is_absent === 'ABSENT';
+
+            // Validation: Max 70
+            if (!isAbsent && extMarks > 70) {
+                errors.push({ row: rowNum, message: `Marks (${extMarks}) exceed maximum allowed (70)` });
+                continue;
+            }
+
+            // Find specific exam_id if not provided (though it should be)
+            let targetExamId = exam_id;
+            if (!targetExamId) {
+                const examRes = await client.query(
+                    'SELECT id FROM exams WHERE subject_id = $1 AND academic_year_id = $2 LIMIT 1',
+                    [subject_id, academic_year_id]
+                );
+                if (examRes.rows.length > 0) targetExamId = examRes.rows[0].id;
+            }
+
+            if (!targetExamId) {
+                errors.push({ row: rowNum, message: "Could not identify target exam." });
+                continue;
+            }
+
+            // Upsert into marks table
+            await client.query(`
+                INSERT INTO marks (student_id, subject_id, exam_id, academic_year_id, external_marks, total_marks, status)
+                VALUES ($1, $2, $3, $4, $5, $5, 'Draft')
+                ON CONFLICT (student_id, subject_id, exam_id) 
+                DO UPDATE SET 
+                    external_marks = EXCLUDED.external_marks,
+                    total_marks = EXCLUDED.external_marks,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE marks.status != 'Approved'
+            `, [studentId, subject_id, targetExamId, academic_year_id, isAbsent ? 0 : extMarks]);
+
+            // Update assignment status
+            await client.query(`
+                UPDATE external_faculty_assignments 
+                SET status = 'Evaluated' 
+                WHERE faculty_user_id = $1 AND exam_id = $2 
+                  AND (subject_id = $3 OR subject_id IS NULL)
+                  AND status != 'Submitted'
+            `, [faculty_user_id, targetExamId, subject_id]);
+
+            successCount++;
+        }
+
+        await client.query('COMMIT');
+        res.status(200).json({ 
+            message: `Successfully processed ${successCount} records.`,
+            errors: errors.length > 0 ? errors : null
+        });
+
+    } catch (error) {
+        if (client) await client.query('ROLLBACK');
+        console.error("bulkUploadExternalMarks error:", error);
+        res.status(500).json({ error: "Failed to perform bulk upload", details: error.message });
+    } finally {
+        if (client) client.release();
+    }
+};

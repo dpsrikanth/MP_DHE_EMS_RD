@@ -7,6 +7,9 @@ import { TableSearch } from '../../components/TableControls';
 import { facultyApi } from '../../api/facultyApi';
 import { marksApi } from '../../api/marksApi';
 import { masterDataApi } from '../../api/masterDataApi';
+import { ChevronDown, Download, FileSpreadsheet, FileUp } from "lucide-react";
+import Papa from 'papaparse';
+import BulkImportModal from '../../components/BulkImportModal';
 
 const MarksEntry = () => {
     const location = useLocation();
@@ -23,6 +26,8 @@ const MarksEntry = () => {
     const [reviews, setReviews] = useState({}); // Per-student review statuses/comments
     const [searchQuery, setSearchQuery] = useState('');
     const [subjectSchedules, setSubjectSchedules] = useState([]);
+    const [showBulkDropdown, setShowBulkDropdown] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
 
     useEffect(() => {
         fetchAssignedSubjects();
@@ -320,6 +325,62 @@ const MarksEntry = () => {
         }
     };
 
+    const downloadTemplate = () => {
+        if (!marksStructure.length) return toast.warning('Structure not loaded');
+        const headers = ['Enrollment No', 'Student Name', ...marksStructure.map(c => c.component_name)];
+        const csv = Papa.unparse([headers]);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', `template_${selectedAssignment?.label || 'internal'}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const exportToCSV = () => {
+        if (students.length === 0) return toast.warning('No data to export');
+        const csv = Papa.unparse(students.map(s => {
+            const row = {
+                'Enrollment No': s.rollnumber || s.id,
+                'Student Name': s.name
+            };
+            marksStructure.forEach(comp => {
+                const draft = marksDraft[s.id]?.[comp.id] || { marks: '', isAbsent: false };
+                row[comp.component_name] = draft.isAbsent ? 'ABSENT' : draft.marks;
+            });
+            row['Total'] = calculateTotal(s.id).toFixed(1);
+            row['Status'] = determineStatus(s.id).label;
+            return row;
+        }));
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', `marks_${selectedAssignment?.label || 'internal'}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const transformPayload = (rows) => {
+        return rows.map(row => {
+            const components = {};
+            Object.entries(row).forEach(([key, val]) => {
+                if (key.startsWith('comp_')) {
+                    const compId = key.split('_')[1];
+                    components[compId] = { 
+                        marks: val === 'ABSENT' ? 0 : val, 
+                        is_absent: val === 'ABSENT' 
+                    };
+                }
+            });
+            return {
+                enrollment_number: row.enrollment_number,
+                components: components
+            };
+        });
+    };
+
 
     const handleSubmitMarks = async () => {
         const assignmentStr = assignedSubjects.find(a => a.id === selectedAssignment.value);
@@ -475,6 +536,51 @@ const MarksEntry = () => {
                         styles={{ control: (base) => ({ ...base, borderRadius: '1rem', borderColor: '#e2e8f0' }) }}
                     />
                 </div>
+
+                {/* Bulk Actions Dropdown */}
+                {selectedAssignment && (
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowBulkDropdown(!showBulkDropdown)}
+                            className="flex items-center gap-2 px-6 py-3 bg-white text-slate-700 border-2 border-slate-100 rounded-xl font-black text-sm tracking-widest hover:border-indigo-600 transition-all"
+                        >
+                            <FileSpreadsheet size={18} />
+                            <span>Bulk Actions</span>
+                            <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {showBulkDropdown && (
+                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-[100] animate-in slide-in-from-top-2">
+                                <button
+                                    onClick={() => {
+                                        setShowImportModal(true);
+                                        setShowBulkDropdown(false);
+                                    }}
+                                    disabled={isReadOnly && normalizedStatus !== 'Rejected'}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors disabled:opacity-50"
+                                >
+                                    <FileUp size={18} />
+                                    Import Marks CSV
+                                </button>
+                                <button
+                                    onClick={() => { downloadTemplate(); setShowBulkDropdown(false); }}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                                >
+                                    <Download size={18} />
+                                    Download Template
+                                </button>
+                                <div className="h-px bg-slate-100 my-1"></div>
+                                <button
+                                    onClick={() => { exportToCSV(); setShowBulkDropdown(false); }}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                                >
+                                    <Download size={18} />
+                                    Export Current View
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {loading && (
@@ -673,6 +779,35 @@ const MarksEntry = () => {
                     <p className="font-bold">Cannot proceed with marks entry.</p>
                     <p className="text-sm mt-1">Either no students are enrolled or the marks structure is not configured for this subject yet.</p>
                 </div>
+            )}
+
+            {/* Bulk Import Modal */}
+            {selectedAssignment && marksStructure.length > 0 && (
+                <BulkImportModal
+                    isOpen={showImportModal}
+                    onClose={() => setShowImportModal(false)}
+                    onUploadSuccess={() => {
+                        const assignment = assignedSubjects.find(a => a.id === selectedAssignment.value);
+                        fetchSubjectDetails(assignment);
+                        setShowImportModal(false);
+                    }}
+                    endpoint="/faculty-marks/bulk-upload"
+                    entityName="marks"
+                    expectedColumns={{
+                        enrollment_number: 'Enrollment No',
+                        ...Object.fromEntries(marksStructure.map(c => [`comp_${c.id}`, c.component_name]))
+                    }}
+                    optionalColumns={marksStructure.map(c => `comp_${c.id}`)}
+                    extraPayload={{
+                        subject_id: assignedSubjects.find(a => a.id === selectedAssignment.value)?.subject_id,
+                        faculty_id: JSON.parse(localStorage.getItem('user'))?.teacher_id || 1,
+                        college_id: assignedSubjects.find(a => a.id === selectedAssignment.value)?.college_id,
+                        semester_id: assignedSubjects.find(a => a.id === selectedAssignment.value)?.semester_id,
+                        academic_year_id: assignedSubjects.find(a => a.id === selectedAssignment.value)?.academic_year_id,
+                        section: assignedSubjects.find(a => a.id === selectedAssignment.value)?.section
+                    }}
+                    transformPayload={transformPayload}
+                />
             )}
         </div>
     );

@@ -5,7 +5,8 @@ const {
     getAssignedStudents, 
     saveExternalMarks, 
     finalizeExternalMarks,
-    unlockExternalMarks 
+    unlockExternalMarks,
+    bulkUploadExternalMarks 
 } = require('../controllers/externalFacultyController');
 
 /**
@@ -95,5 +96,19 @@ router.post('/finalize-marks', verifyToken, finalizeExternalMarks);
  *         description: Subject unlocked
  */
 router.post('/unlock-subject', verifyToken, unlockExternalMarks);
+
+/**
+ * @swagger
+ * /api/external-faculty/bulk-upload:
+ *   post:
+ *     summary: Bulk upload external marks via CSV
+ *     tags: [External Examiner Operations]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Marks uploaded successfully
+ */
+router.post('/bulk-upload', verifyToken, bulkUploadExternalMarks);
 
 module.exports = router;

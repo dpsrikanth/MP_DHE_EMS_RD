@@ -534,3 +534,131 @@ exports.getStudentsForRound = async (req, res) => {
     }
 };
 
+exports.bulkUploadInternalMarks = async (req, res) => {
+    const client = await db.connect();
+    try {
+        const { marks, subject_id, component_id, faculty_id, college_id, semester_id, academic_year_id, section } = req.body;
+
+        if (!marks || !Array.isArray(marks) || !subject_id) {
+            return res.status(400).json({ error: "Invalid payload. Marks data and Subject ID are required." });
+        }
+
+        // Fetch marks structure for validation
+        const structureRes = await client.query(
+            'SELECT id, component_name, max_marks FROM internal_marks_structure WHERE subject_id = $1',
+            [parseInt(subject_id)]
+        );
+        const structureMap = {};
+        structureRes.rows.forEach(row => {
+            structureMap[row.id] = row;
+        });
+
+        await client.query('BEGIN');
+
+        let errors = [];
+        let successCount = 0;
+
+        for (let i = 0; i < marks.length; i++) {
+            const record = marks[i];
+            const rowNum = i + 1;
+            const enrollmentNo = record.enrollment_number || record.rollnumber;
+
+            if (!enrollmentNo) {
+                errors.push({ row: rowNum, message: "Missing Enrollment No / Roll Number" });
+                continue;
+            }
+
+            // Lookup student_id
+            const studentRes = await client.query(
+                'SELECT id FROM students WHERE TRIM(rollnumber) = $1',
+                [enrollmentNo.toString().trim()]
+            );
+
+            if (studentRes.rows.length === 0) {
+                errors.push({ row: rowNum, message: `Student with ID ${enrollmentNo} not found.` });
+                continue;
+            }
+
+            const studentId = studentRes.rows[0].id;
+            
+            // Handle both single-component and multi-component payloads
+            const marksToProcess = [];
+            if (record.component_id || component_id) {
+                const compId = parseInt(record.component_id || component_id);
+                const mObtained = record.marks_obtained !== undefined && record.marks_obtained !== '' ? parseFloat(record.marks_obtained) : 0;
+                
+                // Validation
+                const compInfo = structureMap[compId];
+                if (compInfo && !isNaN(mObtained) && mObtained > compInfo.max_marks) {
+                    errors.push({ row: rowNum, message: `Marks for ${compInfo.component_name} (${mObtained}) exceed maximum allowed (${compInfo.max_marks})` });
+                    continue;
+                }
+
+                marksToProcess.push({
+                    component_id: compId,
+                    marks_obtained: isNaN(mObtained) ? 0 : mObtained,
+                    is_absent: record.is_absent === true || record.is_absent === 'true' || record.is_absent === 'ABSENT'
+                });
+            } else if (record.components && typeof record.components === 'object') {
+                let rowHasError = false;
+                Object.entries(record.components).forEach(([id, data]) => {
+                    const compId = parseInt(id);
+                    const mObtained = data.marks !== undefined && data.marks !== '' ? parseFloat(data.marks) : 0;
+                    
+                    // Validation
+                    const compInfo = structureMap[compId];
+                    if (compInfo && !isNaN(mObtained) && mObtained > compInfo.max_marks) {
+                        errors.push({ row: rowNum, message: `Marks for ${compInfo.component_name} (${mObtained}) exceed maximum allowed (${compInfo.max_marks})` });
+                        rowHasError = true;
+                    }
+
+                    if (!rowHasError) {
+                        marksToProcess.push({
+                            component_id: compId,
+                            marks_obtained: isNaN(mObtained) ? 0 : mObtained,
+                            is_absent: data.is_absent === true || data.is_absent === 'true' || data.is_absent === 'ABSENT'
+                        });
+                    }
+                });
+                if (rowHasError) continue;
+            }
+
+            for (const m of marksToProcess) {
+                if (!m.component_id) continue;
+                const query = `
+                    INSERT INTO student_internal_marks 
+                    (student_id, subject_id, component_id, marks_obtained, is_absent, entered_by_faculty_id) 
+                    VALUES ($1, $2, $3, $4, $5, $6) 
+                    ON CONFLICT (student_id, component_id) 
+                    DO UPDATE SET 
+                        updated_at = CURRENT_TIMESTAMP,
+                        marks_obtained = EXCLUDED.marks_obtained, 
+                        is_absent = EXCLUDED.is_absent
+                `;
+                await client.query(query, [
+                    studentId, 
+                    parseInt(subject_id), 
+                    m.component_id, 
+                    m.marks_obtained, 
+                    m.is_absent, 
+                    faculty_id ? parseInt(faculty_id) : null
+                ]);
+            }
+            successCount++;
+        }
+
+        await client.query('COMMIT');
+        res.status(200).json({ 
+            message: `Successfully processed ${successCount} records.`,
+            errors: errors.length > 0 ? errors : null
+        });
+
+    } catch (error) {
+        if (client) await client.query('ROLLBACK');
+        console.error("bulkUploadInternalMarks error:", error);
+        res.status(500).json({ error: "Failed to perform bulk upload of internal marks", details: error.message });
+    } finally {
+        if (client) client.release();
+    }
+};
+

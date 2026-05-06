@@ -154,5 +154,6 @@ router.get('/attendance-summary', facultyMarksController.getAttendanceSummary);
  *       - bearerAuth: []
  */
 router.post('/request-unlock', facultyMarksController.requestUnlock);
+router.post('/bulk-upload', facultyMarksController.bulkUploadInternalMarks);
 
 module.exports = router;

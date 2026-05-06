@@ -1,11 +1,11 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { UploadCloud, X, FileText, CheckCircle2, ShieldAlert, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import apiClient from '../api/client';
 
-const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityName, expectedColumns, optionalColumns = [] }) => {
+const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityName, expectedColumns, optionalColumns = [], extraPayload = {}, transformPayload = null }) => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -170,8 +170,13 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
     setValidationErrors([]);
 
     const submitData = (rows) => {
-      const mappedData = rows.map(row => mapRowToDbKeys(row));
-      const payload = {};
+      let mappedData = rows.map(row => mapRowToDbKeys(row));
+      
+      if (transformPayload) {
+        mappedData = transformPayload(mappedData);
+      }
+
+      const payload = { ...extraPayload };
       payload[entityName] = mappedData;
 
       return apiClient.post(endpoint, payload);

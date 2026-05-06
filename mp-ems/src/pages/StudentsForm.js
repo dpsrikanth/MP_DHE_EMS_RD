@@ -115,7 +115,13 @@ const StudentsForm = () => {
       if (semesterRes) setCollegeSemesters(semesterRes || []);
       if (programRes) setCollegePrograms(programRes || []);
       if (policyRes) setCollegePolicies(policyRes || []);
-      if (yearRes) setCollegeAcademicYears(yearRes || []);
+      if (yearRes) {
+        const years = yearRes || [];
+        setCollegeAcademicYears(years);
+        if (years.length > 0 && !isEditing && !form.admission_year) {
+          setForm(prev => ({ ...prev, admission_year: years[years.length - 1].year_name }));
+        }
+      }
     } catch (err) { console.error('Error fetching college data:', err); }
     finally { setCascadingLoading(false); }
   };
@@ -161,11 +167,13 @@ const StudentsForm = () => {
       const collegeObj = colleges.find(col => (col.college_name || col.name) === value);
       if (collegeObj) {
         await fetchCollegeData(collegeObj.id);
-        setForm(prev => ({ ...prev, policies: '', programName: '', admission_year: '', semister: '', batch: '' }));
+        setForm(prev => ({ ...prev, policies: '', programName: '', department: '', admission_year: '', semister: '', batch: '' }));
       } else {
-        setForm(prev => ({ ...prev, policies: '', programName: '', admission_year: '', semister: '', batch: '' }));
+        setForm(prev => ({ ...prev, policies: '', programName: '', department: '', admission_year: '', semister: '', batch: '' }));
         setCollegeSemesters([]); setCollegePrograms([]); setCollegePolicies([]); setCollegeAcademicYears([]);
       }
+    } else if (name === 'programName') {
+      setForm(prev => ({ ...prev, department: '' }));
     } else if (name === 'batch') {
       // Auto-populate policy when batch is selected based on master configuration
       const selectedBatch = batches.find(b => b.batch_name === value);
@@ -293,12 +301,20 @@ const StudentsForm = () => {
                       options={collegePolicies.map(p => ({ value: p.name, label: p.name }))} placeholder={form.collageName ? 'Select Policy' : 'Select College First'} />
                     <Sel form={form} onChange={handleChange} errors={errors} label="Academic Program" name="programName" icon={BookOpen} req disabled={!form.collageName}
                       options={programs.map(p => ({ value: p.name, label: p.name }))} placeholder={form.collageName ? 'Select Program' : 'Select College First'} />
-                    <Sel form={form} onChange={handleChange} errors={errors} label="Department" name="department" icon={Building2} req
-                      options={departments.map(d => ({ value: d.department_name, label: d.department_name }))} placeholder="Select Department" />
+                    <Sel form={form} onChange={handleChange} errors={errors} label="Department" name="department" icon={Building2} req disabled={!form.programName}
+                      options={(() => {
+                        if (!form.programName) return [];
+                        const prog = programs.find(p => p.name === form.programName);
+                        if (!prog || !prog.department_ids) return [];
+                        return departments
+                          .filter(d => prog.department_ids.includes(d.id))
+                          .map(d => ({ value: d.department_name, label: d.department_name }));
+                      })()} 
+                      placeholder={form.programName ? "Select Department" : "Select Program First"} />
                     <Sel form={form} onChange={handleChange} errors={errors} label="Admission Cycle" name="admission_year" icon={Calendar} req disabled={!form.collageName}
-                      options={collegeAcademicYears.map(y => ({ value: y.year_name, label: y.year_name }))} placeholder={form.collageName ? 'Select Year' : 'Select College First'} />
+                      options={collegeAcademicYears.slice(-1).map(y => ({ value: y.year_name, label: y.year_name }))} placeholder={form.collageName ? 'Select Year' : 'Select College First'} />
                     <Sel form={form} onChange={handleChange} errors={errors} label="Current Semester" name="semister" icon={Layers} req disabled={!form.collageName}
-                      options={collegeSemesters.map(s => ({ value: s.semester_name, label: s.semester_name }))} placeholder={form.collageName ? 'Select Semester' : 'Select College First'} />
+                      options={[...collegeSemesters].sort((a, b) => a.semester_name.localeCompare(b.semester_name, undefined, { numeric: true, sensitivity: 'base' })).map(s => ({ value: s.semester_name, label: s.semester_name }))} placeholder={form.collageName ? 'Select Semester' : 'Select College First'} />
                     <Sel form={form} onChange={handleChange} errors={errors} label="Academic Batches" name="batch" icon={Layers} req disabled={!form.programName}
                       options={batches.filter(b => !b.program_name || b.program_name === form.programName).map(b => ({ value: b.batch_name, label: `${b.batch_name} ${b.academic_year ? '('+b.academic_year+')' : ''}` }))} placeholder={form.programName ? 'Select Batch' : 'Select Program First'} />
                     <F form={form} onChange={handleChange} errors={errors} label="Section" name="section" icon={BookOpen} placeholder="e.g. Economics" />

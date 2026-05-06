@@ -12,6 +12,11 @@ export const marksApi = {
         const response = await apiClient.post('/marks/teacher-save', data);
         return response.data;
     },
+    
+    bulkUploadMarks: async (data) => {
+        const response = await apiClient.post('/marks/bulk-upload', data);
+        return response.data;
+    },
 
     // --- Internal Marks (HOD Approvals) ---
     getApprovals: async (params) => {
@@ -43,6 +48,11 @@ export const marksApi = {
 
     unlockExternalSubject: async (data) => {
         const response = await apiClient.post('/external-faculty/unlock-subject', data);
+        return response.data;
+    },
+    
+    bulkUploadExternalMarks: async (data) => {
+        const response = await apiClient.post('/external-faculty/bulk-upload', data);
         return response.data;
     },
 

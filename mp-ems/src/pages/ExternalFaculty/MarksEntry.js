@@ -1,12 +1,15 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Save, Send, AlertCircle, Info, 
   Search, FileEdit, CheckCircle2,
   GraduationCap, BookOpen, Loader2, Filter,
-  UserCircle, ClipboardCheck, Unlock
+  UserCircle, ClipboardCheck, Unlock,
+  Download, Upload, FileSpreadsheet, ChevronDown
 } from "lucide-react";
 import { toast } from 'react-toastify';
+import Papa from 'papaparse';
 import { marksApi } from '../../api/marksApi';
+import BulkImportModal from "../../components/BulkImportModal";
 
 const ExternalMarksEntry = () => {
   const [assignments, setAssignments] = useState([]);
@@ -14,6 +17,9 @@ const ExternalMarksEntry = () => {
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [modifiedMarks, setModifiedMarks] = useState({}); // { student_id_subject_id_exam_id: marks }
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [activeSubjectForImport, setActiveSubjectForImport] = useState(null);
+  const [showBulkMenu, setShowBulkMenu] = useState(null); // subject_id
 
   useEffect(() => {
     fetchAssignments();
@@ -130,6 +136,46 @@ const ExternalMarksEntry = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const downloadTemplate = (subject) => {
+    const csv = Papa.unparse([
+      {
+        "Roll Number": "SAMPLE123",
+        "Student Name": "Sample Student",
+        "External Marks": "55",
+        "Attendance": "PRESENT"
+      }
+    ]);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `External_Marks_Template_${subject.subject_name.replace(/\s+/g, '_')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToCSV = (subject) => {
+    const data = subject.students.map(s => {
+      const key = `${s.student_id}_${s.subject_id}_${s.exam_id}`;
+      return {
+        "Roll Number": s.rollnumber,
+        "Student Name": s.student_name,
+        "External Marks": modifiedMarks[key] || "",
+        "Attendance": s.is_absent ? "ABSENT" : "PRESENT",
+        "Status": s.marks_status || "Draft"
+      };
+    });
+    
+    const csv = Papa.unparse(data);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `External_Marks_${subject.subject_name.replace(/\s+/g, '_')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Nested Grouping by Exam -> Subject
@@ -264,6 +310,52 @@ const ExternalMarksEntry = () => {
                       </div>
                       
                       <div className="flex items-center gap-4">
+                        {/* Bulk Actions Menu */}
+                        {subject.assignment_status !== 'Submitted' && (
+                          <div className="relative">
+                            <button 
+                              onClick={() => setShowBulkMenu(showBulkMenu === subject.subject_id ? null : subject.subject_id)}
+                              className="h-14 px-6 bg-white/10 hover:bg-white/20 text-white text-[12px] font-black tracking-[0.2em] rounded-2xl border border-white/10 flex items-center gap-3 transition-all"
+                            >
+                              <FileSpreadsheet size={18} /> Bulk Actions <ChevronDown size={14} />
+                            </button>
+                            
+                            {showBulkMenu === subject.subject_id && (
+                              <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-3 z-50 animate-in fade-in zoom-in duration-200">
+                                <button 
+                                  onClick={() => {
+                                    setActiveSubjectForImport(subject);
+                                    setShowImportModal(true);
+                                    setShowBulkMenu(null);
+                                  }}
+                                  className="w-full px-6 py-3 text-left text-[12px] font-black text-slate-700 hover:bg-slate-50 flex items-center gap-3 tracking-wider transition-colors"
+                                >
+                                  <Upload size={16} className="text-indigo-500" /> Import CSV
+                                </button>
+                                <button 
+                                  onClick={() => {
+                                    downloadTemplate(subject);
+                                    setShowBulkMenu(null);
+                                  }}
+                                  className="w-full px-6 py-3 text-left text-[12px] font-black text-slate-700 hover:bg-slate-50 flex items-center gap-3 tracking-wider transition-colors"
+                                >
+                                  <Download size={16} className="text-blue-500" /> Download Template
+                                </button>
+                                <div className="h-px bg-slate-50 mx-4 my-2"></div>
+                                <button 
+                                  onClick={() => {
+                                    exportToCSV(subject);
+                                    setShowBulkMenu(null);
+                                  }}
+                                  className="w-full px-6 py-3 text-left text-[12px] font-black text-slate-700 hover:bg-slate-50 flex items-center gap-3 tracking-wider transition-colors"
+                                >
+                                  <FileSpreadsheet size={16} className="text-emerald-500" /> Export CSV
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         {subject.assignment_status === 'Submitted' ? (
                           <button 
                             onClick={() => handleUnlockSubject(subject, exam.exam_name)}
@@ -374,6 +466,34 @@ const ExternalMarksEntry = () => {
             <p className="text-slate-400 font-medium max-w-md mx-auto">Your evaluation dashboard will populate automatically once the University Administrator assigns exams to your profile.</p>
           </div>
         </div>
+      )}
+
+      {/* Bulk Import Modal */}
+      {showImportModal && activeSubjectForImport && (
+        <BulkImportModal 
+          isOpen={showImportModal}
+          onClose={() => {
+            setShowImportModal(false);
+            setActiveSubjectForImport(null);
+          }}
+          onSuccess={() => {
+            fetchAssignments(true);
+            setShowImportModal(false);
+            setActiveSubjectForImport(null);
+          }}
+          entityName="marks"
+          endpoint="/external-faculty/bulk-upload"
+          extraPayload={{
+            subject_id: activeSubjectForImport.subject_id,
+            exam_id: activeSubjectForImport.students[0]?.exam_id,
+            academic_year_id: activeSubjectForImport.students[0]?.academic_year_id
+          }}
+          expectedColumns={{
+            enrollment_number: 'Roll Number',
+            external_marks: 'External Marks',
+            is_absent: 'Attendance'
+          }}
+        />
       )}
     </div>
   );

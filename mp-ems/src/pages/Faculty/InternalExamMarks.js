@@ -13,8 +13,14 @@ import {
     Clock,
     UserCircle,
     ClipboardCheck,
-    AlertCircle
+    AlertCircle,
+    ChevronDown,
+    Download,
+    FileSpreadsheet,
+    FileUp
 } from "lucide-react";
+import Papa from 'papaparse';
+import BulkImportModal from '../../components/BulkImportModal';
 import { TableSearch } from '../../components/TableControls';
 import { facultyApi } from '../../api/facultyApi';
 import { masterDataApi } from '../../api/masterDataApi';
@@ -41,6 +47,8 @@ const InternalExamMarks = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [schedules, setSchedules] = useState([]);
     const [workflowStatus, setWorkflowStatus] = useState('Pending');
+    const [showBulkDropdown, setShowBulkDropdown] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
 
     const teacherId = JSON.parse(localStorage.getItem('user'))?.teacher_id || 1;
 
@@ -195,6 +203,39 @@ const InternalExamMarks = () => {
         }
     };
 
+    const downloadTemplate = () => {
+        const headers = ['Enrollment No', 'Marks Obtained', 'Attendance'];
+        const csv = Papa.unparse([headers]);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', `template_${selectedRound?.label || 'internal'}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const exportToCSV = () => {
+        if (students.length === 0) return toast.warning('No data to export');
+        const csv = Papa.unparse(students.map(s => {
+            const entry = marksDraft[s.id] || { marks: '', isAbsent: false };
+            return {
+                'Enrollment No': s.rollnumber || s.id,
+                'Student Name': s.name,
+                'Marks Obtained': entry.marks,
+                'Attendance': entry.isAbsent ? 'ABSENT' : 'PRESENT',
+                'Status': entry.isAbsent ? 'N/A' : (parseFloat(entry.marks) < (componentInfo?.passing_marks || 0) ? 'Below Passing' : 'Qualified')
+            };
+        }));
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', `marks_${selectedRound?.label || 'internal'}_${selectedSubject?.subject_code || ''}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const filteredStudents = students.filter(s => 
         s.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
         s.rollnumber?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -343,8 +384,53 @@ const InternalExamMarks = () => {
                                 </span>
                             </div>
                             <p className="text-sm text-slate-500 font-medium">Entering marks for section {selectedSubject.section}</p>
-                        </div>
                     </div>
+
+                    <div className="flex-1"></div>
+
+                    {/* Bulk Actions Dropdown */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowBulkDropdown(!showBulkDropdown)}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold text-sm hover:border-indigo-600 transition-all shadow-sm"
+                        >
+                            <FileSpreadsheet size={18} className="text-indigo-600" />
+                            <span>Bulk Actions</span>
+                            <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {showBulkDropdown && (
+                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-[100] animate-in slide-in-from-top-2">
+                                <button
+                                    onClick={() => {
+                                        setShowImportModal(true);
+                                        setShowBulkDropdown(false);
+                                    }}
+                                    disabled={['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors disabled:opacity-50"
+                                >
+                                    <FileUp size={18} />
+                                    Import Marks CSV
+                                </button>
+                                <button
+                                    onClick={() => { downloadTemplate(); setShowBulkDropdown(false); }}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                                >
+                                    <Download size={18} />
+                                    Download Template
+                                </button>
+                                <div className="h-px bg-slate-100 my-1"></div>
+                                <button
+                                    onClick={() => { exportToCSV(); setShowBulkDropdown(false); }}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                                >
+                                    <Download size={18} />
+                                    Export Current View
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
 
                     <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
                         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -491,6 +577,35 @@ const InternalExamMarks = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Bulk Import Modal */}
+            {selectedSubject && componentInfo && (
+                <BulkImportModal
+                    isOpen={showImportModal}
+                    onClose={() => setShowImportModal(false)}
+                    onUploadSuccess={() => {
+                        fetchStudentMarks(selectedSubject);
+                        setShowImportModal(false);
+                    }}
+                    endpoint="/faculty-marks/bulk-upload"
+                    entityName="marks"
+                    expectedColumns={{
+                        enrollment_number: 'Enrollment No',
+                        marks_obtained: 'Marks Obtained',
+                        is_absent: 'Attendance'
+                    }}
+                    optionalColumns={['marks_obtained', 'is_absent']}
+                    extraPayload={{
+                        subject_id: selectedSubject.subject_id,
+                        component_id: componentInfo.id,
+                        faculty_id: teacherId,
+                        college_id: selectedSubject.college_id,
+                        semester_id: selectedSem.value,
+                        academic_year_id: selectedYear.value,
+                        section: selectedSubject.section
+                    }}
+                />
             )}
         </div>
     );
