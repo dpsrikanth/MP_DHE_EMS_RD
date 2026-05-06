@@ -463,7 +463,7 @@ const ExamScheduling = () => {
                     <button
                         onClick={fetchSubjectsAndSchedules}
                         disabled={loading.subjects}
-                        className="bg-slate-800 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-900 transition-all shadow-lg shadow-slate-200 disabled:opacity-50"
+                        className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50"
                     >
                         <Search size={18} />
                         {loading.subjects ? 'Loading...' : 'Go'}

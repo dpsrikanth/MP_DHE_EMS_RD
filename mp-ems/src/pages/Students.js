@@ -183,7 +183,7 @@ const Students = () => {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
   if (error) return (
@@ -198,7 +198,7 @@ const Students = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-5">
-            <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600">
+            <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
               <GraduationCap size={32} />
             </div>
             <div>
@@ -223,7 +223,7 @@ const Students = () => {
                 <div className="relative">
                   <button
                     onClick={() => setShowBulkDropdown(!showBulkDropdown)}
-                    className="inline-flex items-center gap-2 px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all text-sm whitespace-nowrap"
+                    className="inline-flex items-center gap-2 px-4 py-3 bg-indigo-50 hover:bg-indigo-100 text-slate-700 font-bold rounded-2xl transition-all text-sm whitespace-nowrap"
                   >
                     <span>Bulk Actions</span>
                     <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />
@@ -258,7 +258,7 @@ const Students = () => {
                 
                 <button
                   onClick={() => navigate('/students/add')}
-                  className="inline-flex items-center gap-2 px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
+                  className="inline-flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-200 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
                 >
                   <Plus size={20} />
                   <span>Enroll Student</span>
@@ -339,12 +339,12 @@ const Students = () => {
                     {visibleColumns.policies && (
                       <td className="px-4 py-5 font-bold text-slate-900">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 font-bold group-hover:bg-emerald-50 group-hover:text-emerald-500 group-hover:border-emerald-100 transition-all duration-300">
+                          <div className="w-10 h-10 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-400 font-bold group-hover:bg-indigo-100 group-hover:text-indigo-600 group-hover:border-indigo-200 transition-all duration-300">
                             <User size={18} />
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-bold text-slate-900 truncate leading-none mb-1">{item.name?.trim() || '—'}</p>
-                            <p className="text-[11px] font-black text-emerald-500  tracking-widest leading-none flex items-center gap-1"><FileText size={10} /> {item.policies || '—'}</p>
+                            <p className="text-[11px] font-black text-indigo-500 tracking-widest leading-none flex items-center gap-1"><FileText size={10} /> {item.policies || '—'}</p>
                           </div>
                         </div>
                       </td>
@@ -352,7 +352,7 @@ const Students = () => {
                     {visibleColumns.programName && (
                       <td className="px-4 py-5 font-medium">
                         <div className="flex items-center gap-1.5">
-                          <BookOpen size={14} className="text-slate-400" />
+                          <BookOpen size={14} className="text-indigo-400" />
                           <span className="text-[13px] text-slate-700">{item.programName || '—'}</span>
                         </div>
                       </td>
@@ -360,7 +360,7 @@ const Students = () => {
                     {visibleColumns.admission_year && (
                       <td className="px-4 py-5 font-medium">
                         <div className="flex items-center gap-1.5">
-                          <Calendar size={14} className="text-slate-400" />
+                          <Calendar size={14} className="text-indigo-400" />
                           <span className="text-[13px] text-slate-700">{item.admission_year || '—'}</span>
                         </div>
                       </td>
@@ -368,7 +368,7 @@ const Students = () => {
                     {visibleColumns.semister && (
                       <td className="px-4 py-5 font-medium">
                         <div className="flex items-center gap-1.5">
-                          <Layers size={14} className="text-slate-400" />
+                          <Layers size={14} className="text-indigo-400" />
                           <span className="text-[13px] text-slate-700">{item.semister || '—'}</span>
                         </div>
                       </td>
@@ -378,7 +378,7 @@ const Students = () => {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => navigate(`/students/edit/${item.id}`)}
-                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
                             title="Edit Record"
                           >
                             <Pencil size={18} />
@@ -402,7 +402,7 @@ const Students = () => {
                       <p className="text-sm font-bold text-slate-400  tracking-widest">No students found matching your query</p>
                       <button
                         onClick={() => setSearchQuery('')}
-                        className="text-[13px] font-black text-emerald-500 hover:text-emerald-600 underline  tracking-tighter"
+                        className="text-[13px] font-black text-indigo-500 hover:text-indigo-600 underline tracking-tighter"
                       >
                         Reset Results
                       </button>
