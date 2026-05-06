@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Printer, Download, ChevronLeft, GraduationCap, Calendar, Award, BookOpen, CheckCircle2, User, Building, MapPin } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -132,7 +132,7 @@ const ResultSheet = () => {
           </button>
           <button 
             onClick={handlePrint}
-            className="flex items-center gap-2 bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-black text-[13px]  tracking-widest shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all"
+            className="flex items-center gap-2 bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-black text-[13px]  tracking-widest shadow-lg shadow-indigo-500/20 hover:bg-emerald-600 transition-all"
           >
             <Download size={16} />
             Download PDF
@@ -143,7 +143,7 @@ const ResultSheet = () => {
       {/* Result Sheet Card */}
       <div className="max-w-5xl mx-auto bg-white shadow-2xl rounded-none sm:rounded-[2.5rem] overflow-hidden print:shadow-none print:m-0 print:rounded-none">
         {/* Header */}
-        <div className="bg-slate-900 text-white p-8 sm:p-12 relative overflow-hidden">
+        <div className="bg-indigo-600 text-white p-8 sm:p-12 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500 rounded-full blur-[100px] opacity-20 -mr-32 -mt-32" />
           <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center sm:items-start gap-8">
             <div className="text-center sm:text-left flex-1">
@@ -192,7 +192,7 @@ const ResultSheet = () => {
         <div className="p-0">
           <table className="w-full border-collapse border-spacing-0">
             <thead>
-              <tr className="bg-slate-900/5 text-left text-[12px] font-black text-slate-500  tracking-widest border-y border-slate-100">
+              <tr className="bg-indigo-600/5 text-left text-[12px] font-black text-slate-500  tracking-widest border-y border-slate-100">
                 <th className="px-8 py-5">Sl. No.</th>
                 <th className="px-4 py-5 font-black">Course Code</th>
                 <th className="px-4 py-5">Title of the Course</th>
@@ -255,7 +255,7 @@ const ResultSheet = () => {
         </div>
 
         {/* Summary Block */}
-        <div className="p-8 sm:p-12 bg-slate-900 text-white">
+        <div className="p-8 sm:p-12 bg-indigo-600 text-white">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
                 <SummaryItem label="Total Credits Assigned" value={totalCreditsAssigned} />
                 <SummaryItem label="Total Credits Earned" value={totalCreditsEarned} />
@@ -266,8 +266,8 @@ const ResultSheet = () => {
                 </div>
                 <div className={`flex flex-col items-center justify-center p-6 rounded-[1.5rem] shadow-xl ${
                   overallStatus === 'FAIL' ? 'bg-red-600 shadow-red-600/20' : 
-                  overallStatus === 'PASS (GRACE)' ? 'bg-amber-500 shadow-amber-500/20' : 
-                  'bg-emerald-500 shadow-emerald-500/20'
+                  overallStatus === 'PASS (GRACE)' ? 'bg-indigo- shadow-indigo-500/20' : 
+                  'bg-emerald-500 shadow-indigo-500/20'
                 }`}>
                     <p className="text-[12px] font-black text-white/60  tracking-widest mb-1">Final Result</p>
                     <p className="text-2xl font-black tracking-tight  whitespace-nowrap">{overallStatus}</p>

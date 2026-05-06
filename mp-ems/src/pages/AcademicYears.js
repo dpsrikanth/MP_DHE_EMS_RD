@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { toast } from 'react-toastify';
 import { useNavigate } from "react-router-dom";
 import { 
@@ -142,7 +142,7 @@ const AcademicYears = () => {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
   if (error) return (
@@ -157,7 +157,7 @@ const AcademicYears = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-600">
+            <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
               <Calendar size={28} />
             </div>
             <div>
@@ -179,7 +179,7 @@ const AcademicYears = () => {
             {authUtils.isSuperAdmin() ? (
               <button 
                 onClick={() => navigate('/academic-years/add')}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-2xl shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
               >
                 <Plus size={20} />
                 <span>Add Session</span>
@@ -187,7 +187,7 @@ const AcademicYears = () => {
             ) : (
               <button 
                 onClick={() => setShowAssignModal(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-2xl shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
               >
                 <Plus size={20} />
                 <span>Assign from Master</span>
@@ -227,7 +227,7 @@ const AcademicYears = () => {
                     {visibleColumns.id && <td className="px-6 py-4 text-sm font-bold text-slate-400">#{item.id}</td>}
                     {visibleColumns.year_name && (
                       <td className="px-4 py-5 font-bold text-slate-900">
-                        <span className="bg-sky-50 text-sky-700 px-3 py-1 rounded-lg border border-sky-100 font-mono italic">
+                        <span className="bg-indigo- text-sky-700 px-3 py-1 rounded-lg border border-sky-100 font-mono italic">
                           {item.year_name}
                         </span>
                       </td>
@@ -246,7 +246,7 @@ const AcademicYears = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button 
                           onClick={() => navigate(`/academic-years/edit/${item.id}`)}
-                          className="p-2 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-xl transition-all"
+                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
                           title="Edit Session"
                         >
                           <Pencil size={18} />
@@ -269,7 +269,7 @@ const AcademicYears = () => {
                       <p className="text-sm font-bold text-slate-400  tracking-widest">No academic years found</p>
                       <button 
                         onClick={() => setSearchQuery('')}
-                        className="text-[13px] font-black text-sky-500 hover:text-sky-600 underline  tracking-tighter"
+                        className="text-[13px] font-black text-indigo-500 hover:text-indigo-600 underline  tracking-tighter"
                       >
                         Reset Search
                       </button>
@@ -296,7 +296,7 @@ const AcademicYears = () => {
       {/* Assign Modal for University Admin */}
       {showAssignModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowAssignModal(false)} />
+          <div className="absolute inset-0 bg-indigo-600/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowAssignModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col mb-20 animate-in zoom-in-95 duration-300">
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
               <div>
@@ -348,7 +348,7 @@ const AcademicYears = () => {
               <button 
                 onClick={handleMap}
                 disabled={!mappingSelection}
-                className="px-10 py-4 bg-sky-600 disabled:opacity-50 hover:bg-sky-700 text-white font-black rounded-2xl shadow-xl shadow-sky-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm  tracking-widest flex items-center gap-3"
+                className="px-10 py-4 bg-indigo-600 disabled:opacity-50 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm  tracking-widest flex items-center gap-3"
               >
                 <Check size={20} />
                 <span>Assign Session</span>
@@ -361,7 +361,7 @@ const AcademicYears = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
+          <div className="absolute inset-0 bg-indigo-600/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
             <div className="p-6 text-center flex flex-col items-center">
               <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">

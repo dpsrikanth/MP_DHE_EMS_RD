@@ -64,7 +64,7 @@ const FacultyDashboard = () => {
     const getStatusConfig = (subjectId, section) => {
         const status = workflowStatus[`${subjectId}_${section}`] || 'Pending';
         switch (status) {
-            case 'Submitted': return { color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', icon: Clock, label: 'Submitted' };
+            case 'Submitted': return { color: 'text-indigo-', bg: 'bg-indigo-', border: 'border-indigo-', icon: Clock, label: 'Submitted' };
             case 'Locked': return { color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', icon: CheckCircle, label: 'Locked' };
             default: return { color: 'text-slate-500', bg: 'bg-slate-50', border: 'border-slate-200', icon: ShieldAlert, label: 'Pending' };
         }
@@ -104,7 +104,7 @@ const FacultyDashboard = () => {
                     <p className="text-[13px] font-black text-slate-400  tracking-widest mb-1">Total Assignments</p>
                     <p className="text-3xl font-black text-slate-900">{assignedSubjects.length}</p>
                 </div>
-                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-amber-600">
+                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-indigo-">
                     <p className="text-[13px] font-black text-slate-400  tracking-widest mb-1">Pending Submissions</p>
                     <p className="text-3xl font-black">{assignedSubjects.filter(a => (workflowStatus[`${a.subject_id}_${a.section}`] || 'Pending') === 'Pending').length}</p>
                 </div>
@@ -148,7 +148,7 @@ const FacultyDashboard = () => {
                         {searchQuery && (
                             <button 
                                 onClick={() => setSearchQuery('')}
-                                className="mt-6 px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold text-[13px]  tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/20"
+                                className="mt-6 px-8 py-3 bg-indigo-600 text-white rounded-2xl font-bold text-[13px]  tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-indigo-600/20"
                             >
                                 Clear All Searches
                             </button>
@@ -195,7 +195,7 @@ const FacultyDashboard = () => {
                                         </button>
                                         <button 
                                             onClick={() => handleEnterMarks(item)}
-                                            className="w-full flex items-center justify-center px-4 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-indigo-600 transition-all text-sm"
+                                            className="w-full flex items-center justify-center px-4 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-600 transition-all text-sm"
                                         >
                                             Enter Marks
                                         </button>

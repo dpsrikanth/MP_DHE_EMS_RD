@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { CreditCard, Search } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
 import { toast } from 'react-toastify';
@@ -58,7 +58,7 @@ const SecrecyPayments = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-20 space-y-4 min-h-[60vh]">
-        <div className="w-12 h-12 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-indigo-/20 border-t-sky-500 rounded-full animate-spin"></div>
         <p className="text-slate-400 font-black  tracking-widest text-[13px]">Loading Payments...</p>
       </div>
     );
@@ -67,7 +67,7 @@ const SecrecyPayments = () => {
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 bg-slate-50/30 min-h-screen pb-20 fade-in duration-500 animate-in">
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-        <CreditCard size={32} className="text-sky-500" />
+        <CreditCard size={32} className="text-indigo-" />
         <div>
           <h2 className="text-2xl font-black text-slate-800 italic">Payment Management</h2>
           <p className="text-slate-500 text-sm font-medium">Manage and process paper setter payments.</p>
@@ -89,21 +89,21 @@ const SecrecyPayments = () => {
           </h3>
           <p className="text-[13px] font-bold text-emerald-500 mt-1">This month</p>
         </div>
-        <div className="bg-amber-50/50 p-6 rounded-2xl border border-amber-100">
-          <p className="text-[13px] font-black text-amber-600 ">Pending Payments</p>
+        <div className="bg-indigo-/50 p-6 rounded-2xl border border-amber-100">
+          <p className="text-[13px] font-black text-indigo- ">Pending Payments</p>
           <h3 className="text-3xl font-black text-amber-700 mt-1">
             ₹{payments.filter(p => p.status !== 'Paid').reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0).toLocaleString()}
           </h3>
-          <p className="text-[13px] font-bold text-amber-500 mt-1">{payments.filter(p => p.status !== 'Paid').length} pending</p>
+          <p className="text-[13px] font-bold text-indigo- mt-1">{payments.filter(p => p.status !== 'Paid').length} pending</p>
         </div>
-        <div className="bg-sky-50/50 p-6 rounded-2xl border border-sky-100">
-          <p className="text-[13px] font-black text-sky-600 ">Average per Paper</p>
+        <div className="bg-indigo-/50 p-6 rounded-2xl border border-sky-100">
+          <p className="text-[13px] font-black text-indigo- ">Average per Paper</p>
           <h3 className="text-3xl font-black text-sky-700 mt-1">
             ₹{payments.length > 0 
               ? Math.round(payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0) / payments.length).toLocaleString()
               : 0}
           </h3>
-          <p className="text-[13px] font-bold text-sky-500 mt-1">Standard rate</p>
+          <p className="text-[13px] font-bold text-indigo- mt-1">Standard rate</p>
         </div>
       </div>
 
@@ -127,8 +127,8 @@ const SecrecyPayments = () => {
                 <td className="px-6 py-4">
                   <span className={`px-2 py-1 rounded-md text-[12px] font-black  ${
                     p.status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 
-                    p.status === 'Processing' ? 'bg-blue-100 text-blue-700' : 
-                    'bg-amber-100 text-amber-700'
+                    p.status === 'Processing' ? 'bg-indigo- text-blue-700' : 
+                    'bg-indigo- text-amber-700'
                   }`}>
                     {p.status}
                   </span>
@@ -137,7 +137,7 @@ const SecrecyPayments = () => {
                   {p.status !== 'Paid' && (
                     <button 
                       onClick={() => handleProcessPayment(p.id)}
-                      className="text-[13px] font-black text-sky-600 hover:text-sky-700 transition-colors decoration-2 underline-offset-4 hover:underline"
+                      className="text-[13px] font-black text-indigo- hover:text-sky-700 transition-colors decoration-2 underline-offset-4 hover:underline"
                     >
                       Process Payment
                     </button>
@@ -156,7 +156,7 @@ const SecrecyPayments = () => {
                      {searchQuery && (
                        <button 
                          onClick={() => setSearchQuery('')}
-                         className="mt-2 text-[13px] font-black text-sky-600 hover:text-sky-700 underline  tracking-widest"
+                         className="mt-2 text-[13px] font-black text-indigo-600 hover:text-indigo-700 underline  tracking-widest"
                        >
                          Reset Search
                        </button>

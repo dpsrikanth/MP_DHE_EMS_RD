@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { Users, Layout, Trash2, Play, Search, Building2, ChevronRight, Download, Info, CheckCircle2, AlertCircle } from "lucide-react";
 import { TableSearch } from '../../components/TableControls';
@@ -170,7 +170,7 @@ const SeatingArrangement = () => {
                         <div className="flex items-center gap-3">
                             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Seat Allocation</h1>
                             {isLocked && (
-                                <span className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-lg text-[13px] font-black  tracking-widest animate-pulse">
+                                <span className="flex items-center gap-1.5 px-3 py-1 bg-indigo- text-indigo- border border-amber-100 rounded-lg text-[13px] font-black  tracking-widest animate-pulse">
                                     <Info size={12} />
                                     Finalized & Locked
                                 </span>
@@ -227,7 +227,7 @@ const SeatingArrangement = () => {
                                     <button
                                         onClick={handleLockSeating}
                                         disabled={loading || !selectedExam || arrangements.length === 0}
-                                        className="flex-1 flex items-center justify-center gap-2 h-[56px] bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95  tracking-widest text-[11px] disabled:opacity-50 whitespace-nowrap px-3"
+                                        className="flex-1 flex items-center justify-center gap-2 h-[56px] bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95  tracking-widest text-[11px] disabled:opacity-50 whitespace-nowrap px-3"
                                     >
                                         <CheckCircle2 size={14} />
                                         Approve
@@ -258,7 +258,7 @@ const SeatingArrangement = () => {
                         {/* Capacity Info Card */}
                         <div className="bg-emerald-50 rounded-[2rem] border border-emerald-100 p-8 flex items-center justify-between shadow-sm shadow-emerald-500/5">
                             <div className="flex items-center gap-5">
-                                <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600 border border-emerald-100 shadow-sm">
+                                <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600 border border-emerald-100 shadow-sm">
                                     <Info size={28} />
                                 </div>
                                 <div>
@@ -299,7 +299,7 @@ const SeatingArrangement = () => {
                 </div>
 
                 {/* Status Card */}
-                <div className="lg:col-span-3 xl:col-span-2 bg-slate-900 rounded-[2.5rem] p-6 shadow-2xl flex flex-col justify-between relative overflow-hidden group">
+                <div className="lg:col-span-3 xl:col-span-2 bg-indigo-600 rounded-[2.5rem] p-6 shadow-2xl flex flex-col justify-between relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 blur-3xl rounded-full" />
                     <div className="relative z-10">
                         <h3 className="text-xl font-black text-white">Allocation Status</h3>
@@ -359,7 +359,7 @@ const SeatingArrangement = () => {
                         <tbody className="divide-y divide-slate-100">
                             {filteredArrangements.length > 0 ? (
                                 filteredArrangements.map((a, i) => (
-                                    <tr key={a.id} className={`hover:bg-indigo-50/30 transition-colors group ${a.is_external ? 'bg-orange-50/40' : ''}`}>
+                                    <tr key={a.id} className={`hover:bg-indigo-50/30 transition-colors group ${a.is_external ? 'bg-indigo-/40' : ''}`}>
                                         <td className="py-5 px-8">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 border border-slate-200 font-black text-[13px] group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
@@ -381,7 +381,7 @@ const SeatingArrangement = () => {
                                                     {a.hall_code}
                                                 </div>
                                                 {a.is_external && (
-                                                    <span className="text-[9px] font-black text-orange-500  tracking-widest">
+                                                    <span className="text-[9px] font-black text-indigo-  tracking-widest">
                                                         @ {a.seat_college_name}
                                                     </span>
                                                 )}
@@ -401,7 +401,7 @@ const SeatingArrangement = () => {
                                         </td>
                                         <td className="py-5 px-8 text-right">
                                             {a.is_external ? (
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-50 text-orange-600 rounded-lg text-[12px] font-black border border-orange-100  tracking-widest">
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo- text-indigo- rounded-lg text-[12px] font-black border border-orange-100  tracking-widest">
                                                     <AlertCircle size={12} />
                                                     External Center
                                                 </span>

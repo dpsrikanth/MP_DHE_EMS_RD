@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { 
@@ -125,7 +125,7 @@ const Batches = () => {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
   if (error) return (
@@ -140,7 +140,7 @@ const Batches = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-600">
+            <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
               <Layers size={28} />
             </div>
             <div>
@@ -161,7 +161,7 @@ const Batches = () => {
             />
             <button 
               onClick={() => navigate('/batches/add')}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-2xl shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
             >
               <Plus size={20} />
               <span>Add Batch</span>
@@ -207,8 +207,8 @@ const Batches = () => {
                     {visibleColumns.created_at && <td className="px-4 py-4 text-[13px] font-medium text-slate-400">{formatDate(item.created_at)}</td>}
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => { setViewData(item); setShowViewModal(true); }} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all" title="View Details"><Eye size={18} /></button>
-                        <button onClick={() => navigate(`/batches/edit/${item.id}`)} className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 rounded-xl transition-all" title="Edit Batch"><Pencil size={18} /></button>
+                        <button onClick={() => { setViewData(item); setShowViewModal(true); }} className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-xl transition-all" title="View Details"><Eye size={18} /></button>
+                        <button onClick={() => navigate(`/batches/edit/${item.id}`)} className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-xl transition-all" title="Edit Batch"><Pencil size={18} /></button>
                         <button onClick={() => handleDelete(item)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Delete Batch"><MdDelete size={20} /></button>
                       </div>
                     </td>
@@ -228,7 +228,7 @@ const Batches = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
+          <div className="absolute inset-0 bg-indigo-600/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
             <div className="p-6 text-center flex flex-col items-center">
               <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6"><MdDelete size={32} /></div>
@@ -246,7 +246,7 @@ const Batches = () => {
       {/* View Details Modal */}
       {showViewModal && viewData && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowViewModal(false)} />
+          <div className="absolute inset-0 bg-indigo-600/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowViewModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
               <div>
@@ -268,7 +268,7 @@ const Batches = () => {
               </div>
             </div>
             <div className="px-8 py-5 bg-slate-50 border-t border-slate-100 flex justify-end">
-              <button onClick={() => setShowViewModal(false)} className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm  tracking-widest">Close Details</button>
+              <button onClick={() => setShowViewModal(false)} className="px-8 py-3 bg-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm  tracking-widest">Close Details</button>
             </div>
           </div>
         </div>

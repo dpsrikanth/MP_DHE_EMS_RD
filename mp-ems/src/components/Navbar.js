@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Search, 
@@ -82,7 +82,7 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
           <input 
             type="text" 
             placeholder="Search anything..."
-            className="w-full bg-slate-100 border-none rounded-2xl py-2.5 pl-12 pr-4 text-sm text-slate-700 focus:ring-2 focus:ring-sky-500/20 focus:bg-white transition-all outline-none"
+            className="w-full bg-slate-100 border-none rounded-2xl py-2.5 pl-12 pr-4 text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all outline-none"
           />
         </div>
       </div> */}
@@ -109,7 +109,7 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
                 {roleName.replace('_', ' ')}
               </p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-sky-500/20">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-indigo-500/20">
               {getInitials()}
             </div>
             <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${showDropdown ? 'rotate-180' : ''}`} />

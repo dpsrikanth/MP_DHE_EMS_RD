@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { FileText, Eye, Download, X, Search } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { TableSearch } from '../../components/TableControls';
@@ -161,7 +161,7 @@ const SecrecyQuestionPapers = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-20 space-y-4 min-h-[60vh]">
-        <div className="w-12 h-12 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-indigo-/20 border-t-sky-500 rounded-full animate-spin"></div>
         <p className="text-slate-400 font-black  tracking-widest text-[13px]">Loading Question Papers...</p>
       </div>
     );
@@ -171,7 +171,7 @@ const SecrecyQuestionPapers = () => {
     <div className="p-8 max-w-7xl mx-auto space-y-8 bg-slate-50/30 min-h-screen pb-20 fade-in duration-500 animate-in">
       <div className="flex items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
         <div className="flex items-center gap-4">
-          <FileText size={32} className="text-sky-500" />
+          <FileText size={32} className="text-indigo-" />
           <div>
             <h2 className="text-2xl font-black text-slate-800 italic">Question Papers Review</h2>
             <p className="text-slate-500 text-sm font-medium">Review submitted papers and select sets for printing.</p>
@@ -183,7 +183,7 @@ const SecrecyQuestionPapers = () => {
           <select
             value={examFilter}
             onChange={(e) => setExamFilter(e.target.value)}
-            className="h-10 bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl focus:ring-2 focus:ring-sky-400 focus:border-sky-400 px-4 outline-none cursor-pointer min-w-[220px]"
+            className="h-10 bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl focus:ring-2 focus:ring-sky-400 focus:border-indigo- px-4 outline-none cursor-pointer min-w-[220px]"
           >
             <option value="">All Exams</option>
             {examOptions.map(ex => (
@@ -212,15 +212,15 @@ const SecrecyQuestionPapers = () => {
                     <h3 className="text-lg font-black text-slate-800">{paper.subject_name} — Set {paper.set_name}</h3>
                     <p className="text-[13px] font-bold text-slate-400  tracking-widest mt-0.5">
                       Exam: {paper.exam_name || `EX00${paper.exam_id}`}
-                      {paper.exam_type_name && <span className="ml-2 px-2 py-0.5 bg-sky-50 text-sky-600 rounded-md">{paper.exam_type_name}</span>}
+                      {paper.exam_type_name && <span className="ml-2 px-2 py-0.5 bg-indigo- text-indigo- rounded-md">{paper.exam_type_name}</span>}
                       {' '}| Semester: {paper.semester || 'N/A'}
                     </p>
                   </div>
                   <span className={`px-3 py-1 rounded-lg text-[13px] font-black  tracking-widest ${
                     paper.status === 'Finalized' ? 'bg-emerald-100 text-emerald-700' : 
-                    paper.status === 'Uploaded' ? 'bg-orange-100 text-orange-700' : 
+                    paper.status === 'Uploaded' ? 'bg-indigo- text-orange-700' : 
                     paper.status === 'Rejected' ? 'bg-rose-100 text-rose-700' :
-                    paper.status === 'Revision' ? 'bg-amber-100 text-amber-700' :
+                    paper.status === 'Revision' ? 'bg-indigo- text-amber-700' :
                     'bg-slate-100 text-slate-600'
                   }`}>
                     {paper.status === 'Finalized' ? 'Approved' : 
@@ -260,7 +260,7 @@ const SecrecyQuestionPapers = () => {
                     <>
                       <button 
                         onClick={() => handleUpdateStatus(paper.assignment_id, 'Finalized')}
-                        className="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2 px-6 rounded-lg text-[13px]  tracking-widest transition-all"
+                        className="bg-indigo-500 hover:bg-indigo-600 text-white font-black py-2 px-6 rounded-lg text-[13px]  tracking-widest transition-all"
                       >
                         Approve
                       </button>
@@ -272,7 +272,7 @@ const SecrecyQuestionPapers = () => {
                       </button>
                       <button 
                          onClick={() => handleUpdateStatus(paper.assignment_id, 'Revision', 'Needs more variety')}
-                         className="bg-amber-500 hover:bg-amber-600 text-white font-black py-2 px-6 rounded-lg text-[13px]  tracking-widest transition-all"
+                         className="bg-indigo-500 hover:bg-indigo-600 text-white font-black py-2 px-6 rounded-lg text-[13px]  tracking-widest transition-all"
                       >
                         Request Revision
                       </button>
@@ -284,7 +284,7 @@ const SecrecyQuestionPapers = () => {
                         setSelectedPaperForSets(paper);
                         setShowSelectSetsModal(true);
                       }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-black py-2.5 px-6 rounded-lg text-[13px]  tracking-widest transition-all shadow-md shadow-blue-500/20"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2.5 px-6 rounded-lg text-[13px]  tracking-widest transition-all shadow-md shadow-indigo-500/20"
                     >
                       Select Sets for Printing
                     </button>
@@ -323,7 +323,7 @@ const SecrecyQuestionPapers = () => {
                 {(searchQuery || examFilter) && (
                     <button 
                         onClick={() => { setSearchQuery(''); setExamFilter(''); }}
-                        className="text-[13px] font-black text-sky-500 hover:text-sky-600 underline  tracking-widest"
+                        className="text-[13px] font-black text-indigo-500 hover:text-indigo-600 underline  tracking-widest"
                     >
                         Reset All Filters
                     </button>
@@ -334,16 +334,16 @@ const SecrecyQuestionPapers = () => {
       </div>
 
       {showSelectSetsModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-indigo-600/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in slide-in-from-bottom-8 duration-300">
              <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-               <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 italic"><FileText size={22} className="text-sky-500" /> Select Question Sets - {selectedPaperForSets?.subject_name}</h3>
+               <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 italic"><FileText size={22} className="text-indigo-" /> Select Question Sets - {selectedPaperForSets?.subject_name}</h3>
                <button onClick={() => { setShowSelectSetsModal(false); setSelectedSets([]); }} className="text-slate-400 hover:text-slate-600 transition-colors"><X size={24} /></button>
              </div>
              
              <div className="p-8 space-y-6">
-                <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100/50">
-                   <h4 className="text-[13px] font-black text-blue-600  mb-4">Exam Details</h4>
+                <div className="bg-indigo-/50 p-6 rounded-2xl border border-blue-100/50">
+                   <h4 className="text-[13px] font-black text-indigo-  mb-4">Exam Details</h4>
                    <div className="grid grid-cols-2 gap-y-4 gap-x-10">
                      <div>
                        <span className="text-[13px] font-bold text-slate-400">Subject: </span>
@@ -364,8 +364,8 @@ const SecrecyQuestionPapers = () => {
                    </div>
                 </div>
 
-                <div className="bg-amber-50/50 p-6 rounded-2xl border border-amber-100">
-                   <h4 className="text-[13px] font-black text-amber-600  mb-2">Selection Instructions</h4>
+                <div className="bg-indigo-/50 p-6 rounded-2xl border border-amber-100">
+                   <h4 className="text-[13px] font-black text-indigo-  mb-2">Selection Instructions</h4>
                    <ul className="text-[13px] font-bold text-amber-700 space-y-1 ml-4 list-disc">
                      <li>Select exactly {Math.min(3, availableSets.length)} question sets for this examination</li>
                      <li>Selected sets will be used for printing and distribution</li>
@@ -385,7 +385,7 @@ const SecrecyQuestionPapers = () => {
                       >
                         <div className="flex items-center gap-4">
                            <div className={`w-5 h-5 rounded border-2 transition-colors flex items-center justify-center ${
-                             selectedSets.includes(p.assignment_id) ? 'bg-sky-500 border-sky-500' : 'border-slate-200 group-hover:border-sky-400'
+                             selectedSets.includes(p.assignment_id) ? 'bg-indigo- border-indigo-' : 'border-slate-200 group-hover:border-indigo-'
                            }`}>
                              {selectedSets.includes(p.assignment_id) && <div className="w-2 h-2 bg-white rounded-full" />}
                            </div>
@@ -413,7 +413,7 @@ const SecrecyQuestionPapers = () => {
                      onClick={handleApproveSelectedSets}
                      disabled={selectedSets.length !== Math.min(3, availableSets.length)}
                      className={`px-8 py-3 rounded-xl font-black text-[13px]  tracking-widest transition-all shadow-sm ${
-                       selectedSets.length === Math.min(3, availableSets.length) ? 'bg-sky-500 hover:bg-sky-600 text-white cursor-pointer' : 'bg-slate-300 text-white cursor-not-allowed'
+                       selectedSets.length === Math.min(3, availableSets.length) ? 'bg-indigo-500 hover:bg-indigo-600 text-white cursor-pointer' : 'bg-slate-300 text-white cursor-not-allowed'
                      }`}
                    >
                      Approve Selected Sets

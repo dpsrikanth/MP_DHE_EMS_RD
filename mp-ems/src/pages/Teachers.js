@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+﻿import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
@@ -340,7 +340,7 @@ const Teachers = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-5">
-            <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-600">
+            <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
               <Users size={32} />
             </div>
             <div>
@@ -434,7 +434,7 @@ const Teachers = () => {
                   
                   <button
                     onClick={() => navigate('/teachers/add')}
-                    className="inline-flex items-center gap-2 px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
+                    className="inline-flex items-center gap-2 px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
                   >
                     <Plus size={20} />
                     <span>Add Staff</span>
@@ -454,7 +454,7 @@ const Teachers = () => {
             }}
             className={`px-5 py-2 rounded-xl font-bold text-sm transition-all ${
               staffType === 'Teaching'
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                ? 'bg-indigo- text-white shadow-lg shadow-indigo-500/20'
                 : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
             }`}
           >
@@ -467,7 +467,7 @@ const Teachers = () => {
             }}
             className={`px-5 py-2 rounded-xl font-bold text-sm transition-all ${
               staffType === 'Non-Teaching'
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                ? 'bg-indigo- text-white shadow-lg shadow-indigo-500/20'
                 : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
             }`}
           >
@@ -553,7 +553,7 @@ const Teachers = () => {
                     {visibleColumns.name && (
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
+                          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200 group-hover:bg-indigo- group-hover:text-indigo-500 transition-colors">
                             <User size={20} />
                           </div>
                           <div>
@@ -579,7 +579,7 @@ const Teachers = () => {
                     )}
                     {visibleColumns.designation && (
                       <td className="px-4 py-4">
-                        <p className="text-[13px] text-slate-700 font-bold text-blue-600/80">{safeDisplay(item.designation)}</p>
+                        <p className="text-[13px] text-slate-700 font-bold text-indigo-/80">{safeDisplay(item.designation)}</p>
                       </td>
                     )}
                     {/* ... omitted commented out cells ... */}
@@ -601,7 +601,7 @@ const Teachers = () => {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => navigate(`/teachers/edit/${item.id}`)}
-                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
                             title="Modify Profile"
                           >
                             <Pencil size={18} />
@@ -625,7 +625,7 @@ const Teachers = () => {
                       <p className="text-sm font-bold text-slate-400  tracking-widest">No faculty members found</p>
                       <button
                         onClick={() => setSearchQuery('')}
-                        className="text-[13px] font-black text-blue-500 hover:text-blue-600 underline  tracking-tighter"
+                        className="text-[13px] font-black text-indigo-500 hover:text-indigo-600 underline  tracking-tighter"
                       >
                         Clear Search
                       </button>
@@ -650,7 +650,7 @@ const Teachers = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
+          <div className="absolute inset-0 bg-indigo-600/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
             <div className="p-6 text-center flex flex-col items-center">
               <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
@@ -681,7 +681,7 @@ const Teachers = () => {
       {/* View Details Modal */}
       {showViewModal && viewData && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowViewModal(false)} />
+          <div className="absolute inset-0 bg-indigo-600/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowViewModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 flex flex-col">
             {/* Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -727,7 +727,7 @@ const Teachers = () => {
                 {/* Professional Section */}
                 <div className="col-span-full mt-6 mb-2">
                   <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center"><Briefcase size={18} /></span>
+                    <span className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center"><Briefcase size={18} /></span>
                     Professional Affiliation
                   </h3>
                 </div>
@@ -749,7 +749,7 @@ const Teachers = () => {
                 {/* Documents Section */}
                 <div className="col-span-full mt-6 mb-2">
                   <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center"><IdCard size={18} /></span>
+                    <span className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center"><IdCard size={18} /></span>
                     Identification & Tax
                   </h3>
                 </div>
@@ -760,7 +760,7 @@ const Teachers = () => {
                 {/* Address Section */}
                 <div className="col-span-full mt-6 mb-2">
                   <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center"><MapPin size={18} /></span>
+                    <span className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center"><MapPin size={18} /></span>
                     Contact & Address Details
                   </h3>
                 </div>
@@ -780,7 +780,7 @@ const Teachers = () => {
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
               <button
                 onClick={() => setShowViewModal(false)}
-                className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm  tracking-widest"
+                className="px-8 py-3 bg-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm  tracking-widest"
               >
                 Close Profile
               </button>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Building2, Users, TrendingUp, AlertTriangle, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
 import { masterDataApi } from '../../api/masterDataApi';
@@ -68,7 +68,7 @@ const InfrastructureAnalytics = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <h1 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-            <Building2 className="text-blue-600" size={32} /> Infrastructure Analytics
+            <Building2 className="text-indigo-" size={32} /> Infrastructure Analytics
           </h1>
           <p className="text-slate-500 font-medium mt-1">College-wise Capacity vs Student Distribution</p>
         </div>
@@ -79,7 +79,7 @@ const InfrastructureAnalytics = () => {
             <input
               type="text"
               placeholder="Search colleges..."
-              className="pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none w-full font-medium transition-all"
+              className="pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:-indigo-/10 outline-none w-full font-medium transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -88,7 +88,7 @@ const InfrastructureAnalytics = () => {
           <select
             value={selectedExam}
             onChange={(e) => setSelectedExam(e.target.value)}
-            className="w-full md:w-64 px-4 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm outline-none focus:ring-4 focus:ring-blue-500/20 cursor-pointer appearance-none transition-all"
+            className="w-full md:w-64 px-4 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/20 cursor-pointer appearance-none transition-all"
           >
             <option value="">All Exams (Aggregate)</option>
             {exams.map(exam => (
@@ -176,7 +176,7 @@ const InfrastructureAnalytics = () => {
                       {item.approved_halls_details.length > 3 && (
                         <button
                           onClick={() => toggleExpansion(item.id)}
-                          className="w-full py-1.5 text-[12px] font-black text-blue-600 hover:text-blue-700  tracking-widest transition-colors flex items-center justify-center gap-1.5"
+                          className="w-full py-1.5 text-[12px] font-black text-indigo- hover:text-blue-700  tracking-widest transition-colors flex items-center justify-center gap-1.5"
                         >
                           {expandedIds[item.id] ? (
                             <>Show Less <ChevronUp size={12} /></>
@@ -192,13 +192,13 @@ const InfrastructureAnalytics = () => {
                 <div className="pt-2">
                   <div className="flex justify-between text-[13px] mb-1">
                     <span className="text-slate-500 font-medium">Capacity Coverage</span>
-                    <span className={isDeficit ? 'text-rose-600 font-bold' : 'text-blue-600 font-bold'}>
+                    <span className={isDeficit ? 'text-rose-600 font-bold' : 'text-indigo- font-bold'}>
                       {occupancy}%
                     </span>
                   </div>
                   <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className={`h-full transition-all duration-500 rounded-full ${isDeficit ? 'bg-rose-500' : 'bg-blue-500'}`}
+                      className={`h-full transition-all duration-500 rounded-full ${isDeficit ? 'bg-rose-500' : 'bg-indigo-'}`}
                       style={{ width: `${Math.min(occupancy, 100)}%` }}
                     />
                   </div>

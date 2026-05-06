@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import Select, { components } from 'react-select';
@@ -23,7 +23,7 @@ const CheckboxOption = (props) => {
             type="checkbox"
             checked={props.isSelected}
             onChange={() => null}
-            className="w-4 h-4 text-sky-500 border-slate-300 rounded focus:ring-sky-500 pointer-events-none"
+            className="w-4 h-4 text-indigo- border-slate-300 rounded focus:-indigo- pointer-events-none"
           />
           <span className="text-sm font-medium">{props.label}</span>
         </div>
@@ -162,7 +162,7 @@ const Universities = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-600">
+            <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
               <School size={28} />
             </div>
             <div>
@@ -183,7 +183,7 @@ const Universities = () => {
             />
             <button 
               onClick={() => navigate('/universities/add')}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-2xl shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
             >
               <Plus size={20} />
               <span>Add University</span>
@@ -230,7 +230,7 @@ const Universities = () => {
                         {item.colleges_count > 0 ? (
                           <button 
                             onClick={() => showDetails(item, 'colleges')}
-                            className="inline-flex items-center px-4 py-1.5 bg-sky-50 text-sky-600 rounded-full text-[13px] font-bold hover:bg-sky-100 transition-colors"
+                            className="inline-flex items-center px-4 py-1.5 bg-indigo- text-indigo- rounded-full text-[13px] font-bold hover:bg-indigo- transition-colors"
                           >
                             {item.colleges_count} Colleges
                           </button>
@@ -243,7 +243,7 @@ const Universities = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button 
                           onClick={() => navigate(`/universities/edit/${item.id}`)}
-                          className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 rounded-xl transition-all"
+                          className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-xl transition-all"
                           title="Edit University"
                         >
                           <Pencil size={18} />
@@ -258,7 +258,7 @@ const Universities = () => {
                         <div className="w-px h-4 bg-slate-200 mx-1"></div>
                         <button 
                           onClick={() => navigate('/colleges', { state: { universityId: item.id, addMode: true } })}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl text-[13px] font-bold transition-all"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-indigo-600 hover:text-white rounded-xl text-[13px] font-bold transition-all"
                           title="Manage Colleges"
                         >
                           <Plus size={14} />
@@ -275,7 +275,7 @@ const Universities = () => {
                       <p className="text-sm font-bold text-slate-400  tracking-widest">No universities match your search</p>
                       <button 
                         onClick={() => setSearchQuery('')}
-                        className="text-[13px] font-black text-sky-500 hover:text-sky-600 underline  tracking-tighter"
+                        className="text-[13px] font-black text-indigo-500 hover:text-indigo-600 underline  tracking-tighter"
                       >
                         Clear Search
                       </button>
@@ -320,7 +320,7 @@ const Universities = () => {
               ) : (
                 detailsList.map((item) => (
                   <div key={item.id} className="p-4 flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-sky-500"></div>
+                    <div className="w-2 h-2 rounded-full bg-indigo-"></div>
                     <span className="text-sm font-semibold text-slate-700">
                       {item.college_name || item.name || item.year_name || 'Anonymous Entry'}
                     </span>
@@ -335,7 +335,7 @@ const Universities = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
+          <div className="absolute inset-0 bg-indigo-600/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
             <div className="p-6 text-center flex flex-col items-center">
               <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">

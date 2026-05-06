@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { authApi } from '../api/authApi';
 
 const SessionMonitor = ({ children }) => {
@@ -116,7 +116,7 @@ const SessionMonitor = ({ children }) => {
             
             <button 
               onClick={handleExtend}
-              className="w-full py-4 bg-sky-600 hover:bg-sky-700 text-white font-black rounded-xl shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] tracking-widest  text-sm"
+              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] tracking-widest  text-sm"
             >
               Extend Session
             </button>

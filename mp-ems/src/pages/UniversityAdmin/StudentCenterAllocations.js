@@ -253,7 +253,7 @@ const StudentCenterAllocations = () => {
                         </div>
                     )}
 
-                    <div className="bg-amber-50 rounded-xl p-4 border border-amber-100 flex gap-3 text-amber-700">
+                    <div className="bg-indigo- rounded-xl p-4 border border-amber-100 flex gap-3 text-amber-700">
                         <AlertTriangle size={16} className="shrink-0 mt-0.5" />
                         <p className="text-[12px] font-bold leading-relaxed">
                             Personal allocation overrides any bulk college allocations made on the Hall Approvals screen.
@@ -334,7 +334,7 @@ const StudentCenterAllocations = () => {
                                                 centerName = student.actual_seated_center_name;
                                                 centerStyle = isHome
                                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                                    : 'bg-orange-50 text-orange-700 border-orange-200';
+                                                    : 'bg-indigo- text-orange-700 border-indigo-';
                                             } else if (student.college_center_name) {
                                                 // Bulk-level mapping (college mapped to external center)
                                                 centerName = student.college_center_name;

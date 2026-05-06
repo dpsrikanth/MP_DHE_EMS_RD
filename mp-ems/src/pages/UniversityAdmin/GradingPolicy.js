@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
     ShieldCheck, Save, Plus, Trash2, Info,
     Settings, BarChart3, ChevronRight, AlertTriangle
@@ -158,7 +158,7 @@ const GradingPolicy = () => {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-                <div className="w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                 <p className="text-slate-500 font-medium">Loading university policy...</p>
             </div>
         );
@@ -169,7 +169,7 @@ const GradingPolicy = () => {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-600 shadow-sm border border-sky-500/20">
+                    <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-/20">
                         <ShieldCheck size={32} />
                     </div>
                     <div>
@@ -188,7 +188,7 @@ const GradingPolicy = () => {
                                 value={selectedUni}
                                 onChange={(e) => isSuperOrAdmin && setSelectedUni(e.target.value)}
                                 disabled={!isSuperOrAdmin}
-                                className={`h-14 pl-5 pr-10 bg-white border-2 border-slate-100 rounded-2xl text-sm font-black text-slate-700 outline-none transition-all appearance-none shadow-sm shadow-slate-200/50 ${isSuperOrAdmin ? 'cursor-pointer focus:border-sky-500' : 'cursor-default opacity-80'}`}
+                                className={`h-14 pl-5 pr-10 bg-white border-2 border-slate-100 rounded-2xl text-sm font-black text-slate-700 outline-none transition-all appearance-none shadow-sm shadow-slate-200/50 ${isSuperOrAdmin ? 'cursor-pointer focus:border-indigo-500' : 'cursor-default opacity-80'}`}
                                 style={{ backgroundImage: isSuperOrAdmin ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'%3E%3C/path%3E%3C/svg%3E")` : 'none', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1rem' }}
                             >
                                 {universities.map(uni => (
@@ -200,7 +200,7 @@ const GradingPolicy = () => {
                     <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="inline-flex items-center gap-2 px-8 py-4 bg-sky-600 hover:bg-sky-700 text-white font-black rounded-2xl shadow-xl shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 mt-auto"
+                        className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 mt-auto"
                     >
                         {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Save size={20} />}
                         <span>{saving ? 'Saving Changes...' : 'Save Configuration'}</span>
@@ -219,7 +219,7 @@ const GradingPolicy = () => {
                             </h3>
                             <button
                                 onClick={handleAddRow}
-                                className="inline-flex items-center gap-2 text-[13px] font-black text-sky-600 bg-sky-50 hover:bg-sky-100 px-4 py-2 rounded-xl transition-colors border border-sky-100"
+                                className="inline-flex items-center gap-2 text-[13px] font-black text-indigo- bg-indigo- hover:bg-indigo- px-4 py-2 rounded-xl transition-colors border border-sky-100"
                             >
                                 <Plus size={14} />
                                 Add Grade
@@ -243,7 +243,7 @@ const GradingPolicy = () => {
                                                     type="number"
                                                     value={row.min}
                                                     onChange={(e) => handleScaleChange(index, 'min', e.target.value)}
-                                                    className="w-24 h-10 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-black text-slate-700 focus:bg-white focus:border-sky-500 outline-none transition-all"
+                                                    className="w-24 h-10 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-black text-slate-700 focus:bg-white focus:border-indigo-500 outline-none transition-all"
                                                 />
                                             </td>
                                             <td className="px-6 py-3">
@@ -252,7 +252,7 @@ const GradingPolicy = () => {
                                                     value={row.grade}
                                                     onChange={(e) => handleScaleChange(index, 'grade', e.target.value)}
                                                     placeholder="A+, O, F etc."
-                                                    className="w-24 h-10 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-black text-slate-700 focus:bg-white focus:border-sky-500 outline-none transition-all "
+                                                    className="w-24 h-10 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-black text-slate-700 focus:bg-white focus:border-indigo-500 outline-none transition-all "
                                                 />
                                             </td>
                                             <td className="px-6 py-3">
@@ -261,7 +261,7 @@ const GradingPolicy = () => {
                                                     step="0.1"
                                                     value={row.points}
                                                     onChange={(e) => handleScaleChange(index, 'points', e.target.value)}
-                                                    className="w-24 h-10 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-black text-slate-700 focus:bg-white focus:border-sky-500 outline-none transition-all"
+                                                    className="w-24 h-10 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-black text-slate-700 focus:bg-white focus:border-indigo-500 outline-none transition-all"
                                                 />
                                             </td>
                                             <td className="px-6 py-3 text-center">
@@ -296,7 +296,7 @@ const GradingPolicy = () => {
                                         type="number"
                                         value={config.pass_threshold}
                                         onChange={(e) => setConfig({ ...config, pass_threshold: Number(e.target.value) })}
-                                        className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl px-5 text-lg font-black text-sky-600 outline-none focus:bg-white focus:border-sky-500 transition-all font-mono"
+                                        className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl px-5 text-lg font-black text-indigo- outline-none focus:bg-white focus:border-indigo-500 transition-all font-mono"
                                     />
                                     <div className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-black">PERCENT</div>
                                 </div>
@@ -312,15 +312,15 @@ const GradingPolicy = () => {
                                 </div>
                                 <button
                                     onClick={() => setConfig({ ...config, calculate_sgpa_on_earned_only: !config.calculate_sgpa_on_earned_only })}
-                                    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${config.calculate_sgpa_on_earned_only ? 'bg-sky-500' : 'bg-slate-200'}`}
+                                    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${config.calculate_sgpa_on_earned_only ? 'bg-indigo-' : 'bg-slate-200'}`}
                                 >
                                     <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${config.calculate_sgpa_on_earned_only ? 'translate-x-5' : 'translate-x-0'}`} />
                                 </button>
                             </div>
                         </div>
                         
-                        <div className="bg-amber-50 rounded-2xl p-5 border border-amber-100 flex gap-4">
-                            <AlertTriangle size={24} className="text-amber-500 shrink-0" />
+                        <div className="bg-indigo- rounded-2xl p-5 border border-amber-100 flex gap-4">
+                            <AlertTriangle size={24} className="text-indigo- shrink-0" />
                             <div className="space-y-1">
                                 <p className="text-[13px] font-black text-amber-900  tracking-tight">Important Notice</p>
                                 <p className="text-[12px] font-bold text-amber-700 leading-relaxed tracking-tight ">
@@ -332,18 +332,18 @@ const GradingPolicy = () => {
 
                     <div className="bg-sky-900 rounded-2xl p-5 text-white space-y-4 shadow-xl shadow-sky-900/20">
                         <div className="flex items-center gap-3">
-                            <Info size={20} className="text-sky-400" />
+                            <Info size={20} className="text-indigo-400" />
                             <h4 className="font-black text-sm  tracking-widest">Logic Guide</h4>
                         </div>
                         <div className="space-y-4">
                             <div className="flex gap-4 group">
-                                <div className="w-8 h-8 rounded-full bg-sky-800 flex items-center justify-center text-[13px] font-black text-sky-400 group-hover:bg-sky-500 group-hover:text-white transition-colors">1</div>
+                                <div className="w-8 h-8 rounded-full bg-sky-800 flex items-center justify-center text-[13px] font-black text-indigo-400 group-hover:bg-indigo- group-hover:text-white transition-colors">1</div>
                                 <p className="text-[12px] font-medium leading-relaxed opacity-80 flex-1">
                                     Grades are assigned by checking which range the student's marks fall into, starting from highest to lowest threshold.
                                 </p>
                             </div>
                             <div className="flex gap-4 group">
-                                <div className="w-8 h-8 rounded-full bg-sky-800 flex items-center justify-center text-[13px] font-black text-sky-400 group-hover:bg-sky-500 group-hover:text-white transition-colors">2</div>
+                                <div className="w-8 h-8 rounded-full bg-sky-800 flex items-center justify-center text-[13px] font-black text-indigo-400 group-hover:bg-indigo- group-hover:text-white transition-colors">2</div>
                                 <p className="text-[12px] font-medium leading-relaxed opacity-80 flex-1">
                                     Grade points are used in the calculation of SGPA: Total (Points × Credits) / Total Credits.
                                 </p>

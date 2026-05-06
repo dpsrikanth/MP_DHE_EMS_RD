@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { CheckCircle, ArrowLeft, ShieldCheck, AlertCircle, MessageSquare, X, Send, Lock } from 'lucide-react';
@@ -260,7 +260,7 @@ const MarksReview = () => {
                 <button onClick={() => navigate('/admin/marks-approval')} className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-colors shadow-sm">
                     <ArrowLeft size={18} />
                 </button>
-                <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-600">
+                <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
                     <ShieldCheck size={28} />
                 </div>
                 <div>
@@ -280,7 +280,7 @@ const MarksReview = () => {
             ) : (
                 <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
                     <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                        <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 font-bold text-sm">
+                        <div className="flex items-center gap-2 text-indigo- bg-indigo- px-3 py-1.5 rounded-lg border border-indigo- font-bold text-sm">
                             <AlertCircle size={16} />
                             Preview Mode: Best of 3 will be officially calculated upon Locking
                         </div>
@@ -353,7 +353,7 @@ const MarksReview = () => {
                                                 {(isHOD || isCollegeAdmin) && subjectMeta?.status !== 'Locked' ? (
                                                     <button
                                                         onClick={() => handleOpenGrace(student)}
-                                                        className={`p-2 rounded-lg transition-colors flex flex-col items-center gap-1 hover:scale-[1.05] ${studentsGraceMarks[student.student_id]?.marks > 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                                                        className={`p-2 rounded-lg transition-colors flex flex-col items-center gap-1 hover:scale-[1.05] ${studentsGraceMarks[student.student_id]?.marks > 0 ? 'bg-indigo- text-amber-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
                                                     >
                                                         <ShieldCheck size={16} />
                                                         <span className="text-[8px] font-black">{studentsGraceMarks[student.student_id]?.marks > 0 ? `+${studentsGraceMarks[student.student_id].marks}` : 'ADD GRACE'}</span>
@@ -391,7 +391,7 @@ const MarksReview = () => {
                     <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-between items-center z-20 sticky bottom-0">
                         <div className="flex flex-col gap-2">
                             <div className="text-sm text-slate-500 max-w-xl">
-                                <span className="font-bold text-amber-600 block mb-1">Important Note</span>
+                                <span className="font-bold text-indigo- block mb-1">Important Note</span>
                                 {isHOD ?
                                     "Approving this section will notify the College Admin that marks are ready for final locking. You will still be able to view these marks." :
                                     "Once you lock these marks, they cannot be modified by the faculty. The system will permanently write the Best of 3 calculations to the database."
@@ -413,7 +413,7 @@ const MarksReview = () => {
                                 <button
                                     disabled={isRejecting}
                                     onClick={handleSendBackToCollege}
-                                    className="inline-flex items-center gap-2 px-6 py-4 bg-amber-600 text-white font-black rounded-xl shadow-lg shadow-amber-600/20 hover:bg-amber-700 transition-all  tracking-widest text-[13px]"
+                                    className="inline-flex items-center gap-2 px-6 py-4 bg-indigo- text-white font-black rounded-xl shadow-lg shadow-indigo-600/20 hover:bg-indigo- transition-all  tracking-widest text-[13px]"
                                     title="Send back to college (Scenario 2)"
                                 >
                                     <Send size={18} />
@@ -435,7 +435,7 @@ const MarksReview = () => {
                                     disabled={isLocking}
                                     onClick={handleApproveSection}
                                     className={`inline-flex items-center gap-2 px-10 py-4 text-white font-black rounded-xl shadow-xl transition-all  tracking-widest text-sm
-                                        ${isLocking ? 'bg-amber-400 cursor-not-allowed shadow-none' : 'bg-emerald-500 hover:bg-emerald-600 hover:scale-[1.02] shadow-emerald-500/20 active:scale-[0.98]'}`}
+                                        ${isLocking ? 'bg-amber-400 cursor-not-allowed shadow-none' : 'bg-emerald-500 hover:bg-emerald-600 hover:scale-[1.02] shadow-indigo-500/20 active:scale-[0.98]'}`}
                                 >
                                     {isLocking ? (
                                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -458,7 +458,7 @@ const MarksReview = () => {
                                 disabled={isLocking}
                                 onClick={handleLockMarks}
                                 className={`inline-flex items-center gap-2 px-10 py-4 text-white font-black rounded-xl shadow-xl transition-all  tracking-widest text-sm
-                                    ${isLocking ? 'bg-amber-400 cursor-not-allowed shadow-none' : 'bg-amber-500 hover:bg-amber-600 hover:scale-[1.02] shadow-amber-500/20 active:scale-[0.98]'}`}
+                                    ${isLocking ? 'bg-amber-400 cursor-not-allowed shadow-none' : 'bg-indigo-500 hover:bg-indigo-600 hover:scale-[1.02] shadow-indigo-500/20 active:scale-[0.98]'}`}
                             >
                                 {isLocking ? (
                                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -475,7 +475,7 @@ const MarksReview = () => {
 
             {/* Review Modal */}
             {isReviewOpen && selectedStudent && (
-                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-indigo-600/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                     <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
                         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                             <h3 className="text-xl font-bold text-slate-900">Review Student Marks</h3>
@@ -539,7 +539,7 @@ const MarksReview = () => {
             )}
             {/* Grace Marks Modal */}
             {isGraceOpen && selectedStudent && (
-                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-indigo-600/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                     <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
                         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                             <h3 className="text-xl font-bold text-slate-900">Add Grace Marks</h3>
@@ -548,7 +548,7 @@ const MarksReview = () => {
                             </button>
                         </div>
                         <div className="p-6 space-y-6">
-                            <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex items-center gap-3 text-amber-800">
+                            <div className="bg-indigo- p-4 rounded-2xl border border-amber-100 flex items-center gap-3 text-amber-800">
                                 <ShieldCheck size={24} />
                                 <div>
                                     <p className="text-sm font-bold">Applying Grace Marks for {selectedStudent.student_name}</p>

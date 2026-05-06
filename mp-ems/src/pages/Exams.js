@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+﻿import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   FileText, Plus, Pencil, X, Check, Calendar, Book, Layers, Hash, ArrowRight,
@@ -427,7 +427,7 @@ const Exams = () => {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
   if (error) return (
@@ -442,7 +442,7 @@ const Exams = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-5">
-            <div className="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-600">
+            <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
               <FileText size={32} />
             </div>
             <div>
@@ -469,7 +469,7 @@ const Exams = () => {
             {!isCollegeAdminRole && (
               <button 
                 onClick={() => navigate('/exams/add')}
-                className="inline-flex items-center gap-2 px-8 py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-2xl shadow-xl shadow-purple-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
+                className="inline-flex items-center gap-2 px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
               >
                 <Plus size={20} />
                 <span>Schedule Exam</span>
@@ -482,7 +482,7 @@ const Exams = () => {
         {isUniversityAdminRole && (
           <div className="px-5 py-3 bg-gradient-to-r from-slate-50/80 to-purple-50/40 border-t border-slate-100">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center text-purple-500">
+              <div className="w-7 h-7 rounded-lg bg-indigo- flex items-center justify-center text-indigo-">
                 <Filter size={14} />
               </div>
               <span className="text-[12px] font-black text-slate-400  tracking-[0.2em]">Filter Examinations</span>
@@ -502,7 +502,7 @@ const Exams = () => {
                 <select
                   value={filterCollege}
                   onChange={(e) => handleCollegeFilterChange(e.target.value)}
-                  className="w-full appearance-none bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold text-slate-700 outline-none transition-all cursor-pointer shadow-sm"
+                  className="w-full appearance-none bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-indigo-500 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold text-slate-700 outline-none transition-all cursor-pointer shadow-sm"
                 >
                   <option value="">All Colleges</option>
                   {filterOptions.availableColleges.map(c => (
@@ -520,7 +520,7 @@ const Exams = () => {
                   disabled={!filterCollege}
                   className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold outline-none transition-all cursor-pointer shadow-sm ${
                     filterCollege 
-                      ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-purple-500 text-slate-700' 
+                      ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-indigo-500 text-slate-700' 
                       : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
                   }`}
                 >
@@ -540,7 +540,7 @@ const Exams = () => {
                   disabled={!filterProgram}
                   className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold outline-none transition-all cursor-pointer shadow-sm ${
                     filterProgram 
-                      ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-purple-500 text-slate-700' 
+                      ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-indigo-500 text-slate-700' 
                       : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
                   }`}
                 >
@@ -560,7 +560,7 @@ const Exams = () => {
                   disabled={!filterSemester}
                   className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold outline-none transition-all cursor-pointer shadow-sm ${
                     filterSemester 
-                      ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-purple-500 text-slate-700' 
+                      ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-indigo-500 text-slate-700' 
                       : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
                   }`}
                 >
@@ -582,7 +582,7 @@ const Exams = () => {
               onClick={() => { setExamTypeFilter('internal'); setFilterProgram(''); setFilterSemester(''); }}
               className={`px-6 py-3 text-[13px] font-black  tracking-widest rounded-t-xl transition-all border-b-2 ${
                 examTypeFilter === 'internal'
-                  ? 'border-purple-500 text-purple-600 bg-purple-50/50'
+                  ? 'border-indigo- text-indigo- bg-indigo-/50'
                   : 'border-transparent text-slate-400 hover:text-slate-700'
               }`}
             >
@@ -592,7 +592,7 @@ const Exams = () => {
               onClick={() => { setExamTypeFilter('external'); setFilterProgram(''); setFilterSemester(''); }}
               className={`px-6 py-3 text-[13px] font-black  tracking-widest rounded-t-xl transition-all border-b-2 ${
                 examTypeFilter === 'external'
-                  ? 'border-blue-500 text-blue-600 bg-blue-50/50'
+                  ? 'border-indigo- text-indigo- bg-indigo-/50'
                   : 'border-transparent text-slate-400 hover:text-slate-700'
               }`}
             >
@@ -605,7 +605,7 @@ const Exams = () => {
         {isCollegeAdminRole && (
           <div className="px-5 py-3 bg-gradient-to-r from-slate-50/80 to-purple-50/40 border-t border-slate-100">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center text-purple-500">
+              <div className="w-7 h-7 rounded-lg bg-indigo- flex items-center justify-center text-indigo-">
                 <Filter size={14} />
               </div>
               <span className="text-[12px] font-black text-slate-400  tracking-[0.2em]">Filter by Program & Semester</span>
@@ -625,7 +625,7 @@ const Exams = () => {
                 <select
                   value={filterProgram}
                   onChange={(e) => handleProgramFilterChange(e.target.value)}
-                  className="w-full appearance-none bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold text-slate-700 outline-none transition-all cursor-pointer shadow-sm"
+                  className="w-full appearance-none bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-indigo-500 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold text-slate-700 outline-none transition-all cursor-pointer shadow-sm"
                 >
                   <option value="">All Programs</option>
                   {collegeAdminFilterOptions.programs.map(p => (
@@ -643,7 +643,7 @@ const Exams = () => {
                   disabled={!filterProgram}
                   className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold outline-none transition-all cursor-pointer shadow-sm ${
                     filterProgram 
-                      ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-purple-500 text-slate-700' 
+                      ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-indigo-500 text-slate-700' 
                       : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
                   }`}
                 >
@@ -660,7 +660,7 @@ const Exams = () => {
 
         {/* Read-only banner for college admin viewing external exams */}
         {isCollegeAdminRole && examTypeFilter === 'external' && (
-          <div className="mx-6 mt-4 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-2xl flex items-center gap-3 text-sm text-blue-700 font-semibold">
+          <div className="mx-6 mt-4 px-4 py-2.5 bg-indigo- border border-indigo- rounded-2xl flex items-center gap-3 text-sm text-blue-700 font-semibold">
             <Globe size={16} className="shrink-0" />
             External exams are managed by the University Admin. You can view them here but cannot create, edit or delete them.
           </div>
@@ -757,7 +757,7 @@ const Exams = () => {
                           </div>
                           <div className="flex items-center gap-2">
                              {sub.student_application_open && (
-                               <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" title="Applications Open" />
+                               <div className="w-2 h-2 rounded-full bg-indigo- animate-pulse" title="Applications Open" />
                              )}
                           </div>
                         </div>
@@ -782,7 +782,7 @@ const Exams = () => {
                             {item.exam_type !== 1 && (
                               <button 
                                 onClick={() => handleToggleApplications(item)}
-                                className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-[13px] ${item.subjects[0].student_application_open ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'}`}
+                                className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-[13px] ${item.subjects[0].student_application_open ? 'bg-indigo- border-indigo- text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'}`}
                               >
                                 <span className=" tracking-widest">{item.subjects[0].student_application_open ? 'Enrolling' : 'Open Enrollment'}</span>
                                 <Users size={16} />
@@ -792,7 +792,7 @@ const Exams = () => {
                               onClick={() => handleToggleResultsPublish(item)}
                               disabled={!item.subjects.every(s => s.marks_submitted) && !item.subjects[0].results_published}
                               title={!item.subjects.every(s => s.marks_submitted) && !item.subjects[0].results_published ? "All internal marks must be 'Locked' by colleges and external marks must be 'Submitted' before publishing." : ""}
-                              className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-[13px] ${item.subjects[0].results_published ? 'bg-amber-50 border-amber-200 text-amber-700' : (!item.subjects.every(s => s.marks_submitted) ? 'bg-slate-50 border-slate-200 text-slate-300 cursor-not-allowed grayscale' : 'bg-white border-slate-200 text-slate-600 hover:border-amber-400 hover:text-amber-600')}`}
+                              className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all font-bold text-[13px] ${item.subjects[0].results_published ? 'bg-indigo- border-indigo- text-amber-700' : (!item.subjects.every(s => s.marks_submitted) ? 'bg-slate-50 border-slate-200 text-slate-300 cursor-not-allowed grayscale' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo- hover:text-indigo-')}`}
                             >
                               <span className=" tracking-widest">{item.subjects[0].results_published ? 'Results Live' : 'Publish Results'}</span>
                               <Check size={16} />

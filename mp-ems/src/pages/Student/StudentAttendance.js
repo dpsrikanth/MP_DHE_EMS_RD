@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Calendar, BookOpen, Clock, AlertCircle, 
   CheckCircle2, XCircle, ChevronRight, LayoutDashboard,
@@ -52,7 +52,7 @@ const AttendanceDetail = ({ subjectId, dateFilter }) => {
     if (loading) {
         return (
             <div className="py-4 flex justify-center">
-                <div className="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
@@ -138,7 +138,7 @@ const CombinedHistory = ({ dateFilter }) => {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[300px]">
-                <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
@@ -169,7 +169,7 @@ const CombinedHistory = ({ dateFilter }) => {
                         <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
                             <td className="px-8 py-5">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex flex-col items-center justify-center font-black group-hover:bg-sky-500 group-hover:text-white transition-colors duration-300">
+                                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex flex-col items-center justify-center font-black group-hover:bg-indigo- group-hover:text-white transition-colors duration-300">
                                         <div className="text-[12px] italic">{formatDate(row.attendance_date)}</div>
                                     </div>
                                     <div>
@@ -178,7 +178,7 @@ const CombinedHistory = ({ dateFilter }) => {
                                 </div>
                             </td>
                             <td className="px-6 py-5">
-                                <p className="text-[13px] font-black text-slate-900 group-hover:text-sky-600 transition-colors">{row.subject_name}</p>
+                                <p className="text-[13px] font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{row.subject_name}</p>
                                 <p className="text-[12px] font-bold text-slate-400  tracking-widest">{row.subject_code}</p>
                             </td>
                             <td className="px-6 py-5">
@@ -231,20 +231,20 @@ const StudentAttendance = () => {
 
     const getStatusColor = (percentage) => {
         if (percentage >= 75) return 'text-emerald-600 bg-emerald-50 border-emerald-100';
-        if (percentage >= 60) return 'text-amber-600 bg-amber-50 border-amber-100';
+        if (percentage >= 60) return 'text-indigo- bg-indigo- border-amber-100';
         return 'text-red-600 bg-red-50 border-red-100';
     };
 
     const getProgressColor = (percentage) => {
         if (percentage >= 75) return 'bg-emerald-500';
-        if (percentage >= 60) return 'bg-amber-500';
+        if (percentage >= 60) return 'bg-indigo-';
         return 'bg-red-500';
     };
 
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
-                <div className="w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
@@ -258,24 +258,24 @@ const StudentAttendance = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-900/20">
+                    <div className="w-14 h-14 bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-600/20">
                         <History size={26} />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight italic">Attendance <span className="text-sky-500 not-italic">Analytics</span></h1>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight italic">Attendance <span className="text-indigo- not-italic">Analytics</span></h1>
                         <p className="text-[13px] text-slate-400 font-black tracking-[0.2em] mt-1 ">Advanced academic engagement tracking</p>
                     </div>
                 </div>
                 <div className="flex bg-slate-100 p-1.5 rounded-2xl shadow-inner border border-slate-200">
                     <button 
                         onClick={() => setActiveTab('subject')}
-                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black  tracking-widest transition-all duration-300 ${activeTab === 'subject' ? 'bg-white text-sky-600 shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black  tracking-widest transition-all duration-300 ${activeTab === 'subject' ? 'bg-white text-indigo- shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         By Subject
                     </button>
                     <button 
                         onClick={() => setActiveTab('history')}
-                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black  tracking-widest transition-all duration-300 ${activeTab === 'history' ? 'bg-white text-sky-600 shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black  tracking-widest transition-all duration-300 ${activeTab === 'history' ? 'bg-white text-indigo- shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         Combined History
                     </button>
@@ -296,14 +296,14 @@ const StudentAttendance = () => {
                             key={f.id}
                             onClick={() => setDateFilter(f.id)}
                             className={`px-4 py-1.5 rounded-full text-[12px] font-black  tracking-widest transition-all whitespace-nowrap ${
-                                dateFilter === f.id ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                                dateFilter === f.id ? 'bg-indigo- text-white shadow-md shadow-indigo-500/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
                             }`}
                         >
                             {f.label}
                         </button>
                     ))}
                 </div>
-                <div className="flex items-center gap-2 text-sky-600 text-[12px] font-black  tracking-widest italic animate-pulse">
+                <div className="flex items-center gap-2 text-indigo- text-[12px] font-black  tracking-widest italic animate-pulse">
                     <Info size={12} /> Live synchronization enabled
                 </div>
             </div>
@@ -313,8 +313,8 @@ const StudentAttendance = () => {
                     {/* Top Metrics (only shown in subject view) */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500 rounded-full blur-[60px] opacity-10 group-hover:opacity-20 transition-opacity" />
-                            <BarChart3 className="text-sky-500 mb-4" size={32} />
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo- rounded-full blur-[60px] opacity-10 group-hover:opacity-20 transition-opacity" />
+                            <BarChart3 className="text-indigo- mb-4" size={32} />
                             <h3 className="text-sm font-black text-slate-400  tracking-widest mb-1">Overall Percentage</h3>
                             <div className="flex items-baseline gap-2">
                                 <span className="text-4xl font-black text-slate-900 tracking-tighter">{overallAttendance}%</span>
@@ -330,11 +330,11 @@ const StudentAttendance = () => {
                             <span className="text-4xl font-black text-slate-900 tracking-tighter">{attendance.length} Subjects</span>
                         </div>
 
-                        <div className="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden group">
-                             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500 rounded-full blur-[60px] opacity-20" />
-                             <AlertCircle className="text-amber-400 mb-4" size={32} />
+                        <div className="bg-indigo-600 rounded-[2rem] p-8 text-white relative overflow-hidden group">
+                             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo- rounded-full blur-[60px] opacity-20" />
+                             <AlertCircle className="text-indigo-400 mb-4" size={32} />
                              <h3 className="text-sm font-black opacity-60  tracking-widest mb-1 italic">Exam Eligibility</h3>
-                             <p className="text-[13px] font-bold leading-relaxed">Ensure a minimum of <span className="text-amber-400 font-black">75%</span> engagement per course for hall ticket validation.</p>
+                             <p className="text-[13px] font-bold leading-relaxed">Ensure a minimum of <span className="text-indigo-400 font-black">75%</span> engagement per course for hall ticket validation.</p>
                         </div>
                     </div>
 
@@ -364,7 +364,7 @@ const StudentAttendance = () => {
                                                 </div>
                                                 <div>
                                                     <div className="flex items-center gap-2 mb-1">
-                                                        <span className="text-[12px] font-black text-sky-600 bg-sky-50 px-2 py-0.5 rounded  tracking-wider border border-sky-100">
+                                                        <span className="text-[12px] font-black text-indigo- bg-indigo- px-2 py-0.5 rounded  tracking-wider border border-sky-100">
                                                             {sub.subject_code}
                                                         </span>
                                                     </div>
@@ -396,7 +396,7 @@ const StudentAttendance = () => {
                                                         )}
                                                     </div>
                                                 </div>
-                                                <div className={`text-slate-300 transition-transform duration-300 ${expandedSubject === sub.subject_id ? 'rotate-180 text-sky-500' : ''}`}>
+                                                <div className={`text-slate-300 transition-transform duration-300 ${expandedSubject === sub.subject_id ? 'rotate-180 text-indigo-' : ''}`}>
                                                     <ChevronDown size={24} />
                                                 </div>
                                             </div>

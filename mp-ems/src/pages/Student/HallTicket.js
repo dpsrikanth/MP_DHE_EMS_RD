@@ -39,7 +39,7 @@ const HallTicket = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex justify-center items-center bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-"></div>
       </div>
     );
   }
@@ -49,7 +49,7 @@ const HallTicket = () => {
       <div className="min-h-screen flex flex-col justify-center items-center bg-slate-50 p-6">
         <h2 className="text-2xl font-black text-slate-900 mb-4">Hall Ticket Not Available</h2>
         <p className="text-slate-500 mb-8">We couldn't find your hall ticket for this exam series.</p>
-        <button onClick={() => navigate('/student/exams')} className="bg-sky-500 text-white px-6 py-2 rounded-xl font-bold">
+        <button onClick={() => navigate('/student/exams')} className="bg-indigo- text-white px-6 py-2 rounded-xl font-bold">
           Go Back
         </button>
       </div>
@@ -64,7 +64,7 @@ const HallTicket = () => {
       <div className="max-w-[800px] mx-auto mb-6 flex justify-between items-center no-print">
         <button 
           onClick={() => navigate('/student/exams')}
-          className="flex items-center gap-2 text-slate-600 font-bold hover:text-sky-600 transition-colors"
+          className="flex items-center gap-2 text-slate-600 font-bold hover:text-indigo- transition-colors"
         >
           <ChevronLeft size={20} />
           Back to Exams

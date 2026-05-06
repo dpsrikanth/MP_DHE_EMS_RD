@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { 
   ShieldCheck, Save, Info, 
   Search, BookOpen, GraduationCap, AlertTriangle
@@ -145,7 +145,7 @@ const ManageCredits = () => {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-                <div className="w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                 <p className="text-slate-500 font-medium">Loading subject data...</p>
             </div>
         );
@@ -175,7 +175,7 @@ const ManageCredits = () => {
                                 value={selectedUni}
                                 onChange={(e) => isSuperOrAdmin && setSelectedUni(e.target.value)}
                                 disabled={!isSuperOrAdmin}
-                                className={`h-14 pl-5 pr-10 bg-white border-2 border-slate-100 rounded-2xl text-sm font-black text-slate-700 outline-none transition-all appearance-none shadow-sm shadow-slate-200/50 ${isSuperOrAdmin ? 'cursor-pointer focus:border-sky-500' : 'cursor-default opacity-80'}`}
+                                className={`h-14 pl-5 pr-10 bg-white border-2 border-slate-100 rounded-2xl text-sm font-black text-slate-700 outline-none transition-all appearance-none shadow-sm shadow-slate-200/50 ${isSuperOrAdmin ? 'cursor-pointer focus:border-indigo-500' : 'cursor-default opacity-80'}`}
                                 style={{ backgroundImage: isSuperOrAdmin ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'%3E%3C/path%3E%3C/svg%3E")` : 'none', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1rem' }}
                             >
                                 {universities.map(uni => (
@@ -260,7 +260,7 @@ const ManageCredits = () => {
                                             />
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg font-black text-[13px] shadow-sm ${isOverridden ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-white'}`}>
+                                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg font-black text-[13px] shadow-sm ${isOverridden ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white'}`}>
                                                 {effectiveValue}
                                             </span>
                                         </td>
@@ -272,7 +272,7 @@ const ManageCredits = () => {
                 </div>
             </div>
 
-            <div className="bg-slate-900 rounded-2xl p-6 text-white space-y-6 shadow-xl shadow-slate-900/20">
+            <div className="bg-indigo-600 rounded-2xl p-6 text-white space-y-6 shadow-xl shadow-indigo-600/20">
                 <div className="flex items-center gap-3">
                     <Info size={24} className="text-indigo-400" />
                     <h4 className="font-black text-lg  tracking-widest">About Credit Overrides</h4>

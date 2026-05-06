@@ -107,9 +107,9 @@ const MarksApproval = () => {
 
     const getStatusStyle = (status) => {
         switch (status) {
-            case 'Pending': return 'bg-yellow-100 text-yellow-700';
-            case 'Submitted': return 'bg-blue-100 text-blue-700';
-            case 'Verified': return 'bg-purple-100 text-purple-700';
+            case 'Pending': return 'bg-indigo- text-yellow-700';
+            case 'Submitted': return 'bg-indigo- text-blue-700';
+            case 'Verified': return 'bg-indigo- text-purple-700';
             case 'Approved': return 'bg-green-100 text-green-700';
             case 'Locked': return 'bg-slate-200 text-slate-700';
             default: return 'bg-slate-100 text-slate-700';
@@ -249,7 +249,7 @@ const MarksApproval = () => {
                                                 {isCollegeAdmin && wf.status === 'Approved' && (
                                                     <button
                                                         onClick={() => updateStatus(wf.id, 'Locked')}
-                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-800 text-white hover:bg-slate-900 rounded-lg text-[13px] font-bold shadow-md shadow-slate-900/20 transition-all"
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-800 text-white hover:bg-indigo-600 rounded-lg text-[13px] font-bold shadow-md shadow-indigo-600/20 transition-all"
                                                     >
                                                         <Lock size={12} /> Lock Marks
                                                     </button>

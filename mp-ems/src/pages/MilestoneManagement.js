@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { toast } from 'react-toastify';
 import { useNavigate } from "react-router-dom";
 import { 
@@ -239,7 +239,7 @@ const MilestoneManagement = () => {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
 
@@ -334,8 +334,8 @@ const MilestoneManagement = () => {
                       <span className="text-sm font-black text-slate-900  tracking-tight">{item.name}</span>
                       <div className="flex flex-wrap gap-1.5 items-center mt-1">
                         <span className={`text-[9px] font-black w-fit px-2 py-0.5 rounded-md border 
-                          ${item.type === 'Internal' ? 'bg-sky-50 text-sky-600 border-sky-100' : 
-                            item.type === 'External' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-slate-50 text-slate-500 border-slate-200'} `}>
+                          ${item.type === 'Internal' ? 'bg-indigo- text-indigo- border-sky-100' : 
+                            item.type === 'External' ? 'bg-indigo- text-indigo- border-amber-100' : 'bg-slate-50 text-slate-500 border-slate-200'} `}>
                           {item.type}
                         </span>
                         
@@ -351,7 +351,7 @@ const MilestoneManagement = () => {
                           </span>
                         )}
                         {resolveMetadataName('semesters', item.semester_id) && (
-                          <span className="text-[9px] font-black bg-purple-50 text-purple-600 border border-purple-100 px-2 py-0.5 rounded-md ">
+                          <span className="text-[9px] font-black bg-indigo- text-indigo- border border-purple-100 px-2 py-0.5 rounded-md ">
                             {resolveMetadataName('semesters', item.semester_id)}
                           </span>
                         )}
@@ -391,7 +391,7 @@ const MilestoneManagement = () => {
       {/* Entry Modal */}
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowModal(false)} />
+          <div className="absolute inset-0 bg-indigo-600/40 backdrop-blur-sm" onClick={() => setShowModal(false)} />
           <form onSubmit={handleSubmit} className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
               <div>
@@ -463,7 +463,7 @@ const MilestoneManagement = () => {
 
             <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4">
               <button type="button" onClick={() => setShowModal(false)} className="text-sm font-bold text-slate-400 hover:text-slate-600 px-4">Cancel</button>
-              <button type="submit" className="px-10 py-4 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 transition-all  text-[13px] tracking-widest flex items-center gap-2">
+              <button type="submit" className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 transition-all  text-[13px] tracking-widest flex items-center gap-2">
                 <Check size={20} />
                 <span>{formData.id ? 'Save Changes' : 'Create Milestone'}</span>
               </button>
@@ -477,7 +477,7 @@ const MilestoneManagement = () => {
       {/* Delete Confirmation */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
+          <div className="absolute inset-0 bg-indigo-600/60 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
             <div className="p-8 text-center flex flex-col items-center">
               <div className="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mb-6 border border-red-100 shadow-sm"><MdDelete size={40} /></div>

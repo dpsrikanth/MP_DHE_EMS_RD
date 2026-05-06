@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, Award, CheckCircle, XCircle, BookOpen, Clock, Download, 
   LayoutDashboard, Search, GraduationCap, CheckCircle2 
@@ -128,7 +128,7 @@ const StudentResults = () => {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
 
@@ -149,7 +149,7 @@ const StudentResults = () => {
                   placeholder="Filter results..."
                 />
              </div>
-             <a href="/student/dashboard" className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-[13px] hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20 whitespace-nowrap">
+             <a href="/student/dashboard" className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-[13px] hover:bg-slate-800 transition-all shadow-lg shadow-indigo-600/20 whitespace-nowrap">
                 <LayoutDashboard size={16} /> Return to Home
              </a>
         </div>
@@ -186,7 +186,7 @@ const StudentResults = () => {
             <select
               value={selectedSemester}
               onChange={(e) => setSelectedSemester(e.target.value)}
-              className="bg-slate-50 border border-slate-200 text-slate-700 text-[13px] font-bold rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm cursor-pointer transition-all hover:bg-white min-w-[140px]"
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-[13px] font-bold rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm cursor-pointer transition-all hover:bg-white min-w-[140px]"
             >
               <option value="All">All Semesters</option>
               {availableSemesters.map(sem => (
@@ -210,7 +210,7 @@ const StudentResults = () => {
            {searchQuery && (
              <button 
                onClick={() => setSearchQuery('')}
-               className="mt-6 text-[13px] font-black text-emerald-600 hover:text-emerald-700 underline  tracking-widest"
+               className="mt-6 text-[13px] font-black text-indigo-600 hover:text-indigo-700 underline  tracking-widest"
              >
                Clear All Filters
              </button>
@@ -246,7 +246,7 @@ const StudentResults = () => {
                     {series.exam_type !== 1 && (
                       <button 
                         onClick={() => window.open(`/student/result-sheet/${encodeURIComponent(series.exam_name)}`, '_blank')}
-                        className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[12px] font-black  tracking-widest shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all flex items-center gap-2 group"
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-[12px] font-black  tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-slate-800 transition-all flex items-center gap-2 group"
                       >
                         <Download size={14} className="group-hover:translate-y-0.5 transition-transform" /> 
                         Download Statement
@@ -394,17 +394,17 @@ const StudentResults = () => {
                        <p className="text-[9px] font-black opacity-80  mb-2">Σ(Ci x Gi)</p>
                        <p className="text-xl font-black tracking-tighter">{series.totalCiGi}</p>
                     </div>
-                    <div className="p-4 border-r border-b border-slate-200 bg-slate-900 text-white text-center">
+                    <div className="p-4 border-r border-b border-slate-200 bg-indigo-600 text-white text-center">
                        <p className="text-[9px] font-black opacity-60  mb-2 italic">Semester SGPA</p>
                        <p className="text-2xl font-black text-emerald-400 tracking-tight">{series.sgpa}</p>
                     </div>
-                    <div className="p-4 border-r border-b border-slate-200 bg-slate-900 text-white text-center">
+                    <div className="p-4 border-r border-b border-slate-200 bg-indigo-600 text-white text-center">
                        <p className="text-[9px] font-black opacity-60  mb-2 italic tracking-widest">CGPA</p>
                        <p className="text-2xl font-black text-slate-500 tracking-tight">N/A</p>
                     </div>
                     <div className={`p-4 border-b border-slate-200 text-center col-span-2 md:col-span-1 ${
                       series.overallStatus === 'FAIL' ? 'bg-red-600 text-white' : 
-                      series.overallStatus === 'PASS (GRACE)' ? 'bg-amber-500 text-white' : 
+                      series.overallStatus === 'PASS (GRACE)' ? 'bg-indigo- text-white' : 
                       'bg-emerald-600 text-white'
                     }`}>
                        <p className="text-[9px] font-black opacity-80  mb-2">Final Result</p>

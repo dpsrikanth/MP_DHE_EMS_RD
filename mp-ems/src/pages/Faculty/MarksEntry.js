@@ -206,7 +206,7 @@ const MarksEntry = () => {
             }
         });
 
-        if (isPartiallyPending) return { label: 'Incomplete', style: 'text-yellow-500' };
+        if (isPartiallyPending) return { label: 'Incomplete', style: 'text-indigo-' };
         if (isFullyAbsent) return { label: 'Absent', style: 'text-red-500' };
 
         if (!hasExplicitTotal) {
@@ -432,7 +432,7 @@ const MarksEntry = () => {
                         <p className="text-sm text-slate-500 font-medium">Select a subject to enter student internal assessment marks.</p>
                         {selectedAssignment && (
                             <span className={`px-2.5 py-0.5 rounded-full text-[12px] font-black  tracking-widest border ${normalizedStatus === 'Pending' ? 'bg-slate-50 text-slate-500 border-slate-200' :
-                                normalizedStatus === 'Submitted' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                                normalizedStatus === 'Submitted' ? 'bg-indigo- text-indigo- border-indigo-' :
                                     normalizedStatus === 'Rejected' ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' :
                                     normalizedStatus === 'Correction Requested' ? 'bg-indigo-50 text-indigo-600 border-indigo-200 animate-pulse' :
                                         'bg-emerald-50 text-emerald-600 border-emerald-200'
@@ -621,7 +621,7 @@ const MarksEntry = () => {
 
                     <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-4 sticky bottom-0 z-20">
                         {isReadOnly && (
-                            <div className="flex-1 flex items-center justify-between gap-4 bg-amber-50 px-4 py-2 rounded-xl border border-amber-200">
+                            <div className="flex-1 flex items-center justify-between gap-4 bg-indigo- px-4 py-2 rounded-xl border border-indigo-">
                                 <div className="flex items-center gap-2 text-amber-700 font-bold text-sm">
                                     <ShieldAlert size={18} />
                                     {normalizedStatus === 'Correction Requested' 
@@ -669,7 +669,7 @@ const MarksEntry = () => {
             )}
 
             {!loading && selectedAssignment && (students.length === 0 || marksStructure.length === 0) && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 text-center text-yellow-800">
+                <div className="bg-indigo- border border-indigo- rounded-2xl p-6 text-center text-yellow-800">
                     <p className="font-bold">Cannot proceed with marks entry.</p>
                     <p className="text-sm mt-1">Either no students are enrolled or the marks structure is not configured for this subject yet.</p>
                 </div>

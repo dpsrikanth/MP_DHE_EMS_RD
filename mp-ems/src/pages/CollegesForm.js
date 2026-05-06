@@ -216,7 +216,7 @@ const CollegesForm = () => {
                             <button type="button" onClick={handleDetectLocation} disabled={detectingLocation} className="p-2 bg-white border border-slate-200 text-indigo-500 rounded-lg hover:bg-indigo-50 transition-all shadow-sm">
                                <MapPin size={14} />
                             </button>
-                            <button type="button" onClick={() => setShowMapModal(true)} className="p-2 bg-white border border-slate-200 text-purple-500 rounded-lg hover:bg-purple-50 transition-all shadow-sm">
+                            <button type="button" onClick={() => setShowMapModal(true)} className="p-2 bg-white border border-slate-200 text-indigo- rounded-lg hover:bg-indigo- transition-all shadow-sm">
                                <Map size={14} />
                             </button>
                          </div>
@@ -285,7 +285,7 @@ const CollegesForm = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <div className="form-field">
                           <label className="form-label flex items-center gap-2">
-                             <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                             <span className="w-1.5 h-1.5 bg-indigo- rounded-full"></span>
                              Academic Years
                           </label>
                           <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }}
@@ -296,7 +296,7 @@ const CollegesForm = () => {
                         </div>
                         <div className="form-field">
                           <label className="form-label flex items-center gap-2">
-                             <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
+                             <span className="w-1.5 h-1.5 bg-indigo- rounded-full"></span>
                              Semester Control
                           </label>
                           <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }}

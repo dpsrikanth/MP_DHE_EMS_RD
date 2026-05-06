@@ -43,7 +43,7 @@ const SecrecyDashboard = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-20 space-y-4 min-h-[60vh]">
-        <div className="w-12 h-12 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-indigo-/20 border-t-sky-500 rounded-full animate-spin"></div>
         <p className="text-slate-400 font-black  tracking-widest text-[13px]">Synchronizing Secrecy Data...</p>
       </div>
     );
@@ -53,7 +53,7 @@ const SecrecyDashboard = () => {
     <div className="p-8 max-w-7xl mx-auto space-y-8 bg-slate-50/30 min-h-screen pb-20">
       {/* Header */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-        <TrendingUp size={32} className="text-sky-500" />
+        <TrendingUp size={32} className="text-indigo-" />
         <div>
           <h1 className="text-2xl font-black text-slate-800 tracking-tight italic">Secrecy Department Dashboard</h1>
           <p className="text-slate-500 text-sm font-medium">Overview of secrecy operations and recent activity.</p>
@@ -64,10 +64,10 @@ const SecrecyDashboard = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {[
-            { label: 'Paper Setters', value: stats.total_paper_setters, icon: <Users size={24} className="text-blue-500" />, bg: 'bg-blue-50' },
+            { label: 'Paper Setters', value: stats.total_paper_setters, icon: <Users size={24} className="text-indigo-" />, bg: 'bg-indigo-' },
             { label: 'Question Sets', value: stats.total_question_sets, icon: <FileText size={24} className="text-emerald-500" />, bg: 'bg-emerald-50' },
-            { label: 'Approved Papers', value: stats.approved_papers, icon: <CheckCircle2 size={24} className="text-purple-500" />, bg: 'bg-purple-50' },
-            { label: 'Pending Review', value: stats.pending_review, icon: <Clock size={24} className="text-orange-500" />, bg: 'bg-orange-50' },
+            { label: 'Approved Papers', value: stats.approved_papers, icon: <CheckCircle2 size={24} className="text-indigo-" />, bg: 'bg-indigo-' },
+            { label: 'Pending Review', value: stats.pending_review, icon: <Clock size={24} className="text-indigo-" />, bg: 'bg-indigo-' },
           ].map((item, idx) => (
             <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between group hover:shadow-md transition-shadow">
               <div>
@@ -92,8 +92,8 @@ const SecrecyDashboard = () => {
                 <div className="flex items-center gap-4">
                   <div className={`w-3 h-3 rounded-full ${
                     activity.type === 'PAPER_APPROVED' ? 'bg-emerald-500' : 
-                    activity.type === 'PAYMENT_PROCESSED' ? 'bg-blue-500' : 
-                    activity.type === 'PAPER_UPLOADED' ? 'bg-sky-500' : 'bg-slate-300'
+                    activity.type === 'PAYMENT_PROCESSED' ? 'bg-indigo-' : 
+                    activity.type === 'PAPER_UPLOADED' ? 'bg-indigo-' : 'bg-slate-300'
                   }`} />
                   <div>
                     <h4 className="font-bold text-slate-800">{activity.type.replace(/_/g, ' ')}</h4>

@@ -122,7 +122,7 @@ const Users = () => {
             <TableSearch value={searchQuery} onChange={setSearchQuery} placeholder="Search users..." />
             <button 
               onClick={() => navigate('/users/add')}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap text-sm  tracking-widest"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap text-sm  tracking-widest"
             >
               <UserPlus size={20} />
               <span>Add User</span>

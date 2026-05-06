@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Mail,
   Lock,
@@ -150,7 +150,7 @@ const Register = () => {
             <School size={32} />
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight">Intense</h1>
-          <p className="text-[10px] font-black text-sky-400 tracking-[0.3em] uppercase">Institutional Portal</p>
+          <p className="text-[10px] font-black text-indigo-400 tracking-[0.3em] uppercase">Institutional Portal</p>
         </div>
 
         {/* The Card */}
@@ -169,7 +169,7 @@ const Register = () => {
           </div>
 
           {message && (
-            <div className={`w-full mb-8 p-4 rounded-2xl flex items-center gap-3 border animate-in slide-in-from-top-4 duration-300 ${isSuccessMessage ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>
+            <div className={`w-full mb-8 p-4 rounded-2xl flex items-center gap-3 border animate-in slide-in-from-top-4 duration-300 ${isSuccessMessage ? 'bg-indigo-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isSuccessMessage ? 'bg-emerald-500/20' : 'bg-rose-500/20'}`}>
                 {isSuccessMessage ? <CheckCircle2 size={18} /> : <Rocket size={18} className="rotate-45" />}
               </div>
@@ -193,7 +193,7 @@ const Register = () => {
                   {errors.email && <p className="text-[11px] font-bold text-rose-400 ml-1 uppercase tracking-wider">{errors.email}</p>}
                 </div>
                 
-                <div className="p-5 bg-sky-500/10 text-sky-400 rounded-2xl border border-sky-500/10 text-[13px] font-medium leading-relaxed">
+                <div className="p-5 bg-indigo-500/10 text-indigo-400 rounded-2xl border border-indigo-/10 text-[13px] font-medium leading-relaxed">
                   <strong>Note:</strong> You must have a pre-registered profile created by your administrator.
                 </div>
               </div>
@@ -219,14 +219,14 @@ const Register = () => {
                 <div className="flex flex-col gap-4 items-center">
                   {timer > 0 ? (
                     <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.15em]">
-                      Resend in <span className="text-sky-400 font-extrabold">{Math.floor(timer / 60).toString().padStart(2, '0')}:{(timer % 60).toString().padStart(2, '0')}</span>
+                      Resend in <span className="text-indigo-400 font-extrabold">{Math.floor(timer / 60).toString().padStart(2, '0')}:{(timer % 60).toString().padStart(2, '0')}</span>
                     </p>
                   ) : (
                     <button
                       type="button"
                       onClick={sendOtp}
                       disabled={loading}
-                      className="text-[11px] font-black text-sky-400 hover:text-sky-300 transition-colors underline underline-offset-4 decoration-sky-400/30 uppercase tracking-widest"
+                      className="text-[11px] font-black text-indigo-400 hover:text-sky-300 transition-colors underline underline-offset-4 decoration-sky-400/30 uppercase tracking-widest"
                     >
                       Resend Code
                     </button>
@@ -301,7 +301,7 @@ const Register = () => {
 
           <p className="mt-10 text-center text-sm text-slate-400 font-medium">
             Already have an account?{' '}
-            <button onClick={() => navigate("/")} className="text-sky-400 font-bold hover:underline underline-offset-4">Log In</button>
+            <button onClick={() => navigate("/")} className="text-indigo-400 font-bold hover:underline underline-offset-4">Log In</button>
           </p>
         </div>
 

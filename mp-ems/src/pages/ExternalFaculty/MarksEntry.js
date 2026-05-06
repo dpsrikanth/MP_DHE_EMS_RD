@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { 
   Save, Send, AlertCircle, Info, 
   Search, FileEdit, CheckCircle2,
@@ -201,7 +201,7 @@ const ExternalMarksEntry = () => {
     <div className="max-w-[1600px] mx-auto p-4 md:p-8 space-y-12 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-5">
-          <div className="w-16 h-16 bg-slate-900 rounded-[2rem] flex items-center justify-center text-indigo-400 shadow-2xl">
+          <div className="w-16 h-16 bg-indigo-600 rounded-[2rem] flex items-center justify-center text-indigo-400 shadow-2xl">
             <ClipboardCheck size={32} />
           </div>
           <div>
@@ -244,7 +244,7 @@ const ExternalMarksEntry = () => {
 
                 return (
                   <div key={subIdx} className="bg-white rounded-[3rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden group hover:border-indigo-200 transition-all duration-500">
-                    <div className="bg-slate-900 p-8 text-white flex flex-col md:flex-row md:items-center justify-between gap-6 group-hover:bg-slate-950 transition-colors">
+                    <div className="bg-indigo-600 p-8 text-white flex flex-col md:flex-row md:items-center justify-between gap-6 group-hover:bg-slate-950 transition-colors">
                       <div className="space-y-3">
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-indigo-500/20 rounded-xl"><BookOpen size={20} className="text-indigo-400" /></div>
@@ -253,7 +253,7 @@ const ExternalMarksEntry = () => {
                         <div className="flex items-center gap-4">
                           <span className={`text-[12px] font-black  tracking-widest px-4 py-1.5 rounded-full border ${
                             subject.assignment_status === 'Submitted' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20' : 
-                            'bg-amber-500/20 text-amber-400 border-amber-500/20'
+                            'bg-indigo-/20 text-indigo-400 border-indigo-/20'
                           }`}>
                             {subject.assignment_status === 'Evaluated' ? 'Draft Saved' : subject.assignment_status}
                           </span>
@@ -268,7 +268,7 @@ const ExternalMarksEntry = () => {
                           <button 
                             onClick={() => handleUnlockSubject(subject, exam.exam_name)}
                             disabled={submitting}
-                            className="h-14 px-8 bg-amber-500 hover:bg-amber-600 text-white text-[12px] font-black  tracking-[0.2em] rounded-2xl shadow-xl shadow-amber-900/20 flex items-center gap-3 transition-all disabled:opacity-30"
+                            className="h-14 px-8 bg-indigo-500 hover:bg-indigo-600 text-white text-[12px] font-black  tracking-[0.2em] rounded-2xl shadow-xl shadow-amber-900/20 flex items-center gap-3 transition-all disabled:opacity-30"
                           >
                             <Unlock size={16} /> Enable / Unlock
                           </button>

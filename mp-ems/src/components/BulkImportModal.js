@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { UploadCloud, X, FileText, CheckCircle2, ShieldAlert, Loader2 } from 'lucide-react';
@@ -377,7 +377,7 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
                 </button>
                 <button
                   onClick={handleSubmit}
-                  className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center disabled:opacity-50"
+                  className="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center disabled:opacity-50"
                   disabled={loading}
                 >
                   {loading ? (

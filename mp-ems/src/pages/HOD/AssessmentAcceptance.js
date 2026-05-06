@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { 
     CheckCircle, Clock, FileText, ChevronRight, 
@@ -92,7 +92,7 @@ const AssessmentAcceptance = () => {
             {/* Header section with specific HOD Branding */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600 shadow-inner">
+                    <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">
                         <ClipboardCheck size={32} />
                     </div>
                     <div>
@@ -115,7 +115,7 @@ const AssessmentAcceptance = () => {
 
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-32 space-y-4">
-                    <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                     <p className="text-slate-400 font-black  tracking-widest text-[12px]">Loading pending assessments...</p>
                 </div>
             ) : groupedData.length === 0 ? (
@@ -140,7 +140,7 @@ const AssessmentAcceptance = () => {
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2 mb-0.5">
-                                            <span className="px-2 py-0.5 bg-slate-900 text-white text-[9px] font-black rounded  tracking-widest">
+                                            <span className="px-2 py-0.5 bg-indigo-600 text-white text-[9px] font-black rounded  tracking-widest">
                                                 {batch.subject_code}
                                             </span>
                                             <span className="text-slate-400 text-[13px] font-bold">•</span>
@@ -175,7 +175,7 @@ const AssessmentAcceptance = () => {
                                         <div key={comp.component_id} className={`p-5 rounded-2xl border-2 transition-all flex flex-col justify-between h-full ${comp.is_accepted ? 'bg-emerald-50/30 border-emerald-100' : 'bg-white border-slate-100 hover:border-slate-200 shadow-sm'}`}>
                                             <div>
                                                 <div className="flex justify-between items-start mb-4">
-                                                    <div className={`p-2 rounded-lg ${comp.is_accepted ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}`}>
+                                                    <div className={`p-2 rounded-lg ${comp.is_accepted ? 'bg-indigo-500/10 text-emerald-600' : 'bg-indigo-/10 text-indigo-'}`}>
                                                         {comp.is_accepted ? <ShieldCheck size={20} /> : <AlertCircle size={20} />}
                                                     </div>
                                                     {comp.is_accepted && (
@@ -197,7 +197,7 @@ const AssessmentAcceptance = () => {
                                                     </div>
                                                     <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                                         <div 
-                                                            className={`h-full transition-all duration-1000 ${comp.is_accepted ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                                                            className={`h-full transition-all duration-1000 ${comp.is_accepted ? 'bg-emerald-500' : 'bg-indigo-'}`}
                                                             style={{ width: '100%' }} // Note: total_students could be added to query if needed
                                                         />
                                                     </div>
@@ -213,7 +213,7 @@ const AssessmentAcceptance = () => {
                                                 <button 
                                                     onClick={() => handleAccept(comp)}
                                                     disabled={isProcessing}
-                                                    className="w-full py-3 bg-emerald-500 text-white text-[12px] font-black  tracking-[0.2em] rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                                    className="w-full py-3 bg-emerald-500 text-white text-[12px] font-black  tracking-[0.2em] rounded-xl shadow-lg shadow-indigo-500/20 hover:bg-emerald-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                                                 >
                                                     {isProcessing ? (
                                                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

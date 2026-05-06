@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { Server, Hash, Mail, Lock, User, Eye, EyeOff, Save, CheckCircle2, AlertCircle } from "lucide-react";
 import { systemConfigApi } from "../api/systemConfigApi";
 
@@ -97,7 +97,7 @@ const SmtpConfig = () => {
                 onChange={handleChange}
                 placeholder="smtp.example.com"
                 required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm"
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm"
               />
             </div>
           </div>
@@ -116,7 +116,7 @@ const SmtpConfig = () => {
                 onChange={handleChange}
                 placeholder="465"
                 required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm"
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm"
               />
             </div>
           </div>
@@ -135,7 +135,7 @@ const SmtpConfig = () => {
                 onChange={handleChange}
                 placeholder="sender@example.com"
                 required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm"
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm"
               />
             </div>
           </div>
@@ -154,7 +154,7 @@ const SmtpConfig = () => {
                 onChange={handleChange}
                 placeholder="••••••••"
                 required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-14 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm"
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-14 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm"
               />
               <button
                 type="button"
@@ -182,7 +182,7 @@ const SmtpConfig = () => {
                 onChange={handleChange}
                 placeholder="Institution Name"
                 required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm"
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm"
               />
             </div>
           </div>
@@ -200,7 +200,7 @@ const SmtpConfig = () => {
                 onChange={handleChange}
                 placeholder="noreply@example.com"
                 required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 outline-none transition-all font-semibold shadow-sm"
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm"
               />
             </div>
           </div>
@@ -218,7 +218,7 @@ const SmtpConfig = () => {
           <button
             type="submit"
             disabled={isSaving}
-            className="w-full md:w-auto px-10 group relative overflow-hidden bg-slate-900 text-white rounded-2xl py-4 font-black text-sm  tracking-[0.15em] shadow-xl shadow-slate-900/10 hover:shadow-sky-500/20 active:scale-[0.98] transition-all disabled:opacity-70"
+            className="w-full md:w-auto px-10 group relative overflow-hidden bg-slate-900 text-white rounded-2xl py-4 font-black text-sm  tracking-[0.15em] shadow-xl shadow-slate-900/10 hover:shadow-indigo-500/20 active:scale-[0.98] transition-all disabled:opacity-70"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-sky-400 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="relative flex items-center justify-center gap-2">

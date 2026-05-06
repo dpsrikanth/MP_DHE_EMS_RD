@@ -131,7 +131,7 @@ const MarksVerification = () => {
 
     const getStatusConfig = (status) => {
         switch (status) {
-            case 'Submitted': return { color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', icon: Clock, label: 'Ready for Review' };
+            case 'Submitted': return { color: 'text-indigo-', bg: 'bg-indigo-', border: 'border-indigo-', icon: Clock, label: 'Ready for Review' };
             case 'Rejected': return { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', icon: ShieldAlert, label: 'Rejected - Sent Back' };
             case 'Locked': return { color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', icon: CheckCircle, label: 'Locked & Verified' };
             case 'Correction Requested': return { color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200', icon: ShieldAlert, label: 'Correction Requested', pulse: true };
@@ -217,7 +217,7 @@ const MarksVerification = () => {
                                             </button>
                                             <button 
                                                 onClick={() => handleSendBackToCollege(item)}
-                                                className="text-white hover:bg-amber-700 bg-amber-600 p-2 rounded-xl transition-all shadow-lg shadow-amber-600/30 flex items-center gap-1 text-[12px] font-black  tracking-widest px-3"
+                                                className="text-white hover:bg-indigo- bg-indigo- p-2 rounded-xl transition-all shadow-lg -indigo-/30 flex items-center gap-1 text-[12px] font-black  tracking-widest px-3"
                                                 title="Send to College Admin for review (when marks are already approved)"
                                             >
                                                 <Send size={14} /> Send to College
@@ -229,7 +229,7 @@ const MarksVerification = () => {
                                             {isAdmin && (
                                                 <button 
                                                     onClick={() => handleUnlockMarks(item)}
-                                                    className="text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 p-2 rounded-xl transition-colors"
+                                                    className="text-indigo- hover:text-amber-700 bg-indigo- hover:bg-indigo- p-2 rounded-xl transition-colors"
                                                     title="Unlock Marks (Admin Only)"
                                                 >
                                                     <Lock size={20} />
@@ -275,7 +275,7 @@ const MarksVerification = () => {
             )}
 
             {logModalOpen && selectedLogItem && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-indigo-600/50 backdrop-blur-sm">
                     <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
                         <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                             <div>

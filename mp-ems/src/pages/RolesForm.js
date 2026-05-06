@@ -120,10 +120,10 @@ const RolesForm = () => {
                   </div>
                 </div>
 
-                <div className="p-8 bg-amber-50 border border-amber-100 rounded-[2rem] space-y-4">
-                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-amber-600 shadow-sm"><ShieldCheck size={24} /></div>
+                <div className="p-8 bg-indigo- border border-amber-100 rounded-[2rem] space-y-4">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-indigo- shadow-sm"><ShieldCheck size={24} /></div>
                   <h4 className="text-sm font-black text-amber-900  tracking-tight">Security Implications</h4>
-                  <p className="text-[13px] text-amber-600/80 leading-relaxed font-bold">
+                  <p className="text-[13px] text-indigo-/80 leading-relaxed font-bold">
                     Roles act as the root for all user permissions. Removing or renaming roles could impact access for hundreds of users simultaneously.
                   </p>
                 </div>
@@ -133,7 +133,7 @@ const RolesForm = () => {
               <div className="space-y-10">
                  <div className="form-section">
                     <div className="form-section__title"><span>Role Preview</span></div>
-                    <div className="form-section-card bg-slate-900 text-white p-8">
+                    <div className="form-section-card bg-indigo-600 text-white p-8">
                        <div className="flex items-center gap-4 mb-6">
                           <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white"><ShieldCheck size={20} /></div>
                           <div>

@@ -119,7 +119,7 @@ const MarksReports = () => {
                 </div>
                 <button 
                     onClick={fetchReport}
-                    className="px-8 h-[45px] bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all flex items-center gap-2"
+                    className="px-8 h-[45px] bg-indigo-600 text-white font-bold rounded-xl hover:bg-slate-800 transition-all flex items-center gap-2"
                 >
                     <Search size={18} />
                     Search

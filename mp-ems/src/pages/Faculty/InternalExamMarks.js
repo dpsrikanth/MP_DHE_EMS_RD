@@ -262,7 +262,7 @@ const InternalExamMarks = () => {
                 </div>
                 <button 
                     onClick={handleGo}
-                    className="h-[46px] bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center gap-2"
+                    className="h-[46px] bg-indigo-600 text-white font-bold rounded-xl hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center gap-2"
                 >
                     <Search size={18} />
                     Filter Subjects
@@ -334,10 +334,10 @@ const InternalExamMarks = () => {
                                 </h2>
                                 <span className={`px-3 py-1 rounded-full text-[12px] font-black  tracking-widest shadow-sm
                                     ${workflowStatus === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 
-                                      workflowStatus === 'Submitted' ? 'bg-blue-100 text-blue-700' :
+                                      workflowStatus === 'Submitted' ? 'bg-indigo- text-blue-700' :
                                       workflowStatus === 'Locked' ? 'bg-slate-200 text-slate-700' :
                                       workflowStatus === 'Rejected' ? 'bg-red-100 text-red-700' :
-                                      'bg-amber-100 text-amber-700'}
+                                      'bg-indigo- text-amber-700'}
                                 `}>
                                     {workflowStatus}
                                 </span>

@@ -127,7 +127,7 @@ const Profile = () => {
 
         {/* Right Column - Secondary Info */}
         <div className="space-y-8">
-          <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden group">
+          <div className="bg-indigo-600 rounded-[2.5rem] p-8 text-white relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity" />
             <Shield className="text-indigo-400 mb-6" size={32} />
             <h3 className="text-xl font-black mb-2 tracking-tight">Login Security</h3>

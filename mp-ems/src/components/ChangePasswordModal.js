@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { authApi } from '../api/authApi';
@@ -129,7 +129,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
                   name="oldPassword"
                   value={formData.oldPassword}
                   onChange={handleChange}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-10 text-sm font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-10 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                   placeholder="Enter current password"
                   required
                 />
@@ -155,7 +155,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
                   name="newPassword"
                   value={formData.newPassword}
                   onChange={handleChange}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-10 text-sm font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-10 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                   placeholder="Create new password"
                   required
                 />
@@ -181,7 +181,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-10 text-sm font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-10 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                   placeholder="Confirm new password"
                   required
                 />
@@ -208,7 +208,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-[2] px-4 py-2.5 text-sm font-bold text-white bg-sky-500 hover:bg-sky-600 rounded-xl shadow-lg shadow-sky-500/30 transition-all flex justify-center items-center disabled:opacity-70"
+                className="flex-[2] px-4 py-2.5 text-sm font-bold text-white bg-indigo-500 hover:bg-indigo-600 rounded-xl shadow-lg shadow-sky-500/30 transition-all flex justify-center items-center disabled:opacity-70"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>

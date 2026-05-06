@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+﻿import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   CheckCircle2, AlertCircle, Loader2, BookOpen,
   Search, Users, GraduationCap, ClipboardCheck,
@@ -282,8 +282,8 @@ const UniversityMarksView = () => {
                 disabled={publishing || (!summary?.canPublish && !summary?.resultsPublished)}
                 title={!summary?.canPublish && !summary?.resultsPublished ? "Results cannot be published until all subjects are 'Locked' by colleges and external marks are submitted." : ""}
                 className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-[13px]  tracking-widest transition-all shadow-lg disabled:opacity-50 ${summary?.resultsPublished
-                  ? 'bg-emerald-500 text-white shadow-emerald-500/20 hover:bg-emerald-600'
-                  : 'bg-slate-900 text-white shadow-slate-900/20 hover:bg-slate-800'
+                  ? 'bg-emerald-500 text-white shadow-indigo-500/20 hover:bg-emerald-600'
+                  : 'bg-indigo-600 text-white shadow-indigo-600/20 hover:bg-slate-800'
                   }`}
               >
                 {summary?.resultsPublished ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -346,7 +346,7 @@ const UniversityMarksView = () => {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="stitch-card p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center text-sky-500 transition-transform group-hover:scale-110"><Users size={20} /></div>
+              <div className="w-10 h-10 bg-indigo- rounded-xl flex items-center justify-center text-indigo- transition-transform group-hover:scale-110"><Users size={20} /></div>
               <p className="text-[9px] font-black text-slate-400  tracking-widest">Students</p>
             </div>
             <p className="text-3xl font-black text-slate-900 tracking-tight">{summary.totalStudents}</p>
@@ -368,7 +368,7 @@ const UniversityMarksView = () => {
           </div>
           <div className="stitch-card p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-500"><TrendingUp size={20} /></div>
+              <div className="w-10 h-10 bg-indigo- rounded-xl flex items-center justify-center text-indigo-"><TrendingUp size={20} /></div>
               <p className="text-[9px] font-black text-slate-400  tracking-widest">Avg Marks</p>
             </div>
             <p className="text-3xl font-black text-slate-900 tracking-tight">{summary.avgMarks}</p>
@@ -453,7 +453,7 @@ const UniversityMarksView = () => {
                     key={name}
                     onClick={() => setActiveSubject(name)}
                     className={`h-10 px-6 rounded-full text-[12px] font-black  tracking-widest transition-all ${activeSubject === name
-                      ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20 scale-105'
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 scale-105'
                       : 'bg-white text-slate-400 border-2 border-slate-50 hover:border-indigo-200 hover:text-indigo-500'
                       }`}
                   >
@@ -464,7 +464,7 @@ const UniversityMarksView = () => {
 
               {/* Subject Table */}
               <div className="stitch-card rounded-2xl shadow-xl shadow-slate-200/30 overflow-hidden">
-                <div className="bg-slate-900 p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="bg-indigo-600 p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div className="flex items-center gap-4">
                     <div className="p-2.5 bg-indigo-500/20 rounded-xl border border-indigo-500/30">
                       <BookOpen size={20} className="text-indigo-400" />
@@ -602,7 +602,7 @@ const UniversityMarksView = () => {
                         <tr key={student.student_id} className="hover:bg-indigo-50/20 transition-all group">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-slate-900 rounded-[1rem] flex items-center justify-center text-white text-[13px] font-black group-hover:bg-indigo-600 transition-all shadow-md">
+                              <div className="w-10 h-10 bg-indigo-600 rounded-[1rem] flex items-center justify-center text-white text-[13px] font-black group-hover:bg-indigo-600 transition-all shadow-md">
                                 <GraduationCap size={16} />
                               </div>
                               <div>

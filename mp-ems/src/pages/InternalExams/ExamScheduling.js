@@ -485,12 +485,12 @@ const ExamScheduling = () => {
                         <div className="h-10 w-px bg-slate-200 hidden md:block" />
 
                         <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-/10 flex items-center justify-center text-indigo-">
                                 <Calendar size={20} />
                             </div>
                             <div>
                                 <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">Exam Round Dates</p>
-                                <p className="text-sm font-black text-blue-600 leading-none italic">
+                                <p className="text-sm font-black text-indigo- leading-none italic">
                                     {formatDate(active.start)} - {formatDate(active.end)}
                                 </p>
                             </div>
@@ -499,12 +499,12 @@ const ExamScheduling = () => {
                         <div className="h-10 w-px bg-slate-200 hidden md:block" />
 
                         <div className="flex items-center gap-4 animate-in slide-in-from-right duration-500">
-                            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-/10 flex items-center justify-center text-indigo-">
                                 <Clock size={20} />
                             </div>
                             <div>
-                                <p className="text-[12px] font-black text-amber-500  tracking-widest leading-none mb-1 text-left">Scheduling Window</p>
-                                <p className="text-sm font-black text-amber-600 leading-none italic text-left">
+                                <p className="text-[12px] font-black text-indigo-  tracking-widest leading-none mb-1 text-left">Scheduling Window</p>
+                                <p className="text-sm font-black text-indigo- leading-none italic text-left">
                                     {scheduleWindow ? `${formatDate(scheduleWindow.startFull, true)} to ${formatDate(scheduleWindow.endFull, true)}` : 'Open / No Deadline'}
                                 </p>
                             </div>
@@ -551,7 +551,7 @@ const ExamScheduling = () => {
                                                             onChange={(e) => handleScheduleChange(sub.id, 'exam_date', e.target.value)}
                                                         />
                                                         {isValidationEnabled && scheduleWindow && (
-                                                            <div className="text-[9px] text-amber-500 mt-1 font-bold italic flex items-center gap-1">
+                                                            <div className="text-[9px] text-indigo- mt-1 font-bold italic flex items-center gap-1">
                                                                 <Clock size={10} />
                                                                 Deadline: {formatDate(scheduleWindow.endFull)}
                                                             </div>

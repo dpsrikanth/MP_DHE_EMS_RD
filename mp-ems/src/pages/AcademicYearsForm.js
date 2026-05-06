@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { masterDataApi } from '../api/masterDataApi';
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
@@ -83,7 +83,7 @@ const AcademicYearsForm = () => {
             </div>
           </div>
           <div className="form-header__right">
-              <span className="text-[12px] font-black text-sky-400  tracking-widest bg-sky-50 px-4 py-2 rounded-xl border border-sky-100 shadow-sm">
+              <span className="text-[12px] font-black text-indigo-400  tracking-widest bg-indigo- px-4 py-2 rounded-xl border border-sky-100 shadow-sm">
                 Chronos Module v1.0
               </span>
           </div>
@@ -112,7 +112,7 @@ const AcademicYearsForm = () => {
                     <div className="form-field">
                       <label className="form-label form-label--required">Official Session Reference</label>
                       <div className="form-input-wrap h-16">
-                        <Calendar size={22} className="form-input-wrap__icon text-sky-500" />
+                        <Calendar size={22} className="form-input-wrap__icon text-indigo-" />
                         <input 
                           type="text" 
                           id="year_name"
@@ -123,8 +123,8 @@ const AcademicYearsForm = () => {
                           required
                         />
                       </div>
-                      <div className="mt-4 p-4 bg-sky-50 border border-sky-100 rounded-2xl flex items-start gap-3">
-                         <div className="w-6 h-6 bg-white rounded-lg flex items-center justify-center text-sky-600 shadow-sm mt-0.5"><Calendar size={12} /></div>
+                      <div className="mt-4 p-4 bg-indigo- border border-sky-100 rounded-2xl flex items-start gap-3">
+                         <div className="w-6 h-6 bg-white rounded-lg flex items-center justify-center text-indigo- shadow-sm mt-0.5"><Calendar size={12} /></div>
                          <p className="text-[11px] font-medium text-sky-700 leading-relaxed">
                             <span className="font-extrabold ">Standard Format:</span> YYYY-YYYY (e.g., 2023-2024). This identifier represents the full academic lifecycle across all mapped semesters.
                          </p>
@@ -136,11 +136,11 @@ const AcademicYearsForm = () => {
 
               {/* Right Column: Visual Summary / Context (7 cols) */}
               <div className="xl:col-span-7 space-y-10">
-                 <div className="h-full bg-slate-900 rounded-[3rem] p-12 text-white relative overflow-hidden flex flex-col justify-between group">
+                 <div className="h-full bg-indigo-600 rounded-[3rem] p-12 text-white relative overflow-hidden flex flex-col justify-between group">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-sky-400/10 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-sky-400/20 transition-all duration-1000" />
                     
                     <div className="relative z-10 space-y-6">
-                       <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-sky-400"><Calendar size={32} /></div>
+                       <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-indigo-400"><Calendar size={32} /></div>
                        <h3 className="text-3xl font-black tracking-tight leading-tight">Master Workflow<br/>Synchronization</h3>
                        <p className="text-slate-400 font-medium leading-relaxed max-w-md">
                           Academic years serve as the root parent for all institutional timelines. Initializing a session enables university-wide program scheduling and examination cycles.
@@ -148,7 +148,7 @@ const AcademicYearsForm = () => {
                     </div>
 
                     <div className="relative z-10 pt-10 border-t border-white/5 mt-10">
-                       <div className="flex items-center gap-4 text-[12px] font-black  tracking-[0.2em] text-sky-400 opacity-60">
+                       <div className="flex items-center gap-4 text-[12px] font-black  tracking-[0.2em] text-indigo-400 opacity-60">
                           <span className="w-1 h-1 bg-sky-400 rounded-full"></span>
                           Chronological Consistency Control active
                        </div>

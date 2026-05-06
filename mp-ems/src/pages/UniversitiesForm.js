@@ -265,7 +265,7 @@ const UniversitiesForm = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <div className="form-field">
                           <label className="form-label flex items-center gap-2">
-                             <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                             <span className="w-1.5 h-1.5 bg-indigo- rounded-full"></span>
                              Academic Year Control
                           </label>
                           <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false}
@@ -275,7 +275,7 @@ const UniversitiesForm = () => {
                         </div>
                         <div className="form-field">
                           <label className="form-label flex items-center gap-2">
-                             <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
+                             <span className="w-1.5 h-1.5 bg-indigo- rounded-full"></span>
                              Semester Matrix
                           </label>
                           <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false}

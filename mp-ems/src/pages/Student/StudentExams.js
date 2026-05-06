@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { Calendar, Clock, BookOpen, CreditCard, CheckCircle, AlertCircle, Printer, Search, X } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
@@ -79,7 +79,7 @@ const StudentExams = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-"></div>
       </div>
     );
   }
@@ -99,7 +99,7 @@ const StudentExams = () => {
               placeholder="Search subjects or dates..."
             />
           </div>
-          <div className="bg-sky-50 px-4 py-2 rounded-2xl border border-sky-100 flex items-center gap-2 text-sky-700 font-bold text-sm h-12">
+          <div className="bg-indigo- px-4 py-2 rounded-2xl border border-sky-100 flex items-center gap-2 text-sky-700 font-bold text-sm h-12">
             <Calendar size={18} />
             {formatDate(new Date())}
           </div>
@@ -120,7 +120,7 @@ const StudentExams = () => {
           {searchQuery && (
             <button 
               onClick={() => setSearchQuery('')}
-              className="mt-4 text-[13px] font-black text-sky-600 hover:text-sky-700 underline  tracking-tighter"
+              className="mt-4 text-[13px] font-black text-indigo-600 hover:text-indigo-700 underline  tracking-tighter"
             >
               Clear Search
             </button>
@@ -154,7 +154,7 @@ const StudentExams = () => {
                 ) : !group.allRegistered ? (
                   <button
                     onClick={() => handleRegister(group.ids)}
-                    className="mt-4 md:mt-0 group relative inline-flex items-center gap-3 bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-black text-[13px]  tracking-widest shadow-2xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
+                    className="mt-4 md:mt-0 group relative inline-flex items-center gap-3 bg-indigo-600 text-white px-8 py-3.5 rounded-2xl font-black text-[13px]  tracking-widest shadow-2xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <CreditCard size={16} className="relative z-10" />
@@ -163,7 +163,7 @@ const StudentExams = () => {
                 ) : (
                   <button
                     onClick={() => window.open(`/student/hall-ticket/${group.exam_name}/${group.subjects[0].semester_id}`, '_blank')}
-                    className="mt-4 md:mt-0 group relative inline-flex items-center gap-3 bg-emerald-600 text-white px-8 py-3.5 rounded-2xl font-black text-[13px]  tracking-widest shadow-2xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
+                    className="mt-4 md:mt-0 group relative inline-flex items-center gap-3 bg-emerald-600 text-white px-8 py-3.5 rounded-2xl font-black text-[13px]  tracking-widest shadow-2xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <Printer size={16} className="relative z-10" />
@@ -189,7 +189,7 @@ const StudentExams = () => {
                           Enrolled
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1.5 bg-amber-50 text-amber-600 px-3 py-1 rounded-full border border-amber-100 font-black text-[8px]  tracking-widest">
+                        <div className="flex items-center gap-1.5 bg-indigo- text-indigo- px-3 py-1 rounded-full border border-amber-100 font-black text-[8px]  tracking-widest">
                           <Clock size={10} />
                           Pending
                         </div>

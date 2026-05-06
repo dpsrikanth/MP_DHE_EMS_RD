@@ -62,7 +62,7 @@ const ExamAnalytics = () => {
           <select
             value={selectedExam}
             onChange={(e) => setSelectedExam(e.target.value)}
-            className="w-full md:w-80 px-4 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/20 cursor-pointer appearance-none transition-all"
+            className="w-full md:w-80 px-4 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/20 cursor-pointer appearance-none transition-all"
           >
             <option value="">All Exams (Aggregate)</option>
             {exams.map(exam => (

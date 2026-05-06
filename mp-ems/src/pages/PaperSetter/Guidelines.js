@@ -7,11 +7,11 @@ const Guidelines = () => {
       <div className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 md:px-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between py-4 gap-4">
           <div className="flex items-center gap-4">
-            <div className="bg-sky-500 p-2 rounded-xl text-white">
+            <div className="bg-indigo- p-2 rounded-xl text-white">
               <Shield size={24} />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-slate-800 tracking-tight">Paper Setter <span className="text-sky-500">Portal</span></h1>
+              <h1 className="text-2xl font-black text-slate-800 tracking-tight">Paper Setter <span className="text-indigo-">Portal</span></h1>
               <p className="text-slate-400 text-[12px] font-bold  tracking-widest">Guidelines</p>
             </div>
           </div>
@@ -29,7 +29,7 @@ const Guidelines = () => {
               
               <div className="space-y-8 max-w-2xl">
                 <section className="space-y-4">
-                  <h3 className="text-sm font-black text-sky-600  tracking-[0.2em] flex items-center gap-2">General Instructions</h3>
+                  <h3 className="text-sm font-black text-indigo-  tracking-[0.2em] flex items-center gap-2">General Instructions</h3>
                   <ul className="space-y-3">
                     {[
                       'Each subject requires minimum 3 question paper sets (A, B, C)',
@@ -38,7 +38,7 @@ const Guidelines = () => {
                       'All papers must be reviewed and approved by secrecy department'
                     ].map((text, i) => (
                       <li key={i} className="flex items-start gap-3 group">
-                        <div className="w-5 h-5 bg-sky-100 rounded-full flex items-center justify-center text-sky-600 flex-shrink-0 group-hover:scale-110 transition-transform mt-0.5">•</div>
+                        <div className="w-5 h-5 bg-indigo- rounded-full flex items-center justify-center text-indigo- flex-shrink-0 group-hover:scale-110 transition-transform mt-0.5">•</div>
                         <p className="text-slate-600 font-bold tracking-tight text-sm leading-relaxed">{text}</p>
                       </li>
                     ))}
@@ -63,7 +63,7 @@ const Guidelines = () => {
                 </section>
 
                 <section className="space-y-4">
-                  <h3 className="text-sm font-black text-purple-600  tracking-[0.2em] flex items-center gap-2">Quality Standards</h3>
+                  <h3 className="text-sm font-black text-indigo-  tracking-[0.2em] flex items-center gap-2">Quality Standards</h3>
                   <ul className="space-y-3">
                     {[
                       'Questions should cover entire syllabus appropriately',
@@ -72,7 +72,7 @@ const Guidelines = () => {
                       'Provide clear marking scheme'
                     ].map((text, i) => (
                       <li key={i} className="flex items-start gap-3 group">
-                        <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 flex-shrink-0 group-hover:scale-110 transition-transform mt-0.5">•</div>
+                        <div className="w-5 h-5 bg-indigo- rounded-full flex items-center justify-center text-indigo- flex-shrink-0 group-hover:scale-110 transition-transform mt-0.5">•</div>
                         <p className="text-slate-600 font-bold tracking-tight text-sm leading-relaxed">{text}</p>
                       </li>
                     ))}

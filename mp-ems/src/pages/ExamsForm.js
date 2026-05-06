@@ -376,7 +376,7 @@ const ExamsForm = () => {
                   )}
                 </div>
 
-                <div className="p-10 bg-slate-900 rounded-[3rem] text-white space-y-6 relative overflow-hidden group">
+                <div className="p-10 bg-indigo-600 rounded-[3rem] text-white space-y-6 relative overflow-hidden group">
                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-indigo-500/20 transition-all duration-700" />
                    <div className="relative z-10 flex items-center justify-between">
                       <div className="space-y-4 max-w-md">

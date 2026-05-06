@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Mail,
@@ -109,7 +109,7 @@ const Login = () => {
             <School size={32} />
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight">Intense</h1>
-          <p className="text-[10px] font-black text-sky-400 tracking-[0.3em] uppercase">Institutional Portal</p>
+          <p className="text-[10px] font-black text-indigo-400 tracking-[0.3em] uppercase">Institutional Portal</p>
         </div>
 
         {/* The Card */}
@@ -148,7 +148,7 @@ const Login = () => {
                 <button 
                   type="button"
                   onClick={() => navigate("/forgot-password")}
-                  className="text-[10px] font-black text-sky-500 hover:text-sky-400 transition-colors uppercase tracking-widest"
+                  className="text-[10px] font-black text-indigo- hover:text-indigo-400 transition-colors uppercase tracking-widest"
                 >
                   Forgot?
                 </button>
@@ -204,7 +204,7 @@ const Login = () => {
 
           <p className="mt-10 text-center text-sm text-slate-400 font-medium">
             New to the system?{' '}
-            <button onClick={() => navigate("/register")} className="text-sky-400 font-bold hover:underline underline-offset-4">Create Account</button>
+            <button onClick={() => navigate("/register")} className="text-indigo-400 font-bold hover:underline underline-offset-4">Create Account</button>
           </p>
         </div>
 

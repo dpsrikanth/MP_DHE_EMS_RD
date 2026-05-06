@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Upload, FileText, Calendar, Clock, Loader2, FileUp, BookOpen, X, Search } from 'lucide-react';
 import { toast } from 'react-toastify';
 import authUtils from '../../utils/authUtils';
@@ -93,11 +93,11 @@ const PaperSetterDashboard = () => {
       <div className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 md:px-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between py-4 gap-4">
           <div className="flex items-center gap-4">
-            <div className="bg-sky-500 p-2 rounded-xl text-white">
+            <div className="bg-indigo- p-2 rounded-xl text-white">
               <BookOpen size={24} />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-slate-800 tracking-tight">Paper Setter <span className="text-sky-500">Portal</span></h1>
+              <h1 className="text-2xl font-black text-slate-800 tracking-tight">Paper Setter <span className="text-indigo-">Portal</span></h1>
               <p className="text-slate-400 text-[12px] font-bold  tracking-widest">Assigned Exams Dashboard</p>
             </div>
           </div>
@@ -114,7 +114,7 @@ const PaperSetterDashboard = () => {
       <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-40 gap-4">
-            <Loader2 className="text-sky-500 animate-spin" size={48} />
+            <Loader2 className="text-indigo- animate-spin" size={48} />
             <p className="text-slate-400 font-black  tracking-widest text-sm animate-pulse">Syncing Secure Data...</p>
           </div>
         ) : (
@@ -131,7 +131,7 @@ const PaperSetterDashboard = () => {
                   {searchQuery && (
                     <button 
                       onClick={() => setSearchQuery('')}
-                      className="text-[12px] font-black text-sky-600 hover:text-sky-700 underline  tracking-widest"
+                      className="text-[12px] font-black text-indigo-600 hover:text-indigo-700 underline  tracking-widest"
                     >
                       Clear Search
                     </button>
@@ -146,7 +146,7 @@ const PaperSetterDashboard = () => {
                       <div>
                          <div className="flex items-center gap-2 mb-1">
                            <h3 className="text-2xl font-black text-slate-800 tracking-tight">{exam.subject_name}</h3>
-                           <span className={`px-3 py-1 rounded-full text-[12px] font-black  tracking-wider ${exam.latest_status === 'Revision' ? 'bg-rose-100 text-rose-600' : exam.sets_submitted > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                           <span className={`px-3 py-1 rounded-full text-[12px] font-black  tracking-wider ${exam.latest_status === 'Revision' ? 'bg-rose-100 text-rose-600' : exam.sets_submitted > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo- text-indigo-'}`}>
                              {exam.latest_status === 'Revision' ? 'Revision Needed' : exam.sets_submitted > 0 ? 'Completed' : 'Pending'}
                            </span>
                          </div>
@@ -207,7 +207,7 @@ const PaperSetterDashboard = () => {
                          <button 
                           onClick={() => handleUpload(exam)}
                           disabled={uploading === exam.subject_id || !selectedFiles[exam.subject_id]}
-                          className="flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-600 disabled:bg-slate-200 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-lg shadow-sky-500/20 active:scale-95 text-sm  tracking-widest min-w-[200px]"
+                          className="flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-slate-200 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-lg shadow-indigo-500/20 active:scale-95 text-sm  tracking-widest min-w-[200px]"
                          >
                            {uploading === exam.subject_id ? <Loader2 className="animate-spin" size={18} /> : <FileUp size={18} />}
                            {uploading === exam.subject_id ? 'Encrypting...' : 'Upload Question Paper'}

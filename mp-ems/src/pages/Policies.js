@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { 
@@ -147,7 +147,7 @@ const Policies = () => {
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none opacity-60"></div>
         <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div className="flex items-center gap-5">
-            <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600">
+            <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
               <ShieldCheck size={32} />
             </div>
             <div>
@@ -170,7 +170,7 @@ const Policies = () => {
             {authUtils.isSuperAdmin() ? (
               <button 
                 onClick={() => navigate('/policies/add')}
-                className="inline-flex items-center gap-2 px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
+                className="inline-flex items-center gap-2 px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
               >
                 <Plus size={20} />
                 <span>Create Policy</span>
@@ -178,7 +178,7 @@ const Policies = () => {
             ) : (
               <button 
                 onClick={() => setShowAssignModal(true)}
-                className="inline-flex items-center gap-2 px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
+                className="inline-flex items-center gap-2 px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
               >
                 <Plus size={20} />
                 <span>Assign from Master</span>
@@ -232,7 +232,7 @@ const Policies = () => {
                     {visibleColumns.name && (
                       <td className="px-4 py-5 font-black text-slate-800 tracking-tight">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500">
+                          <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500">
                             <ShieldCheck size={16} />
                           </div>
                           {item.name}
@@ -258,7 +258,7 @@ const Policies = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button 
                           onClick={() => navigate(`/policies/edit/${item.id}`)}
-                          className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
                           title="Edit Policy"
                         >
                           <Pencil size={18} />
@@ -281,7 +281,7 @@ const Policies = () => {
                       <p className="text-sm font-bold text-slate-400  tracking-widest">No policies found matching your criteria</p>
                       <button 
                         onClick={() => setSearchQuery('')}
-                        className="text-[13px] font-black text-emerald-500 hover:text-emerald-600 underline  tracking-tighter"
+                        className="text-[13px] font-black text-indigo-500 hover:text-indigo-600 underline  tracking-tighter"
                       >
                         Reset Results
                       </button>
@@ -308,7 +308,7 @@ const Policies = () => {
       {/* Assign Modal for University Admin */}
       {showAssignModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowAssignModal(false)} />
+          <div className="absolute inset-0 bg-indigo-600/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowAssignModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col mb-20 animate-in zoom-in-95 duration-300">
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
               <div>
@@ -360,7 +360,7 @@ const Policies = () => {
               <button 
                 onClick={handleMap}
                 disabled={!mappingSelection}
-                className="px-10 py-4 bg-emerald-600 disabled:opacity-50 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm  tracking-widest flex items-center gap-3"
+                className="px-10 py-4 bg-indigo-600 disabled:opacity-50 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm  tracking-widest flex items-center gap-3"
               >
                 <Check size={20} />
                 <span>Assign Policy</span>
@@ -373,7 +373,7 @@ const Policies = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
+          <div className="absolute inset-0 bg-indigo-600/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
             <div className="p-6 text-center flex flex-col items-center">
               <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">

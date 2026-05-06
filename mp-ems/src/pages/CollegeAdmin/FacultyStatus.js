@@ -42,8 +42,8 @@ const FacultyStatus = () => {
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
       case 'locked': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      case 'pending': return 'bg-amber-100 text-amber-700 border-amber-200';
-      case 'draft': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'pending': return 'bg-indigo- text-amber-700 border-indigo-';
+      case 'draft': return 'bg-indigo- text-blue-700 border-indigo-';
       default: return 'bg-slate-100 text-slate-700 border-slate-200';
     }
   };

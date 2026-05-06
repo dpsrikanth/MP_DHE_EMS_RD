@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   BarChart3,
   Plus,
@@ -246,8 +246,8 @@ const Marks = () => {
   const getPerformanceColor = (obtained, max) => {
     const percentage = (obtained / max) * 100;
     if (percentage >= 80) return "text-emerald-500 bg-emerald-50 border-emerald-100";
-    if (percentage >= 60) return "text-sky-500 bg-sky-50 border-sky-100";
-    if (percentage >= 40) return "text-amber-500 bg-amber-50 border-amber-100";
+    if (percentage >= 60) return "text-indigo- bg-indigo- border-sky-100";
+    if (percentage >= 40) return "text-indigo- bg-indigo- border-amber-100";
     return "text-red-500 bg-red-50 border-red-100";
   };
 
@@ -445,7 +445,7 @@ const Marks = () => {
               </div>
               <h3 className="text-2xl font-black text-slate-900 mb-2">Sync Connection Failed</h3>
               <p className="text-slate-500 font-medium max-w-md mb-8">{error}</p>
-              <button onClick={fetchData} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold  tracking-widest text-[13px] hover:bg-slate-800 transition-all">Retry Synchronization</button>
+              <button onClick={fetchData} className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold  tracking-widest text-[13px] hover:bg-slate-800 transition-all">Retry Synchronization</button>
             </div>
           ) : (
             <table className="w-full border-collapse">
@@ -496,7 +496,7 @@ const Marks = () => {
                     {visibleColumns.student && (
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600 group-hover:bg-sky-500 group-hover:text-white transition-all">
+                          <div className="w-10 h-10 bg-indigo- rounded-xl flex items-center justify-center text-indigo- group-hover:bg-indigo- group-hover:text-white transition-all">
                             <GraduationCap size={18} />
                           </div>
                           <div>
@@ -551,14 +551,14 @@ const Marks = () => {
                       <div className="flex items-center justify-end gap-3">
                         <span className={`px-3 py-1 text-[12px] font-black  tracking-wider rounded-md border
                           ${item.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                            item.status === 'Pending Approval' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                            item.status === 'Pending Approval' ? 'bg-indigo- text-indigo- border-amber-100' :
                               'bg-slate-100 text-slate-500 border-slate-200'}`}>
                           {item.status || 'Not Entered'}
                         </span>
 
                         {activeTab === 'hod' && (
                           <div className="flex items-center gap-1 ml-2">
-                            <button onClick={() => handleHodAction(item.mark_id, 'Approve')} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors border border-transparent hover:border-emerald-200" title="Approve">
+                            <button onClick={() => handleHodAction(item.mark_id, 'Approve')} className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-emerald-200" title="Approve">
                               <CheckCircle2 size={18} />
                             </button>
                             <button onClick={() => handleHodAction(item.mark_id, 'Reject')} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200" title="Reject">
@@ -615,13 +615,13 @@ const Marks = () => {
             <span className="text-[12px] font-black  tracking-widest">Secure Ledger Active</span>
           </div>
         </div>
-        <div className="bg-slate-900 p-8 rounded-3xl text-white shadow-2xl shadow-slate-900/20 relative overflow-hidden group border border-slate-800">
-          <div className="absolute top-0 right-0 p-8 text-sky-500 opacity-20 group-hover:scale-150 transition-transform duration-700">
+        <div className="bg-indigo-600 p-8 rounded-3xl text-white shadow-2xl shadow-indigo-600/20 relative overflow-hidden group border border-slate-800">
+          <div className="absolute top-0 right-0 p-8 text-indigo- opacity-20 group-hover:scale-150 transition-transform duration-700">
             <TrendingUp size={100} />
           </div>
           <h4 className="text-lg font-black mb-3  tracking-tighter">Trend Insights</h4>
           <p className="text-slate-400 font-medium mb-6 leading-relaxed max-w-sm text-sm">Use our advanced AI engines to predict student outcomes based on historical performance data.</p>
-          <button className="text-[12px] font-black text-sky-400 hover:text-sky-300 transition-colors  tracking-widest flex items-center gap-2">
+          <button className="text-[12px] font-black text-indigo-400 hover:text-sky-300 transition-colors  tracking-widest flex items-center gap-2">
             Explore Analytics
             <ArrowUpRight size={16} />
           </button>

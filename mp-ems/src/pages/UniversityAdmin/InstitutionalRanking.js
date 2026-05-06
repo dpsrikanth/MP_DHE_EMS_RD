@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, Star, Percent, BarChart3, Search } from 'lucide-react';
 import { universityAdminApi } from '../../api/universityAdminApi';
 
@@ -33,7 +33,7 @@ const InstitutionalRanking = () => {
       <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <Trophy className="text-amber-500" /> Institutional Rankings
+            <Trophy className="text-indigo-" /> Institutional Rankings
           </h1>
           <p className="text-slate-500">Comparative Analysis of College Passing Percentages</p>
         </div>
@@ -42,7 +42,7 @@ const InstitutionalRanking = () => {
           <input 
             type="text" 
             placeholder="Search institutions..."
-            className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none w-64"
+            className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none w-64"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -73,9 +73,9 @@ const InstitutionalRanking = () => {
                 <tr key={index} className="hover:bg-slate-50/80 transition-colors group">
                   <td className="px-6 py-3">
                     <div className="flex items-center justify-center">
-                      {rank === 1 ? <Medal className="text-amber-400" /> : 
+                      {rank === 1 ? <Medal className="text-indigo-400" /> : 
                        rank === 2 ? <Medal className="text-slate-300" /> : 
-                       rank === 3 ? <Medal className="text-amber-600" /> : 
+                       rank === 3 ? <Medal className="text-indigo-" /> : 
                        <span className="font-bold text-slate-400">#{rank}</span>}
                     </div>
                   </td>
@@ -92,8 +92,8 @@ const InstitutionalRanking = () => {
                         <div 
                           className={`h-full rounded-full transition-all duration-1000 ${
                             item.pass_percentage >= 75 ? 'bg-emerald-500' :
-                            item.pass_percentage >= 50 ? 'bg-blue-500' :
-                            'bg-amber-500'
+                            item.pass_percentage >= 50 ? 'bg-indigo-' :
+                            'bg-indigo-'
                           }`}
                           style={{ width: `${item.pass_percentage || 0}%` }}
                         />
@@ -119,26 +119,26 @@ const InstitutionalRanking = () => {
           </div>
         </div>
 
-        <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 flex items-start gap-4">
-          <div className="p-3 bg-blue-100 rounded-xl text-blue-600">
+        <div className="bg-indigo- p-6 rounded-2xl border border-blue-100 flex items-start gap-4">
+          <div className="p-3 bg-indigo- rounded-xl text-indigo-">
             <BarChart3 size={24} />
           </div>
           <div>
             <h4 className="text-blue-800 font-bold">Average Efficiency</h4>
-            <p className="text-blue-600 text-[13px] mt-1">Institutions with Pass Rate 50-75%</p>
+            <p className="text-indigo- text-[13px] mt-1">Institutions with Pass Rate 50-75%</p>
             <div className="text-2xl font-black text-blue-800 mt-2">
               {ranking.filter(r => r.pass_percentage >= 50 && r.pass_percentage < 75).length}
             </div>
           </div>
         </div>
 
-        <div className="bg-amber-50 p-6 rounded-2xl border border-amber-100 flex items-start gap-4">
-          <div className="p-3 bg-amber-100 rounded-xl text-amber-600">
+        <div className="bg-indigo- p-6 rounded-2xl border border-amber-100 flex items-start gap-4">
+          <div className="p-3 bg-indigo- rounded-xl text-indigo-">
             <Percent size={24} />
           </div>
           <div>
             <h4 className="text-amber-800 font-bold">Needs Support</h4>
-            <p className="text-amber-600 text-[13px] mt-1">Institutions with Pass Rate {'<'} 50%</p>
+            <p className="text-indigo- text-[13px] mt-1">Institutions with Pass Rate {'<'} 50%</p>
             <div className="text-2xl font-black text-amber-800 mt-2">
               {ranking.filter(r => r.pass_percentage < 50).length}
             </div>

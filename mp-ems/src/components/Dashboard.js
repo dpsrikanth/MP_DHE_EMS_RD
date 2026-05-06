@@ -1,4 +1,4 @@
-import { 
+﻿import { 
   Users, 
   GraduationCap, 
   BookOpen, 
@@ -100,12 +100,12 @@ const Dashboard = () => {
 
   const dashboardStats = [
     { label: 'Total Teachers', value: teachersCount, icon: <Users size={24} />, color: 'bg-blue-500', shadow: 'shadow-blue-500/20' },
-    { label: 'Total Students', value: totalStudents, icon: <GraduationCap size={24} />, color: 'bg-emerald-500', shadow: 'shadow-emerald-500/20' },
+    { label: 'Total Students', value: totalStudents, icon: <GraduationCap size={24} />, color: 'bg-emerald-500', shadow: 'shadow-indigo-500/20' },
     { label: 'Programs', value: programsCount, icon: <BookOpen size={24} />, color: 'bg-amber-500', shadow: 'shadow-amber-500/20' },
     { label: 'Exams', value: examsCount, icon: <FileText size={24} />, color: 'bg-purple-500', shadow: 'shadow-purple-500/20' },
-    { label: 'Colleges', value: collegesCount, icon: <Building2 size={24} />, color: 'bg-sky-500', shadow: 'shadow-sky-500/20' },
+    { label: 'Colleges', value: collegesCount, icon: <Building2 size={24} />, color: 'bg-sky-500', shadow: 'shadow-indigo-500/20' },
     { label: 'Universities', value: universitiesCount, icon: <School size={24} />, color: 'bg-indigo-500', shadow: 'shadow-indigo-500/20' },
-    { label: 'Policies', value: policiesCount, icon: <Award size={24} />, color: 'bg-emerald-500', shadow: 'shadow-emerald-500/20' },
+    { label: 'Policies', value: policiesCount, icon: <Award size={24} />, color: 'bg-emerald-500', shadow: 'shadow-indigo-500/20' },
     { label: 'Semesters', value: semestersCount, icon: <Layers size={24} />, color: 'bg-rose-500', shadow: 'shadow-rose-500/20' },
     { label: 'Subjects', value: subjectsCount, icon: <Book size={24} />, color: 'bg-teal-500', shadow: 'shadow-teal-500/20' },
   ];

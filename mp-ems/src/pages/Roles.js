@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { 
@@ -86,7 +86,7 @@ const Roles = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-5">
-            <div className="w-14 h-14 bg-amber-500/10 rounded-[1.5rem] flex items-center justify-center text-amber-600 shadow-inner">
+            <div className="w-14 h-14 bg-indigo-/10 rounded-[1.5rem] flex items-center justify-center text-indigo- shadow-inner">
               <ShieldCheck size={32} />
             </div>
             <div>
@@ -98,7 +98,7 @@ const Roles = () => {
             <TableSearch value={searchQuery} onChange={setSearchQuery} placeholder="Filter roles..." />
             <button 
               onClick={() => navigate('/roles/add')}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-amber-600 hover:bg-amber-700 text-white font-black rounded-2xl shadow-xl shadow-amber-600/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap text-sm  tracking-widest"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap text-sm  tracking-widest"
             >
               <ShieldPlus size={20} />
               <span>New Role</span>
@@ -112,16 +112,16 @@ const Roles = () => {
                 {paginatedData.map((role) => (
                     <div key={role.id} className="group bg-slate-50 hover:bg-white border-2 border-slate-50 hover:border-amber-100 rounded-2xl p-5 transition-all duration-300 flex items-center justify-between shadow-sm hover:shadow-xl hover:shadow-amber-900/5">
                         <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 group-hover:text-amber-500 group-hover:rotate-12 transition-all">
+                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 group-hover:text-indigo-500 group-hover:rotate-12 transition-all">
                                 <Lock size={20} />
                             </div>
                             <div>
-                                <h3 className="font-black text-slate-900 group-hover:text-amber-600 transition-colors  tracking-tight">{role.role_name}</h3>
+                                <h3 className="font-black text-slate-900 group-hover:text-indigo-600 transition-colors  tracking-tight">{role.role_name}</h3>
                                 <p className="text-[12px] font-bold text-slate-400  tracking-widest">ID: #{role.id}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => navigate(`/roles/edit/${role.id}`)} className="p-2 text-slate-400 hover:text-amber-600 transition-colors"><Pencil size={18} /></button>
+                            <button onClick={() => navigate(`/roles/edit/${role.id}`)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"><Pencil size={18} /></button>
                             <button onClick={() => { setDeleteTarget(role); setShowDeleteModal(true); }} className="p-2 text-slate-400 hover:text-rose-600 transition-colors"><MdDelete size={20} /></button>
                         </div>
                     </div>

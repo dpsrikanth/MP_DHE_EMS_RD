@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { School, Github, Twitter, Linkedin } from 'lucide-react';
 
 /**
@@ -23,9 +23,9 @@ const Footer = () => {
               Empowering education through advanced management tools. Streamlined, efficient, and data-driven solutions for modern institutions.
             </p>
             <div className="flex gap-4">
-              <button className="text-slate-400 hover:text-sky-500 transition-colors"><Twitter size={18} /></button>
-              <button className="text-slate-400 hover:text-sky-500 transition-colors"><Github size={18} /></button>
-              <button className="text-slate-400 hover:text-sky-500 transition-colors"><Linkedin size={18} /></button>
+              <button className="text-slate-400 hover:text-indigo-500 transition-colors"><Twitter size={18} /></button>
+              <button className="text-slate-400 hover:text-indigo-500 transition-colors"><Github size={18} /></button>
+              <button className="text-slate-400 hover:text-indigo-500 transition-colors"><Linkedin size={18} /></button>
             </div>
           </div>
 

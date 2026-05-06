@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { 
@@ -32,7 +32,7 @@ const Option = (props) => {
           type="checkbox"
           checked={props.isSelected}
           onChange={() => null}
-          className="mr-2 rounded border-emerald-500 text-emerald-600 focus:ring-emerald-500"
+          className="mr-2 rounded border-indigo-500 text-indigo-600 focus:ring-indigo-500"
         />{" "}
         <label>{props.label}</label>
       </components.Option>
@@ -188,7 +188,7 @@ const Programs = () => {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
   if (error) return (
@@ -203,7 +203,7 @@ const Programs = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600">
+            <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
               <BookOpen size={28} />
             </div>
             <div>
@@ -225,7 +225,7 @@ const Programs = () => {
             {authUtils.isSuperAdmin() ? (
               <button 
                 onClick={() => navigate('/programs/add')}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
               >
                 <Plus size={20} />
                 <span>Add Program</span>
@@ -233,7 +233,7 @@ const Programs = () => {
             ) : (
               <button 
                 onClick={() => setShowAssignModal(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
               >
                 <Plus size={20} />
                 <span>Assign from Master</span>
@@ -311,14 +311,14 @@ const Programs = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button 
                           onClick={() => { setViewData(item); setShowViewModal(true); }}
-                          className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
+                          className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-xl transition-all"
                           title="View Details"
                         >
                           <Eye size={18} />
                         </button>
                         <button 
                           onClick={() => navigate(`/programs/edit/${item.id}`)}
-                          className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"
+                          className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-xl transition-all"
                           title="Edit Program"
                         >
                           <Pencil size={18} />
@@ -341,7 +341,7 @@ const Programs = () => {
                       <p className="text-sm font-bold text-slate-400  tracking-widest">No programs found matching your search</p>
                       <button 
                         onClick={() => setSearchQuery('')}
-                        className="text-[13px] font-black text-emerald-500 hover:text-emerald-600 underline  tracking-tighter"
+                        className="text-[13px] font-black text-indigo-500 hover:text-indigo-600 underline  tracking-tighter"
                       >
                         Clear Filters
                       </button>
@@ -366,7 +366,7 @@ const Programs = () => {
       {/* Assign Modal for University Admin */}
       {showAssignModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowAssignModal(false)} />
+          <div className="absolute inset-0 bg-indigo-600/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowAssignModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col mb-20 animate-in zoom-in-95 duration-300">
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
               <div>
@@ -418,7 +418,7 @@ const Programs = () => {
               <button 
                 onClick={handleMap}
                 disabled={!mappingSelection}
-                className="px-8 py-3.5 bg-emerald-600 disabled:opacity-50 hover:bg-emerald-700 text-white font-black rounded-xl shadow-xl shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm  tracking-widest flex items-center gap-3"
+                className="px-8 py-3.5 bg-indigo-600 disabled:opacity-50 hover:bg-indigo-700 text-white font-black rounded-xl shadow-xl shadow-indigo-600/20 transition-all hover:scale-[1.03] active:scale-[0.97] text-sm  tracking-widest flex items-center gap-3"
               >
                 <Check size={20} />
                 <span>Assign Program</span>
@@ -433,7 +433,7 @@ const Programs = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
+          <div className="absolute inset-0 bg-indigo-600/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowDeleteModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
             <div className="p-6 text-center flex flex-col items-center">
               <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
@@ -464,7 +464,7 @@ const Programs = () => {
       {/* View Details Modal */}
       {showViewModal && viewData && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowViewModal(false)} />
+          <div className="absolute inset-0 bg-indigo-600/40 backdrop-blur-sm animate-in fade-in" onClick={() => setShowViewModal(false)} />
           
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
             {/* Header */}
@@ -500,7 +500,7 @@ const Programs = () => {
 
               <div className="space-y-4">
                 <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center"><Layers size={18}/></span>
+                  <span className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center"><Layers size={18}/></span>
                   Associated Departments
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -524,7 +524,7 @@ const Programs = () => {
             <div className="px-8 py-5 bg-slate-50 border-t border-slate-100 flex justify-end">
               <button 
                 onClick={() => setShowViewModal(false)}
-                className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm  tracking-widest"
+                className="px-8 py-3 bg-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 hover:scale-[1.03] active:scale-[0.97] transition-all text-sm  tracking-widest"
               >
                 Close Details
               </button>

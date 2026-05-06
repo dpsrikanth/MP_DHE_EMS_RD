@@ -301,7 +301,7 @@ const FacultyAssignment = () => {
             {/* Edit Modal */}
             {showEditModal && editingAssignment && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowEditModal(false)} />
+                    <div className="absolute inset-0 bg-indigo-600/40 backdrop-blur-sm" onClick={() => setShowEditModal(false)} />
                     <div className="relative bg-white rounded-3xl shadow-xl w-full max-w-2xl overflow-hidden pointer-events-auto">
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div>
@@ -385,7 +385,7 @@ const FacultyAssignment = () => {
             {/* Delete Confirmation Modal */}
             {showDeleteModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
+                    <div className="absolute inset-0 bg-indigo-600/60 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
                     <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden pointer-events-auto">
                         <div className="p-8 text-center flex flex-col items-center">
                             <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">

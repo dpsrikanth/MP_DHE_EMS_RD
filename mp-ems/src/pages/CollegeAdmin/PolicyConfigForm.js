@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate, useParams } from 'react-router-dom';
 import Select from 'react-select';
@@ -168,7 +168,7 @@ const PolicyConfigForm = () => {
 
     if (loading) return (
         <div className="flex justify-center items-center h-64">
-            <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
     );
 
@@ -183,7 +183,7 @@ const PolicyConfigForm = () => {
                     >
                         <ArrowLeft size={24} />
                     </button>
-                    <div className="w-14 h-14 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-600">
+                    <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
                         <ShieldCheck size={28} />
                     </div>
                     <div>
@@ -271,7 +271,7 @@ const PolicyConfigForm = () => {
                                     <select 
                                         value={editingMapping.policy_id} 
                                         onChange={(e) => setEditingMapping({...editingMapping, policy_id: e.target.value})}
-                                        className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-sky-500"
+                                        className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-500"
                                     >
                                         <option value="">Select Policy</option>
                                         {policies.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -282,7 +282,7 @@ const PolicyConfigForm = () => {
                                     <select 
                                         value={editingMapping.department_id} 
                                         onChange={(e) => setEditingMapping({...editingMapping, department_id: e.target.value})}
-                                        className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-sky-500"
+                                        className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-500"
                                     >
                                         <option value="">Select Department</option>
                                         {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -293,7 +293,7 @@ const PolicyConfigForm = () => {
                                     <select 
                                         value={editingMapping.program_id} 
                                         onChange={(e) => setEditingMapping({...editingMapping, program_id: e.target.value})}
-                                        className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-sky-500"
+                                        className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-500"
                                     >
                                         <option value="">Select Program</option>
                                         {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -304,7 +304,7 @@ const PolicyConfigForm = () => {
                                     <select 
                                         value={editingMapping.semester_id} 
                                         onChange={(e) => setEditingMapping({...editingMapping, semester_id: e.target.value})}
-                                        className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-sky-500"
+                                        className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-500"
                                     >
                                         <option value="">Select Semester</option>
                                         {semesters.map(s => <option key={s.id} value={s.id}>{s.semester_name}</option>)}
@@ -316,7 +316,7 @@ const PolicyConfigForm = () => {
                                 <select 
                                     value={editingMapping.subject_id} 
                                     onChange={(e) => setEditingMapping({...editingMapping, subject_id: e.target.value})}
-                                    className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-sky-500"
+                                    className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-500"
                                 >
                                     <option value="">Select Subject</option>
                                     {subjects.map(s => <option key={s.id} value={s.id}>{s.subject_code} - {s.name}</option>)}
@@ -337,7 +337,7 @@ const PolicyConfigForm = () => {
                     <button 
                         onClick={isEditing ? handleUpdateMapping : handleSaveMapping} 
                         disabled={saving || (!isEditing && (!selectedPolicy || !selectedProgram || !selectedSemester || !selectedDepartment))}
-                        className="inline-flex items-center gap-2 px-8 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:scale-100"
+                        className="inline-flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:scale-100"
                     >
                         {saving ? (
                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>

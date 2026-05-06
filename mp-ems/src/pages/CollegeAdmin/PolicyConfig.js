@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
 import { ShieldCheck, Save, Pencil, Trash2, X, Search } from "lucide-react";
@@ -190,14 +190,14 @@ const PolicyConfig = () => {
 
     if (loading) return (
         <div className="flex justify-center items-center h-64">
-            <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
     );
 
     return (
         <div className="p-6 md:p-8 space-y-6">
             <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-600">
+                <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
                     <ShieldCheck size={28} />
                 </div>
                 <div>
@@ -276,7 +276,7 @@ const PolicyConfig = () => {
                         <div className="flex justify-end pt-4">
                             <button
                                 onClick={handleSaveMapping}
-                                className="inline-flex items-center gap-2 px-8 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02]"
+                                className="inline-flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02]"
                             >
                                 <Save size={18} />
                                 <span>Save Mapping</span>
@@ -317,7 +317,7 @@ const PolicyConfig = () => {
                                 filteredMappings.map((map) => (
                                     <tr key={map.id} className="hover:bg-slate-50/50 transition-colors">
                                         <td className="py-4 px-6 text-sm font-semibold text-slate-800">{map.policy_name}</td>
-                                        <td className="py-4 px-6 text-sm text-slate-600 font-medium bg-amber-50/30">{map.department_name}</td>
+                                        <td className="py-4 px-6 text-sm text-slate-600 font-medium bg-indigo-/30">{map.department_name}</td>
                                         <td className="py-4 px-6">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-semibold text-sky-700">{map.program_name}</span>
@@ -341,7 +341,7 @@ const PolicyConfig = () => {
                                                         semester_id: semesters.find(s => s.semester_name === map.semester_name)?.id,
                                                         subject_id: subjects.find(s => s.subject_code === map.subject_code)?.id
                                                     })}
-                                                    className="p-2 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-xl transition-all"
+                                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
                                                     title="Edit Mapping"
                                                 >
                                                     <Pencil size={18} />
@@ -368,7 +368,7 @@ const PolicyConfig = () => {
                                             {searchQuery && (
                                                 <button 
                                                     onClick={() => setSearchQuery('')}
-                                                    className="text-[13px] font-black text-sky-600 hover:text-sky-700 underline  tracking-tighter mt-2"
+                                                    className="text-[13px] font-black text-indigo-600 hover:text-indigo-700 underline  tracking-tighter mt-2"
                                                 >
                                                     Clear Search
                                                 </button>
@@ -385,7 +385,7 @@ const PolicyConfig = () => {
             {/* Edit Modal */}
             {showEditModal && editingMapping && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowEditModal(false)} />
+                    <div className="absolute inset-0 bg-indigo-600/40 backdrop-blur-sm" onClick={() => setShowEditModal(false)} />
                     <div className="relative bg-white rounded-3xl shadow-xl w-full max-w-xl overflow-hidden pointer-events-auto">
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div>
@@ -457,7 +457,7 @@ const PolicyConfig = () => {
                         </div>
                         <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
                             <button onClick={() => setShowEditModal(false)} className="px-5 py-2 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">Cancel</button>
-                            <button onClick={handleUpdateMapping} className="px-5 py-2 text-sm font-bold bg-sky-600 hover:bg-sky-700 text-white rounded-xl shadow-md transition-all">Update Mapping</button>
+                            <button onClick={handleUpdateMapping} className="px-5 py-2 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition-all">Update Mapping</button>
                         </div>
                     </div>
                 </div>
@@ -466,7 +466,7 @@ const PolicyConfig = () => {
             {/* Delete Confirmation Modal */}
             {showDeleteModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
+                    <div className="absolute inset-0 bg-indigo-600/60 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
                     <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden">
                         <div className="p-8 text-center flex flex-col items-center">
                             <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">

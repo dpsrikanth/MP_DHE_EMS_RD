@@ -96,11 +96,11 @@ const SubmittedPapers = () => {
       <div className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 md:px-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between py-4 gap-4">
           <div className="flex items-center gap-4">
-            <div className="bg-sky-500 p-2 rounded-xl text-white">
+            <div className="bg-indigo- p-2 rounded-xl text-white">
               <FileText size={24} />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-slate-800 tracking-tight">Paper Setter <span className="text-sky-500">Portal</span></h1>
+              <h1 className="text-2xl font-black text-slate-800 tracking-tight">Paper Setter <span className="text-indigo-">Portal</span></h1>
               <p className="text-slate-400 text-[12px] font-bold  tracking-widest">Submitted Papers</p>
             </div>
           </div>
@@ -117,7 +117,7 @@ const SubmittedPapers = () => {
       <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-40 gap-4">
-            <Loader2 className="text-sky-500 animate-spin" size={48} />
+            <Loader2 className="text-indigo- animate-spin" size={48} />
             <p className="text-slate-400 font-black  tracking-widest text-sm animate-pulse">Loading secure data...</p>
           </div>
         ) : filteredPapers.length === 0 ? (
@@ -134,7 +134,7 @@ const SubmittedPapers = () => {
             {searchQuery && (
               <button 
                 onClick={() => setSearchQuery('')}
-                className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-[13px]  tracking-[0.2em] hover:bg-sky-500 transition-all shadow-xl shadow-slate-900/20 active:scale-95"
+                className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-black text-[13px]  tracking-[0.2em] hover:bg-indigo- transition-all shadow-xl shadow-indigo-600/20 active:scale-95"
               >
                 Reset Filters
               </button>
@@ -162,7 +162,7 @@ const SubmittedPapers = () => {
                           <label className="text-[12px] font-black text-slate-400  tracking-widest block mb-1">Status</label>
                           <p className={`font-black  text-[11px] tracking-wider ${
                             paper.status === 'Approved' ? 'text-emerald-500' : 
-                            paper.status === 'Rejected' ? 'text-rose-500' : 'text-amber-500'
+                            paper.status === 'Rejected' ? 'text-rose-500' : 'text-indigo-'
                           }`}>{paper.status}</p>
                         </div>
                       </div>
@@ -177,7 +177,7 @@ const SubmittedPapers = () => {
                       <div className="flex items-center gap-4 pt-2">
                         <button 
                             onClick={() => handleAction(paper.paper_id, 'view', paper.subject_name)}
-                            className="text-sky-500 hover:text-sky-600 font-bold text-sm flex items-center gap-1.5 transition-colors"
+                            className="text-indigo- hover:text-indigo- font-bold text-sm flex items-center gap-1.5 transition-colors"
                         >
                             <BookOpen size={16} /> View Paper
                         </button>
@@ -193,7 +193,7 @@ const SubmittedPapers = () => {
                     <div className={`px-4 py-1.5 rounded-full text-[12px] font-black  tracking-widest flex items-center gap-1.5 ${
                       paper.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 
                       paper.status === 'Rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 
-                      'bg-blue-50 text-blue-600 border border-blue-100'
+                      'bg-indigo- text-indigo- border border-blue-100'
                     }`}>
                       {paper.status === 'Approved' ? <CheckCircle2 size={12} /> : 
                       paper.status === 'Rejected' ? <XCircle size={12} /> : <Clock size={12} />}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Users, Eye, Edit3, X, UserPlus, FileText, Smartphone, HardDrive, GraduationCap, Search } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
 import { toast } from 'react-toastify';
@@ -162,40 +162,40 @@ const SecrecyPaperSetters = () => {
   }, [paperSetters, searchQuery]);
 
   const renderViewSetterModal = () => (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-indigo-600/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in slide-in-from-bottom-8 duration-300">
         <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 italic"><Users size={22} className="text-sky-500" /> Paper Setter Details</h3>
+          <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 italic"><Users size={22} className="text-indigo-" /> Paper Setter Details</h3>
           <button onClick={() => setShowViewSetterModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg hover:bg-white"><X size={24} /></button>
         </div>
         <div className="p-8 space-y-6 overflow-y-auto max-h-[85vh]">
           {/* Personal Information */}
-          <div className="bg-blue-50/30 p-6 rounded-2xl border border-blue-100/50 space-y-4">
-            <h4 className="text-[13px] font-black text-blue-600  tracking-widest">Personal Information</h4>
+          <div className="bg-indigo-/30 p-6 rounded-2xl border border-blue-100/50 space-y-4">
+            <h4 className="text-[13px] font-black text-indigo-  tracking-widest">Personal Information</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-white rounded-lg shadow-sm text-blue-500"><Users size={18} /></div>
+                <div className="p-2 bg-white rounded-lg shadow-sm text-indigo-"><Users size={18} /></div>
                 <div>
                   <p className="text-[12px] font-black text-slate-400 ">Full Name</p>
                   <p className="font-bold text-slate-700">{selectedSetter?.name}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-white rounded-lg shadow-sm text-blue-500"><FileText size={18} /></div>
+                <div className="p-2 bg-white rounded-lg shadow-sm text-indigo-"><FileText size={18} /></div>
                 <div>
                   <p className="text-[12px] font-black text-slate-400 ">Email</p>
                   <p className="font-bold text-slate-700">{selectedSetter?.email}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-white rounded-lg shadow-sm text-blue-500"><Smartphone size={18} /></div>
+                <div className="p-2 bg-white rounded-lg shadow-sm text-indigo-"><Smartphone size={18} /></div>
                 <div>
                   <p className="text-[12px] font-black text-slate-400 ">Phone</p>
                   <p className="font-bold text-slate-700">{selectedSetter?.phone || 'Not provided'}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-white rounded-lg shadow-sm text-blue-500"><HardDrive size={18} /></div>
+                <div className="p-2 bg-white rounded-lg shadow-sm text-indigo-"><HardDrive size={18} /></div>
                 <div>
                   <p className="text-[12px] font-black text-slate-400 ">Employee ID</p>
                   <p className="font-bold text-slate-700">EMP{String(selectedSetter?.id).padStart(3, '0')}</p>
@@ -230,26 +230,26 @@ const SecrecyPaperSetters = () => {
           </div>
 
           {/* Qualification */}
-          <div className="bg-purple-50/30 p-6 rounded-2xl border border-purple-100/50 space-y-4">
-            <h4 className="text-[13px] font-black text-purple-600  tracking-widest">Qualification</h4>
+          <div className="bg-indigo-/30 p-6 rounded-2xl border border-purple-100/50 space-y-4">
+            <h4 className="text-[13px] font-black text-indigo-  tracking-widest">Qualification</h4>
             <div className="flex items-center gap-3">
-               <GraduationCap size={20} className="text-purple-500" />
+               <GraduationCap size={20} className="text-indigo-" />
                <p className="font-bold text-slate-700">{selectedSetter?.qualification || 'Not specified'}</p>
             </div>
           </div>
 
           {/* Assigned Subjects */}
-          <div className="bg-amber-50/30 p-6 rounded-2xl border border-amber-100/50 space-y-4">
-            <h4 className="text-[13px] font-black text-amber-600  tracking-widest">Assigned Subjects</h4>
+          <div className="bg-indigo-/30 p-6 rounded-2xl border border-amber-100/50 space-y-4">
+            <h4 className="text-[13px] font-black text-indigo-  tracking-widest">Assigned Subjects</h4>
             <div className="flex flex-wrap gap-2">
               {selectedSetter?.subjects && selectedSetter.subjects[0] ? selectedSetter.subjects.map((sub, i) => (
-                <span key={i} className="text-[13px] font-bold bg-amber-100 text-amber-700 px-3 py-1 rounded-full">{sub}</span>
+                <span key={i} className="text-[13px] font-bold bg-indigo- text-amber-700 px-3 py-1 rounded-full">{sub}</span>
               )) : <p className="text-slate-400 italic text-sm font-medium">No subjects assigned yet.</p>}
             </div>
           </div>
 
           <div className="flex justify-end pt-4">
-            <button onClick={() => setShowViewSetterModal(false)} className="bg-slate-800 hover:bg-slate-900 text-white font-black py-2.5 px-8 rounded-xl text-sm transition-all shadow-lg shadow-slate-200 active:scale-95">Close</button>
+            <button onClick={() => setShowViewSetterModal(false)} className="bg-slate-800 hover:bg-indigo-600 text-white font-black py-2.5 px-8 rounded-xl text-sm transition-all shadow-lg shadow-slate-200 active:scale-95">Close</button>
           </div>
         </div>
       </div>
@@ -257,10 +257,10 @@ const SecrecyPaperSetters = () => {
   );
 
   const renderEditSetterModal = () => (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-indigo-600/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in slide-in-from-bottom-8 duration-300">
         <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 italic"><Edit3 size={22} className="text-sky-500" /> Edit Paper Setter</h3>
+          <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 italic"><Edit3 size={22} className="text-indigo-" /> Edit Paper Setter</h3>
           <button onClick={() => setShowEditSetterModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg hover:bg-white"><X size={24} /></button>
         </div>
         <div className="p-8 space-y-6 overflow-y-auto max-h-[85vh]">
@@ -271,7 +271,7 @@ const SecrecyPaperSetters = () => {
                 type="text" 
                 value={editSetterForm.name}
                 onChange={(e) => setEditSetterForm({ ...editSetterForm, name: e.target.value })}
-                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-sky-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
+                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
               />
             </div>
             <div className="space-y-1.5">
@@ -280,7 +280,7 @@ const SecrecyPaperSetters = () => {
                 type="email" 
                 value={editSetterForm.email}
                 onChange={(e) => setEditSetterForm({ ...editSetterForm, email: e.target.value })}
-                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-sky-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
+                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
               />
             </div>
             <div className="space-y-1.5">
@@ -289,7 +289,7 @@ const SecrecyPaperSetters = () => {
                 type="text" 
                 value={editSetterForm.phone}
                 onChange={(e) => setEditSetterForm({ ...editSetterForm, phone: e.target.value })}
-                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-sky-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
+                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
               />
             </div>
             <div className="space-y-1.5">
@@ -297,7 +297,7 @@ const SecrecyPaperSetters = () => {
               <select 
                 value={editSetterForm.department}
                 onChange={(e) => setEditSetterForm({ ...editSetterForm, department: e.target.value })}
-                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-sky-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm appearance-none"
+                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm appearance-none"
               >
                 <option value="">Select Department</option>
                 {departments.map(d => <option key={d.id} value={d.id}>{d.department_name}</option>)}
@@ -308,7 +308,7 @@ const SecrecyPaperSetters = () => {
               <select 
                 value={editSetterForm.designation}
                 onChange={(e) => setEditSetterForm({ ...editSetterForm, designation: e.target.value })}
-                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-sky-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm appearance-none"
+                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm appearance-none"
               >
                 <option value="">Select Designation</option>
                 {designations.map(d => <option key={d.id} value={d.id}>{d.designation_name}</option>)}
@@ -320,7 +320,7 @@ const SecrecyPaperSetters = () => {
                 type="number" 
                 value={editSetterForm.experience}
                 onChange={(e) => setEditSetterForm({ ...editSetterForm, experience: e.target.value })}
-                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-sky-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
+                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
               />
             </div>
             <div className="space-y-1.5">
@@ -328,7 +328,7 @@ const SecrecyPaperSetters = () => {
               <select 
                 value={editSetterForm.status}
                 onChange={(e) => setEditSetterForm({ ...editSetterForm, status: e.target.value })}
-                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-sky-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm appearance-none"
+                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm appearance-none"
               >
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
@@ -340,7 +340,7 @@ const SecrecyPaperSetters = () => {
                 type="text" 
                 value={editSetterForm.qualification}
                 onChange={(e) => setEditSetterForm({ ...editSetterForm, qualification: e.target.value })}
-                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-sky-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
+                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
               />
             </div>
           </div>
@@ -355,7 +355,7 @@ const SecrecyPaperSetters = () => {
                       type="checkbox" 
                       checked={editSetterForm.subjects.includes(sub.id)}
                       onChange={() => handleEditSubjectToggle(sub.id)}
-                      className="w-4 h-4 rounded text-sky-500 focus:ring-sky-500 border-slate-300 transition-all" 
+                      className="w-4 h-4 rounded text-indigo- focus:-indigo- border-slate-300 transition-all" 
                     />
                     <span className="text-[13px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors  tracking-tight">{sub.name}</span>
                  </label>
@@ -367,7 +367,7 @@ const SecrecyPaperSetters = () => {
 
           <div className="flex justify-end gap-3 pt-4">
             <button onClick={() => setShowEditSetterModal(false)} className="px-8 py-3 rounded-xl font-black text-[13px]  tracking-widest text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all">Cancel</button>
-            <button onClick={handleEditSave} className="px-10 py-3 rounded-xl font-black text-[13px]  tracking-widest text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20">Update Paper Setter</button>
+            <button onClick={handleEditSave} className="px-10 py-3 rounded-xl font-black text-[13px]  tracking-widest text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20">Update Paper Setter</button>
           </div>
         </div>
       </div>
@@ -377,7 +377,7 @@ const SecrecyPaperSetters = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-20 space-y-4 min-h-[60vh]">
-        <div className="w-12 h-12 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-indigo-/20 border-t-sky-500 rounded-full animate-spin"></div>
         <p className="text-slate-400 font-black  tracking-widest text-[13px]">Loading Paper Setters...</p>
       </div>
     );
@@ -387,7 +387,7 @@ const SecrecyPaperSetters = () => {
     <div className="p-8 max-w-7xl mx-auto space-y-8 bg-slate-50/30 min-h-screen pb-20 fade-in duration-500 animate-in">
       <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
         <div className="flex items-center gap-4">
-          <Users size={32} className="text-sky-500" />
+          <Users size={32} className="text-indigo-" />
           <div>
             <h2 className="text-2xl font-black text-slate-800 italic">Paper Setters Management</h2>
             <p className="text-slate-500 text-sm font-medium">Manage and assign subjects to paper setters.</p>
@@ -403,7 +403,7 @@ const SecrecyPaperSetters = () => {
           </div>
           <button 
             onClick={() => setShowAddSetterModal(true)}
-            className="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2.5 px-6 rounded-xl flex items-center gap-2 shadow-lg shadow-sky-500/20 transition-all active:scale-95"
+            className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2.5 px-6 rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
           >
             <UserPlus size={18} />
             Add Paper Setter
@@ -447,7 +447,7 @@ const SecrecyPaperSetters = () => {
                         setSelectedSetter(setter);
                         setShowViewSetterModal(true);
                       }}
-                      className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 rounded-lg transition-colors"
+                      className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors"
                     >
                       <Eye size={18} />
                     </button>
@@ -467,7 +467,7 @@ const SecrecyPaperSetters = () => {
                         });
                         setShowEditSetterModal(true);
                       }}
-                      className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors"
+                      className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors"
                     >
                       <Edit3 size={18} />
                     </button>
@@ -489,7 +489,7 @@ const SecrecyPaperSetters = () => {
                      {searchQuery && (
                        <button 
                          onClick={() => setSearchQuery('')}
-                         className="mt-4 text-[13px] font-black text-sky-600 hover:text-sky-700 underline  tracking-widest"
+                         className="mt-4 text-[13px] font-black text-indigo-600 hover:text-indigo-700 underline  tracking-widest"
                        >
                          Reset Filters
                        </button>
@@ -503,10 +503,10 @@ const SecrecyPaperSetters = () => {
       </div>
 
       {showAddSetterModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-indigo-600/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className={`bg-white w-full ${setterType === 'new' ? 'max-w-2xl' : 'max-w-md'} rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in slide-in-from-bottom-8 duration-300 transition-all`}>
              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-               <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 italic"><Users size={22} className="text-sky-500" /> Add Paper Setter</h3>
+               <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 italic"><Users size={22} className="text-indigo-" /> Add Paper Setter</h3>
                <button onClick={() => setShowAddSetterModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg hover:bg-white"><X size={24} /></button>
              </div>
              <div className="p-8 space-y-6 overflow-y-auto max-h-[85vh]">
@@ -519,9 +519,9 @@ const SecrecyPaperSetters = () => {
                         name="setterType" 
                         checked={setterType === 'existing'} 
                         onChange={() => setSetterType('existing')}
-                        className="w-4 h-4 text-sky-500 focus:ring-sky-500" 
+                        className="w-4 h-4 text-indigo- focus:-indigo-" 
                       />
-                      <span className="text-sm font-bold text-slate-700 group-hover:text-sky-600 transition-colors">Select Existing Paper Setter</span>
+                      <span className="text-sm font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">Select Existing Paper Setter</span>
                    </label>
                    <label className="flex items-center gap-2 cursor-pointer group">
                       <input 
@@ -529,9 +529,9 @@ const SecrecyPaperSetters = () => {
                         name="setterType" 
                         checked={setterType === 'new'} 
                         onChange={() => setSetterType('new')}
-                        className="w-4 h-4 text-sky-500 focus:ring-sky-500" 
+                        className="w-4 h-4 text-indigo- focus:-indigo-" 
                       />
-                      <span className="text-sm font-bold text-slate-700 group-hover:text-sky-600 transition-colors">Add New Paper Setter</span>
+                      <span className="text-sm font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">Add New Paper Setter</span>
                    </label>
                  </div>
                </div>
@@ -541,7 +541,7 @@ const SecrecyPaperSetters = () => {
                    <div className="space-y-2">
                      <label className="text-[12px] font-black text-slate-400  tracking-widest px-1">Select Paper Setter</label>
                      <div className="relative">
-                       <select className="w-full bg-slate-100 border border-transparent focus:border-sky-500 focus:bg-white rounded-2xl px-5 py-4 font-bold text-slate-700 appearance-none outline-none transition-all">
+                       <select className="w-full bg-slate-100 border border-transparent focus:border-indigo-500 focus:bg-white rounded-2xl px-5 py-4 font-bold text-slate-700 appearance-none outline-none transition-all">
                          <option>Select a paper setter</option>
                          {paperSetters.map(s => (
                            <option key={s.id} value={s.id}>{s.name} - {s.subjects?.join(', ') || 'General'}</option>
@@ -549,7 +549,7 @@ const SecrecyPaperSetters = () => {
                        </select>
                      </div>
                    </div>
-                   <button className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-4 rounded-2xl shadow-xl shadow-slate-200 transition-all active:scale-[0.98]">
+                   <button className="w-full bg-slate-800 hover:bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-slate-200 transition-all active:scale-[0.98]">
                      Assign Paper Setter
                    </button>
                  </div>
@@ -563,7 +563,7 @@ const SecrecyPaperSetters = () => {
                         value={newSetterForm.name}
                         onChange={handleFormChange}
                         placeholder="Dr. John Smith" 
-                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-sky-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
                       />
                     </div>
                     <div className="space-y-1.5 col-span-1">
@@ -574,7 +574,7 @@ const SecrecyPaperSetters = () => {
                         value={newSetterForm.email}
                         onChange={handleFormChange}
                         placeholder="john.smith@university.edu" 
-                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-sky-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
                       />
                     </div>
                     <div className="space-y-1.5 col-span-1">
@@ -585,7 +585,7 @@ const SecrecyPaperSetters = () => {
                         value={newSetterForm.phone}
                         onChange={handleFormChange}
                         placeholder="+91-9876543210" 
-                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-sky-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
                       />
                     </div>
                     <div className="space-y-1.5 col-span-1">
@@ -593,7 +593,7 @@ const SecrecyPaperSetters = () => {
                       <select 
                         value={newSetterForm.department}
                         onChange={(e) => handleDepartmentChange(e.target.value)}
-                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-sky-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm appearance-none"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm appearance-none"
                       >
                         <option value="">Select Department</option>
                         {departments.map(d => <option key={d.id} value={d.id}>{d.department_name}</option>)}
@@ -605,7 +605,7 @@ const SecrecyPaperSetters = () => {
                         name="designation"
                         value={newSetterForm.designation}
                         onChange={handleFormChange}
-                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-sky-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm appearance-none"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm appearance-none"
                       >
                         <option value="">Select Designation</option>
                         {designations.map(d => (
@@ -621,7 +621,7 @@ const SecrecyPaperSetters = () => {
                         value={newSetterForm.experience}
                         onChange={handleFormChange}
                         placeholder="5" 
-                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-sky-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
                       />
                     </div>
                     <div className="space-y-1.5 col-span-2">
@@ -632,7 +632,7 @@ const SecrecyPaperSetters = () => {
                         value={newSetterForm.qualification}
                         onChange={handleFormChange}
                         placeholder="Ph.D. in Computer Science" 
-                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-sky-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl px-4 py-3 font-semibold text-slate-700 outline-none transition-all shadow-sm" 
                       />
                     </div>
                     <div className="space-y-3 col-span-2">
@@ -644,7 +644,7 @@ const SecrecyPaperSetters = () => {
                                 type="checkbox" 
                                 checked={newSetterForm.subjects.includes(sub.id)}
                                 onChange={() => handleSubjectToggle(sub.id)}
-                                className="w-4 h-4 rounded text-sky-500 focus:ring-sky-500 border-slate-300 transition-all" 
+                                className="w-4 h-4 rounded text-indigo- focus:-indigo- border-slate-300 transition-all" 
                               />
                               <span className="text-[13px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors  tracking-tight">{sub.name}</span>
                            </label>
@@ -659,7 +659,7 @@ const SecrecyPaperSetters = () => {
                       <button onClick={() => setShowAddSetterModal(false)} className="px-6 py-3 rounded-xl font-black text-[13px]  tracking-widest text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all">Cancel</button>
                       <button 
                         onClick={handleSaveNewSetter}
-                        className="px-10 py-3 rounded-xl font-black text-[13px]  tracking-widest text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+                        className="px-10 py-3 rounded-xl font-black text-[13px]  tracking-widest text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
                       >
                         Submit
                       </button>

@@ -117,8 +117,8 @@ const ExternalFacultyDashboard = () => {
           <div key={i} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <div className={`w-12 h-12 rounded-2xl mb-4 flex items-center justify-center 
               ${stat.color === 'slate' ? 'bg-slate-100 text-slate-600' : ''}
-              ${stat.color === 'amber' ? 'bg-amber-100 text-amber-600' : ''}
-              ${stat.color === 'blue' ? 'bg-blue-100 text-blue-600' : ''}
+              ${stat.color === 'amber' ? 'bg-indigo- text-indigo-' : ''}
+              ${stat.color === 'blue' ? 'bg-indigo- text-indigo-' : ''}
               ${stat.color === 'emerald' ? 'bg-emerald-100 text-emerald-600' : ''}
             `}>
               {React.cloneElement(stat.icon, { size: 24 })}
@@ -185,8 +185,8 @@ const ExternalFacultyDashboard = () => {
                     <td className="px-8 py-6 text-center">
                       <span className={`inline-block px-3 py-1 rounded-full text-[9px] font-black  tracking-widest border
                         ${row.assignment_status === 'Submitted' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                          row.assignment_status === 'Evaluated' ? 'bg-blue-50 text-blue-600 border-blue-100' : 
-                          'bg-amber-50 text-amber-600 border-amber-100'}
+                          row.assignment_status === 'Evaluated' ? 'bg-indigo- text-indigo- border-blue-100' : 
+                          'bg-indigo- text-indigo- border-amber-100'}
                       `}>
                         {row.assignment_status}
                       </span>

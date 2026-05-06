@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
 import { 
@@ -276,7 +276,7 @@ const Attendance = () => {
                                 type="date"
                                 value={attendanceDate}
                                 onChange={(e) => setAttendanceDate(e.target.value)}
-                                className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all font-bold text-sm"
+                                className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all font-bold text-sm"
                             />
                         </div>
                         <div className="md:col-span-6 lg:col-span-3 space-y-2">
@@ -286,7 +286,7 @@ const Attendance = () => {
                                 min="1"
                                 value={periodNumber}
                                 onChange={(e) => setPeriodNumber(parseInt(e.target.value) || 1)}
-                                className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all font-bold text-sm"
+                                className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all font-bold text-sm"
                             />
                         </div>
                     </>
@@ -303,7 +303,7 @@ const Attendance = () => {
                                 <button
                                     key={filter.id}
                                     onClick={() => setAnalyticsFilter(filter.id)}
-                                    className={`flex-1 py-3 rounded-2xl text-[12px] font-black  tracking-widest transition-all ${analyticsFilter === filter.id ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                                    className={`flex-1 py-3 rounded-2xl text-[12px] font-black  tracking-widest transition-all ${analyticsFilter === filter.id ? 'bg-emerald-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
                                 >
                                     {filter.label}
                                 </button>
@@ -315,7 +315,7 @@ const Attendance = () => {
 
             {loading ? (
                 <div className="flex justify-center items-center py-20">
-                    <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
             ) : selectedAssignment ? (
                 <div className="space-y-6">
@@ -329,7 +329,7 @@ const Attendance = () => {
                             <h4 className="text-[12px] font-black text-slate-400  tracking-[0.2em] mb-2">Sessions Held</h4>
                             <p className="text-2xl font-black text-emerald-600 tracking-tighter">{summaryStats.totalSessions}</p>
                          </div>
-                         <div className="bg-slate-900 p-6 rounded-3xl shadow-xl shadow-slate-900/10 text-white md:col-span-2 flex items-center justify-between">
+                         <div className="bg-indigo-600 p-6 rounded-3xl shadow-xl shadow-slate-900/10 text-white md:col-span-2 flex items-center justify-between">
                             <div>
                                 <h4 className="text-[12px] font-black opacity-50  tracking-[0.2em] mb-2 italic">Engagement Alert</h4>
                                 <p className="text-[13px] font-bold leading-relaxed">System identifies students with <span className="text-red-400 font-black underline decoration-red-400/50 underline-offset-4">below 75% attendance</span> in the selected period.</p>
@@ -381,7 +381,7 @@ const Attendance = () => {
                                                 <td className="px-6 py-5 text-center">
                                                     {activeTab === 'mark' ? (
                                                         <div className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl font-black  text-[12px] shadow-sm transition-all ${
-                                                            attendanceDraft[st.id] === 'Present' ? 'bg-emerald-500 text-white shadow-emerald-500/20' : 'bg-red-500 text-white shadow-red-500/20'
+                                                            attendanceDraft[st.id] === 'Present' ? 'bg-emerald-500 text-white shadow-indigo-500/20' : 'bg-red-500 text-white shadow-red-500/20'
                                                         }`}>
                                                             {attendanceDraft[st.id] === 'Present' ? <CheckCircle size={12} /> : <XCircle size={12} />}
                                                             {attendanceDraft[st.id]}
@@ -399,7 +399,7 @@ const Attendance = () => {
                                                             {percentage}%
                                                         </div>
                                                         <div className="w-24 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                                                            <div className={`h-full rounded-full transition-all duration-1000 ${percentage >= 75 ? 'bg-emerald-500' : (percentage >= 60 ? 'bg-amber-500' : 'bg-red-500')}`} style={{ width: `${percentage}%` }} />
+                                                            <div className={`h-full rounded-full transition-all duration-1000 ${percentage >= 75 ? 'bg-emerald-500' : (percentage >= 60 ? 'bg-indigo-' : 'bg-red-500')}`} style={{ width: `${percentage}%` }} />
                                                         </div>
                                                     </div>
                                                 </td>
@@ -423,7 +423,7 @@ const Attendance = () => {
                                 <button
                                     onClick={handleSaveAttendance}
                                     disabled={isSaving}
-                                    className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-[13px]  tracking-[0.2em] shadow-xl shadow-slate-900/20 transition-all active:scale-[0.98] disabled:bg-slate-400 flex items-center gap-3"
+                                    className="px-10 py-4 bg-indigo-600 hover:bg-slate-800 text-white rounded-2xl font-black text-[13px]  tracking-[0.2em] shadow-xl shadow-indigo-600/20 transition-all active:scale-[0.98] disabled:bg-slate-400 flex items-center gap-3"
                                 >
                                     {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Save size={18} />}
                                     {isSaving ? 'Processing...' : 'Commit Session Log'}

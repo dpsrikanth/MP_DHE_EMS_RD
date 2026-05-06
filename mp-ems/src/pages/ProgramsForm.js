@@ -193,7 +193,7 @@ const ProgramsForm = () => {
                   </div>
                 </div>
 
-                <div className="p-10 bg-slate-900 rounded-[3rem] text-white relative overflow-hidden group">
+                <div className="p-10 bg-indigo-600 rounded-[3rem] text-white relative overflow-hidden group">
                    <div className="absolute bottom-0 right-0 w-40 h-40 bg-indigo-500/10 rounded-full -mr-20 -mb-20 blur-3xl group-hover:bg-indigo-500/20 transition-all duration-700" />
                    <div className="relative z-10 space-y-4">
                       <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-white"><Settings size={28} /></div>

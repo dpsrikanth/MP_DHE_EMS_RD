@@ -101,7 +101,7 @@ const ExternalAssignment = () => {
 
   return (
     <div className="max-w-[1600px] mx-auto p-4 sm:p-5 space-y-4 animate-in fade-in duration-500">
-      <div className="bg-slate-900 rounded-2xl p-5 text-white shadow-2xl relative overflow-hidden">
+      <div className="bg-indigo-600 rounded-2xl p-5 text-white shadow-2xl relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             <h1 className="text-4xl font-black italic text-indigo-400">Exam Evaluation Control</h1>
@@ -171,7 +171,7 @@ const ExternalAssignment = () => {
 
           <div className="lg:col-span-4 space-y-4 sticky top-6">
             <div className="bg-white rounded-2xl border border-slate-100 shadow-xl overflow-hidden">
-               <div className="p-5 bg-slate-900 text-white"><h3 className="text-xl font-black  tracking-tight">Assign Evaluator</h3></div>
+               <div className="p-5 bg-indigo-600 text-white"><h3 className="text-xl font-black  tracking-tight">Assign Evaluator</h3></div>
                <div className="p-5 space-y-4">
                   <div className="space-y-3">
                     <label className="text-[13px] font-black text-slate-400  tracking-widest">External Faculty</label>
@@ -180,7 +180,7 @@ const ExternalAssignment = () => {
                       {faculties.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                     </select>
                   </div>
-                  <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 flex gap-3 text-amber-700">
+                  <div className="bg-indigo- rounded-2xl p-4 border border-amber-100 flex gap-3 text-amber-700">
                     <Info size={18} className="shrink-0" />
                     <p className="text-[12px] font-bold leading-relaxed tracking-tight">
                       Selected faculty will evaluate ALL subjects for all {selectedExams.reduce((acc, id) => acc + (pendingExams.find(e => e.exam_id === id)?.student_count || 0), 0)} registered students across the selected exams.
