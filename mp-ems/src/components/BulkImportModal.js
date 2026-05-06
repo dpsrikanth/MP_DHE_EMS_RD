@@ -5,7 +5,7 @@ import { UploadCloud, X, FileText, CheckCircle2, ShieldAlert, Loader2 } from 'lu
 import { toast } from 'react-toastify';
 import apiClient from '../api/client';
 
-const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityName, expectedColumns, optionalColumns = [], extraPayload = {}, transformPayload = null }) => {
+const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, onSuccess, endpoint, entityName, expectedColumns, optionalColumns = [], extraPayload = {}, transformPayload = null }) => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -218,12 +218,14 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, endpoint, entityNam
       const response = await submitData(rows);
       const data = response.data;
 
-      toast.success(data.message || 'Import successful!');
       if (data.errors && data.errors.length > 0) {
+        toast.error(data.message || 'Import completed with some validation errors. Please fix them and try again.');
         setValidationErrors(data.errors);
       } else {
+        toast.success(data.message || 'Import successful!');
         handleReset();
-        onUploadSuccess();
+        if (onUploadSuccess) onUploadSuccess();
+        else if (onSuccess) onSuccess();
         onClose();
       }
     } catch (error) {

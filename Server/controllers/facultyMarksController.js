@@ -647,10 +647,18 @@ exports.bulkUploadInternalMarks = async (req, res) => {
             successCount++;
         }
 
+        if (errors.length > 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ 
+                message: `Import rejected. Found ${errors.length} validation error(s). No records were imported.`,
+                errors: errors
+            });
+        }
+
         await client.query('COMMIT');
         res.status(200).json({ 
-            message: `Successfully processed ${successCount} records.`,
-            errors: errors.length > 0 ? errors : null
+            message: `Successfully processed all ${successCount} records.`,
+            errors: []
         });
 
     } catch (error) {
