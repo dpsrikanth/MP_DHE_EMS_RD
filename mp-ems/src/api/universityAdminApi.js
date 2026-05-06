@@ -74,5 +74,9 @@ export const universityAdminApi = {
         if (examId) url += `?exam_id=${examId}`;
         const response = await apiClient.get(url);
         return response.data;
+    },
+    getStudentSearchDetails: async (admissionNo) => {
+        const response = await apiClient.get(`/university-admin/student-search/${admissionNo}`);
+        return response.data;
     }
 };

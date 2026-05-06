@@ -34,7 +34,8 @@ import {
   Hash,
   ClipboardCheck,
   Briefcase,
-  Monitor
+  Monitor,
+  Search
 } from "lucide-react";
 
 /**
@@ -149,6 +150,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             { id: 6, name: 'Semesters', path: '/semesters', icon: <Layers size={18} /> },
             { id: 9, name: 'Faculty', path: '/teachers', icon: <Users size={18} /> },
             { id: 10, name: 'Students', path: '/students', icon: <UserCircle size={18} /> },
+            { id: 31, name: 'Student Search', path: '/university/student-search', icon: <Search size={18} /> },
           ]
         },
         {
@@ -196,10 +198,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     if (roleName === 'Faculty' || roleName === 'Teacher') {
       const items = [
         { id: 1, name: 'Dashboard', path: '/faculty/dashboard', icon: <LayoutDashboard size={20} /> },
-        { 
-          id: 'marks', 
-          name: 'Marks & Assessment', 
-          type: 'parent', 
+        {
+          id: 'marks',
+          name: 'Marks & Assessment',
+          type: 'parent',
           icon: <ClipboardCheck size={20} />,
           children: [
             { id: 2, name: 'General Marks', path: '/faculty/marks-entry', icon: <BarChart3 size={18} /> },
@@ -207,6 +209,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           ]
         },
         { id: 4, name: 'Attendance', path: '/faculty/attendance', icon: <Calendar size={20} /> },
+        { id: 31, name: 'Student Search', path: '/university/student-search', icon: <Search size={20} /> },
         { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> }
       ];
       if (isAssignedPaperSetter) {
@@ -339,7 +342,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       {/* Navigation Menu */}
       <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
         <p className="px-4 text-[12px] font-black text-slate-500  tracking-[0.2em] mb-4">Main Menu</p>
-        
+
         {menuItems.map((item) => {
           if (item.type === 'parent') {
             const isExpanded = expandedMenus[item.id];
@@ -349,9 +352,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               <div key={item.id} className="space-y-1">
                 <button
                   onClick={() => toggleMenu(item.id)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${
-                    isExpanded || hasActiveChild ? 'text-white' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
-                  }`}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${isExpanded || hasActiveChild ? 'text-white' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                    }`}
                 >
                   <div className="flex items-center gap-3 text-left">
                     <span className={`shrink-0 ${isExpanded || hasActiveChild ? 'text-indigo-400' : 'text-slate-500 group-hover:text-indigo-400/70'} transition-colors duration-300`}>
@@ -370,11 +372,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                         <button
                           key={child.id}
                           onClick={() => handleLinkClick(child.path)}
-                          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${
-                            isChildActive
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${isChildActive
                               ? 'bg-indigo-500/10 text-indigo-400 font-black'
                               : 'text-slate-500 hover:bg-slate-800 hover:text-slate-200'
-                          }`}
+                            }`}
                         >
                           <span className={`shrink-0 transition-colors ${isChildActive ? 'text-indigo-400' : 'text-slate-600 group-hover:text-slate-400'}`}>
                             {child.icon}
@@ -392,7 +393,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
           // Simple Link Item
           const isActive = item.path && (
-            location.pathname === item.path || 
+            location.pathname === item.path ||
             (item.path.includes('?') && (location.pathname + location.search) === item.path)
           );
 
@@ -400,11 +401,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             <button
               key={item.id}
               onClick={() => handleLinkClick(item.path)}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${
-                isActive
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${isActive
                   ? 'bg-indigo-500 text-white font-black shadow-lg shadow-indigo-500/20'
                   : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3 text-left">
                 <span className={`shrink-0 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-indigo-400/70'} transition-colors duration-300`}>

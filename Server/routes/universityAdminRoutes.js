@@ -11,7 +11,8 @@ const {
     getCollegesMapping,
     updateSittingCenter,
     getStudentsForAllocation,
-    allocateStudentsToCenter
+    allocateStudentsToCenter,
+    getStudentSearchDetails
 } = require('../controllers/universityAdminController');
 
 /**
@@ -144,5 +145,7 @@ router.put('/center-mapping/:collegeId', verifyToken, updateSittingCenter);
 
 router.get('/students-for-allocation/:collegeId', verifyToken, getStudentsForAllocation);
 router.post('/allocate-students-center', verifyToken, allocateStudentsToCenter);
+
+router.get('/student-search/:admissionNo', verifyToken, getStudentSearchDetails);
 
 module.exports = router;

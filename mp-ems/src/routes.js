@@ -60,6 +60,7 @@ import ResultSheet from "./pages/Student/ResultSheet";
 import ManageCredits from "./pages/UniversityAdmin/ManageCredits";
 import HallApprovals from "./pages/UniversityAdmin/HallApprovals";
 import StudentCenterAllocations from "./pages/UniversityAdmin/StudentCenterAllocations";
+import StudentGlobalSearch from "./pages/UniversityAdmin/StudentGlobalSearch";
 import PaperSetterDashboard from "./pages/PaperSetter/Dashboard";
 import PaperSetterSubmittedPapers from "./pages/PaperSetter/SubmittedPapers";
 import PaperSetterGuidelines from "./pages/PaperSetter/Guidelines";
@@ -225,6 +226,7 @@ const AppRoutes = () => {
       <Route path="/university/exam-analytics" element={<Layout><ProtectedRoute element={<ExamAnalytics />} /></Layout>} />
       <Route path="/university/institutional-ranking" element={<Layout><ProtectedRoute element={<InstitutionalRanking />} /></Layout>} />
       <Route path="/university/student-allocations" element={<Layout><ProtectedRoute element={<StudentCenterAllocations />} /></Layout>} />
+      <Route path="/university/student-search" element={<Layout><ProtectedRoute element={<StudentGlobalSearch />} /></Layout>} />
       <Route path="/profile" element={<Layout><ProtectedRoute element={<Profile />} /></Layout>} />
       <Route path="/smtp-settings" element={<Layout><ProtectedRoute element={<SmtpSettings />} /></Layout>} />
     </Routes>

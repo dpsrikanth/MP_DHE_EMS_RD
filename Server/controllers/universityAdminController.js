@@ -773,3 +773,88 @@ exports.allocateStudentsToCenter = async (req, res) => {
         res.status(500).json({ error: "Failed to allocate student centers" });
     }
 };
+
+exports.getStudentSearchDetails = async (req, res) => {
+    try {
+        const { admissionNo } = req.params;
+
+        if (!admissionNo) {
+            return res.status(400).json({ error: "Admission number is required" });
+        }
+
+        // 1. Fetch Student Personal Details
+        const studentRes = await db.query(`
+            SELECT s.*, c.name as college_name
+            FROM students s
+            LEFT JOIN colleges c ON s."collageName" ILIKE c.name
+            WHERE s.admission_no = $1 AND s."deleteStatus" = true
+        `, [admissionNo]);
+
+        if (studentRes.rows.length === 0) {
+            return res.status(404).json({ error: "Student not found" });
+        }
+
+        const student = studentRes.rows[0];
+
+        // Initialize response object
+        const response = {
+            personalDetails: student,
+            marksHistory: [],
+            paymentHistory: [],
+            centerHistory: []
+        };
+
+        // 2. Fetch Marks History (Safe wrapper)
+        try {
+            const marksRes = await db.query(`
+                SELECT m.*, sub.name as subject_name, sub.subject_code, sub.credit,
+                       sem.semester_name, 
+                       ay.year_name as academic_year,
+                       e.name as exam_name
+                FROM marks m
+                JOIN master_subjects sub ON m.subject_id = sub.id
+                JOIN master_semesters sem ON sub.semester_id = sem.id
+                LEFT JOIN master_academic_years ay ON m.academic_year_id = ay.id
+                JOIN exams e ON m.exam_id = e.id
+                WHERE m.student_id = $1
+                ORDER BY ay.year_name DESC, sem.id DESC, sub.name ASC
+            `, [student.id]);
+            response.marksHistory = marksRes.rows;
+        } catch (e) { console.error("Marks fetch error:", e.message); }
+
+        // 3. Fetch Payment History (Safe wrapper - might fail if table not migrated)
+        try {
+            const paymentsRes = await db.query(`
+                SELECT p.*, sem.semester_name, ay.year_name as academic_year
+                FROM student_semester_payments p
+                JOIN master_semesters sem ON p.semester_id = sem.id
+                JOIN master_academic_years ay ON p.academic_year_id = ay.id
+                WHERE p.student_id = $1
+                ORDER BY ay.year_name DESC, sem.id DESC
+            `, [student.id]);
+            response.paymentHistory = paymentsRes.rows;
+        } catch (e) { console.error("Payments fetch error (Table might be missing):", e.message); }
+
+        // 4. Fetch Center History (Safe wrapper)
+        try {
+            const centerRes = await db.query(`
+                SELECT sa.*, e.name as exam_name, e.exam_date,
+                       c.name as center_name,
+                       eh.hall_code
+                FROM seating_arrangements sa
+                JOIN exams e ON sa.exam_id = e.id
+                JOIN colleges c ON sa.college_id = c.id
+                JOIN examination_halls eh ON sa.hall_id = eh.id
+                WHERE sa.student_id = $1
+                ORDER BY e.exam_date DESC
+            `, [student.id]);
+            response.centerHistory = centerRes.rows;
+        } catch (e) { console.error("Center history fetch error:", e.message); }
+
+        res.status(200).json(response);
+
+    } catch (error) {
+        console.error("Get student search details error:", error);
+        res.status(500).json({ error: "Failed to fetch student profile" });
+    }
+};
