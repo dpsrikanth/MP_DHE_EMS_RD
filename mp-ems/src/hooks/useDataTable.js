@@ -96,10 +96,10 @@ export const useDataTable = (data = [], {
     setCurrentPage(1);
   };
 
-  const toggleColumn = (key) => {
+  const toggleColumn = (key, forcedValue) => {
     setVisibleColumns(prev => ({
       ...prev,
-      [key]: !prev[key]
+      [key]: forcedValue !== undefined ? forcedValue : !prev[key]
     }));
   };
 

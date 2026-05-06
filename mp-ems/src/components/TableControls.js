@@ -32,7 +32,6 @@ export const ColumnVisibilitySelector = ({ columns, visibleColumns, onToggle }) 
 
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
           <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="p-4 border-b border-slate-50 bg-slate-50/50">
               <h3 className="text-[12px] font-black text-slate-400  tracking-widest">Toggle Column Visibility</h3>
@@ -41,17 +40,21 @@ export const ColumnVisibilitySelector = ({ columns, visibleColumns, onToggle }) 
               {columns.map(col => (
                 <label 
                   key={col.key}
-                  className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl cursor-pointer transition-colors group"
+                  className="w-full flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl cursor-pointer transition-colors text-left group"
                 >
                   <span className="text-sm font-bold text-slate-700">{col.label}</span>
-                  <div className="relative">
+                  <div className="relative flex items-center">
                     <input 
                       type="checkbox"
                       checked={!!visibleColumns[col.key]}
-                      onChange={() => onToggle(col.key)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        // Call the parent
+                        onToggle(col.key, e.target.checked);
+                      }}
                       className="peer sr-only"
                     />
-                    <div className="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:bg-indigo-500 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-4 peer-checked:after:border-white"></div>
+                    <div className="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:bg-indigo-500 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-4 peer-checked:after:border-white shadow-sm"></div>
                   </div>
                 </label>
               ))}
