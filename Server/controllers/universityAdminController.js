@@ -26,13 +26,16 @@ exports.getRegistrationsPendingAssignment = async (req, res) => {
         const university_id = req.user?.university_id || req.user?.universityId;
 
         // Fetch Exams that have NO exam-level external faculty assigned yet.
-        // We include exams even if they don't have paid student registrations yet.
+        // Grouped by exam name so assigning once covers the entire series.
         let query = `
-            SELECT DISTINCT e.id as exam_id, e.name as exam_name,
-                   (SELECT COUNT(DISTINCT er.student_id) FROM exam_registrations er WHERE er.exam_id = e.id AND er.payment_status = 'Paid') as student_count,
-                   (SELECT COUNT(DISTINCT m.subject_id) FROM marks m WHERE m.exam_id = e.id) as subject_count
+            SELECT MIN(e.id) as exam_id, e.name as exam_name,
+                   SUM(DISTINCT (SELECT COUNT(DISTINCT er.student_id) FROM exam_registrations er WHERE er.exam_id = e.id AND er.payment_status = 'Paid')) as student_count,
+                   COUNT(DISTINCT e.subject_id) as subject_count
             FROM exams e
-            LEFT JOIN external_faculty_assignments efa ON efa.exam_id = e.id AND efa.subject_id IS NULL
+            LEFT JOIN external_faculty_assignments efa ON (
+                efa.exam_id IN (SELECT id FROM exams WHERE name = e.name)
+                AND efa.subject_id IS NULL
+            )
             WHERE efa.id IS NULL
         `;
         const params = [];
@@ -43,7 +46,7 @@ exports.getRegistrationsPendingAssignment = async (req, res) => {
             params.push(university_id);
         }
 
-        query += ` ORDER BY e.id DESC`;
+        query += ` GROUP BY e.name ORDER BY exam_id DESC`;
 
         const result = await db.query(query, params);
         res.status(200).json(result.rows);
@@ -373,6 +376,55 @@ exports.getResultHubData = async (req, res) => {
             ? (totalWithMarks.reduce((s, r) => s + Number(r.total_marks), 0) / totalWithMarks.length).toFixed(1)
             : '0.0';
         let examType = rows.length > 0 ? rows[0].exam_type : null;
+        let isGraceEnabled = rows.length > 0 ? rows[0].is_grace_enabled : false;
+
+        // Check if students are already promoted for this exam series
+        let isPromoted = false;
+        if (exam_name && rows.length > 0) {
+            // Check if there are ANY students who have passed everything but are NOT yet promoted.
+            // If such students exist, isPromoted should be false so the admin can click the button.
+            const pendingPromotion = await db.query(`
+                WITH target_subjects AS (
+                    SELECT DISTINCT subject_id FROM exams WHERE name = $1
+                ),
+                ia_summary AS (
+                    SELECT sim_ia.student_id, sim_ia.subject_id, SUM(sim_ia.marks_obtained::float) as ia_total
+                    FROM student_internal_marks sim_ia
+                    JOIN internal_marks_structure ims_ia ON sim_ia.component_id = ims_ia.id
+                    JOIN target_subjects ts ON sim_ia.subject_id = ts.subject_id
+                    WHERE ims_ia.component_name ILIKE 'IA%'
+                    GROUP BY sim_ia.student_id, sim_ia.subject_id
+                ),
+                other_summary AS (
+                    SELECT sim_o.student_id, sim_o.subject_id, SUM(sim_o.marks_obtained::float) as other_total
+                    FROM student_internal_marks sim_o
+                    JOIN internal_marks_structure ims_o ON sim_o.component_id = ims_o.id
+                    JOIN target_subjects ts ON sim_o.subject_id = ts.subject_id
+                    WHERE ims_o.component_name NOT ILIKE 'IA%' AND ims_o.component_name NOT ILIKE 'TOTAL%'
+                    GROUP BY sim_o.student_id, sim_o.subject_id
+                ),
+                raw_internal AS (
+                    SELECT COALESCE(i.student_id, o.student_id) as student_id, COALESCE(i.subject_id, o.subject_id) as subject_id,
+                           (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0)) as total_raw
+                    FROM ia_summary i FULL OUTER JOIN other_summary o ON i.student_id = o.student_id AND i.subject_id = o.subject_id
+                )
+                SELECT 1 FROM students s
+                WHERE s.id IN (SELECT m.student_id FROM marks m JOIN exams e ON m.exam_id = e.id WHERE e.name = $1)
+                AND s.id NOT IN (
+                    SELECT m2.student_id 
+                    FROM marks m2
+                    JOIN exams e2 ON m2.exam_id = e2.id
+                    LEFT JOIN raw_internal ri ON ri.student_id = m2.student_id AND ri.subject_id = m2.subject_id
+                    WHERE e2.name = $1
+                      AND (COALESCE(m2.internal_marks, ri.total_raw, 0) + COALESCE(m2.external_marks, 0) + COALESCE(e2.moderation_marks, 0) + COALESCE(m2.grace_marks, 0)) < 40
+                )
+                AND s.semister ~ (SELECT (regexp_matches(ms.semester_name, '\\d+'))[1] FROM exams e JOIN master_semesters ms ON e.semester_id = ms.id WHERE e.name = $1 LIMIT 1)
+                LIMIT 1
+            `, [exam_name]);
+            
+            // isPromoted is true only if NO eligible students are left in the current semester.
+            isPromoted = pendingPromotion.rows.length === 0;
+        }
 
         // Validation for "canPublish" button in UI
         let workflowReady = true;
@@ -381,17 +433,38 @@ exports.getResultHubData = async (req, res) => {
 
             if (currentExamType === 2) {
                 // External Exams (Type 2): Check if external faculty marks are submitted for all subjects in the series
+                // Also ensure that internal marks are locked by all relevant colleges if the user expects it.
                 const externalCheck = await db.query(`
                     SELECT COUNT(DISTINCT e.subject_id) as total_subjects,
-                           COUNT(DISTINCT efa.subject_id) FILTER (WHERE efa.status IN ('Submitted', 'Approved', 'Finalized')) as submitted_count
+                           COUNT(DISTINCT e.subject_id) FILTER (WHERE efa.status IN ('Submitted', 'Approved', 'Finalized')) as submitted_count,
+                           -- Also check if internal marks are locked for these subjects across all colleges that have registrations
+                           (SELECT COUNT(DISTINCT mws.id) FROM marks_workflow_status mws 
+                            WHERE mws.subject_id IN (SELECT subject_id FROM exams WHERE name = $1)
+                              AND mws.status NOT IN ('Locked', 'Finalized')
+                              AND EXISTS (
+                                  SELECT 1 FROM exam_registrations er 
+                                  JOIN students s ON er.student_id = s.id
+                                  JOIN colleges c ON LOWER(s."collageName") = LOWER(c.name)
+                                  WHERE er.exam_id IN (SELECT id FROM exams WHERE name = $1 AND subject_id = mws.subject_id)
+                                    AND c.id = mws.college_id
+                              )
+                           ) as pending_internal_locks
                     FROM exams e
-                    LEFT JOIN external_faculty_assignments efa ON efa.exam_id = e.id 
-                      AND (efa.subject_id = e.subject_id OR efa.subject_id IS NULL)
+                    LEFT JOIN external_faculty_assignments efa ON (
+                        efa.exam_id IN (SELECT id FROM exams WHERE TRIM(name) ILIKE TRIM($1))
+                        AND (efa.subject_id = e.subject_id OR efa.subject_id IS NULL)
+                    )
                     WHERE TRIM(e.name) ILIKE TRIM($1)
+                      -- Only count subjects that actually have registered students
+                      AND EXISTS (SELECT 1 FROM exam_registrations er WHERE er.exam_id = e.id AND er.payment_status = 'Paid')
                 `, [exam_name]);
 
                 const stats = externalCheck.rows[0];
-                if (parseInt(stats.total_subjects) === 0 || parseInt(stats.submitted_count) < parseInt(stats.total_subjects)) {
+                const total = parseInt(stats.total_subjects);
+                const submitted = parseInt(stats.submitted_count);
+                const pendingLocks = parseInt(stats.pending_internal_locks || 0);
+
+                if (total === 0 || submitted < total || pendingLocks > 0) {
                     workflowReady = false;
                 }
             } else {
@@ -429,7 +502,8 @@ exports.getResultHubData = async (req, res) => {
                 resultsPublished,
                 examType,
                 canPublish,
-                isGraceEnabled: rows.length > 0 ? rows[0].is_grace_enabled : false
+                isPromoted,
+                isGraceEnabled
             }
         });
     } catch (error) {
@@ -909,5 +983,126 @@ exports.updateModerationMarks = async (req, res) => {
     } catch (error) {
         console.error("Update moderation marks error:", error);
         res.status(500).json({ error: "Failed to update moderation marks" });
+    }
+};
+
+// University Admin: Promote students who passed all subjects in an exam series
+exports.promoteStudents = async (req, res) => {
+    const { exam_name } = req.body;
+    if (!exam_name) return res.status(400).json({ error: "Exam name is required" });
+
+    try {
+        // 1. Get Exam Semester context
+        const examInfo = await db.query(`
+            SELECT DISTINCT ms.semester_name 
+            FROM exams e 
+            JOIN master_semesters ms ON e.semester_id = ms.id 
+            WHERE e.name = $1
+        `, [exam_name]);
+        
+        if (examInfo.rows.length === 0) {
+            return res.status(404).json({ error: "Exam series not found" });
+        }
+        const examSem = examInfo.rows[0].semester_name;
+
+        const query = `
+            WITH target_subjects AS (
+                SELECT DISTINCT subject_id FROM exams WHERE name = $1
+            ),
+            ia_summary AS (
+                SELECT sim_ia.student_id, sim_ia.subject_id, SUM(sim_ia.marks_obtained::float) as ia_total
+                FROM student_internal_marks sim_ia
+                JOIN internal_marks_structure ims_ia ON sim_ia.component_id = ims_ia.id
+                JOIN target_subjects ts ON sim_ia.subject_id = ts.subject_id
+                WHERE ims_ia.component_name ILIKE 'IA%'
+                GROUP BY sim_ia.student_id, sim_ia.subject_id
+            ),
+            other_summary AS (
+                SELECT sim_o.student_id, sim_o.subject_id, SUM(sim_o.marks_obtained::float) as other_total
+                FROM student_internal_marks sim_o
+                JOIN internal_marks_structure ims_o ON sim_o.component_id = ims_o.id
+                JOIN target_subjects ts ON sim_o.subject_id = ts.subject_id
+                WHERE ims_o.component_name NOT ILIKE 'IA%' AND ims_o.component_name NOT ILIKE 'TOTAL%'
+                GROUP BY sim_o.student_id, sim_o.subject_id
+            ),
+            raw_internal AS (
+                SELECT COALESCE(i.student_id, o.student_id) as student_id, COALESCE(i.subject_id, o.subject_id) as subject_id,
+                       (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0)) as total_raw
+                FROM ia_summary i FULL OUTER JOIN other_summary o ON i.student_id = o.student_id AND i.subject_id = o.subject_id
+            )
+            SELECT DISTINCT s.id, s.semister, s.name
+            FROM students s
+            JOIN marks m ON s.id = m.student_id
+            JOIN exams e ON m.exam_id = e.id
+            WHERE e.name = $1
+              AND s.semister ~ (SELECT (regexp_matches($2, '\\d+'))[1])
+              AND s.id NOT IN (
+                  SELECT m2.student_id 
+                  FROM marks m2
+                  JOIN exams e2 ON m2.exam_id = e2.id
+                  LEFT JOIN raw_internal ri ON ri.student_id = m2.student_id AND ri.subject_id = m2.subject_id
+                  WHERE e2.name = $1
+                    AND (COALESCE(m2.internal_marks, ri.total_raw, 0) + COALESCE(m2.external_marks, 0) + COALESCE(e2.moderation_marks, 0) + COALESCE(m2.grace_marks, 0)) < 40
+              )
+        `;
+        const result = await db.query(query, [exam_name, examSem]);
+        const studentsToPromote = result.rows;
+
+        if (studentsToPromote.length === 0) {
+            return res.status(200).json({ message: "No eligible students found for promotion. Either they failed some subjects or they are already promoted." });
+        }
+
+        // 3. Perform promotion (Increment semester number: SEM-1 -> SEM-2)
+        let promotedCount = 0;
+        for (const student of studentsToPromote) {
+            const nextSem = student.semister.replace(/(\d+)/, (match, n) => parseInt(n) + 1);
+            if (nextSem !== student.semister) {
+                await db.query(`UPDATE students SET semister = $1 WHERE id = $2`, [nextSem, student.id]);
+                promotedCount++;
+            }
+        }
+
+        res.status(200).json({ 
+            message: `Successfully promoted ${promotedCount} students to the next semester.`,
+            promotedCount 
+        });
+    } catch (error) {
+        console.error("Promote students error:", error);
+        res.status(500).json({ error: "An error occurred during student promotion." });
+    }
+};
+
+// University Admin: Revert promotion (decrement semester number) - For testing
+exports.unpromoteStudents = async (req, res) => {
+    const { exam_name } = req.body;
+    if (!exam_name) return res.status(400).json({ error: "Exam name is required" });
+
+    try {
+        // Find students who were part of this exam series
+        const query = `
+            SELECT DISTINCT s.id, s.semister
+            FROM students s
+            JOIN marks m ON s.id = m.student_id
+            JOIN exams e ON m.exam_id = e.id
+            WHERE e.name = $1
+        `;
+        const result = await db.query(query, [exam_name]);
+        
+        let unpromotedCount = 0;
+        for (const student of result.rows) {
+            const prevSem = student.semister.replace(/(\d+)/, (match, n) => Math.max(1, parseInt(n) - 1));
+            if (prevSem !== student.semister) {
+                await db.query(`UPDATE students SET semister = $1 WHERE id = $2`, [prevSem, student.id]);
+                unpromotedCount++;
+            }
+        }
+
+        res.status(200).json({ 
+            message: `Reverted promotion for ${unpromotedCount} students.`,
+            unpromotedCount 
+        });
+    } catch (error) {
+        console.error("Unpromote students error:", error);
+        res.status(500).json({ error: "An error occurred during unpromotion." });
     }
 };

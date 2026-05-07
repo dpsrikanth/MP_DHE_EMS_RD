@@ -82,5 +82,13 @@ export const universityAdminApi = {
     updateModerationMarks: async (data) => {
         const response = await apiClient.put('/university-admin/update-moderation', data);
         return response.data;
+    },
+    promoteStudents: async (data) => {
+        const response = await apiClient.post('/university-admin/promote-students', data);
+        return response.data;
+    },
+    unpromoteStudents: async (data) => {
+        const response = await apiClient.post('/university-admin/unpromote-students', data);
+        return response.data;
     }
 };

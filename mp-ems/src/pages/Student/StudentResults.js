@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, Award, CheckCircle, XCircle, BookOpen, Clock, Download, 
   LayoutDashboard, Search, GraduationCap, CheckCircle2 
@@ -404,11 +404,18 @@ const StudentResults = () => {
                     </div>
                     <div className={`p-4 border-b border-slate-200 text-center col-span-2 md:col-span-1 ${
                       series.overallStatus === 'FAIL' ? 'bg-red-600 text-white' : 
-                      series.overallStatus === 'PASS (GRACE)' ? 'bg-indigo- text-white' : 
+                      series.overallStatus === 'PASS (GRACE)' ? 'bg-emerald-600 text-white' : 
                       'bg-emerald-600 text-white'
                     }`}>
                        <p className="text-[9px] font-black opacity-80  mb-2">Final Result</p>
-                       <p className="text-xl font-black tracking-tight ">{series.overallStatus}</p>
+                        <div className="flex flex-col items-center">
+                           <p className="text-xl font-black tracking-tight leading-none">
+                             {series.overallStatus.includes('PASS') ? 'PASS' : 'FAIL'}
+                           </p>
+                           {series.overallStatus.includes('(GRACE)') && (
+                             <p className="text-[8px] font-black opacity-70 mt-1 tracking-widest">(GRACE APPLIED)</p>
+                           )}
+                        </div>
                     </div>
                  </div>
 

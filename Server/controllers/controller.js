@@ -1535,9 +1535,14 @@ const getExams = async (req, res) => {
             WHEN e.exam_type = 2 THEN (
                 -- External Exams: Only require external marks to be submitted.
                 -- We bypass the internal marks lock requirement as per user request to facilitate publication.
+                -- Fix: Use series-aware check to handle global assignments across multiple subject rows.
+                -- Optimization: Automatically mark as submitted if there are no paid student registrations for this subject.
+                (NOT EXISTS (SELECT 1 FROM exam_registrations er WHERE er.exam_id = e.id AND er.payment_status = 'Paid'))
+                OR
                 (SELECT EXISTS (
                     SELECT 1 FROM external_faculty_assignments efa
-                    WHERE efa.exam_id = e.id AND (efa.subject_id = e.subject_id OR efa.subject_id IS NULL) 
+                    WHERE efa.exam_id IN (SELECT id FROM exams WHERE name = e.name)
+                      AND (efa.subject_id = e.subject_id OR efa.subject_id IS NULL) 
                       AND efa.status IN ('Submitted', 'Approved', 'Finalized')
                 ))
             )
@@ -2380,8 +2385,14 @@ const getStudentResults = async (req, res) => {
         e.exam_type,
         COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) as internal_marks,
         COALESCE(m.external_marks, 0) as external_marks,
+        COALESCE(e.moderation_marks, 0) as moderation_marks,
         COALESCE(m.grace_marks, 0) as grace_marks,
-        (COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) + COALESCE(m.external_marks, 0) + COALESCE(m.grace_marks, 0)) as total_marks,
+        (
+            COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) + 
+            COALESCE(m.external_marks, 0) + 
+            COALESCE(e.moderation_marks, 0) + 
+            COALESCE(m.grace_marks, 0)
+        ) as total_marks,
         COALESCE(m.status, 'Internal Only') as result_status,
         e.name as exam_name,
         e.id as exam_id,
@@ -2415,6 +2426,7 @@ const getStudentResults = async (req, res) => {
         1 as exam_type,
         raw_internal.total_raw as internal_marks,
         0 as external_marks,
+        0 as moderation_marks,
         0 as grace_marks,
         raw_internal.total_raw as total_marks,
         raw_internal.batch_status as result_status,
@@ -4605,8 +4617,14 @@ const getResultSheetData = async (req, res) => {
         m.id as mark_id,
         COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) as internal_marks,
         COALESCE(m.external_marks, 0) as external_marks,
+        COALESCE(e.moderation_marks, 0) as moderation_marks,
         COALESCE(m.grace_marks, 0) as grace_marks,
-        (COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) + COALESCE(m.external_marks, 0) + COALESCE(m.grace_marks, 0)) as total_marks,
+        (
+            COALESCE(cim.total_internal, m.internal_marks, raw_internal.total_raw, 0) + 
+            COALESCE(m.external_marks, 0) + 
+            COALESCE(e.moderation_marks, 0) + 
+            COALESCE(m.grace_marks, 0)
+        ) as total_marks,
         m.status as result_status,
         e.name as exam_name,
         e.id as exam_id,

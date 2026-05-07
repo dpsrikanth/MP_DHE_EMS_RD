@@ -33,6 +33,8 @@ const UniversityMarksView = () => {
   const [activeSubject, setActiveSubject] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [publishing, setPublishing] = useState(false);
+  const [promoting, setPromoting] = useState(false);
+  const [unpromoting, setUnpromoting] = useState(false);
 
   // Moderation state
   const [showModerationModal, setShowModerationModal] = useState(false);
@@ -126,6 +128,43 @@ const UniversityMarksView = () => {
       toast.error("Network error");
     } finally {
       setPublishing(false);
+    }
+  };
+
+  // Promote students who passed
+  const handlePromote = async () => {
+    if (!selectedExam) return;
+    if (!window.confirm("Are you sure you want to promote all students who passed this exam to the next semester?")) return;
+    
+    setPromoting(true);
+    try {
+      await universityAdminApi.promoteStudents({ exam_name: selectedExam });
+      toast.success("Eligible students promoted successfully!");
+      fetchData(); // Refresh to see updated semesters in student list if needed
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.error || "Promotion failed");
+    } finally {
+      setPromoting(true);
+      setPromoting(false);
+    }
+  };
+
+  // Unpromote students (for testing)
+  const handleUnpromote = async () => {
+    if (!selectedExam) return;
+    if (!window.confirm("DEBUG: Are you sure you want to revert promotion for students of this exam?")) return;
+    
+    setUnpromoting(true);
+    try {
+      await universityAdminApi.unpromoteStudents({ exam_name: selectedExam });
+      toast.success("Promotion reverted successfully!");
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.error || "Revert failed");
+    } finally {
+      setUnpromoting(false);
     }
   };
 
@@ -312,6 +351,23 @@ const UniversityMarksView = () => {
               >
                 <Download size={16} />
                 Export CSV
+              </button>
+              <button
+                onClick={handlePromote}
+                disabled={promoting || !summary?.resultsPublished || summary?.isPromoted}
+                title={summary?.isPromoted ? "Students already promoted" : (!summary?.resultsPublished ? "Results must be published before promotion" : "Promote students who passed to the next semester")}
+                className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-[13px] tracking-widest transition-all shadow-lg disabled:opacity-50 ${summary?.isPromoted ? 'bg-slate-200 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+              >
+                {promoting ? <Loader2 size={16} className="animate-spin" /> : <TrendingUp size={16} />}
+                {summary?.isPromoted ? 'Promoted' : 'Promote'}
+              </button>
+              <button
+                onClick={handleUnpromote}
+                disabled={unpromoting}
+                className="flex items-center gap-2 px-5 py-3 bg-rose-50 border-2 border-rose-100 text-rose-600 rounded-xl font-bold text-[13px] tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+              >
+                {unpromoting ? <Loader2 size={16} className="animate-spin" /> : <EyeOff size={16} />}
+                Unpromote
               </button>
               <button
                 onClick={togglePublish}

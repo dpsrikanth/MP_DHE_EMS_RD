@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Printer, Download, ChevronLeft, GraduationCap, Calendar, Award, BookOpen, CheckCircle2, User, Building, MapPin } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -265,12 +265,19 @@ const ResultSheet = () => {
                     <p className="text-4xl font-black tracking-tight text-emerald-400">{sgpa}</p>
                 </div>
                 <div className={`flex flex-col items-center justify-center p-6 rounded-[1.5rem] shadow-xl ${
-                  overallStatus === 'FAIL' ? 'bg-red-600 shadow-red-600/20' : 
-                  overallStatus === 'PASS (GRACE)' ? 'bg-indigo- shadow-indigo-500/20' : 
-                  'bg-emerald-500 shadow-indigo-500/20'
+                  overallStatus === 'FAIL' ? 'bg-red-600 shadow-red-600/20' : 'bg-emerald-500 shadow-emerald-500/20'
                 }`}>
                     <p className="text-[12px] font-black text-white/60  tracking-widest mb-1">Final Result</p>
-                    <p className="text-2xl font-black tracking-tight  whitespace-nowrap">{overallStatus}</p>
+                    <div className="text-center">
+                        <p className="text-2xl font-black tracking-tight whitespace-nowrap">
+                            {overallStatus.includes('PASS') ? 'PASS' : 'FAIL'}
+                        </p>
+                        {overallStatus.includes('(GRACE)') && (
+                            <p className="text-[10px] font-black text-white/70 tracking-widest mt-0.5">
+                                (GRACE APPLIED)
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

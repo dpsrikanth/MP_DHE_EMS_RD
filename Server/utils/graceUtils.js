@@ -56,9 +56,11 @@ async function applyGraceMarks(student_id, exam_name, university_id, user_id = n
                 sub.name as subject_name,
                 COALESCE(i.total_internal, 0) + COALESCE(o.total_other, 0) as calculated_internal,
                 m.internal_marks as entered_internal,
+                COALESCE(e.moderation_marks, 0) as moderation_marks,
                 (
                     COALESCE(m.internal_marks, (COALESCE(i.total_internal, 0) + COALESCE(o.total_other, 0)), 0) + 
-                    COALESCE(m.external_marks, 0)
+                    COALESCE(m.external_marks, 0) +
+                    COALESCE(e.moderation_marks, 0)
                 ) as projected_total_marks
             FROM marks m
             JOIN master_subjects sub ON m.subject_id = sub.id
