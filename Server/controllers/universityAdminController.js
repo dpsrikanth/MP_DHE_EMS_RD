@@ -384,41 +384,71 @@ exports.getResultHubData = async (req, res) => {
             // Check if there are ANY students who have passed everything but are NOT yet promoted.
             // If such students exist, isPromoted should be false so the admin can click the button.
             const pendingPromotion = await db.query(`
-                WITH target_subjects AS (
+                WITH series_stats AS (
+                    SELECT program_id, COUNT(DISTINCT subject_id) as total_subjects
+                    FROM exams
+                    WHERE name = $1
+                    GROUP BY program_id
+                ),
+                target_subjects AS (
                     SELECT DISTINCT subject_id FROM exams WHERE name = $1
                 ),
-                ia_summary AS (
-                    SELECT sim_ia.student_id, sim_ia.subject_id, SUM(sim_ia.marks_obtained::float) as ia_total
+                ia_ranked AS (
+                    SELECT 
+                        sim_ia.student_id, 
+                        sim_ia.subject_id, 
+                        sim_ia.marks_obtained::float as marks,
+                        ROW_NUMBER() OVER (PARTITION BY sim_ia.student_id, sim_ia.subject_id ORDER BY sim_ia.marks_obtained::float DESC) as rnk
                     FROM student_internal_marks sim_ia
                     JOIN internal_marks_structure ims_ia ON sim_ia.component_id = ims_ia.id
                     JOIN target_subjects ts ON sim_ia.subject_id = ts.subject_id
                     WHERE ims_ia.component_name ILIKE 'IA%'
-                    GROUP BY sim_ia.student_id, sim_ia.subject_id
+                ),
+                ia_summary AS (
+                    SELECT student_id, subject_id, SUM(marks) as ia_total
+                    FROM ia_ranked
+                    WHERE rnk <= 2
+                    GROUP BY student_id, subject_id
                 ),
                 other_summary AS (
-                    SELECT sim_o.student_id, sim_o.subject_id, SUM(sim_o.marks_obtained::float) as other_total
+                    SELECT 
+                        sim_o.student_id, 
+                        sim_o.subject_id, 
+                        SUM(sim_o.marks_obtained::float) as other_total
                     FROM student_internal_marks sim_o
                     JOIN internal_marks_structure ims_o ON sim_o.component_id = ims_o.id
                     JOIN target_subjects ts ON sim_o.subject_id = ts.subject_id
-                    WHERE ims_o.component_name NOT ILIKE 'IA%' AND ims_o.component_name NOT ILIKE 'TOTAL%'
+                    WHERE ims_o.component_name NOT ILIKE 'IA%' 
+                      AND ims_o.component_name NOT ILIKE 'TOTAL%'
                     GROUP BY sim_o.student_id, sim_o.subject_id
                 ),
                 raw_internal AS (
                     SELECT COALESCE(i.student_id, o.student_id) as student_id, COALESCE(i.subject_id, o.subject_id) as subject_id,
                            (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0)) as total_raw
                     FROM ia_summary i FULL OUTER JOIN other_summary o ON i.student_id = o.student_id AND i.subject_id = o.subject_id
+                ),
+                student_passed_stats AS (
+                    SELECT m.student_id, 
+                           e.program_id,
+                           COUNT(DISTINCT m.subject_id) as passed_subjects
+                    FROM marks m
+                    JOIN exams e ON m.exam_id = e.id
+                    LEFT JOIN raw_internal ri ON ri.student_id = m.student_id AND ri.subject_id = m.subject_id
+                    WHERE e.name = $1
+                      AND (COALESCE(m.internal_marks, ri.total_raw, 0) + COALESCE(m.external_marks, 0) + COALESCE(e.moderation_marks, 0) + COALESCE(m.grace_marks, 0)) >= 40
+                    GROUP BY m.student_id, e.program_id
                 )
                 SELECT 1 FROM students s
-                WHERE s.id IN (SELECT m.student_id FROM marks m JOIN exams e ON m.exam_id = e.id WHERE e.name = $1)
-                AND s.id NOT IN (
-                    SELECT m2.student_id 
-                    FROM marks m2
-                    JOIN exams e2 ON m2.exam_id = e2.id
-                    LEFT JOIN raw_internal ri ON ri.student_id = m2.student_id AND ri.subject_id = m2.subject_id
-                    WHERE e2.name = $1
-                      AND (COALESCE(m2.internal_marks, ri.total_raw, 0) + COALESCE(m2.external_marks, 0) + COALESCE(e2.moderation_marks, 0) + COALESCE(m2.grace_marks, 0)) < 40
-                )
-                AND s.semister ~ (SELECT (regexp_matches(ms.semester_name, '\\d+'))[1] FROM exams e JOIN master_semesters ms ON e.semester_id = ms.id WHERE e.name = $1 LIMIT 1)
+                JOIN student_passed_stats sps ON s.id = sps.student_id
+                JOIN series_stats ss ON sps.program_id = ss.program_id
+                WHERE sps.passed_subjects >= ss.total_subjects
+                  AND s.semister ~ (
+                      SELECT (regexp_matches(ms.semester_name, '\\d+'))[1]
+                      FROM exams e
+                      JOIN master_semesters ms ON e.semester_id = ms.id
+                      WHERE e.name = $1
+                      LIMIT 1
+                  )
                 LIMIT 1
             `, [exam_name]);
             
@@ -1006,44 +1036,66 @@ exports.promoteStudents = async (req, res) => {
         const examSem = examInfo.rows[0].semester_name;
 
         const query = `
-            WITH target_subjects AS (
+            WITH series_stats AS (
+                SELECT program_id, COUNT(DISTINCT subject_id) as total_subjects
+                FROM exams
+                WHERE name = $1
+                GROUP BY program_id
+            ),
+            target_subjects AS (
                 SELECT DISTINCT subject_id FROM exams WHERE name = $1
             ),
-            ia_summary AS (
-                SELECT sim_ia.student_id, sim_ia.subject_id, SUM(sim_ia.marks_obtained::float) as ia_total
+            ia_ranked AS (
+                SELECT 
+                    sim_ia.student_id, 
+                    sim_ia.subject_id, 
+                    sim_ia.marks_obtained::float as marks,
+                    ROW_NUMBER() OVER (PARTITION BY sim_ia.student_id, sim_ia.subject_id ORDER BY sim_ia.marks_obtained::float DESC) as rnk
                 FROM student_internal_marks sim_ia
                 JOIN internal_marks_structure ims_ia ON sim_ia.component_id = ims_ia.id
                 JOIN target_subjects ts ON sim_ia.subject_id = ts.subject_id
                 WHERE ims_ia.component_name ILIKE 'IA%'
-                GROUP BY sim_ia.student_id, sim_ia.subject_id
+            ),
+            ia_summary AS (
+                SELECT student_id, subject_id, SUM(marks) as ia_total
+                FROM ia_ranked
+                WHERE rnk <= 2
+                GROUP BY student_id, subject_id
             ),
             other_summary AS (
-                SELECT sim_o.student_id, sim_o.subject_id, SUM(sim_o.marks_obtained::float) as other_total
+                SELECT 
+                    sim_o.student_id, 
+                    sim_o.subject_id, 
+                    SUM(sim_o.marks_obtained::float) as other_total
                 FROM student_internal_marks sim_o
                 JOIN internal_marks_structure ims_o ON sim_o.component_id = ims_o.id
                 JOIN target_subjects ts ON sim_o.subject_id = ts.subject_id
-                WHERE ims_o.component_name NOT ILIKE 'IA%' AND ims_o.component_name NOT ILIKE 'TOTAL%'
+                WHERE ims_o.component_name NOT ILIKE 'IA%' 
+                  AND ims_o.component_name NOT ILIKE 'TOTAL%'
                 GROUP BY sim_o.student_id, sim_o.subject_id
             ),
             raw_internal AS (
                 SELECT COALESCE(i.student_id, o.student_id) as student_id, COALESCE(i.subject_id, o.subject_id) as subject_id,
                        (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0)) as total_raw
                 FROM ia_summary i FULL OUTER JOIN other_summary o ON i.student_id = o.student_id AND i.subject_id = o.subject_id
+            ),
+            student_passed_stats AS (
+                SELECT m.student_id, 
+                       e.program_id,
+                       COUNT(DISTINCT m.subject_id) as passed_subjects
+                FROM marks m
+                JOIN exams e ON m.exam_id = e.id
+                LEFT JOIN raw_internal ri ON ri.student_id = m.student_id AND ri.subject_id = m.subject_id
+                WHERE e.name = $1
+                  AND (COALESCE(m.internal_marks, ri.total_raw, 0) + COALESCE(m.external_marks, 0) + COALESCE(e.moderation_marks, 0) + COALESCE(m.grace_marks, 0)) >= 40
+                GROUP BY m.student_id, e.program_id
             )
             SELECT DISTINCT s.id, s.semister, s.name
             FROM students s
-            JOIN marks m ON s.id = m.student_id
-            JOIN exams e ON m.exam_id = e.id
-            WHERE e.name = $1
+            JOIN student_passed_stats sps ON s.id = sps.student_id
+            JOIN series_stats ss ON sps.program_id = ss.program_id
+            WHERE sps.passed_subjects >= ss.total_subjects
               AND s.semister ~ (SELECT (regexp_matches($2, '\\d+'))[1])
-              AND s.id NOT IN (
-                  SELECT m2.student_id 
-                  FROM marks m2
-                  JOIN exams e2 ON m2.exam_id = e2.id
-                  LEFT JOIN raw_internal ri ON ri.student_id = m2.student_id AND ri.subject_id = m2.subject_id
-                  WHERE e2.name = $1
-                    AND (COALESCE(m2.internal_marks, ri.total_raw, 0) + COALESCE(m2.external_marks, 0) + COALESCE(e2.moderation_marks, 0) + COALESCE(m2.grace_marks, 0)) < 40
-              )
         `;
         const result = await db.query(query, [exam_name, examSem]);
         const studentsToPromote = result.rows;
