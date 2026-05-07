@@ -13,7 +13,9 @@ import {
   ShieldAlert,
   DownloadCloud,
   UploadCloud,
-  ChevronDown
+  ChevronDown,
+  Search,
+  Zap
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import authUtils from '../utils/authUtils';
@@ -207,17 +209,27 @@ const Students = () => {
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row md:items-center gap-4">
-            <TableSearch
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Search by name, ID or affiliation..."
-            />
-            <ColumnVisibilitySelector
-              columns={availableColumns}
-              visibleColumns={visibleColumns}
-              onToggle={toggleColumn}
-            />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate('/university/student-search')}
+                className="hidden xl:inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl transition-all text-[13px] border border-indigo-100 whitespace-nowrap"
+              >
+                <Zap size={16} className="fill-indigo-700/20" />
+                <span>360 Lookup</span>
+              </button>
+
+              <TableSearch
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search..."
+              />
+              
+              <ColumnVisibilitySelector
+                columns={availableColumns}
+                visibleColumns={visibleColumns}
+                onToggle={toggleColumn}
+              />
+            </div>
             {!authUtils.isUniversityAdmin() && (
               <div className="flex gap-2 relative">
                 <div className="relative">
@@ -266,7 +278,6 @@ const Students = () => {
               </div>
             )}
           </div>
-        </div>
 
         {/* Improved Data Table */}
         <div className="overflow-x-auto text-slate-700">
@@ -316,8 +327,7 @@ const Students = () => {
                   onSort={handleSort}
                   visible={visibleColumns.semister}
                 />
-                {/* <th className={`${visibleColumns.status ? '' : 'hidden'} px-8 py-4 text-[12px] font-black  tracking-widest text-slate-400 text-center`}>Status</th>
-                <th className="px-8 py-4 text-[13px] font-black  tracking-widest text-slate-400 text-right">Settings</th> */}
+                <th className="px-8 py-4 text-[11px] font-black tracking-widest text-slate-400 text-right uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -373,26 +383,36 @@ const Students = () => {
                         </div>
                       </td>
                     )}
-                    {!authUtils.isUniversityAdmin() && (
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1">
                           <button
-                            onClick={() => navigate(`/students/edit/${item.id}`)}
+                            onClick={() => navigate(`/university/student-search?admissionNo=${item.admission_no}`)}
                             className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-                            title="Edit Record"
+                            title="View 360 Profile"
                           >
-                            <Pencil size={18} />
+                            <Zap size={18} />
                           </button>
-                          <button
-                            onClick={() => openDeleteModal(item)}
-                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                            title="Remove Record"
-                          >
-                            <MdDelete size={20} />
-                          </button>
+                          
+                          {!authUtils.isUniversityAdmin() && (
+                            <>
+                              <button
+                                onClick={() => navigate(`/students/edit/${item.id}`)}
+                                className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                title="Edit Record"
+                              >
+                                <Pencil size={18} />
+                              </button>
+                              <button
+                                onClick={() => openDeleteModal(item)}
+                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                title="Remove Record"
+                              >
+                                <MdDelete size={20} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
-                    )}
                   </tr>
                 ))
               ) : (

@@ -100,6 +100,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           children: [
             { id: 6, name: 'Faculty', path: '/teachers', icon: <Users size={18} /> },
             { id: 7, name: 'Students', path: '/students', icon: <UserCircle size={18} /> },
+            { id: 31, name: 'Student Search', path: '/university/student-search', icon: <Search size={18} /> },
             { id: 12, name: 'Batches', path: '/batches', icon: <Layers size={18} /> },
             { id: 13, name: 'Subjects', path: '/subjects', icon: <Book size={18} /> },
             { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={18} /> },
@@ -150,7 +151,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             { id: 6, name: 'Semesters', path: '/semesters', icon: <Layers size={18} /> },
             { id: 9, name: 'Faculty', path: '/teachers', icon: <Users size={18} /> },
             { id: 10, name: 'Students', path: '/students', icon: <UserCircle size={18} /> },
-            { id: 31, name: 'Student Search', path: '/university/student-search', icon: <Search size={18} /> },
           ]
         },
         {
@@ -209,7 +209,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           ]
         },
         { id: 4, name: 'Attendance', path: '/faculty/attendance', icon: <Calendar size={20} /> },
-        { id: 31, name: 'Student Search', path: '/university/student-search', icon: <Search size={20} /> },
         { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> }
       ];
       if (isAssignedPaperSetter) {

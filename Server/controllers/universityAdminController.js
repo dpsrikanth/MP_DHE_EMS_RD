@@ -807,7 +807,16 @@ exports.getStudentSearchDetails = async (req, res) => {
         // 2. Fetch Marks History (Safe wrapper)
         try {
             const marksRes = await db.query(`
-                SELECT m.*, sub.name as subject_name, sub.subject_code, sub.credit,
+                WITH calculated_internals AS (
+                    SELECT sim.student_id, ims.subject_id, SUM(sim.marks_obtained) as internal_sum
+                    FROM student_internal_marks sim
+                    JOIN internal_marks_structure ims ON sim.component_id = ims.id
+                    GROUP BY sim.student_id, ims.subject_id
+                )
+                SELECT m.*, 
+                       COALESCE(m.internal_marks, ci.internal_sum, 0) as internal_marks,
+                       (COALESCE(m.internal_marks, ci.internal_sum, 0) + COALESCE(m.external_marks, 0)) as total_marks,
+                       sub.name as subject_name, sub.subject_code, sub.credit,
                        sem.semester_name, 
                        ay.year_name as academic_year,
                        e.name as exam_name
@@ -816,6 +825,7 @@ exports.getStudentSearchDetails = async (req, res) => {
                 JOIN master_semesters sem ON sub.semester_id = sem.id
                 LEFT JOIN master_academic_years ay ON m.academic_year_id = ay.id
                 JOIN exams e ON m.exam_id = e.id
+                LEFT JOIN calculated_internals ci ON m.student_id = ci.student_id AND m.subject_id = ci.subject_id
                 WHERE m.student_id = $1
                 ORDER BY ay.year_name DESC, sem.id DESC, sub.name ASC
             `, [student.id]);
