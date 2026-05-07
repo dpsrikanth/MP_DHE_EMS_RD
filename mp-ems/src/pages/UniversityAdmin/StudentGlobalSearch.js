@@ -259,7 +259,7 @@ const StudentGlobalSearch = () => {
                             </div>
                             
                             <div className="flex items-center gap-3">
-                              {record.payments.length > 0 ? (
+                              {(record.payments.length > 0 || record.marks.length > 0 || record.centers.length > 0) ? (
                                 <div className="flex items-center gap-2 bg-emerald-50 px-4 py-1.5 rounded-xl border border-emerald-100">
                                   <CreditCard size={14} className="text-emerald-500" />
                                   <p className="text-[10px] font-black text-emerald-600 uppercase">PAID</p>
