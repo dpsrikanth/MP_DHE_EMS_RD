@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Search, User, BookOpen, CreditCard, MapPin, 
   ChevronRight, Calendar, GraduationCap, 
@@ -10,21 +11,26 @@ import { universityAdminApi } from "../../api/universityAdminApi";
 import { toast } from "react-toastify";
 
 const StudentGlobalSearch = () => {
+  const location = useLocation();
   const [admissionNo, setAdmissionNo] = useState("");
   const [studentData, setStudentData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSearch = async (e) => {
-    if (e) e.preventDefault();
-    if (!admissionNo.trim()) {
-      toast.error("Please enter an admission number");
-      return;
+  // Auto-load if admissionNo is in URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const urlAdmissionNo = params.get('admissionNo');
+    if (urlAdmissionNo) {
+      setAdmissionNo(urlAdmissionNo);
+      fetchStudentData(urlAdmissionNo);
     }
+  }, [location.search]);
 
+  const fetchStudentData = async (no) => {
     setLoading(true);
     setStudentData(null);
     try {
-      const data = await universityAdminApi.getStudentSearchDetails(admissionNo);
+      const data = await universityAdminApi.getStudentSearchDetails(no);
       setStudentData(data);
     } catch (err) {
       console.error(err);
@@ -32,6 +38,15 @@ const StudentGlobalSearch = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = async (e) => {
+    if (e) e.preventDefault();
+    if (!admissionNo.trim()) {
+      toast.error("Please enter an admission number");
+      return;
+    }
+    fetchStudentData(admissionNo);
   };
 
   const [selectedSemester, setSelectedSemester] = useState("All");

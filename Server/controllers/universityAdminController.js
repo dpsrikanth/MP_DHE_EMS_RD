@@ -914,15 +914,44 @@ exports.getStudentSearchDetails = async (req, res) => {
         // 2. Fetch Marks History (Safe wrapper)
         try {
             const marksRes = await db.query(`
-                WITH calculated_internals AS (
-                    SELECT sim.student_id, ims.subject_id, SUM(sim.marks_obtained) as internal_sum
-                    FROM student_internal_marks sim
-                    JOIN internal_marks_structure ims ON sim.component_id = ims.id
-                    GROUP BY sim.student_id, ims.subject_id
+                WITH target_subjects AS (
+                    SELECT DISTINCT subject_id FROM exams 
+                ),
+                ia_ranked AS (
+                    SELECT 
+                        sim_ia.student_id, 
+                        sim_ia.subject_id, 
+                        sim_ia.marks_obtained::float as marks,
+                        ROW_NUMBER() OVER (PARTITION BY sim_ia.student_id, sim_ia.subject_id ORDER BY sim_ia.marks_obtained::float DESC) as rnk
+                    FROM student_internal_marks sim_ia
+                    JOIN internal_marks_structure ims_ia ON sim_ia.component_id = ims_ia.id
+                    WHERE ims_ia.component_name ILIKE 'IA%'
+                ),
+                ia_summary AS (
+                    SELECT student_id, subject_id, SUM(marks) as ia_total
+                    FROM ia_ranked
+                    WHERE rnk <= 2
+                    GROUP BY student_id, subject_id
+                ),
+                other_summary AS (
+                    SELECT 
+                        sim_o.student_id, 
+                        sim_o.subject_id, 
+                        SUM(sim_o.marks_obtained::float) as other_total
+                    FROM student_internal_marks sim_o
+                    JOIN internal_marks_structure ims_o ON sim_o.component_id = ims_o.id
+                    WHERE ims_o.component_name NOT ILIKE 'IA%' 
+                      AND ims_o.component_name NOT ILIKE 'TOTAL%'
+                    GROUP BY sim_o.student_id, sim_o.subject_id
+                ),
+                raw_internal AS (
+                    SELECT COALESCE(i.student_id, o.student_id) as student_id, COALESCE(i.subject_id, o.subject_id) as subject_id,
+                           (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0)) as total_raw
+                    FROM ia_summary i FULL OUTER JOIN other_summary o ON i.student_id = o.student_id AND i.subject_id = o.subject_id
                 )
                 SELECT m.*, 
-                       COALESCE(m.internal_marks, ci.internal_sum, 0) as internal_marks,
-                       (COALESCE(m.internal_marks, ci.internal_sum, 0) + COALESCE(m.external_marks, 0)) as total_marks,
+                       COALESCE(m.internal_marks, ri.total_raw, 0) as internal_marks,
+                       (COALESCE(m.internal_marks, ri.total_raw, 0) + COALESCE(m.external_marks, 0) + COALESCE(e.moderation_marks, 0) + COALESCE(m.grace_marks, 0)) as total_marks,
                        sub.name as subject_name, sub.subject_code, sub.credit,
                        sem.semester_name, 
                        ay.year_name as academic_year,
@@ -932,7 +961,7 @@ exports.getStudentSearchDetails = async (req, res) => {
                 JOIN master_semesters sem ON sub.semester_id = sem.id
                 LEFT JOIN master_academic_years ay ON m.academic_year_id = ay.id
                 JOIN exams e ON m.exam_id = e.id
-                LEFT JOIN calculated_internals ci ON m.student_id = ci.student_id AND m.subject_id = ci.subject_id
+                LEFT JOIN raw_internal ri ON m.student_id = ri.student_id AND m.subject_id = ri.subject_id
                 WHERE m.student_id = $1
                 ORDER BY ay.year_name DESC, sem.id DESC, sub.name ASC
             `, [student.id]);
