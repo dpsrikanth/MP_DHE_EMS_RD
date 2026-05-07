@@ -66,8 +66,16 @@ const ExamScheduling = () => {
 
             setRounds(roundsData);
             setPrograms(programsData);
-            setSemesters(semestersData);
-            setAcademicYears(yearsData);
+            setSemesters(semestersData.sort((a, b) => {
+                const numA = parseInt(a.semester_name.replace(/\D/g, '')) || 0;
+                const numB = parseInt(b.semester_name.replace(/\D/g, '')) || 0;
+                return numA - numB;
+            }));
+            setAcademicYears(yearsData.sort((a, b) => {
+                const yearA = a.start_year || parseInt(a.year_name?.split('-')[0]) || 0;
+                const yearB = b.start_year || parseInt(b.year_name?.split('-')[0]) || 0;
+                return yearB - yearA; // Latest first
+            }));
 
             // Default to B.Tech if it exists
             const btech = programsData.find(p =>
@@ -485,12 +493,12 @@ const ExamScheduling = () => {
                         <div className="h-10 w-px bg-slate-200 hidden md:block" />
 
                         <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-/10 flex items-center justify-center text-indigo-">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-600">
                                 <Calendar size={20} />
                             </div>
                             <div>
                                 <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">Exam Round Dates</p>
-                                <p className="text-sm font-black text-indigo- leading-none italic">
+                                <p className="text-sm font-black text-indigo-600 leading-none italic">
                                     {formatDate(active.start)} - {formatDate(active.end)}
                                 </p>
                             </div>
@@ -499,12 +507,12 @@ const ExamScheduling = () => {
                         <div className="h-10 w-px bg-slate-200 hidden md:block" />
 
                         <div className="flex items-center gap-4 animate-in slide-in-from-right duration-500">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-/10 flex items-center justify-center text-indigo-">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-600">
                                 <Clock size={20} />
                             </div>
                             <div>
-                                <p className="text-[12px] font-black text-indigo-  tracking-widest leading-none mb-1 text-left">Scheduling Window</p>
-                                <p className="text-sm font-black text-indigo- leading-none italic text-left">
+                                <p className="text-[12px] font-black text-indigo-600  tracking-widest leading-none mb-1 text-left">Scheduling Window</p>
+                                <p className="text-sm font-black text-indigo-600 leading-none italic text-left">
                                     {scheduleWindow ? `${formatDate(scheduleWindow.startFull, true)} to ${formatDate(scheduleWindow.endFull, true)}` : 'Open / No Deadline'}
                                 </p>
                             </div>
@@ -551,7 +559,7 @@ const ExamScheduling = () => {
                                                             onChange={(e) => handleScheduleChange(sub.id, 'exam_date', e.target.value)}
                                                         />
                                                         {isValidationEnabled && scheduleWindow && (
-                                                            <div className="text-[9px] text-indigo- mt-1 font-bold italic flex items-center gap-1">
+                                                            <div className="text-[9px] text-indigo-600 mt-1 font-bold italic flex items-center gap-1">
                                                                 <Clock size={10} />
                                                                 Deadline: {formatDate(scheduleWindow.endFull)}
                                                             </div>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Calendar as CalendarIcon, 
   ChevronLeft, 
@@ -169,7 +169,7 @@ const InternalCalendar = () => {
             <CalendarIcon size={32} />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight italic">Academic<span className="text-indigo- not-italic ml-2">Calendar</span></h1>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight italic">Academic<span className="text-indigo-600 not-italic ml-2">Calendar</span></h1>
             <p className="text-sm text-slate-500 font-medium tracking-tight">Institutional Roadmap & Exam Schedules</p>
           </div>
         </div>
@@ -180,7 +180,7 @@ const InternalCalendar = () => {
           </button>
           <div className="px-6 text-center min-w-[200px]">
             <span className="text-lg font-black text-slate-800  tracking-widest">{monthNames[currentDate.getMonth()]}</span>
-            <span className="text-lg font-bold text-indigo- ml-2">{currentDate.getFullYear()}</span>
+            <span className="text-lg font-bold text-indigo-600 ml-2">{currentDate.getFullYear()}</span>
           </div>
           <button onClick={nextMonth} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-indigo-500">
             <ChevronRight size={24} />
@@ -206,17 +206,17 @@ const InternalCalendar = () => {
                   key={idx}
                   onClick={() => handleDayClick(day)}
                   className={`min-h-[140px] p-2 border-r border-b border-slate-100 transition-all cursor-pointer group relative overflow-y-hidden
-                    ${!day.currentMonth ? 'bg-slate-50/30' : 'bg-white hover:bg-indigo-/30'}
-                    ${day.isToday ? 'bg-indigo-/50' : ''}`}
+                    ${!day.currentMonth ? 'bg-slate-50/30' : 'bg-white hover:bg-indigo-50/30'}
+                    ${day.isToday ? 'bg-indigo-50/50' : ''}`}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <span className={`text-sm font-black w-8 h-8 flex items-center justify-center rounded-xl transition-colors
                       ${!day.currentMonth ? 'text-slate-200' : 'text-slate-600 group-hover:text-indigo-600'}
-                      ${day.isToday ? 'bg-indigo- text-white shadow-lg -indigo-/30' : ''}`}>
+                      ${day.isToday ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : ''}`}>
                       {day.day}
                     </span>
                     {(day.exams?.length > 0 || day.internalExams?.length > 0 || day.milestones?.length > 0) && (
-                       <span className="w-2 h-2 rounded-full bg-indigo- animate-pulse mt-3 mr-2" />
+                       <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse mt-3 mr-2" />
                     )}
                   </div>
 
@@ -224,8 +224,8 @@ const InternalCalendar = () => {
                     {/* Render Milestones as bars */}
                     {day.milestones && day.milestones.slice(0, 2).map((m, mIdx) => (
                       <div key={mIdx} className={`px-2 py-0.5 rounded-lg text-[8px] font-black  truncate border 
-                        ${m.type === 'Internal' ? 'bg-indigo- text-white border-indigo-' : 
-                          m.type === 'External' ? 'bg-indigo- text-white border-indigo-' : 
+                        ${m.type === 'Internal' ? 'bg-indigo-600 text-white border-indigo-600' : 
+                          m.type === 'External' ? 'bg-indigo-600 text-white border-indigo-600' : 
                           'bg-indigo-600 text-white border-indigo-700'}`}>
                         {m.name}
                       </div>
@@ -262,7 +262,7 @@ const InternalCalendar = () => {
           {selectedDayEvents ? (
             <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl p-6 animate-in slide-in-from-right-8 duration-500 bg-gradient-to-br from-white to-sky-50/30">
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 bg-indigo- rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
                   <Info size={24} />
                 </div>
                 <div>
@@ -280,8 +280,8 @@ const InternalCalendar = () => {
                       <div key={idx} className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-indigo-200 transition-all group">
                         <div className="flex items-center justify-between mb-2">
                            <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border 
-                             ${m.type === 'Internal' ? 'bg-indigo- text-indigo- border-sky-100' : 
-                               m.type === 'External' ? 'bg-indigo- text-indigo- border-amber-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'} `}>
+                             ${m.type === 'Internal' ? 'bg-indigo-600/10 text-indigo-600 border-indigo-100' : 
+                               m.type === 'External' ? 'bg-indigo-600/10 text-indigo-600 border-amber-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'} `}>
                              {m.type}
                            </span>
                            <Flag size={14} className="text-slate-300" />
@@ -361,7 +361,7 @@ const InternalCalendar = () => {
             </div>
           ) : (
             <div className="bg-indigo-600 rounded-2xl p-6 text-white relative overflow-hidden shadow-2xl shadow-indigo-600/20 group">
-              <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-/20 rounded-full blur-3xl opacity-50 transition-opacity group-hover:opacity-100" />
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl opacity-50 transition-opacity group-hover:opacity-100" />
               
               <div className="relative z-10">
                 <Globe className="text-indigo-400 mb-4" size={28} />
@@ -384,7 +384,7 @@ const InternalCalendar = () => {
                   {authUtils.isUniversityAdmin() && (
                     <button 
                       onClick={() => navigate('/milestones')}
-                      className="w-full mt-4 flex items-center justify-center gap-2 py-4 bg-indigo- hover:bg-sky-400 text-white rounded-2xl transition-all font-black text-[13px]  tracking-widest shadow-xl shadow-indigo-500/20"
+                      className="w-full mt-4 flex items-center justify-center gap-2 py-4 bg-indigo-600 hover:bg-sky-400 text-white rounded-2xl transition-all font-black text-[13px]  tracking-widest shadow-xl shadow-indigo-500/20"
                     >
                       <Plus size={18} />
                       Manage Roadmap
@@ -405,11 +405,11 @@ const InternalCalendar = () => {
                   <span className="text-slate-600">General Milestone</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-indigo- rounded-full" />
+                  <div className="w-3 h-3 bg-indigo-600/50 rounded-full" />
                   <span className="text-slate-600">Internal Process</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-indigo- rounded-full" />
+                  <div className="w-3 h-3 bg-indigo-600/30 rounded-full" />
                   <span className="text-slate-600">External Timeline</span>
                 </div>
                 <div className="flex items-center gap-3">

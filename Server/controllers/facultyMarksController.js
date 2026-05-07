@@ -9,7 +9,13 @@ exports.getAssignedSubjects = async (req, res) => {
         const query = `
             SELECT fs.*, ms.name as subject_name, ms.subject_code, 
                    COALESCE(pps.program_id, ims.program_id) as program_id, 
-                   sem.semester_name 
+                   sem.semester_name,
+                   EXISTS (
+                       SELECT 1 FROM internal_exam_schedules ies
+                       WHERE ies.subject_id = fs.subject_id
+                         AND ies.semester_id = fs.semester_id
+                         AND ies.college_id = fs.college_id
+                   ) AS has_schedule
             FROM faculty_subjects fs
             JOIN master_subjects ms ON fs.subject_id = ms.id
             JOIN master_semesters sem ON fs.semester_id = sem.id

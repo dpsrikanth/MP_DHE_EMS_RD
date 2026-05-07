@@ -382,7 +382,7 @@ const UniversityMarksView = () => {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="stitch-card p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-indigo- rounded-xl flex items-center justify-center text-indigo- transition-transform group-hover:scale-110"><Users size={20} /></div>
+              <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 transition-transform group-hover:scale-110"><Users size={20} /></div>
               <p className="text-[9px] font-black text-slate-400  tracking-widest">Students</p>
             </div>
             <p className="text-3xl font-black text-slate-900 tracking-tight">{summary.totalStudents}</p>
@@ -404,7 +404,7 @@ const UniversityMarksView = () => {
           </div>
           <div className="stitch-card p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-indigo- rounded-xl flex items-center justify-center text-indigo-"><TrendingUp size={20} /></div>
+              <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600"><TrendingUp size={20} /></div>
               <p className="text-[9px] font-black text-slate-400  tracking-widest">Avg Marks</p>
             </div>
             <p className="text-3xl font-black text-slate-900 tracking-tight">{summary.avgMarks}</p>

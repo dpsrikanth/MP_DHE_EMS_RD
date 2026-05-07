@@ -27,7 +27,9 @@ const FacultyDashboard = () => {
 
             // 1. Fetch Assigned Subjects
             const subjects = await facultyApi.getAssignedSubjects(teacherId);
-            setAssignedSubjects(subjects || []);
+            // Only show subjects that have an internal exam scheduled
+            const scheduled = (subjects || []).filter(s => s.has_schedule === true);
+            setAssignedSubjects(scheduled);
 
             // 2. Fetch Workflow Status for overall tracking
             if (subjects && subjects.length > 0) {
@@ -64,7 +66,7 @@ const FacultyDashboard = () => {
     const getStatusConfig = (subjectId, section) => {
         const status = workflowStatus[`${subjectId}_${section}`] || 'Pending';
         switch (status) {
-            case 'Submitted': return { color: 'text-indigo-', bg: 'bg-indigo-', border: 'border-indigo-', icon: Clock, label: 'Submitted' };
+            case 'Submitted': return { color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', icon: Clock, label: 'Submitted' };
             case 'Locked': return { color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', icon: CheckCircle, label: 'Locked' };
             default: return { color: 'text-slate-500', bg: 'bg-slate-50', border: 'border-slate-200', icon: ShieldAlert, label: 'Pending' };
         }

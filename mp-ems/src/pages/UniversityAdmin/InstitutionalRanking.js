@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, Star, Percent, BarChart3, Search } from 'lucide-react';
 import { universityAdminApi } from '../../api/universityAdminApi';
 
@@ -33,7 +33,7 @@ const InstitutionalRanking = () => {
       <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <Trophy className="text-indigo-" /> Institutional Rankings
+            <Trophy className="text-indigo-600" /> Institutional Rankings
           </h1>
           <p className="text-slate-500">Comparative Analysis of College Passing Percentages</p>
         </div>
@@ -75,7 +75,7 @@ const InstitutionalRanking = () => {
                     <div className="flex items-center justify-center">
                       {rank === 1 ? <Medal className="text-indigo-400" /> : 
                        rank === 2 ? <Medal className="text-slate-300" /> : 
-                       rank === 3 ? <Medal className="text-indigo-" /> : 
+                       rank === 3 ? <Medal className="text-orange-400" /> : 
                        <span className="font-bold text-slate-400">#{rank}</span>}
                     </div>
                   </td>
@@ -92,8 +92,8 @@ const InstitutionalRanking = () => {
                         <div 
                           className={`h-full rounded-full transition-all duration-1000 ${
                             item.pass_percentage >= 75 ? 'bg-emerald-500' :
-                            item.pass_percentage >= 50 ? 'bg-indigo-' :
-                            'bg-indigo-'
+                             item.pass_percentage >= 50 ? 'bg-indigo-500' :
+                            'bg-indigo-400'
                           }`}
                           style={{ width: `${item.pass_percentage || 0}%` }}
                         />
@@ -119,27 +119,27 @@ const InstitutionalRanking = () => {
           </div>
         </div>
 
-        <div className="bg-indigo- p-6 rounded-2xl border border-blue-100 flex items-start gap-4">
-          <div className="p-3 bg-indigo- rounded-xl text-indigo-">
+        <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-100 flex items-start gap-4">
+          <div className="p-3 bg-indigo-100 rounded-xl text-indigo-600">
             <BarChart3 size={24} />
           </div>
           <div>
-            <h4 className="text-blue-800 font-bold">Average Efficiency</h4>
-            <p className="text-indigo- text-[13px] mt-1">Institutions with Pass Rate 50-75%</p>
-            <div className="text-2xl font-black text-blue-800 mt-2">
+            <h4 className="text-indigo-800 font-bold">Average Efficiency</h4>
+            <p className="text-indigo-600 text-[13px] mt-1">Institutions with Pass Rate 50-75%</p>
+            <div className="text-2xl font-black text-indigo-800 mt-2">
               {ranking.filter(r => r.pass_percentage >= 50 && r.pass_percentage < 75).length}
             </div>
           </div>
         </div>
 
-        <div className="bg-indigo- p-6 rounded-2xl border border-amber-100 flex items-start gap-4">
-          <div className="p-3 bg-indigo- rounded-xl text-indigo-">
+        <div className="bg-rose-50 p-6 rounded-2xl border border-rose-100 flex items-start gap-4">
+          <div className="p-3 bg-rose-100 rounded-xl text-rose-600">
             <Percent size={24} />
           </div>
           <div>
-            <h4 className="text-amber-800 font-bold">Needs Support</h4>
-            <p className="text-indigo- text-[13px] mt-1">Institutions with Pass Rate {'<'} 50%</p>
-            <div className="text-2xl font-black text-amber-800 mt-2">
+            <h4 className="text-rose-800 font-bold">Needs Support</h4>
+            <p className="text-rose-600 text-[13px] mt-1">Institutions with Pass Rate {'<'} 50%</p>
+            <div className="text-2xl font-black text-rose-800 mt-2">
               {ranking.filter(r => r.pass_percentage < 50).length}
             </div>
           </div>

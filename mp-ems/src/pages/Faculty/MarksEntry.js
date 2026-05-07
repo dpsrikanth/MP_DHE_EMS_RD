@@ -53,7 +53,8 @@ const MarksEntry = () => {
             const userStr = localStorage.getItem('user');
             const teacherId = userStr ? JSON.parse(userStr).teacher_id : 1;
             const data = await facultyApi.getAssignedSubjects(teacherId);
-            setAssignedSubjects(data || []);
+            // Only show subjects that have an internal exam scheduled
+            setAssignedSubjects((data || []).filter(s => s.has_schedule === true));
         } catch (err) {
             toast.error('Failed to load assigned subjects');
         } finally {

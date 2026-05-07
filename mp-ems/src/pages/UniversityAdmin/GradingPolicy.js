@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
     ShieldCheck, Save, Plus, Trash2, Info,
     Settings, BarChart3, ChevronRight, AlertTriangle
@@ -169,7 +169,7 @@ const GradingPolicy = () => {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-/20">
+                    <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-600/20">
                         <ShieldCheck size={32} />
                     </div>
                     <div>
@@ -219,7 +219,7 @@ const GradingPolicy = () => {
                             </h3>
                             <button
                                 onClick={handleAddRow}
-                                className="inline-flex items-center gap-2 text-[13px] font-black text-indigo- bg-indigo- hover:bg-indigo- px-4 py-2 rounded-xl transition-colors border border-sky-100"
+                                className="inline-flex items-center gap-2 text-[13px] font-black text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-xl transition-colors border border-sky-100"
                             >
                                 <Plus size={14} />
                                 Add Grade
@@ -296,7 +296,7 @@ const GradingPolicy = () => {
                                         type="number"
                                         value={config.pass_threshold}
                                         onChange={(e) => setConfig({ ...config, pass_threshold: Number(e.target.value) })}
-                                        className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl px-5 text-lg font-black text-indigo- outline-none focus:bg-white focus:border-indigo-500 transition-all font-mono"
+                                        className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl px-5 text-lg font-black text-indigo-600 outline-none focus:bg-white focus:border-indigo-500 transition-all font-mono"
                                     />
                                     <div className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-black">PERCENT</div>
                                 </div>
@@ -312,15 +312,15 @@ const GradingPolicy = () => {
                                 </div>
                                 <button
                                     onClick={() => setConfig({ ...config, calculate_sgpa_on_earned_only: !config.calculate_sgpa_on_earned_only })}
-                                    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${config.calculate_sgpa_on_earned_only ? 'bg-indigo-' : 'bg-slate-200'}`}
+                                    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${config.calculate_sgpa_on_earned_only ? 'bg-indigo-600' : 'bg-slate-200'}`}
                                 >
                                     <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${config.calculate_sgpa_on_earned_only ? 'translate-x-5' : 'translate-x-0'}`} />
                                 </button>
                             </div>
                         </div>
                         
-                        <div className="bg-indigo- rounded-2xl p-5 border border-amber-100 flex gap-4">
-                            <AlertTriangle size={24} className="text-indigo- shrink-0" />
+                        <div className="bg-amber-50 rounded-2xl p-5 border border-amber-100 flex gap-4">
+                            <AlertTriangle size={24} className="text-amber-600 shrink-0" />
                             <div className="space-y-1">
                                 <p className="text-[13px] font-black text-amber-900  tracking-tight">Important Notice</p>
                                 <p className="text-[12px] font-bold text-amber-700 leading-relaxed tracking-tight ">
@@ -337,13 +337,13 @@ const GradingPolicy = () => {
                         </div>
                         <div className="space-y-4">
                             <div className="flex gap-4 group">
-                                <div className="w-8 h-8 rounded-full bg-sky-800 flex items-center justify-center text-[13px] font-black text-indigo-400 group-hover:bg-indigo- group-hover:text-white transition-colors">1</div>
+                                <div className="w-8 h-8 rounded-full bg-sky-800 flex items-center justify-center text-[13px] font-black text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">1</div>
                                 <p className="text-[12px] font-medium leading-relaxed opacity-80 flex-1">
                                     Grades are assigned by checking which range the student's marks fall into, starting from highest to lowest threshold.
                                 </p>
                             </div>
                             <div className="flex gap-4 group">
-                                <div className="w-8 h-8 rounded-full bg-sky-800 flex items-center justify-center text-[13px] font-black text-indigo-400 group-hover:bg-indigo- group-hover:text-white transition-colors">2</div>
+                                <div className="w-8 h-8 rounded-full bg-sky-800 flex items-center justify-center text-[13px] font-black text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">2</div>
                                 <p className="text-[12px] font-medium leading-relaxed opacity-80 flex-1">
                                     Grade points are used in the calculation of SGPA: Total (Points × Credits) / Total Credits.
                                 </p>

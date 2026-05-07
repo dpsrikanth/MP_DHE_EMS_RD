@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { Building2, Save, Pencil, Trash2, X, Search, Layers, Users, SendHorizontal, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { Doughnut } from 'react-chartjs-2';
@@ -244,7 +244,7 @@ const ExaminationHalls = () => {
 
     const getStatusIcon = (status) => {
         switch (status) {
-            case 'Pending': return <Clock size={14} className="text-indigo- animate-pulse" />;
+            case 'Pending': return <Clock size={14} className="text-indigo-600 animate-pulse" />;
             case 'Approved': return <CheckCircle2 size={14} className="text-emerald-500" />;
             case 'Rejected': return <XCircle size={14} className="text-rose-500" />;
             default: return <Pencil size={14} className="text-slate-400" />;
@@ -253,7 +253,7 @@ const ExaminationHalls = () => {
 
     const getStatusClasses = (status) => {
         switch (status) {
-            case 'Pending': return 'bg-indigo- text-amber-700 border-indigo-';
+            case 'Pending': return 'bg-indigo-50 text-indigo-700 border-indigo-100';
             case 'Approved': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
             case 'Rejected': return 'bg-rose-100 text-rose-700 border-rose-200';
             default: return 'bg-slate-100 text-slate-700 border-slate-200';
@@ -408,23 +408,23 @@ const ExaminationHalls = () => {
 
                 <div className={`p-6 rounded-[2rem] border shadow-sm flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md ${approvedCapacity < totalLoad
                         ? 'bg-rose-50 border-rose-100'
-                        : 'bg-white border-blue-100'
+                        : 'bg-indigo-50 border-indigo-100'
                     }`}>
-                    <div className={`absolute top-0 right-0 w-32 h-32 rounded-full translate-x-16 -translate-y-16 pointer-events-none ${approvedCapacity < totalLoad ? 'bg-rose-100/50' : 'bg-indigo-'
+                    <div className={`absolute top-0 right-0 w-32 h-32 rounded-full translate-x-16 -translate-y-16 pointer-events-none ${approvedCapacity < totalLoad ? 'bg-rose-100/50' : 'bg-indigo-100/50'
                         }`} />
                     <div className="flex items-center justify-between mb-4 relative z-10">
-                        <span className={`text-[12px] font-black  tracking-widest ${approvedCapacity < totalLoad ? 'text-rose-600' : 'text-indigo-'
+                        <span className={`text-[12px] font-black  tracking-widest ${approvedCapacity < totalLoad ? 'text-rose-600' : 'text-indigo-600'
                             }`}>
                             {approvedCapacity < totalLoad ? 'Shortage' : 'Surplus Capacity'}
                         </span>
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${approvedCapacity < totalLoad ? 'bg-rose-100 text-rose-500' : 'bg-indigo- text-indigo-'
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${approvedCapacity < totalLoad ? 'bg-rose-100 text-rose-500' : 'bg-indigo-100 text-indigo-600'
                             }`}>
                             {approvedCapacity < totalLoad ? <XCircle size={18} /> : <CheckCircle2 size={18} />}
                         </div>
                     </div>
                     <div className="relative z-10 flex items-center justify-between w-full">
                         <div className="flex items-baseline gap-1">
-                            <span className={`text-4xl font-black ${approvedCapacity < totalLoad ? 'text-rose-700' : 'text-indigo-'
+                            <span className={`text-4xl font-black ${approvedCapacity < totalLoad ? 'text-rose-700' : 'text-indigo-600'
                                 }`}>
                                 {Math.abs(totalLoad - approvedCapacity)}
                             </span>
@@ -445,7 +445,7 @@ const ExaminationHalls = () => {
                             }
                             if (pendingReport) {
                                 return (
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo- text-indigo- border border-indigo- rounded-xl text-[12px] font-black  tracking-widest animate-pulse">
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl text-[12px] font-black  tracking-widest animate-pulse">
                                         <Clock size={12} />
                                         Reported · Awaiting
                                     </span>
@@ -465,19 +465,19 @@ const ExaminationHalls = () => {
                 </div>
 
                 <div className="bg-white p-6 rounded-[2rem] border border-amber-100 shadow-sm flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo- rounded-full translate-x-16 -translate-y-16 pointer-events-none" />
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full translate-x-16 -translate-y-16 pointer-events-none" />
                     <div className="flex items-center justify-between mb-4 relative z-10">
-                        <span className="text-[12px] font-black text-indigo-/70  tracking-widest">Awaiting Verification</span>
-                        <div className="w-10 h-10 rounded-xl bg-indigo- flex items-center justify-center text-indigo- transition-colors">
+                        <span className="text-[12px] font-black text-indigo-600/70  tracking-widest">Awaiting Verification</span>
+                        <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 transition-colors">
                             <Clock size={18} />
                         </div>
                     </div>
                     <div className="relative z-10 space-y-1">
-                        <span className="text-4xl font-black text-indigo-">
+                        <span className="text-4xl font-black text-indigo-600">
                             {pendingCapacity + shortageRequests.filter(r => r.status === 'Pending').length}
                         </span>
                         {shortageRequests.some(r => r.status === 'Pending') && (
-                            <p className="text-[12px] font-bold text-indigo-  tracking-widest">
+                            <p className="text-[12px] font-bold text-indigo-400  tracking-widest">
                                 Incl. shortage report pending
                             </p>
                         )}
@@ -496,8 +496,8 @@ const ExaminationHalls = () => {
                 </div>
                 {totalRooms < 1 && (
                     <div className="absolute inset-0 bg-slate-50/60 backdrop-blur-[2px] z-20 flex items-center justify-center p-6">
-                        <div className="bg-white border border-indigo- rounded-2xl p-4 shadow-xl max-w-sm flex items-start gap-4">
-                            <div className="w-10 h-10 bg-indigo- text-indigo- rounded-full flex-shrink-0 flex items-center justify-center">
+                        <div className="bg-white border border-indigo-100 rounded-2xl p-4 shadow-xl max-w-sm flex items-start gap-4">
+                            <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex-shrink-0 flex items-center justify-center">
                                 <Clock size={20} className="animate-pulse" />
                             </div>
                             <div>
@@ -521,8 +521,8 @@ const ExaminationHalls = () => {
                         );
                     })()}
                     {!newHall.exam_id && (
-                        <div className="flex items-center gap-3 px-4 py-3 bg-indigo- border border-amber-100 rounded-xl">
-                            <span className="text-[12px] font-black text-indigo-  tracking-widest">⚠ Select an Active Exam Context from the top-right dropdown first.</span>
+                        <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-100 rounded-xl">
+                            <span className="text-[12px] font-black text-amber-600  tracking-widest">⚠ Select an Active Exam Context from the top-right dropdown first.</span>
                         </div>
                     )}
                     {/* Inline fields row */}

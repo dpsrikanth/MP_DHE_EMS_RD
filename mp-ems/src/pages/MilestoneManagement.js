@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from 'react-toastify';
 import { useNavigate } from "react-router-dom";
 import { 
@@ -119,9 +119,17 @@ const MilestoneManagement = () => {
       ]);
 
       setMetadata({
-        academicYears: years,
+        academicYears: years.sort((a, b) => {
+          const yearA = a.start_year || parseInt(a.year_name?.split('-')[0]) || 0;
+          const yearB = b.start_year || parseInt(b.year_name?.split('-')[0]) || 0;
+          return yearB - yearA; // Latest first
+        }),
         programs: programs,
-        semesters: semesters
+        semesters: semesters.sort((a, b) => {
+          const numA = parseInt(a.semester_name.replace(/\D/g, '')) || 0;
+          const numB = parseInt(b.semester_name.replace(/\D/g, '')) || 0;
+          return numA - numB;
+        })
       });
     } catch (err) {
       console.error("Metadata fetch error:", err);
@@ -334,8 +342,8 @@ const MilestoneManagement = () => {
                       <span className="text-sm font-black text-slate-900  tracking-tight">{item.name}</span>
                       <div className="flex flex-wrap gap-1.5 items-center mt-1">
                         <span className={`text-[9px] font-black w-fit px-2 py-0.5 rounded-md border 
-                          ${item.type === 'Internal' ? 'bg-indigo- text-indigo- border-sky-100' : 
-                            item.type === 'External' ? 'bg-indigo- text-indigo- border-amber-100' : 'bg-slate-50 text-slate-500 border-slate-200'} `}>
+                          ${item.type === 'Internal' ? 'bg-indigo-600/10 text-indigo-600 border-indigo-100' : 
+                            item.type === 'External' ? 'bg-amber-600/10 text-amber-600 border-amber-100' : 'bg-slate-50 text-slate-500 border-slate-200'} `}>
                           {item.type}
                         </span>
                         
@@ -351,7 +359,7 @@ const MilestoneManagement = () => {
                           </span>
                         )}
                         {resolveMetadataName('semesters', item.semester_id) && (
-                          <span className="text-[9px] font-black bg-indigo- text-indigo- border border-purple-100 px-2 py-0.5 rounded-md ">
+                          <span className="text-[9px] font-black bg-indigo-600/10 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-md ">
                             {resolveMetadataName('semesters', item.semester_id)}
                           </span>
                         )}

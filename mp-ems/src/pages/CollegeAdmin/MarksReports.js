@@ -20,12 +20,17 @@ const MarksReports = () => {
     const fetchMetadata = async () => {
         try {
             const data = await masterDataApi.getMasters();
-            setSemesters((data.semesters || []).map(s => ({ value: s.id, label: s.semester_name })));
+            setSemesters((data.semesters || []).sort((a, b) => {
+                const numA = parseInt(a.semester_name.replace(/\D/g, '')) || 0;
+                const numB = parseInt(b.semester_name.replace(/\D/g, '')) || 0;
+                return numA - numB;
+            }).map(s => ({ value: s.id, label: s.semester_name })));
             setSubjects((data.subjects || []).map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}`, semester_id: s.semester_id })));
         } catch (err) {
             toast.error("Failed to load metadata for filters");
         }
     };
+
 
     const fetchReport = async () => {
         if (!selectedSemester) {

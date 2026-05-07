@@ -38,8 +38,16 @@ const FacultyAssignment = () => {
             setLoading(true);
             const data = await masterDataApi.getMasters();
             setSubjects(data.subjects || []);
-            setSemesters(data.semesters || []);
-            setAcademicYears(data.academicYears || []);
+            setSemesters((data.semesters || []).sort((a, b) => {
+                const numA = parseInt(a.semester_name.replace(/\D/g, '')) || 0;
+                const numB = parseInt(b.semester_name.replace(/\D/g, '')) || 0;
+                return numA - numB;
+            }));
+            setAcademicYears((data.academicYears || []).sort((a, b) => {
+                const yearA = a.start_year || parseInt(a.year_name?.split('-')[0]) || 0;
+                const yearB = b.start_year || parseInt(b.year_name?.split('-')[0]) || 0;
+                return yearB - yearA; // Latest first
+            }));
 
             // Fetch Teachers
             const teacherData = await masterDataApi.getTeachers();

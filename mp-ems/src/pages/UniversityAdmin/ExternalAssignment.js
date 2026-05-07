@@ -180,7 +180,7 @@ const ExternalAssignment = () => {
                       {faculties.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                     </select>
                   </div>
-                  <div className="bg-indigo- rounded-2xl p-4 border border-amber-100 flex gap-3 text-amber-700">
+                  <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 flex gap-3 text-amber-700">
                     <Info size={18} className="shrink-0" />
                     <p className="text-[12px] font-bold leading-relaxed tracking-tight">
                       Selected faculty will evaluate ALL subjects for all {selectedExams.reduce((acc, id) => acc + (pendingExams.find(e => e.exam_id === id)?.student_count || 0), 0)} registered students across the selected exams.

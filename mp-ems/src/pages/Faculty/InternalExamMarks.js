@@ -67,10 +67,22 @@ const InternalExamMarks = () => {
                 facultyApi.getInternalSchedules()
             ]);
 
-            if (years) setAcademicYears(years);
-            if (sems) setSemesters(sems);
+            if (years) {
+                setAcademicYears(years.sort((a, b) => {
+                    const yearA = a.start_year || parseInt(a.year_name?.split('-')[0]) || 0;
+                    const yearB = b.start_year || parseInt(b.year_name?.split('-')[0]) || 0;
+                    return yearB - yearA; // Latest first
+                }));
+            }
+            if (sems) {
+                setSemesters(sems.sort((a, b) => {
+                    const numA = parseInt(a.semester_name.replace(/\D/g, '')) || 0;
+                    const numB = parseInt(b.semester_name.replace(/\D/g, '')) || 0;
+                    return numA - numB;
+                }));
+            }
             if (roundsData) setRounds(roundsData);
-            if (subjects) setAssignedSubjects(subjects);
+            if (subjects) setAssignedSubjects((subjects || []).filter(s => s.has_schedule === true));
             if (schedulesData) setSchedules(schedulesData);
 
         } catch (err) {
@@ -375,10 +387,10 @@ const InternalExamMarks = () => {
                                 </h2>
                                 <span className={`px-3 py-1 rounded-full text-[12px] font-black  tracking-widest shadow-sm
                                     ${workflowStatus === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 
-                                      workflowStatus === 'Submitted' ? 'bg-indigo- text-blue-700' :
+                                      workflowStatus === 'Submitted' ? 'bg-indigo-100 text-indigo-700' :
                                       workflowStatus === 'Locked' ? 'bg-slate-200 text-slate-700' :
                                       workflowStatus === 'Rejected' ? 'bg-red-100 text-red-700' :
-                                      'bg-indigo- text-amber-700'}
+                                      'bg-amber-100 text-amber-700'}
                                 `}>
                                     {workflowStatus}
                                 </span>

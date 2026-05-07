@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Users, 
   School, 
@@ -98,7 +98,7 @@ const ViewStudentsAndUniversities = () => {
             <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
               <TrendingUp size={24} />
             </div>
-            <span className="text-[12px] font-black text-indigo- bg-indigo- px-2 py-1 rounded-lg  tracking-wider">Growth</span>
+            <span className="text-[12px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg  tracking-wider">Growth</span>
           </div>
           <p className="text-slate-500 text-sm font-bold  tracking-widest mb-1">Ecosystem Pulse</p>
           <div className="flex items-end gap-2">
@@ -122,7 +122,7 @@ const ViewStudentsAndUniversities = () => {
               </button>
               <button 
                 onClick={() => setViewMode("students")}
-                className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${viewMode === "students" ? 'bg-indigo- text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${viewMode === "students" ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-indigo-600 hover:bg-indigo-50'}`}
               >
                 Students Only
               </button>
@@ -136,13 +136,13 @@ const ViewStudentsAndUniversities = () => {
           </div>
 
           <div className="relative w-full lg:w-96 group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo- transition-colors" size={18} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={18} />
             <input 
               type="text" 
               placeholder="Filter by name or ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-12 pr-6 text-slate-700 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:-indigo-/5 outline-none transition-all font-semibold"
+              className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-12 pr-6 text-slate-700 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-600/5 outline-none transition-all font-semibold"
             />
           </div>
         </div>
@@ -158,11 +158,11 @@ const ViewStudentsAndUniversities = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {/* Render Students if mode allows */}
               {(viewMode === "all" || viewMode === "students") && filteredStudents.map((student) => (
-                <div key={`student-${student.id}`} className="group relative bg-white border-2 border-slate-50 rounded-[2rem] p-6 hover:border-indigo-/30 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300">
-                  <div className="absolute top-4 right-4 text-indigo- opacity-20 group-hover:opacity-100 transition-opacity">
+                <div key={`student-${student.id}`} className="group relative bg-white border-2 border-slate-50 rounded-[2rem] p-6 hover:border-indigo-600/30 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300">
+                  <div className="absolute top-4 right-4 text-indigo-600 opacity-20 group-hover:opacity-100 transition-opacity">
                     <UserCheck size={20} />
                   </div>
-                  <div className="w-16 h-16 bg-indigo- rounded-2xl flex items-center justify-center text-indigo- mb-6 group-hover:bg-indigo- group-hover:text-white transition-all duration-300">
+                  <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
                     <Users size={28} />
                   </div>
                   <h4 className="text-xl font-black text-slate-900 mb-2 truncate group-hover:text-indigo-600 transition-colors  tracking-tight">{student.student_name}</h4>
@@ -170,7 +170,7 @@ const ViewStudentsAndUniversities = () => {
                     <span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
                     Student ID: <span className="text-slate-600">{student.student_id || student.id}</span>
                   </p>
-                  <button className="w-full flex items-center justify-center gap-2 py-3 bg-slate-50 text-slate-900 rounded-xl font-black text-[13px]  tracking-widest group-hover:bg-indigo- group-hover:text-white transition-all">
+                  <button className="w-full flex items-center justify-center gap-2 py-3 bg-slate-50 text-slate-900 rounded-xl font-black text-[13px]  tracking-widest group-hover:bg-indigo-600 group-hover:text-white transition-all">
                     View Portfolio
                     <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
                   </button>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
@@ -454,7 +454,7 @@ const Teachers = () => {
             }}
             className={`px-5 py-2 rounded-xl font-bold text-sm transition-all ${
               staffType === 'Teaching'
-                ? 'bg-indigo- text-white shadow-lg shadow-indigo-500/20'
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
                 : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
             }`}
           >
@@ -467,7 +467,7 @@ const Teachers = () => {
             }}
             className={`px-5 py-2 rounded-xl font-bold text-sm transition-all ${
               staffType === 'Non-Teaching'
-                ? 'bg-indigo- text-white shadow-lg shadow-indigo-500/20'
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
                 : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
             }`}
           >
@@ -553,7 +553,7 @@ const Teachers = () => {
                     {visibleColumns.name && (
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200 group-hover:bg-indigo- group-hover:text-indigo-500 transition-colors">
+                          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                             <User size={20} />
                           </div>
                           <div>
@@ -579,7 +579,7 @@ const Teachers = () => {
                     )}
                     {visibleColumns.designation && (
                       <td className="px-4 py-4">
-                        <p className="text-[13px] text-slate-700 font-bold text-indigo-/80">{safeDisplay(item.designation)}</p>
+                        <p className="text-[13px] text-slate-700 font-bold text-indigo-600/80">{safeDisplay(item.designation)}</p>
                       </td>
                     )}
                     {/* ... omitted commented out cells ... */}

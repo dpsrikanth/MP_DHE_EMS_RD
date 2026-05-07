@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Building2, CheckCircle2, XCircle, Clock, MapPin, Search, AlertTriangle, ArrowRight, X, Users, Info, Zap, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
 import { masterDataApi } from '../../api/masterDataApi';
@@ -112,7 +112,7 @@ const HallApprovals = () => {
     const getStatusStyle = (status) => {
         const s = status?.toLowerCase();
         switch (s) {
-            case 'pending': return 'bg-indigo- text-amber-700 border-indigo-';
+            case 'pending': return 'bg-indigo-50 text-indigo-700 border-indigo-200';
             case 'approved': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
             case 'rejected': return 'bg-rose-50 text-rose-700 border-rose-200';
             default: return 'bg-slate-50 text-slate-700 border-slate-200';
@@ -211,7 +211,7 @@ const HallApprovals = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg -indigo-/30">
+                    <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
                         <ShieldCheck size={26} />
                     </div>
                     <div>
@@ -226,7 +226,7 @@ const HallApprovals = () => {
                         <select
                             value={selectedCollegeId}
                             onChange={(e) => setSelectedCollegeId(e.target.value)}
-                            className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 text-sm font-bold text-slate-700 rounded-2xl focus:ring-4 focus:-indigo-/10 focus:border-indigo- outline-none transition-all shadow-sm appearance-none cursor-pointer hover:border-slate-300"
+                            className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 text-sm font-bold text-slate-700 rounded-2xl focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 outline-none transition-all shadow-sm appearance-none cursor-pointer hover:border-slate-300"
                         >
                             <option value="all">All Colleges ({halls.length})</option>
                             {collegesWithPending.map(c => (
@@ -246,7 +246,7 @@ const HallApprovals = () => {
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search college or hall..."
-                            className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 text-sm font-bold text-slate-700 rounded-2xl focus:ring-4 focus:-indigo-/10 focus:border-indigo- outline-none transition-all shadow-sm"
+                            className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 text-sm font-bold text-slate-700 rounded-2xl focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 outline-none transition-all shadow-sm"
                         />
                     </div>
                 </div>
@@ -270,7 +270,7 @@ const HallApprovals = () => {
                                 <div key={req.id} className="bg-white p-5 rounded-2xl border border-rose-100/50 shadow-sm flex flex-col gap-5 hover:shadow-md transition-all">
                                     <div className="flex justify-between items-start gap-4">
                                         <span className="text-sm font-black text-slate-800 leading-tight">{req.college_name}</span>
-                                        <span className="flex-shrink-0 px-3 py-1 bg-indigo- text-indigo- text-[9px] font-black  tracking-widest rounded-lg border border-indigo-">Pending</span>
+                                        <span className="flex-shrink-0 px-3 py-1 bg-indigo-50 text-indigo-600 text-[9px] font-black  tracking-widest rounded-lg border border-indigo-200">Pending</span>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3 text-center">
                                         <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
@@ -321,7 +321,7 @@ const HallApprovals = () => {
                                     <div className="p-5 flex flex-col flex-1">
                                         <div className="flex justify-between items-start mb-8">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-14 h-14 bg-indigo- rounded-2xl flex items-center justify-center text-indigo- border border-purple-100 shadow-sm group-hover:bg-indigo- group-hover:text-white transition-all duration-300">
+                                                <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 border border-purple-100 shadow-sm group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
                                                     <Building2 size={28} />
                                                 </div>
                                                 <div>
@@ -329,7 +329,7 @@ const HallApprovals = () => {
                                                     <div className="flex items-center gap-2 mt-1">
                                                         <span className="text-[12px] font-black text-slate-400  tracking-widest bg-slate-100 px-2 py-0.5 rounded-full">ID: {college.college_id}</span>
                                                         <div className="w-1 h-1 rounded-full bg-slate-300" />
-                                                        <span className="text-[12px] font-black text-indigo-  tracking-widest leading-none">Pending: {college.halls.filter(h => h.status === 'Pending').length}</span>
+                                                        <span className="text-[12px] font-black text-indigo-600  tracking-widest leading-none">Pending: {college.halls.filter(h => h.status === 'Pending').length}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -343,12 +343,12 @@ const HallApprovals = () => {
                                             <div className="md:col-span-3 space-y-4">
                                                 <div className="flex items-center justify-between mb-2">
                                                     <h4 className="text-[12px] font-black text-slate-400  tracking-widest flex items-center gap-2">
-                                                        <Zap size={14} className="text-indigo-" /> Infrastructure Queue
+                                                        <Zap size={14} className="text-indigo-600" /> Infrastructure Queue
                                                     </h4>
                                                 </div>
                                                 <div className="space-y-3">
                                                     {college.halls.map((hall) => (
-                                                        <div key={hall.id} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-200/50 transition-all hover:bg-white hover:border-indigo- hover:shadow-lg group/hall">
+                                                        <div key={hall.id} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-200/50 transition-all hover:bg-white hover:border-indigo-100 hover:shadow-lg group/hall">
                                                             <div className="flex items-center gap-4">
                                                                 <span className="text-[13px] font-black text-slate-700  tracking-wider">{hall.hall_code}</span>
                                                                 <div className="flex flex-col">
@@ -363,7 +363,7 @@ const HallApprovals = () => {
                                                             </div>
                                                             <button 
                                                                 onClick={() => setSelectedCollegeId(String(college.college_id))}
-                                                                className="px-4 py-2 bg-white border border-slate-200 text-[9px] font-black text-indigo- rounded-lg  tracking-widest hover:bg-indigo- hover:border-indigo- transition-all"
+                                                                className="px-4 py-2 bg-white border border-slate-200 text-[9px] font-black text-indigo-600 rounded-lg  tracking-widest hover:bg-indigo-600 hover:border-indigo-600 transition-all hover:text-white"
                                                             >
                                                                 View
                                                             </button>
@@ -380,7 +380,7 @@ const HallApprovals = () => {
                                                         <div className={`px-2 py-0.5 rounded-lg text-[8px] font-black  tracking-tighter ${
                                                             isFulfilled ? 'bg-emerald-100 text-emerald-600' : 
                                                             (Number(college.college_approved_capacity) + college.halls.reduce((sum, h) => h.status === 'Pending' ? sum + Number(h.total_capacity) : sum, 0) >= Number(college.total_required)) 
-                                                                ? 'bg-indigo- text-indigo-' 
+                                                                ? 'bg-indigo-50 text-indigo-700' 
                                                                 : 'bg-rose-100 text-rose-600'
                                                         }`}>
                                                             {isFulfilled ? '✓ Verified' : '⟳ In Progress'}
@@ -398,7 +398,7 @@ const HallApprovals = () => {
                                                     <div className="relative h-4 w-full bg-white rounded-xl p-1 border border-slate-200 overflow-hidden shadow-inner mb-6">
                                                         <div 
                                                             className={`h-full rounded-lg transition-all duration-1000 ${
-                                                                isFulfilled ? 'bg-emerald-500' : 'bg-indigo- animate-pulse'
+                                                                isFulfilled ? 'bg-emerald-500' : 'bg-indigo-600 animate-pulse'
                                                             }`}
                                                             style={{ width: `${Math.min(pct, 100)}%` }}
                                                         />
@@ -415,11 +415,11 @@ const HallApprovals = () => {
                                                                 </div>
                                                             </div>
                                                         ) : (Number(college.college_approved_capacity) + college.halls.reduce((sum, h) => h.status === 'Pending' ? sum + Number(h.total_capacity) : sum, 0) >= Number(college.total_required)) ? (
-                                                            <div className="flex items-start gap-3 p-4 bg-indigo-/50 rounded-2xl border border-amber-100 animate-in fade-in slide-in-from-bottom-2">
-                                                                <Clock className="text-indigo- shrink-0 mt-0.5" size={18} />
+                                                            <div className="flex items-start gap-3 p-4 bg-indigo-50 rounded-2xl border border-indigo-100 animate-in fade-in slide-in-from-bottom-2">
+                                                                <Clock className="text-indigo-600 shrink-0 mt-0.5" size={18} />
                                                                 <div className="flex flex-col">
-                                                                    <span className="text-[11px] font-black text-amber-700  tracking-tight">Review Pending</span>
-                                                                    <span className="text-[9px] font-bold text-indigo- leading-tight mt-0.5">Verify the pending halls to cover the remaining {Number(college.total_required) - Number(college.college_approved_capacity)} students.</span>
+                                                                    <span className="text-[11px] font-black text-indigo-700  tracking-tight">Review Pending</span>
+                                                                    <span className="text-[9px] font-bold text-indigo-600 leading-tight mt-0.5">Verify the pending halls to cover the remaining {Number(college.total_required) - Number(college.college_approved_capacity)} students.</span>
                                                                 </div>
                                                             </div>
                                                         ) : (
@@ -456,7 +456,7 @@ const HallApprovals = () => {
                             const isProcessed = hall.status !== 'Pending';
 
                             return (
-                                <div key={hall.id} className="group bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-indigo- border-t-8 border-t-purple-500">
+                                <div key={hall.id} className="group bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-indigo-600 border-t-8 border-t-purple-500">
                                     <div className="p-5 space-y-5">
                                         <div className="flex justify-between items-start">
                                             <div className="flex flex-col gap-1">
@@ -472,7 +472,7 @@ const HallApprovals = () => {
                                                 <span className={`px-2 py-0.5 text-[9px] font-black  tracking-widest rounded-lg border mt-0.5 ${
                                                     hall.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
                                                     hall.status === 'Rejected' ? 'bg-rose-50 text-rose-600 border-rose-200' :
-                                                    'bg-indigo- text-indigo- border-indigo-'
+                                                    'bg-indigo-50 text-indigo-600 border-indigo-200'
                                                 }`}>
                                                     {hall.status}
                                                 </span>
@@ -483,7 +483,7 @@ const HallApprovals = () => {
                                             <div className="bg-slate-50/80 rounded-2xl p-3 border border-slate-100/50">
                                                 <div className="text-[9px] font-black text-slate-400  tracking-widest mb-1">Capacity</div>
                                                 <div className="text-lg font-black text-slate-900 tabular-nums">{hall.total_capacity}</div>
-                                                <div className="text-[8px] font-black text-indigo-  tracking-tighter mt-0.5">{hall.rows}×{hall.seats_per_row}</div>
+                                                <div className="text-[8px] font-black text-indigo-600  tracking-tighter mt-0.5">{hall.rows}×{hall.seats_per_row}</div>
                                             </div>
                                             {(() => {
                                                 const utilizationPct = hall.total_capacity > 0 
@@ -584,7 +584,7 @@ const HallApprovals = () => {
                                 {nearbyColleges.length > 0 ? (
                                     <div className="space-y-3">
                                         <select
-                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:-indigo-/10 focus:border-indigo-500"
+                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-500"
                                             value={targetCollegeId}
                                             onChange={(e) => setTargetCollegeId(e.target.value)}
                                         >
@@ -605,7 +605,7 @@ const HallApprovals = () => {
                                                 </div>
                                             </div>
                                         ) : targetCollegeId && nearbyColleges.find(c => String(c.id) === String(targetCollegeId))?.internal_capacity === 0 && (
-                                            <div className="flex items-center gap-3 p-4 bg-indigo- border border-indigo- rounded-2xl text-amber-700 animate-in fade-in slide-in-from-top-1">
+                                            <div className="flex items-center gap-3 p-4 bg-indigo-50 border border-indigo-200 rounded-2xl text-indigo-700 animate-in fade-in slide-in-from-top-1">
                                                 <AlertTriangle size={20} className="shrink-0" />
                                                 <div className="flex flex-col">
                                                     <span className="text-[13px] font-black  tracking-wider">Infrastructure Alert</span>
@@ -621,8 +621,8 @@ const HallApprovals = () => {
                                 )}
                             </div>
 
-                            <div className="bg-indigo-/50 rounded-2xl p-4 border border-blue-100/50">
-                                <p className="text-[12px] font-bold text-indigo- leading-relaxed text-center">
+                            <div className="bg-indigo-50 rounded-2xl p-4 border border-indigo-100">
+                                <p className="text-[12px] font-bold text-indigo-600 leading-relaxed text-center">
                                     Optimized for logistical efficiency based on distance.
                                 </p>
                             </div>

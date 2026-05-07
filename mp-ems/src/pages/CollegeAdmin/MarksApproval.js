@@ -28,7 +28,11 @@ const MarksApproval = () => {
     const fetchSemesters = async () => {
         try {
             const data = await masterDataApi.getMasters();
-            setSemesters(data.semesters || []);
+            setSemesters((data.semesters || []).sort((a, b) => {
+                const numA = parseInt(a.semester_name.replace(/\D/g, '')) || 0;
+                const numB = parseInt(b.semester_name.replace(/\D/g, '')) || 0;
+                return numA - numB;
+            }));
         } catch (err) {
             console.error('Failed to load semesters');
         }
@@ -107,9 +111,9 @@ const MarksApproval = () => {
 
     const getStatusStyle = (status) => {
         switch (status) {
-            case 'Pending': return 'bg-indigo- text-yellow-700';
-            case 'Submitted': return 'bg-indigo- text-blue-700';
-            case 'Verified': return 'bg-indigo- text-purple-700';
+            case 'Pending': return 'bg-amber-50 text-amber-700';
+            case 'Submitted': return 'bg-indigo-100 text-indigo-700';
+            case 'Verified': return 'bg-indigo-100 text-indigo-700';
             case 'Approved': return 'bg-green-100 text-green-700';
             case 'Locked': return 'bg-slate-200 text-slate-700';
             default: return 'bg-slate-100 text-slate-700';
@@ -126,7 +130,7 @@ const MarksApproval = () => {
 
     if (loading && workflows.length === 0) return (
         <div className="flex justify-center items-center h-64">
-            <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
         </div>
     );
 
@@ -134,7 +138,7 @@ const MarksApproval = () => {
         <div className="p-6 md:p-8 space-y-6">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
+                    <div className="w-12 h-12 bg-indigo-600/10 rounded-2xl flex items-center justify-center text-indigo-600">
                         <FileText size={28} />
                     </div>
                     <div>
@@ -199,13 +203,11 @@ const MarksApproval = () => {
                                                 <Lock size={14} /> Read-only
                                             </span>
                                         ) : wf.status === 'Approved' && isHOD ? (
-                                            // HOD: already approved — show badge only, no action needed
                                             <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-[13px] font-bold border border-green-200">
                                                 <CheckCircle2 size={12} /> Approved
                                             </span>
                                         ) : (
                                             <div className="flex items-center justify-end gap-2">
-                                                {/* HOD: Verify only when action is needed (Submitted / Rejected / Correction Requested) */}
                                                 {isHOD && ['Submitted', 'Rejected', 'Correction Requested'].includes(wf.status) && (
                                                     <button
                                                         onClick={() => navigate(`/admin/marks-review/${wf.subject_id}/${wf.section}`, {
@@ -214,13 +216,12 @@ const MarksApproval = () => {
                                                                 academic_year_id: wf.academic_year_id
                                                             }
                                                         })}
-                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-[13px] font-bold transition-colors"
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg text-[13px] font-bold transition-colors"
                                                     >
                                                         <Eye size={12} /> Verify
                                                     </button>
                                                 )}
 
-                                                {/* HOD: Quick reject button on Submitted rows */}
                                                 {isHOD && wf.status === 'Submitted' && (
                                                     <button
                                                         onClick={() => updateStatus(wf.id, 'Pending')}
@@ -230,7 +231,6 @@ const MarksApproval = () => {
                                                     </button>
                                                 )}
 
-                                                {/* College Admin: Review button for non-Pending statuses */}
                                                 {isCollegeAdmin && wf.status !== 'Pending' && (
                                                     <button
                                                         onClick={() => navigate(`/admin/marks-review/${wf.subject_id}/${wf.section}`, {
@@ -239,17 +239,16 @@ const MarksApproval = () => {
                                                                 academic_year_id: wf.academic_year_id
                                                             }
                                                         })}
-                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-[13px] font-bold transition-colors"
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg text-[13px] font-bold transition-colors"
                                                     >
                                                         <Eye size={12} /> Review
                                                     </button>
                                                 )}
 
-                                                {/* College Admin: Lock button once HOD approved */}
                                                 {isCollegeAdmin && wf.status === 'Approved' && (
                                                     <button
                                                         onClick={() => updateStatus(wf.id, 'Locked')}
-                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-800 text-white hover:bg-indigo-600 rounded-lg text-[13px] font-bold shadow-md shadow-indigo-600/20 transition-all"
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-800 text-white hover:bg-indigo-700 rounded-lg text-[13px] font-bold shadow-md shadow-indigo-600/20 transition-all"
                                                     >
                                                         <Lock size={12} /> Lock Marks
                                                     </button>

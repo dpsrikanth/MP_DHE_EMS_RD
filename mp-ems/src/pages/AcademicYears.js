@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from 'react-toastify';
 import { useNavigate } from "react-router-dom";
 import { 
@@ -227,7 +227,7 @@ const AcademicYears = () => {
                     {visibleColumns.id && <td className="px-6 py-4 text-sm font-bold text-slate-400">#{item.id}</td>}
                     {visibleColumns.year_name && (
                       <td className="px-4 py-5 font-bold text-slate-900">
-                        <span className="bg-indigo- text-sky-700 px-3 py-1 rounded-lg border border-sky-100 font-mono italic">
+                        <span className="bg-sky-50 text-sky-700 px-3 py-1 rounded-lg border border-sky-100 font-mono italic">
                           {item.year_name}
                         </span>
                       </td>
