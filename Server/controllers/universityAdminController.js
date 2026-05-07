@@ -226,7 +226,9 @@ exports.getResultHubData = async (req, res) => {
                     (gc.grace_policy->>'is_enabled')::boolean as is_grace_enabled,
                     (gc.grace_policy->>'max_per_subject_grace')::numeric as max_grace,
                     -- Raw total before grace
-                    (COALESCE(cim.total_internal, m.internal_marks, ri.total_raw, 0) + COALESCE(m.external_marks, 0)) as raw_total,
+                    (COALESCE(cim.total_internal, m.internal_marks, ri.total_raw, 0) + COALESCE(m.external_marks, 0) + COALESCE(e.moderation_marks, 0)) as raw_total,
+                    COALESCE(e.moderation_marks, 0) as moderation_marks,
+                    e.moderation_reason,
                     COALESCE(m.grace_marks, 0) as grace_marks,
                     s.rollnumber, CONCAT(s.first_name, ' ', s.last_name) as student_name,
                     s."collageName" as college_name, s."programName" as program_name,
@@ -265,6 +267,7 @@ exports.getResultHubData = async (req, res) => {
             SELECT 
                 mb.mark_id, mb.student_id, mb.exam_id, mb.marks_status, 
                 mb.internal_marks, mb.external_marks, mb.raw_total, mb.grace_marks,
+                mb.moderation_marks, mb.moderation_reason,
                 mb.rollnumber, mb.student_name, mb.college_name, mb.program_name,
                 mb.exam_name, mb.exam_type, mb.results_published,
                 mb.subject_name, mb.subject_id, mb.credits,
@@ -866,5 +869,45 @@ exports.getStudentSearchDetails = async (req, res) => {
     } catch (error) {
         console.error("Get student search details error:", error);
         res.status(500).json({ error: "Failed to fetch student profile" });
+    }
+};
+// University Admin: Update moderation marks for an exam/subject paper
+exports.updateModerationMarks = async (req, res) => {
+    try {
+        const { exam_id, moderation_marks, moderation_reason } = req.body;
+        const user_id = req.user?.id;
+
+        if (!exam_id) {
+            return res.status(400).json({ error: "Exam ID is required" });
+        }
+
+        const query = `
+            UPDATE exams 
+            SET moderation_marks = $1, 
+                moderation_reason = $2,
+                updated_at = CURRENT_TIMESTAMP,
+                updated_by = $3
+            WHERE id = $4
+            RETURNING *
+        `;
+        const result = await db.query(query, [moderation_marks || 0, moderation_reason || null, user_id, exam_id]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Exam paper not found" });
+        }
+
+        // Log action
+        await db.query(`
+            INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_values)
+            VALUES ($1, $2, $3, $4, $5)
+        `, [user_id, 'UPDATE_MODERATION', 'exams', exam_id, JSON.stringify({ moderation_marks, moderation_reason })]);
+
+        res.status(200).json({ 
+            message: "Moderation marks updated successfully", 
+            data: result.rows[0] 
+        });
+    } catch (error) {
+        console.error("Update moderation marks error:", error);
+        res.status(500).json({ error: "Failed to update moderation marks" });
     }
 };

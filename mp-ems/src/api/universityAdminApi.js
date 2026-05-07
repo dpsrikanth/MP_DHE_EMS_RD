@@ -78,5 +78,9 @@ export const universityAdminApi = {
     getStudentSearchDetails: async (admissionNo) => {
         const response = await apiClient.get(`/university-admin/student-search/${admissionNo}`);
         return response.data;
+    },
+    updateModerationMarks: async (data) => {
+        const response = await apiClient.put('/university-admin/update-moderation', data);
+        return response.data;
     }
 };

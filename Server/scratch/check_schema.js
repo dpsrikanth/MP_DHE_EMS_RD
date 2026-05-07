@@ -1,5 +1,5 @@
-require('dotenv').config({ path: '../Server/config/.env' });
-const db = require('../Server/config/db');
+require('dotenv').config({ path: './config/.env' });
+const db = require('../config/db');
 
 async function checkSchema() {
     try {

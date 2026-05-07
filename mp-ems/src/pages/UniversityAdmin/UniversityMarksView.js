@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   CheckCircle2, AlertCircle, Loader2, BookOpen,
   Search, Users, GraduationCap, ClipboardCheck,
@@ -33,6 +33,11 @@ const UniversityMarksView = () => {
   const [activeSubject, setActiveSubject] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [publishing, setPublishing] = useState(false);
+
+  // Moderation state
+  const [showModerationModal, setShowModerationModal] = useState(false);
+  const [moderationForm, setModerationForm] = useState({ marks: 0, reason: "" });
+  const [savingModeration, setSavingModeration] = useState(false);
 
   const { config: gradingConfig } = useGradingPolicy();
 
@@ -121,6 +126,34 @@ const UniversityMarksView = () => {
       toast.error("Network error");
     } finally {
       setPublishing(false);
+    }
+  };
+
+  const handleApplyModeration = async () => {
+    const subjectData = subjectWiseData[activeSubject];
+    if (!subjectData || subjectData.length === 0) return;
+    
+    const examId = subjectData[0].exam_id;
+    if (!examId) {
+      toast.error("Paper context not found.");
+      return;
+    }
+
+    setSavingModeration(true);
+    try {
+      await universityAdminApi.updateModerationMarks({
+        exam_id: examId,
+        moderation_marks: Number(moderationForm.marks),
+        moderation_reason: moderationForm.reason
+      });
+      toast.success("Moderation marks applied successfully!");
+      setShowModerationModal(false);
+      fetchData(); // Refresh data
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to apply moderation.");
+    } finally {
+      setSavingModeration(false);
     }
   };
 
@@ -485,6 +518,19 @@ const UniversityMarksView = () => {
                         {subjectWiseData[activeSubject]?.filter(s => s.result_status === 'Pass').length || 0}
                       </p>
                     </div>
+                    <button
+                      onClick={() => {
+                        const firstItem = subjectWiseData[activeSubject]?.[0];
+                        setModerationForm({ 
+                          marks: firstItem?.moderation_marks || 0, 
+                          reason: firstItem?.moderation_reason || "" 
+                        });
+                        setShowModerationModal(true);
+                      }}
+                      className="bg-white/10 border border-white/20 px-5 py-3 rounded-2xl text-[11px] font-black  tracking-widest hover:bg-white hover:text-indigo-600 transition-all"
+                    >
+                      Apply Moderation
+                    </button>
                   </div>
                 </div>
 
@@ -499,6 +545,7 @@ const UniversityMarksView = () => {
                           <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Ext</th>
                         )}
                         <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Total</th>
+                        <th className="px-6 py-3.5 text-[11px] font-black text-violet-500  tracking-widest text-center">Mod</th>
                         {summary?.isGraceEnabled && (
                           <th className="px-6 py-3.5 text-[11px] font-black text-indigo-500  tracking-widest text-center">Grace {subjectWiseData[activeSubject]?.[0]?.grace_budget ? `(${subjectWiseData[activeSubject][0].grace_budget})` : ''}</th>
                         )}
@@ -532,6 +579,11 @@ const UniversityMarksView = () => {
                             )}
                             <td className="px-8 py-5 text-center">
                               <span className="text-lg font-black text-slate-900">{item.total_marks || 0}</span>
+                            </td>
+                            <td className="px-8 py-5 text-center">
+                              <span className={`text-[13px] font-black ${Number(item.moderation_marks) > 0 ? 'text-violet-500 bg-violet-50 px-2 py-0.5 rounded-md' : 'text-slate-300 opacity-30'}`}>
+                                {item.moderation_marks > 0 ? `+${item.moderation_marks}` : '—'}
+                              </span>
                             </td>
                             {summary?.isGraceEnabled && (
                               <td className="px-8 py-5 text-center">
@@ -643,6 +695,68 @@ const UniversityMarksView = () => {
               </div>
             </div>
           )}
+        </div>
+      )}
+      {/* ─── Moderation Modal ─── */}
+      {showModerationModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="bg-indigo-600 p-8 text-white">
+              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
+                <TrendingUp size={24} />
+              </div>
+              <h3 className="text-2xl font-black tracking-tight">Subject Moderation</h3>
+              <p className="text-indigo-200 text-sm font-bold mt-1">Apply extra marks for entire paper</p>
+            </div>
+
+            <div className="p-8 space-y-6">
+              <div>
+                <label className="block text-[11px] font-black text-slate-400 tracking-widest uppercase mb-2">Subject</label>
+                <p className="text-lg font-black text-slate-900">{activeSubject}</p>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black text-slate-400 tracking-widest uppercase mb-2">Moderation Marks</label>
+                <input
+                  type="number"
+                  value={moderationForm.marks}
+                  onChange={(e) => setModerationForm(prev => ({ ...prev, marks: e.target.value }))}
+                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-lg font-black text-slate-900 focus:border-indigo-500 transition-all outline-none"
+                  placeholder="e.g. 5"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black text-slate-400 tracking-widest uppercase mb-2">Reason</label>
+                <select
+                  value={moderationForm.reason}
+                  onChange={(e) => setModerationForm(prev => ({ ...prev, reason: e.target.value }))}
+                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:border-indigo-500 transition-all outline-none appearance-none"
+                >
+                  <option value="">Select a reason...</option>
+                  <option value="Question Paper Difficult">Question Paper Difficult</option>
+                  <option value="Question Out of Syllabus">Question Out of Syllabus</option>
+                  <option value="Other">Other Policy Adjustment</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowModerationModal(false)}
+                  className="flex-1 px-6 py-4 rounded-2xl font-black text-[13px] tracking-widest text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleApplyModeration}
+                  disabled={savingModeration}
+                  className="flex-[2] bg-indigo-600 text-white px-6 py-4 rounded-2xl font-black text-[13px] tracking-widest shadow-xl shadow-indigo-600/20 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {savingModeration ? <Loader2 className="animate-spin" size={18} /> : "Save Changes"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
