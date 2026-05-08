@@ -49,8 +49,11 @@ export const facultyApi = {
     },
 
     // --- Exam Rounds & Schedules ---
-    getExamRounds: async (teacherId) => {
-        const response = await apiClient.get(`/faculty-marks/exam-rounds?teacher_id=${teacherId}`);
+    getExamRounds: async (teacherId, academicYearId = null, semesterId = null) => {
+        let url = `/faculty-marks/exam-rounds?teacher_id=${teacherId}`;
+        if (academicYearId) url += `&academic_year_id=${academicYearId}`;
+        if (semesterId) url += `&semester_id=${semesterId}`;
+        const response = await apiClient.get(url);
         return response.data;
     },
 

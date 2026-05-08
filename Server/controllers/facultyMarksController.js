@@ -257,7 +257,58 @@ exports.submitMarks = async (req, res) => {
         try {
             await client.query('BEGIN');
 
+            // --- ADDED VALIDATION: Ensure all students have marks entered ---
             if (component_id) {
+                // 1. Get context names
+                const colRes = await client.query('SELECT name FROM colleges WHERE id = $1', [college_id]);
+                const semRes = await client.query('SELECT semester_name FROM master_semesters WHERE id = $1', [semester_id]);
+                const subRes = await client.query('SELECT program_id FROM master_subjects WHERE id = $1', [subject_id]);
+                
+                if (colRes.rowCount === 0 || semRes.rowCount === 0) {
+                    throw new Error("Invalid college or semester ID");
+                }
+
+                const collageName = colRes.rows[0].name;
+                const semesterName = semRes.rows[0].semester_name;
+                const programId = subRes.rows[0]?.program_id;
+
+                let programName = null;
+                if (programId) {
+                    const progRes = await client.query('SELECT name FROM master_programs WHERE id = $1', [programId]);
+                    if (progRes.rowCount > 0) programName = progRes.rows[0].name;
+                }
+
+                // 2. Count expected students
+                let studentsQuery = `
+                    SELECT COUNT(DISTINCT s.id) as total_students 
+                    FROM students s 
+                    WHERE s."collageName" ILIKE $1 
+                      AND s."semister" ILIKE $2
+                      AND s."deleteStatus" = true
+                `;
+                let queryParams = [collageName, semesterName];
+                if (programName) {
+                    studentsQuery += ` AND s."programName" ILIKE $3`;
+                    queryParams.push(programName);
+                }
+                const studentsCountRes = await client.query(studentsQuery, queryParams);
+                const totalStudents = parseInt(studentsCountRes.rows[0].total_students);
+
+                // 3. Count students with entered marks (or absent status)
+                const marksCountRes = await client.query(`
+                    SELECT COUNT(DISTINCT student_id) as entered_count 
+                    FROM student_internal_marks 
+                    WHERE subject_id = $1 AND component_id = $2
+                `, [subject_id, component_id]);
+                const enteredCount = parseInt(marksCountRes.rows[0].entered_count);
+
+                if (enteredCount < totalStudents) {
+                    await client.query('ROLLBACK');
+                    return res.status(400).json({ 
+                        error: `Incomplete marks. Only ${enteredCount} of ${totalStudents} students have marks recorded. Please ensure all students have marks or are marked as Absent before submitting.` 
+                    });
+                }
+
                 // Internal Exam Marks Workflow
                 const caQuery = `
                     INSERT INTO component_acceptance 
@@ -268,7 +319,59 @@ exports.submitMarks = async (req, res) => {
                 `;
                 await client.query(caQuery, [college_id, subject_id, semester_id, academic_year_id, section, component_id]);
             } else {
-                // General Marks Workflow
+                // General Marks Workflow - Validation: Ensure ALL components have marks for ALL students
+                // 1. Get components for this subject
+                const compQuery = `SELECT id, component_name FROM internal_marks_structure WHERE subject_id = $1 AND college_id = $2`;
+                const compRes = await client.query(compQuery, [subject_id, college_id]);
+                const components = compRes.rows;
+                const componentIds = components.map(c => c.id);
+
+                if (componentIds.length === 0) {
+                     return res.status(400).json({ error: "No marks structure defined for this subject. Cannot submit." });
+                }
+
+                // 2. Get students for context
+                const colRes = await client.query('SELECT name FROM colleges WHERE id = $1', [college_id]);
+                const semRes = await client.query('SELECT semester_name FROM master_semesters WHERE id = $1', [semester_id]);
+                if (colRes.rowCount === 0 || semRes.rowCount === 0) return res.status(400).json({ error: "Invalid context" });
+
+                const collageName = colRes.rows[0].name;
+                const semesterName = semRes.rows[0].semester_name;
+                
+                // Fetch program name if available
+                let programName = null;
+                if (program_id && program_id !== 'null' && program_id !== 'undefined') {
+                    const progRes = await client.query('SELECT name FROM master_programs WHERE id = $1', [program_id]);
+                    if (progRes.rowCount > 0) programName = progRes.rows[0].name;
+                }
+
+                let studentCountQuery = `SELECT COUNT(DISTINCT id) as count FROM students WHERE "collageName" ILIKE $1 AND "semister" ILIKE $2`;
+                let scParams = [collageName, semesterName];
+                if (programName) {
+                    studentCountQuery += ` AND "programName" ILIKE $3`;
+                    scParams.push(programName);
+                }
+                const scRes = await client.query(studentCountQuery, scParams);
+                const totalStudents = parseInt(scRes.rows[0].count);
+
+                // 3. Count marks entered for these students and these components
+                // We need to count records in student_internal_marks for (student_id in context) AND (component_id in list)
+                const marksCountQuery = `
+                    SELECT COUNT(*) as count 
+                    FROM student_internal_marks 
+                    WHERE subject_id = $1 AND component_id = ANY($2)
+                `;
+                const marksCountRes = await client.query(marksCountQuery, [subject_id, componentIds]);
+                const enteredMarksCount = parseInt(marksCountRes.rows[0].count);
+
+                const expectedCount = totalStudents * componentIds.length;
+
+                if (enteredMarksCount < expectedCount) {
+                    return res.status(400).json({ 
+                        error: "Incomplete marks detected. Please ensure all internal assessment rounds (IA1, IA2, etc.) are filled for all students before submitting to HOD."
+                    });
+                }
+
                 const checkQuery = `SELECT id, status, updated_at FROM marks_workflow_status WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5`;
                 const checkRes = await client.query(checkQuery, [college_id, subject_id, semester_id, academic_year_id, section]);
 
@@ -453,20 +556,33 @@ exports.getAttendanceSummary = async (req, res) => {
 
 exports.getAvailableRounds = async (req, res) => {
     try {
-        const { teacher_id } = req.query;
+        const { teacher_id, academic_year_id, semester_id } = req.query;
         const collegesRes = await db.query('SELECT DISTINCT college_id FROM faculty_subjects WHERE teacher_id = $1', [teacher_id]);
         
         if (collegesRes.rowCount === 0) return res.json([]);
         
         const collegeIds = collegesRes.rows.map(r => r.college_id);
         
-        const query = `
+        let query = `
             SELECT DISTINCT round_id as id, round_id as name
             FROM internal_exam_schedules
             WHERE college_id = ANY($1)
-            ORDER BY name ASC
         `;
-        const result = await db.query(query, [collegeIds]);
+        const params = [collegeIds];
+
+        if (academic_year_id && academic_year_id !== 'null' && academic_year_id !== 'undefined') {
+            query += ` AND academic_year_id = $${params.length + 1}`;
+            params.push(academic_year_id);
+        }
+
+        if (semester_id && semester_id !== 'null' && semester_id !== 'undefined') {
+            query += ` AND semester_id = $${params.length + 1}`;
+            params.push(semester_id);
+        }
+
+        query += ` ORDER BY name ASC`;
+        
+        const result = await db.query(query, params);
         res.status(200).json(result.rows);
     } catch (error) {
         console.error("getAvailableRounds error:", error);

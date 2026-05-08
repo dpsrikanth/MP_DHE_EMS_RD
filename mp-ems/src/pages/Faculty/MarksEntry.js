@@ -144,16 +144,8 @@ const MarksEntry = () => {
     };
 
     const handleMarkChange = (studentId, componentId, field, value) => {
-        setMarksDraft(prev => ({
-            ...prev,
-            [studentId]: {
-                ...prev[studentId],
-                [componentId]: {
-                    ...prev[studentId]?.[componentId],
-                    [field]: value
-                }
-            }
-        }));
+        // Disabled: This view is read-only.
+        console.warn("Direct editing is disabled in this view. Please use the 'Internal Exam Round' module for entries.");
     };
 
     const calculateTotal = (studentId) => {
@@ -274,10 +266,12 @@ const MarksEntry = () => {
     };
 
     const normalizedStatus = (workflowStatus || 'Pending').trim();
-    const isReadOnly = ['Submitted', 'Approved', 'Locked', 'Rejected', 'Correction Requested'].includes(normalizedStatus);
+    // This page is now permanently read-only
+    const isReadOnly = true; 
+    const isSubjectSubmitted = ['Submitted', 'Approved', 'Locked'].includes(normalizedStatus);
 
     const handleSaveMarks = async () => {
-        if (isReadOnly && normalizedStatus !== 'Rejected') return;
+        if (isSubjectSubmitted && normalizedStatus !== 'Rejected') return;
         const assignmentStr = assignedSubjects.find(a => a.id === selectedAssignment.value);
         if (!assignmentStr) return;
 
@@ -385,7 +379,25 @@ const MarksEntry = () => {
 
     const handleSubmitMarks = async () => {
         const assignmentStr = assignedSubjects.find(a => a.id === selectedAssignment.value);
-        if (!assignmentStr || (isReadOnly && workflowStatus !== 'Rejected')) return;
+        if (!assignmentStr || (isSubjectSubmitted && normalizedStatus !== 'Rejected')) return;
+
+        // --- Validation Check: Ensure all students have marks for ALL components ---
+        const missingEntries = [];
+        students.forEach(student => {
+            marksStructure.forEach(comp => {
+                const entry = marksDraft[student.id]?.[comp.id];
+                if (!entry || (entry.marks === '' && !entry.isAbsent)) {
+                    missingEntries.push({ student: student.name, component: comp.component_name });
+                }
+            });
+        });
+
+        if (missingEntries.length > 0) {
+            toast.error("Incomplete marks detected. Please ensure all internal assessment rounds (IA1, IA2, etc.) are filled for all students before submitting to HOD.");
+            return;
+        }
+
+        if (!window.confirm("Are you sure you want to submit all marks to HOD? This will lock editing for this subject.")) return;
 
         // Validation for Rejected status
         if (workflowStatus === 'Rejected' && !checkHasChanges()) {
@@ -437,13 +449,14 @@ const MarksEntry = () => {
                 college_id: assignmentStr.college_id,
                 semester_id: assignmentStr.semester_id,
                 academic_year_id: assignmentStr.academic_year_id,
-                faculty_id: teacherId
+                faculty_id: teacherId,
+                program_id: assignmentStr.program_id
             });
 
             toast.success("Marks submitted successfully!");
             fetchSubjectDetails(assignmentStr);
         } catch (err) {
-            toast.error("Error submitting marks");
+            toast.error(err.response?.data?.error || "Error submitting marks");
         } finally {
             setIsSaving(false);
         }
@@ -538,50 +551,7 @@ const MarksEntry = () => {
                     />
                 </div>
 
-                {/* Bulk Actions Dropdown */}
-                {selectedAssignment && (
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowBulkDropdown(!showBulkDropdown)}
-                            className="flex items-center gap-2 px-6 py-3 bg-white text-slate-700 border-2 border-slate-100 rounded-xl font-black text-sm tracking-widest hover:border-indigo-600 transition-all"
-                        >
-                            <FileSpreadsheet size={18} />
-                            <span>Bulk Actions</span>
-                            <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />
-                        </button>
-
-                        {showBulkDropdown && (
-                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-[100] animate-in slide-in-from-top-2">
-                                <button
-                                    onClick={() => {
-                                        setShowImportModal(true);
-                                        setShowBulkDropdown(false);
-                                    }}
-                                    disabled={isReadOnly && normalizedStatus !== 'Rejected'}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors disabled:opacity-50"
-                                >
-                                    <FileUp size={18} />
-                                    Import Marks CSV
-                                </button>
-                                <button
-                                    onClick={() => { downloadTemplate(); setShowBulkDropdown(false); }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
-                                >
-                                    <Download size={18} />
-                                    Download Template
-                                </button>
-                                <div className="h-px bg-slate-100 my-1"></div>
-                                <button
-                                    onClick={() => { exportToCSV(); setShowBulkDropdown(false); }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
-                                >
-                                    <Download size={18} />
-                                    Export Current View
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                )}
+                {/* Bulk Actions - Disabled as this is read-only summary view */}
             </div>
 
             {loading && (
@@ -632,9 +602,6 @@ const MarksEntry = () => {
                                     const total = calculateTotal(student.id);
                                     const status = determineStatus(student.id);
                                     const review = reviews[student.id];
-                                    // Force read-only for marks entry here as they must be managed via the Internal module
-                                    // Allow editing if not read-only or if rejected
-                                    const isStudentReadOnly = isReadOnly && normalizedStatus !== 'Rejected'; 
 
                                     return (
                                         <tr key={student.id} className="hover:bg-indigo-50/30 transition-colors group">
@@ -663,31 +630,14 @@ const MarksEntry = () => {
                                                 return (
                                                     <td key={comp.id} className="px-6 py-4 text-center">
                                                         <div className="flex flex-col items-center gap-2">
-                                                            <input
-                                                                type="number"
-                                                                max={comp.max_marks}
-                                                                min={0}
-                                                                value={draft.marks}
-                                                                disabled={draft.isAbsent || isStudentReadOnly}
-                                                                onChange={(e) => handleMarkChange(student.id, comp.id, 'marks', e.target.value)}
-                                                                className={`w-20 text-center px-2 py-1.5 border rounded-lg font-bold outline-none transition-all ${draft.isAbsent
-                                                                    ? 'bg-slate-100 border-slate-200 text-slate-400'
-                                                                    : isFailedComp
-                                                                        ? 'border-red-300 bg-red-50 text-red-600 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-                                                                        : 'border-slate-200 bg-white text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'
-                                                                    }`}
-                                                                placeholder={draft.isAbsent ? "AB" : "00"}
-                                                            />
-                                                            <label className="flex items-center gap-1.5 cursor-pointer">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={draft.isAbsent}
-                                                                    onChange={(e) => handleMarkChange(student.id, comp.id, 'isAbsent', e.target.checked)}
-                                                                    disabled={isStudentReadOnly}
-                                                                    className="w-3.5 h-3.5 rounded text-red-500 focus:ring-red-500 border-slate-300"
-                                                                />
-                                                                <span className="text-[12px] font-bold text-slate-500  tracking-widest">Absent</span>
-                                                            </label>
+                                                            <div className={`w-20 text-center px-2 py-1.5 border rounded-lg font-bold transition-all ${draft.isAbsent
+                                                                ? 'bg-slate-50 border-slate-100 text-slate-300 italic'
+                                                                : isFailedComp
+                                                                    ? 'border-red-100 bg-red-50 text-red-500'
+                                                                    : 'border-slate-100 bg-slate-50 text-slate-600'
+                                                                }`}>
+                                                                {draft.isAbsent ? "ABSENT" : (draft.marks || "0.0")}
+                                                            </div>
                                                         </div>
                                                     </td>
                                                 );
@@ -727,15 +677,15 @@ const MarksEntry = () => {
                     </div>
 
                     <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-4 sticky bottom-0 z-20">
-                        {isReadOnly && (
-                            <div className="flex-1 flex items-center justify-between gap-4 bg-indigo- px-4 py-2 rounded-xl border border-indigo-">
-                                <div className="flex items-center gap-2 text-amber-700 font-bold text-sm">
+                        {isSubjectSubmitted && (
+                            <div className="flex-1 flex items-center justify-between gap-4 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100">
+                                <div className="flex items-center gap-2 text-indigo-700 font-bold text-sm">
                                     <ShieldAlert size={18} />
                                     {normalizedStatus === 'Correction Requested' 
                                         ? "Correction request pending HOD approval. Marks are locked." 
                                         : normalizedStatus === 'Locked'
                                         ? "Marks have been locked by HOD. Request correction if changes are needed."
-                                        : "Marks are submitted and in read-only mode till college admin review."}
+                                        : "Marks are submitted and in read-only mode till HOD review."}
                                 </div>
                                 {['Submitted', 'Locked'].includes(normalizedStatus) && (
                                     <button
@@ -749,20 +699,22 @@ const MarksEntry = () => {
                                 )}
                             </div>
                         )}
+                        
                         <button
-                            disabled={isSaving || (isReadOnly && normalizedStatus !== 'Rejected')}
+                            disabled={isSaving || (isSubjectSubmitted && normalizedStatus !== 'Rejected')}
                             onClick={handleSaveMarks}
                             className={`inline-flex items-center gap-2 px-6 py-2.5 text-slate-700 font-bold bg-white border border-slate-200 rounded-xl shadow-sm transition-all text-sm
-                                ${isSaving || (isReadOnly && normalizedStatus !== 'Rejected') ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50 hover:border-slate-300'}`}
+                                ${isSaving || (isSubjectSubmitted && normalizedStatus !== 'Rejected') ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50 hover:border-slate-300'}`}
                         >
                             <Save size={18} />
                             Save Draft
                         </button>
+                        
                         <button
-                            disabled={isSaving || (isReadOnly && normalizedStatus !== 'Rejected')}
+                            disabled={isSaving || (isSubjectSubmitted && normalizedStatus !== 'Rejected')}
                             onClick={handleSubmitMarks}
                             className={`inline-flex items-center gap-2 px-10 py-3.5 text-white font-black rounded-xl shadow-xl transition-all  tracking-widest text-sm
-                                ${isSaving || (isReadOnly && normalizedStatus !== 'Rejected') ? 'bg-slate-400 cursor-not-allowed shadow-none' : 'bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] shadow-indigo-600/20 active:scale-[0.98]'}`}
+                                ${isSaving || (isSubjectSubmitted && normalizedStatus !== 'Rejected') ? 'bg-slate-400 cursor-not-allowed shadow-none' : 'bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] shadow-indigo-600/20 active:scale-[0.98]'}`}
                         >
                             {isSaving ? (
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

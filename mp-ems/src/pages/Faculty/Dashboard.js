@@ -199,7 +199,7 @@ const FacultyDashboard = () => {
                                             onClick={() => handleEnterMarks(item)}
                                             className="w-full flex items-center justify-center px-4 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-600 transition-all text-sm"
                                         >
-                                            Enter Marks
+                                            Submit Marks
                                         </button>
                                     </div>
                                 </div>

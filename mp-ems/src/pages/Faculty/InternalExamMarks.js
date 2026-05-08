@@ -56,13 +56,38 @@ const InternalExamMarks = () => {
         fetchInitialData();
     }, []);
 
+    useEffect(() => {
+        if (selectedYear || selectedSem) {
+            fetchFilteredRounds();
+        } else {
+            setRounds([]);
+            setSelectedRound(null);
+        }
+    }, [selectedYear, selectedSem]);
+
+    const fetchFilteredRounds = async () => {
+        try {
+            const data = await facultyApi.getExamRounds(
+                teacherId, 
+                selectedYear?.value, 
+                selectedSem?.value
+            );
+            setRounds(data || []);
+            // If current selected round is not in new list, clear it
+            if (selectedRound && !data.find(r => r.id === selectedRound.value)) {
+                setSelectedRound(null);
+            }
+        } catch (err) {
+            console.error("Failed to fetch rounds:", err);
+        }
+    };
+
     const fetchInitialData = async () => {
         try {
-            // Fetch Years, Semesters, Rounds, Subjects and Schedules in parallel
-            const [years, sems, roundsData, subjects, schedulesData] = await Promise.all([
+            // Fetch Years, Semesters, Subjects and Schedules in parallel
+            const [years, sems, subjects, schedulesData] = await Promise.all([
                 masterDataApi.getAcademicYears(),
                 masterDataApi.getSemesters(),
-                facultyApi.getExamRounds(teacherId),
                 facultyApi.getAssignedSubjects(teacherId),
                 facultyApi.getInternalSchedules()
             ]);
@@ -81,7 +106,6 @@ const InternalExamMarks = () => {
                     return numA - numB;
                 }));
             }
-            if (roundsData) setRounds(roundsData);
             if (subjects) setAssignedSubjects((subjects || []).filter(s => s.has_schedule === true));
             if (schedulesData) setSchedules(schedulesData);
 
@@ -186,6 +210,17 @@ const InternalExamMarks = () => {
     };
     
     const handleSubmit = async () => {
+        // --- Validation Check: Ensure all students have marks or are absent ---
+        const missingMarks = students.filter(student => {
+            const entry = marksDraft[student.id];
+            return !entry || (entry.marks === '' && !entry.isAbsent);
+        });
+
+        if (missingMarks.length > 0) {
+            toast.warning(`Please enter marks for all students. ${missingMarks.length} student(s) are missing marks.`);
+            return;
+        }
+
         if (!window.confirm("Are you sure you want to submit these marks to HOD? You won't be able to edit them after submission.")) return;
         
         // Auto-save any unsaved entries before submitting to HOD

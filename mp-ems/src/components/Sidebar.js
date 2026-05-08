@@ -204,8 +204,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           type: 'parent',
           icon: <ClipboardCheck size={20} />,
           children: [
-            { id: 2, name: 'General Marks', path: '/faculty/marks-entry', icon: <BarChart3 size={18} /> },
-            { id: 50, name: 'Internal Exam Entry', path: '/faculty/internal-marks', icon: <ClipboardCheck size={18} /> },
+            { id: 50, name: 'Internal Marks Entry', path: '/faculty/internal-marks', icon: <ClipboardCheck size={18} /> },
+            { id: 2, name: 'Submit Marks', path: '/faculty/marks-entry', icon: <BarChart3 size={18} /> },
           ]
         },
         { id: 4, name: 'Attendance', path: '/faculty/attendance', icon: <Calendar size={20} /> },
