@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { 
     CheckCircle, Clock, FileText, ChevronRight, 
@@ -14,6 +14,7 @@ const AssessmentAcceptance = () => {
     const [assessments, setAssessments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedSemester, setSelectedSemester] = useState('');
     const [processingId, setProcessingId] = useState(null);
     const navigate = useNavigate();
 
@@ -35,13 +36,27 @@ const AssessmentAcceptance = () => {
         }
     };
 
+    const semesters = useMemo(() => {
+        const unique = {};
+        assessments.forEach(item => {
+            if (!unique[item.semester_id]) {
+                unique[item.semester_id] = item.semester_name;
+            }
+        });
+        return Object.entries(unique).map(([id, name]) => ({ id, name }));
+    }, [assessments]);
+
     const groupedData = useMemo(() => {
-        // First filter by search query
-        const filtered = assessments.filter(item => 
-            item.subject_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.subject_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.section.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+        // First filter by search query and semester
+        const filtered = assessments.filter(item => {
+            const matchesSearch = item.subject_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.subject_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.section.toLowerCase().includes(searchQuery.toLowerCase());
+            
+            const matchesSemester = !selectedSemester || item.semester_id.toString() === selectedSemester.toString();
+            
+            return matchesSearch && matchesSemester;
+        });
 
         // Then group by batch (subject + section)
         const groups = {};
@@ -63,7 +78,7 @@ const AssessmentAcceptance = () => {
             groups[key].components.push(item);
         });
         return Object.values(groups);
-    }, [assessments, searchQuery]);
+    }, [assessments, searchQuery, selectedSemester]);
 
     const handleAccept = async (component) => {
         const id = `${component.subject_id}-${component.section}-${component.component_id}`;
@@ -104,12 +119,30 @@ const AssessmentAcceptance = () => {
                     </div>
                 </div>
                 
-                <div className="w-full md:w-80">
-                    <TableSearch 
-                        value={searchQuery}
-                        onChange={setSearchQuery}
-                        placeholder="Search subjects or sections..."
-                    />
+                <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+                    <div className="relative w-full md:w-60">
+                        <select
+                            value={selectedSemester}
+                            onChange={(e) => setSelectedSemester(e.target.value)}
+                            className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 outline-none transition-all appearance-none cursor-pointer"
+                        >
+                            <option value="">All Semesters</option>
+                            {semesters.map(sem => (
+                                <option key={sem.id} value={sem.id}>{sem.name}</option>
+                            ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <ChevronRight size={16} className="rotate-90" />
+                        </div>
+                    </div>
+
+                    <div className="w-full md:w-80">
+                        <TableSearch 
+                            value={searchQuery}
+                            onChange={setSearchQuery}
+                            placeholder="Search subjects or sections..."
+                        />
+                    </div>
                 </div>
             </div>
 
