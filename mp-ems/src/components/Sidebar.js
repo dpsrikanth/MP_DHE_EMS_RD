@@ -256,7 +256,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             { id: 4, name: 'Staff List', path: '/teachers', icon: <Users size={18} /> },
           ]
         },
-        { id: 5, name: 'Assign Sets (HOD)', path: '/paper-setter/dashboard', icon: <FileText size={20} /> },
         { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> }
       ];
     }
