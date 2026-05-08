@@ -27,9 +27,7 @@ const FacultyDashboard = () => {
 
             // 1. Fetch Assigned Subjects
             const subjects = await facultyApi.getAssignedSubjects(teacherId);
-            // Only show subjects that have an internal exam scheduled
-            const scheduled = (subjects || []).filter(s => s.has_schedule === true);
-            setAssignedSubjects(scheduled);
+            setAssignedSubjects(subjects || []);
 
             // 2. Fetch Workflow Status for overall tracking
             if (subjects && subjects.length > 0) {

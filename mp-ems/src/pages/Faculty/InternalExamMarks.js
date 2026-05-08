@@ -106,7 +106,7 @@ const InternalExamMarks = () => {
                     return numA - numB;
                 }));
             }
-            if (subjects) setAssignedSubjects((subjects || []).filter(s => s.has_schedule === true));
+            if (subjects) setAssignedSubjects(subjects || []);
             if (schedulesData) setSchedules(schedulesData);
 
         } catch (err) {
