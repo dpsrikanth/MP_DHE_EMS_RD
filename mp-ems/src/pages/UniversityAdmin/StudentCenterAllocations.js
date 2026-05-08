@@ -33,7 +33,8 @@ const StudentCenterAllocations = () => {
         try {
             const data = await examApi.getExams();
             if (data) {
-                setExams(data);
+                // Filter to show only EXTERNAL exams for university center allocation
+                setExams(data.filter(e => e.exam_type === 2));
             }
         } catch (error) {
             console.error("Error fetching exams:", error);

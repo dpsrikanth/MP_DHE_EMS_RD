@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { Users, Layout, Trash2, Play, Search, Building2, ChevronRight, Download, Info, CheckCircle2, AlertCircle } from "lucide-react";
 import { TableSearch } from '../../components/TableControls';
@@ -41,7 +41,8 @@ const SeatingArrangement = () => {
     const fetchExams = async () => {
         try {
             const data = await collegeAdminApi.getExams();
-            setExams(data.filter(e => e.status === true || e.is_published === true));
+            // Show only EXTERNAL exams (type 2) that are active/published
+            setExams(data.filter(e => (e.status === true || e.is_published === true) && e.exam_type === 2));
         } catch (err) {
             console.error("Failed to fetch exams", err);
         }

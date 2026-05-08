@@ -229,7 +229,7 @@ export const collegeAdminApi = {
      * Get published exams
      */
     getExams: async () => {
-        const response = await apiClient.get('/exams/published');
+        const response = await apiClient.get('/exams');
         return response.data;
     },
 

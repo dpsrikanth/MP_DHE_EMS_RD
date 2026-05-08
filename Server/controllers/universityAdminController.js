@@ -814,28 +814,31 @@ exports.getStudentsForAllocation = async (req, res) => {
         let params = [collegeId];
         let pCount = 1;
 
-        if (exam_id) {
+        const examIdNum = parseInt(exam_id);
+        if (examIdNum && !isNaN(examIdNum)) {
             const examRes = await db.query(`
                 SELECT e.name as exam_name, mp.name as program_name, ms.semester_name 
                 FROM exams e
                 LEFT JOIN master_programs mp ON e.program_id = mp.id
                 LEFT JOIN master_semesters ms ON e.semester_id = ms.id
                 WHERE e.id = $1
-            `, [exam_id]);
+            `, [examIdNum]);
             
             if (examRes.rowCount > 0) {
                 const { program_name, semester_name, exam_name } = examRes.rows[0];
                 console.log(`[DEBUG] Exam scope: Exam="${exam_name}", Program="${program_name}", Semester="${semester_name}"`);
                 
-                // If master links are present, use them for strict filtering
+                // Use aggressive normalization to handle legacy naming inconsistencies
                 if (program_name) {
                     pCount++;
-                    examFilter += ` AND REPLACE(REPLACE(s."programName", '.', ''), ' ', '') ILIKE REPLACE(REPLACE($${pCount}, '.', ''), ' ', '')`;
+                    // Strip all non-alphanumeric characters and convert to lowercase
+                    examFilter += ` AND LOWER(REGEXP_REPLACE(s."programName", '[^a-zA-Z0-9]', '', 'g')) = LOWER(REGEXP_REPLACE($${pCount}, '[^a-zA-Z0-9]', '', 'g'))`;
                     params.push(program_name);
                 }
                 if (semester_name) {
                     pCount++;
-                    examFilter += ` AND REPLACE(REPLACE(s."semister", '.', ''), ' ', '') ILIKE REPLACE(REPLACE($${pCount}, '.', ''), ' ', '')`;
+                    // Strip all non-alphanumeric, and normalize "semister" -> "semester"
+                    examFilter += ` AND LOWER(REGEXP_REPLACE(REPLACE(LOWER(s."semister"), 'semister', 'semester'), '[^a-zA-Z0-9]', '', 'g')) = LOWER(REGEXP_REPLACE(REPLACE(LOWER($${pCount}), 'semister', 'semester'), '[^a-zA-Z0-9]', '', 'g'))`;
                     params.push(semester_name);
                 }
             } else {
