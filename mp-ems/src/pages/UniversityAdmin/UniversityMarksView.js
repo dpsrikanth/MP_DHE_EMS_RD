@@ -556,24 +556,24 @@ const UniversityMarksView = () => {
 
               {/* Subject Table */}
               <div className="stitch-card rounded-2xl shadow-xl shadow-slate-200/30 overflow-hidden">
-                <div className="bg-indigo-600 p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-2.5 bg-indigo-500/20 rounded-xl border border-indigo-500/30">
-                      <BookOpen size={20} className="text-indigo-400" />
+                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
+                      <BookOpen size={16} />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black tracking-tight">{activeSubject}</h2>
-                      <p className="text-[12px] font-black  tracking-[0.2em] text-indigo-400/80 mt-1">Subject-wise Result Ledger</p>
+                      <h2 className="text-sm font-black text-slate-900 tracking-tight">{activeSubject}</h2>
+                      <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase mt-0.5">Subject-wise Result Ledger</p>
                     </div>
                   </div>
-                    <div className="flex gap-3">
-                      <div className="bg-white/5 border border-white/10 px-5 py-3 rounded-2xl text-center min-w-[80px]">
-                        <p className="text-[10px] font-black tracking-widest text-indigo-200 uppercase mb-0.5">Students</p>
-                        <p className="text-xl font-black">{subjectWiseData[activeSubject]?.length || 0}</p>
+                    <div className="flex gap-2">
+                      <div className="bg-white border border-slate-100 px-4 py-2 rounded-xl text-center min-w-[70px] shadow-sm">
+                        <p className="text-[9px] font-black tracking-widest text-slate-400 uppercase mb-0.5">Students</p>
+                        <p className="text-base font-black text-slate-900">{subjectWiseData[activeSubject]?.length || 0}</p>
                       </div>
-                      <div className="bg-white/5 border border-white/10 px-5 py-3 rounded-2xl text-center min-w-[80px]">
-                        <p className="text-[10px] font-black tracking-widest text-indigo-200 uppercase mb-0.5">Pass</p>
-                        <p className="text-xl font-black text-emerald-400">
+                      <div className="bg-white border border-slate-100 px-4 py-2 rounded-xl text-center min-w-[70px] shadow-sm">
+                        <p className="text-[9px] font-black tracking-widest text-slate-400 uppercase mb-0.5">Pass</p>
+                        <p className="text-base font-black text-emerald-500">
                           {subjectWiseData[activeSubject]?.filter(s => s.result_status === 'Pass').length || 0}
                         </p>
                       </div>
@@ -586,7 +586,7 @@ const UniversityMarksView = () => {
                         });
                         setShowModerationModal(true);
                       }}
-                      className="bg-white/10 border border-white/20 px-5 py-3 rounded-2xl text-[11px] font-black  tracking-widest hover:bg-white hover:text-indigo-600 transition-all"
+                      className="px-4 py-2 rounded-xl text-[11px] font-black tracking-widest bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white border border-indigo-100 transition-all"
                     >
                       Apply Moderation
                     </button>
@@ -676,19 +676,19 @@ const UniversityMarksView = () => {
           {/* ─── Student View ─── */}
           {viewMode === "student" && (
             <div className="stitch-card rounded-2xl shadow-xl shadow-slate-200/30 overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
-              <div className="bg-indigo-600 p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-2.5 bg-white/10 rounded-xl border border-white/20">
-                    <TrendingUp size={20} className="text-white" />
+              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
+                    <TrendingUp size={16} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black tracking-tight">Student Ledger</h2>
-                    <p className="text-[12px] font-black  tracking-[0.2em] text-white/70 mt-1">Consolidated Performance & SGPA</p>
+                    <h2 className="text-sm font-black text-slate-900 tracking-tight">Student Ledger</h2>
+                    <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase mt-0.5">Consolidated Performance & SGPA</p>
                   </div>
                 </div>
-                <div className="bg-white/10 border border-white/20 px-6 py-3 rounded-2xl backdrop-blur-md">
-                  <p className="text-[9px] font-black  tracking-widest text-indigo-200">Total Students</p>
-                  <p className="text-xl font-black">{studentList.length}</p>
+                <div className="bg-white border border-slate-100 px-4 py-2 rounded-xl shadow-sm text-center">
+                  <p className="text-[9px] font-black tracking-widest text-slate-400 uppercase mb-0.5">Total Students</p>
+                  <p className="text-base font-black text-slate-900">{studentList.length}</p>
                 </div>
               </div>
 
@@ -760,12 +760,14 @@ const UniversityMarksView = () => {
       {showModerationModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="bg-indigo-600 p-8 text-white">
-              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
-                <TrendingUp size={24} />
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center gap-4">
+              <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                <TrendingUp size={20} />
               </div>
-              <h3 className="text-2xl font-black tracking-tight">Subject Moderation</h3>
-              <p className="text-indigo-200 text-sm font-bold mt-1">Apply extra marks for entire paper</p>
+              <div>
+                <h3 className="text-lg font-black text-slate-900 tracking-tight">Subject Moderation</h3>
+                <p className="text-slate-400 text-xs font-bold mt-0.5">Apply extra marks for entire paper</p>
+              </div>
             </div>
 
             <div className="p-8 space-y-6">

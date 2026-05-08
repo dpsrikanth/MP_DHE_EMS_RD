@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
 import { 
@@ -329,12 +329,15 @@ const Attendance = () => {
                             <h4 className="text-[12px] font-black text-slate-400  tracking-[0.2em] mb-2">Sessions Held</h4>
                             <p className="text-2xl font-black text-emerald-600 tracking-tighter">{summaryStats.totalSessions}</p>
                          </div>
-                         <div className="bg-indigo-600 p-6 rounded-3xl shadow-xl shadow-slate-900/10 text-white md:col-span-2 flex items-center justify-between">
-                            <div>
-                                <h4 className="text-[12px] font-black opacity-50  tracking-[0.2em] mb-2 italic">Engagement Alert</h4>
-                                <p className="text-[13px] font-bold leading-relaxed">System identifies students with <span className="text-red-400 font-black underline decoration-red-400/50 underline-offset-4">below 75% attendance</span> in the selected period.</p>
+                         <div className="p-5 bg-gradient-to-br from-slate-900 to-indigo-900 rounded-[2rem] text-white md:col-span-2 flex items-center gap-4 relative overflow-hidden shadow-xl">
+                            <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full -mr-8 -mt-8 blur-xl" />
+                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/10 shrink-0">
+                                <Info size={18} className="text-indigo-300" />
                             </div>
-                            <Info className="text-slate-700" size={32} />
+                            <div className="relative z-10 space-y-0.5">
+                                <h4 className="text-[10px] font-black opacity-60 tracking-widest uppercase">Engagement Alert</h4>
+                                <p className="text-[11px] font-bold leading-relaxed opacity-80">System identifies students with <span className="text-red-400 font-black">below 75% attendance</span> in the selected period.</p>
+                            </div>
                          </div>
                     </div>
 

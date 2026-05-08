@@ -688,28 +688,37 @@ const Marks = () => {
       </div>
 
       {/* Footer Insight Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8">
-        <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 p-8 rounded-3xl text-white shadow-2xl shadow-indigo-500/20 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-8 text-white opacity-10 group-hover:scale-150 transition-transform duration-700">
-            <CheckCircle2 size={100} />
-          </div>
-          <h4 className="text-lg font-black mb-3  tracking-tighter">Record Verification</h4>
-          <p className="text-indigo-100 font-medium mb-6 leading-relaxed max-w-sm text-sm">All academic records are signed and synchronized across the institutional blockchain for integrity.</p>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-            <span className="text-[12px] font-black  tracking-widest">Secure Ledger Active</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-8">
+        <div className="p-6 bg-gradient-to-br from-indigo-900 to-slate-900 rounded-[2rem] text-white relative overflow-hidden group shadow-xl">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-10 -mt-10 blur-xl" />
+          <div className="relative z-10 flex items-start gap-4">
+            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/10 flex-shrink-0">
+              <CheckCircle2 size={20} className="text-emerald-400" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-sm font-black tracking-tight">Record Verification</h4>
+              <p className="text-indigo-100/60 font-medium text-xs leading-relaxed">All academic records are signed and synchronized across the institutional system for integrity.</p>
+              <div className="flex items-center gap-2 pt-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                <span className="text-[10px] font-black tracking-widest text-emerald-400">Secure Ledger Active</span>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="bg-indigo-600 p-8 rounded-3xl text-white shadow-2xl shadow-indigo-600/20 relative overflow-hidden group border border-slate-800">
-          <div className="absolute top-0 right-0 p-8 text-indigo- opacity-20 group-hover:scale-150 transition-transform duration-700">
-            <TrendingUp size={100} />
+        <div className="p-6 bg-gradient-to-br from-slate-900 to-indigo-900 rounded-[2rem] text-white relative overflow-hidden group shadow-xl">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-10 -mt-10 blur-xl" />
+          <div className="relative z-10 flex items-start gap-4">
+            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/10 flex-shrink-0">
+              <TrendingUp size={20} className="text-indigo-400" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-sm font-black tracking-tight">Trend Insights</h4>
+              <p className="text-indigo-100/60 font-medium text-xs leading-relaxed">Use our advanced AI engines to predict student outcomes based on historical performance data.</p>
+              <button className="text-[10px] font-black text-indigo-400 hover:text-sky-300 transition-colors tracking-widest flex items-center gap-1 pt-1">
+                Explore Analytics <ArrowUpRight size={12} />
+              </button>
+            </div>
           </div>
-          <h4 className="text-lg font-black mb-3  tracking-tighter">Trend Insights</h4>
-          <p className="text-slate-400 font-medium mb-6 leading-relaxed max-w-sm text-sm">Use our advanced AI engines to predict student outcomes based on historical performance data.</p>
-          <button className="text-[12px] font-black text-indigo-400 hover:text-sky-300 transition-colors  tracking-widest flex items-center gap-2">
-            Explore Analytics
-            <ArrowUpRight size={16} />
-          </button>
         </div>
       </div>
       {/* Bulk Import Modal */}

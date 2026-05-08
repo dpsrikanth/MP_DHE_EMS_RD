@@ -290,34 +290,36 @@ const ExternalMarksEntry = () => {
 
                 return (
                   <div key={subIdx} className="bg-white rounded-[3rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden group hover:border-indigo-200 transition-all duration-500">
-                    <div className="bg-indigo-600 p-8 text-white flex flex-col md:flex-row md:items-center justify-between gap-6 group-hover:bg-slate-950 transition-colors">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-indigo-500/20 rounded-xl"><BookOpen size={20} className="text-indigo-400" /></div>
-                          <h3 className="text-2xl font-black tracking-tight">{subject.subject_name}</h3>
+                    <div className="px-8 py-5 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                          <BookOpen size={18} />
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span className={`text-[12px] font-black  tracking-widest px-4 py-1.5 rounded-full border ${
-                            subject.assignment_status === 'Submitted' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20' : 
-                            'bg-indigo-/20 text-indigo-400 border-indigo-/20'
-                          }`}>
-                            {subject.assignment_status === 'Evaluated' ? 'Draft Saved' : subject.assignment_status}
-                          </span>
-                          <span className="text-[12px] font-black text-slate-500  tracking-widest">
-                            {filteredStudents.length} Students Registered
-                          </span>
+                        <div>
+                          <h3 className="text-base font-black text-slate-900 tracking-tight">{subject.subject_name}</h3>
+                          <div className="flex items-center gap-3 mt-0.5">
+                            <span className={`text-[10px] font-black tracking-widest px-2.5 py-0.5 rounded-full border ${
+                              subject.assignment_status === 'Submitted' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                              'bg-indigo-50 text-indigo-600 border-indigo-100'
+                            }`}>
+                              {subject.assignment_status === 'Evaluated' ? 'Draft Saved' : subject.assignment_status}
+                            </span>
+                            <span className="text-[10px] font-black text-slate-400 tracking-widest">
+                              {filteredStudents.length} Students
+                            </span>
+                          </div>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
                         {/* Bulk Actions Menu */}
                         {subject.assignment_status !== 'Submitted' && (
                           <div className="relative">
                             <button 
                               onClick={() => setShowBulkMenu(showBulkMenu === subject.subject_id ? null : subject.subject_id)}
-                              className="h-14 px-6 bg-white/10 hover:bg-white/20 text-white text-[12px] font-black tracking-[0.2em] rounded-2xl border border-white/10 flex items-center gap-3 transition-all"
+                              className="h-10 px-4 bg-white border-2 border-slate-100 text-slate-600 text-[11px] font-black tracking-widest rounded-xl flex items-center gap-2 transition-all hover:border-indigo-200 hover:text-indigo-600"
                             >
-                              <FileSpreadsheet size={18} /> Bulk Actions <ChevronDown size={14} />
+                              <FileSpreadsheet size={15} /> Bulk Actions <ChevronDown size={13} />
                             </button>
                             
                             {showBulkMenu === subject.subject_id && (
@@ -360,25 +362,25 @@ const ExternalMarksEntry = () => {
                           <button 
                             onClick={() => handleUnlockSubject(subject, exam.exam_name)}
                             disabled={submitting}
-                            className="h-14 px-8 bg-indigo-500 hover:bg-indigo-600 text-white text-[12px] font-black  tracking-[0.2em] rounded-2xl shadow-xl shadow-amber-900/20 flex items-center gap-3 transition-all disabled:opacity-30"
+                            className="h-10 px-5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-black tracking-widest rounded-xl border border-amber-200 flex items-center gap-2 transition-all disabled:opacity-30"
                           >
-                            <Unlock size={16} /> Enable / Unlock
+                            <Unlock size={14} /> Enable / Unlock
                           </button>
                         ) : (
                           <>
                             <button 
                               onClick={() => handleSaveSubjectDraft(subject, exam.exam_name)}
                               disabled={submitting || subject.assignment_status === 'Submitted'}
-                              className="h-14 px-8 bg-white/5 hover:bg-white/10 text-white text-[12px] font-black  tracking-[0.2em] rounded-2xl border border-white/10 flex items-center gap-3 transition-all disabled:opacity-30"
+                              className="h-10 px-5 bg-white border-2 border-slate-100 text-slate-600 text-[11px] font-black tracking-widest rounded-xl flex items-center gap-2 hover:border-indigo-200 hover:text-indigo-600 transition-all disabled:opacity-30"
                             >
-                              <Save size={16} /> Save Draft
+                              <Save size={14} /> Save Draft
                             </button>
                             <button 
                               onClick={() => handleFinalizeSubject(subject, exam.exam_name)}
                               disabled={submitting || subject.assignment_status === 'Submitted'}
-                              className="h-14 px-8 bg-indigo-600 hover:bg-indigo-700 text-white text-[12px] font-black  tracking-[0.2em] rounded-2xl shadow-xl shadow-indigo-900/40 flex items-center gap-3 transition-all disabled:opacity-30"
+                              className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-black tracking-widest rounded-xl shadow-lg shadow-indigo-600/20 flex items-center gap-2 transition-all disabled:opacity-30"
                             >
-                              <Send size={16} /> Finalize Subject
+                              <Send size={14} /> Finalize Subject
                             </button>
                           </>
                         )}

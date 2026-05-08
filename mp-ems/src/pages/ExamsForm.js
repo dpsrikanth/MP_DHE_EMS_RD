@@ -376,20 +376,17 @@ const ExamsForm = () => {
                   )}
                 </div>
 
-                <div className="p-10 bg-indigo-600 rounded-[3rem] text-white space-y-6 relative overflow-hidden group">
-                   <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-indigo-500/20 transition-all duration-700" />
-                   <div className="relative z-10 flex items-center justify-between">
-                      <div className="space-y-4 max-w-md">
-                         <div className="w-14 h-14 bg-indigo-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/40"><AlertCircle size={30} /></div>
-                         <h4 className="text-xl font-black tracking-tight ">Operational Readiness</h4>
-                         <p className="text-sm text-slate-400 font-medium leading-relaxed">
-                           Finalizing this schedule will push these assessments into academic registries. Ensure all dates and subject-mappings are validated against institutional calendars.
-                         </p>
+                <div className="p-8 bg-gradient-to-br from-indigo-900 to-slate-900 rounded-[2.5rem] text-white relative overflow-hidden group shadow-xl transition-all duration-500">
+                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+                   <div className="relative z-10 flex items-start gap-5">
+                      <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-white border border-white/20 flex-shrink-0">
+                         <AlertCircle size={24} className="group-hover:scale-110 transition-transform duration-500" />
                       </div>
-                      <div className="hidden lg:block">
-                        <div className="w-32 h-32 border-8 border-slate-800 rounded-full flex items-center justify-center">
-                           <Check size={48} className="text-indigo-500 opacity-20" />
-                        </div>
+                      <div className="space-y-2">
+                         <h4 className="text-lg font-black tracking-tight leading-none">Operational Readiness</h4>
+                         <p className="text-xs text-indigo-100/70 font-medium leading-relaxed">
+                            Finalizing this schedule will push these assessments into academic registries. Ensure all dates and subject-mappings are validated against institutional calendars.
+                         </p>
                       </div>
                    </div>
                 </div>

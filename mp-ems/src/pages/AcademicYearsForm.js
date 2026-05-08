@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { masterDataApi } from '../api/masterDataApi';
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
@@ -91,71 +91,61 @@ const AcademicYearsForm = () => {
         
         {/* Body */}
         <form onSubmit={handleSubmit}>
-          <div className="form-body">
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-              
-              {/* Left Column: Essential Configuration (5 cols) */}
-              <div className="xl:col-span-5 space-y-10">
+          <div className="form-body flex justify-center py-12">
+            <div className="max-w-2xl w-full space-y-10">
                 <div className="form-section">
                   <div className="form-section__title"><span>Session Identity</span></div>
-                  <div className="space-y-8">
-                    {isEditing && (
-                      <div className="p-8 bg-slate-50 border-2 border-slate-100 rounded-[2.5rem] flex items-center justify-between shadow-inner">
-                         <div>
-                            <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-2">Chronological Hash</p>
-                            <p className="text-sm font-black text-slate-900 font-mono tracking-tighter">SEC-CYCLE-{id.padStart(3, '0')}</p>
-                         </div>
-                         <div className="w-12 h-12 bg-white rounded-2xl border border-slate-200 flex items-center justify-center text-slate-300 shadow-sm"><Hash size={20} /></div>
-                      </div>
-                    )}
-                    
-                    <div className="form-field">
-                      <label className="form-label form-label--required">Official Session Reference</label>
-                      <div className="form-input-wrap h-16">
-                        <Calendar size={22} className="form-input-wrap__icon text-indigo-" />
-                        <input 
-                          type="text" 
-                          id="year_name"
-                          placeholder="e.g. 2024-2025" 
-                          value={formData.year_name} 
-                          onChange={(e) => setFormData({ ...formData, year_name: e.target.value })}
-                          className="form-input form-input--with-icon text-xl font-bold tracking-tight"
-                          required
-                        />
-                      </div>
-                      <div className="mt-4 p-4 bg-indigo- border border-sky-100 rounded-2xl flex items-start gap-3">
-                         <div className="w-6 h-6 bg-white rounded-lg flex items-center justify-center text-indigo- shadow-sm mt-0.5"><Calendar size={12} /></div>
-                         <p className="text-[11px] font-medium text-sky-700 leading-relaxed">
-                            <span className="font-extrabold ">Standard Format:</span> YYYY-YYYY (e.g., 2023-2024). This identifier represents the full academic lifecycle across all mapped semesters.
-                         </p>
+                  <div className="bg-white border-2 border-slate-50 shadow-xl shadow-slate-200/20 rounded-[2rem] p-8 space-y-8">
+                    <div className="space-y-8">
+                      {isEditing && (
+                        <div className="p-8 bg-slate-50 border-2 border-slate-100 rounded-[2.5rem] flex items-center justify-between shadow-inner">
+                           <div>
+                              <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-2">Chronological Hash</p>
+                              <p className="text-sm font-black text-slate-900 font-mono tracking-tighter">SEC-CYCLE-{id.padStart(3, '0')}</p>
+                           </div>
+                           <div className="w-12 h-12 bg-white rounded-2xl border border-slate-200 flex items-center justify-center text-slate-300 shadow-sm"><Hash size={20} /></div>
+                        </div>
+                      )}
+                      
+                      <div className="form-field">
+                        <label className="form-label form-label--required">Official Session Reference</label>
+                        <div className="form-input-wrap h-16">
+                          <Calendar size={22} className="form-input-wrap__icon text-indigo-" />
+                          <input 
+                            type="text" 
+                            id="year_name"
+                            placeholder="e.g. 2024-2025" 
+                            value={formData.year_name} 
+                            onChange={(e) => setFormData({ ...formData, year_name: e.target.value })}
+                            className="form-input form-input--with-icon text-xl font-bold tracking-tight"
+                            required
+                          />
+                        </div>
+                        <div className="mt-4 p-4 bg-indigo- border border-sky-100 rounded-2xl flex items-start gap-3">
+                           <div className="w-6 h-6 bg-white rounded-lg flex items-center justify-center text-indigo- shadow-sm mt-0.5"><Calendar size={12} /></div>
+                           <p className="text-[11px] font-medium text-sky-700 leading-relaxed">
+                              <span className="font-extrabold ">Standard Format:</span> YYYY-YYYY (e.g., 2023-2024). This identifier represents the full academic lifecycle across all mapped semesters.
+                           </p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Right Column: Visual Summary / Context (7 cols) */}
-              <div className="xl:col-span-7 space-y-10">
-                 <div className="h-full bg-indigo-600 rounded-[3rem] p-12 text-white relative overflow-hidden flex flex-col justify-between group">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-sky-400/10 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-sky-400/20 transition-all duration-1000" />
-                    
-                    <div className="relative z-10 space-y-6">
-                       <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-indigo-400"><Calendar size={32} /></div>
-                       <h3 className="text-3xl font-black tracking-tight leading-tight">Master Workflow<br/>Synchronization</h3>
-                       <p className="text-slate-400 font-medium leading-relaxed max-w-md">
-                          Academic years serve as the root parent for all institutional timelines. Initializing a session enables university-wide program scheduling and examination cycles.
-                       </p>
-                    </div>
-
-                    <div className="relative z-10 pt-10 border-t border-white/5 mt-10">
-                       <div className="flex items-center gap-4 text-[12px] font-black  tracking-[0.2em] text-indigo-400 opacity-60">
-                          <span className="w-1 h-1 bg-sky-400 rounded-full"></span>
-                          Chronological Consistency Control active
-                       </div>
-                    </div>
-                 </div>
-              </div>
-
+                <div className="p-8 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-[2.5rem] text-white relative overflow-hidden group shadow-xl transition-all duration-500">
+                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+                   <div className="relative z-10 flex items-start gap-5">
+                      <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-white border border-white/20 flex-shrink-0">
+                         <Calendar size={24} className="group-hover:rotate-12 transition-transform duration-500" />
+                      </div>
+                      <div className="space-y-2">
+                         <h4 className="text-lg font-black tracking-tight leading-none">Master Workflow Synchronization</h4>
+                         <p className="text-xs text-indigo-100/70 font-medium leading-relaxed">
+                            Academic years serve as the root parent for all institutional timelines. Initializing a session enables university-wide program scheduling and examination cycles.
+                         </p>
+                      </div>
+                   </div>
+                </div>
             </div>
           </div>
 

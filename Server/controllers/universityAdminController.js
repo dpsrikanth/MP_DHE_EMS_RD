@@ -823,7 +823,7 @@ exports.getStudentsForAllocation = async (req, res) => {
                    sa.seat_no
             FROM students s
             JOIN colleges hc ON hc.name ILIKE s."collageName"
-            JOIN exam_registrations er ON er.student_id = s.id
+            LEFT JOIN exam_registrations er ON er.student_id = s.id ${exam_id ? 'AND er.exam_id = ' + parseInt(exam_id) : ''}
             LEFT JOIN colleges c_personal ON s.sitting_center_id = c_personal.id
             LEFT JOIN colleges hc_center ON hc.sitting_center_id = hc_center.id
             LEFT JOIN (
@@ -835,14 +835,9 @@ exports.getStudentsForAllocation = async (req, res) => {
                 ${exam_id ? 'WHERE sa_inner.exam_id = ' + parseInt(exam_id) : ''}
             ) sa ON sa.student_id = s.id
             LEFT JOIN colleges c_seated ON c_seated.id = sa.seated_college_id
-            WHERE hc.id = $1 AND s."deleteStatus" = true AND er.payment_status = 'Paid'
+            WHERE hc.id = $1 AND s."deleteStatus" = true
         `;
         const params = [collegeId];
-
-        if (exam_id) {
-            query += ` AND er.exam_id = $2`;
-            params.push(exam_id);
-        }
 
         query += ` ORDER BY s.rollnumber ASC`;
 

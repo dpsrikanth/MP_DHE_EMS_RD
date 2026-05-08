@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { masterDataApi } from '../../api/masterDataApi';
+import { examApi } from '../../api/examApi';
 import { universityAdminApi } from '../../api/universityAdminApi';
 import { toast } from 'react-toastify';
 import { Users, Building2, AlertTriangle, ArrowRight, ShieldCheck, UserCheck, Info } from "lucide-react";
@@ -30,7 +31,7 @@ const StudentCenterAllocations = () => {
 
     const fetchExams = async () => {
         try {
-            const data = await masterDataApi.getExams();
+            const data = await examApi.getExams();
             if (data) {
                 setExams(data);
             }

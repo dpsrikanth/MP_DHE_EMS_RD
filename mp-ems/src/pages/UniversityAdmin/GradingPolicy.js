@@ -330,23 +330,26 @@ const GradingPolicy = () => {
                         </div>
                     </div>
 
-                    <div className="bg-sky-900 rounded-2xl p-5 text-white space-y-4 shadow-xl shadow-sky-900/20">
-                        <div className="flex items-center gap-3">
-                            <Info size={20} className="text-indigo-400" />
-                            <h4 className="font-black text-sm  tracking-widest">Logic Guide</h4>
-                        </div>
-                        <div className="space-y-4">
-                            <div className="flex gap-4 group">
-                                <div className="w-8 h-8 rounded-full bg-sky-800 flex items-center justify-center text-[13px] font-black text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">1</div>
-                                <p className="text-[12px] font-medium leading-relaxed opacity-80 flex-1">
-                                    Grades are assigned by checking which range the student's marks fall into, starting from highest to lowest threshold.
-                                </p>
+                    <div className="p-6 bg-gradient-to-br from-slate-900 to-indigo-900 rounded-[2rem] text-white relative overflow-hidden group shadow-xl transition-all duration-500">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+                        <div className="relative z-10 space-y-4">
+                            <div className="flex items-center gap-3">
+                                <Info size={18} className="text-indigo-400" />
+                                <h4 className="font-black text-xs tracking-widest uppercase">Logic Guide</h4>
                             </div>
-                            <div className="flex gap-4 group">
-                                <div className="w-8 h-8 rounded-full bg-sky-800 flex items-center justify-center text-[13px] font-black text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">2</div>
-                                <p className="text-[12px] font-medium leading-relaxed opacity-80 flex-1">
-                                    Grade points are used in the calculation of SGPA: Total (Points × Credits) / Total Credits.
-                                </p>
+                            <div className="space-y-3">
+                                <div className="flex gap-4 group/item">
+                                    <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-black text-indigo-400 group-hover/item:bg-indigo-600 group-hover/item:text-white transition-colors">1</div>
+                                    <p className="text-[11px] font-medium leading-relaxed opacity-70 flex-1">
+                                        Grades are assigned by checking which range the student's marks fall into, starting from highest to lowest threshold.
+                                    </p>
+                                </div>
+                                <div className="flex gap-4 group/item">
+                                    <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-black text-indigo-400 group-hover/item:bg-indigo-600 group-hover/item:text-white transition-colors">2</div>
+                                    <p className="text-[11px] font-medium leading-relaxed opacity-70 flex-1">
+                                        Grade points are used in the calculation of SGPA: Total (Points × Credits) / Total Credits.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>

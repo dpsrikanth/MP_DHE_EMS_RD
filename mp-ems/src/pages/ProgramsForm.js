@@ -149,58 +149,64 @@ const ProgramsForm = () => {
               <div className="xl:col-span-5 space-y-10">
                 <div className="form-section">
                   <div className="form-section__title"><span>Strategic Identity</span></div>
-                  <div className="space-y-6">
-                    {isEditing && (
-                      <div className="p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] flex items-center justify-between">
-                         <div>
-                            <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-2">Registry Reference</p>
-                            <p className="text-sm font-black text-slate-900 font-mono tracking-tighter">PRG-SPEC-{id.padStart(4, '0')}</p>
-                         </div>
-                         <div className="w-10 h-10 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-300 shadow-sm"><Hash size={18} /></div>
-                      </div>
-                    )}
-                    
-                    <div className="form-field">
-                      <label className="form-label form-label--required">Title of Degree / Program</label>
-                      <div className="form-input-wrap">
-                        <BookOpen size={18} className="form-input-wrap__icon" />
-                        <input type="text" placeholder="e.g. Bachelor of Technology" value={form.name} 
-                          onChange={(e) => setForm({ ...form, name: e.target.value })}
-                          className="form-input form-input--with-icon" required />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-6">
+                  <div className="bg-white border-2 border-slate-50 shadow-xl shadow-slate-200/20 rounded-[2rem] p-8 space-y-8">
+                    <div className="space-y-6">
+                      {isEditing && (
+                        <div className="p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] flex items-center justify-between">
+                           <div>
+                              <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-2">Registry Reference</p>
+                              <p className="text-sm font-black text-slate-900 font-mono tracking-tighter">PRG-SPEC-{id.padStart(4, '0')}</p>
+                           </div>
+                           <div className="w-10 h-10 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-300 shadow-sm"><Hash size={18} /></div>
+                        </div>
+                      )}
+                      
                       <div className="form-field">
-                        <label className="form-label form-label--required">Duration (Academic Years)</label>
+                        <label className="form-label form-label--required">Title of Degree / Program</label>
                         <div className="form-input-wrap">
-                          <Calendar size={18} className="form-input-wrap__icon" />
-                          <input type="number" placeholder="e.g. 4" value={form.duration_years} 
-                            onChange={(e) => setForm({ ...form, duration_years: e.target.value })}
+                          <BookOpen size={18} className="form-input-wrap__icon" />
+                          <input type="text" placeholder="e.g. Bachelor of Technology" value={form.name} 
+                            onChange={(e) => setForm({ ...form, name: e.target.value })}
                             className="form-input form-input--with-icon" required />
                         </div>
                       </div>
-                      <div className="form-field">
-                        <label className="form-label">Program Reference Code</label>
-                        <div className="form-input-wrap">
-                          <Hash size={18} className="form-input-wrap__icon" />
-                          <input type="text" placeholder="e.g. BTECH-CS" value={form.code} 
-                            onChange={(e) => setForm({ ...form, code: e.target.value })}
-                            className="form-input form-input--with-icon font-mono " />
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className="form-field">
+                          <label className="form-label form-label--required">Duration (Academic Years)</label>
+                          <div className="form-input-wrap">
+                            <Calendar size={18} className="form-input-wrap__icon" />
+                            <input type="number" placeholder="e.g. 4" value={form.duration_years} 
+                              onChange={(e) => setForm({ ...form, duration_years: e.target.value })}
+                              className="form-input form-input--with-icon" required />
+                          </div>
+                        </div>
+                        <div className="form-field">
+                          <label className="form-label">Program Reference Code</label>
+                          <div className="form-input-wrap">
+                            <Hash size={18} className="form-input-wrap__icon" />
+                            <input type="text" placeholder="e.g. BTECH-CS" value={form.code} 
+                              onChange={(e) => setForm({ ...form, code: e.target.value })}
+                              className="form-input form-input--with-icon font-mono " />
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-10 bg-indigo-600 rounded-[3rem] text-white relative overflow-hidden group">
-                   <div className="absolute bottom-0 right-0 w-40 h-40 bg-indigo-500/10 rounded-full -mr-20 -mb-20 blur-3xl group-hover:bg-indigo-500/20 transition-all duration-700" />
-                   <div className="relative z-10 space-y-4">
-                      <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-white"><Settings size={28} /></div>
-                      <h4 className="text-xl font-black tracking-tight ">Academic Logic</h4>
-                      <p className="text-sm text-slate-400 font-medium leading-relaxed">
-                        Defining program duration and grading systems will establish the base evaluation metrics for all students enrolled in this curriculum series.
-                      </p>
+                <div className="p-8 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-[2.5rem] text-white relative overflow-hidden group shadow-xl transition-all duration-500">
+                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+                   <div className="relative z-10 flex items-start gap-5">
+                      <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-white border border-white/20 flex-shrink-0">
+                         <Settings size={24} className="group-hover:rotate-90 transition-transform duration-1000" />
+                      </div>
+                      <div className="space-y-2">
+                         <h4 className="text-lg font-black tracking-tight leading-none">Academic Logic</h4>
+                         <p className="text-xs text-indigo-100/70 font-medium leading-relaxed">
+                           Defining program duration and grading systems will establish the base evaluation metrics for all students enrolled in this curriculum series.
+                         </p>
+                      </div>
                    </div>
                 </div>
               </div>
@@ -209,7 +215,7 @@ const ProgramsForm = () => {
               <div className="xl:col-span-7 space-y-10">
                 <div className="form-section">
                   <div className="form-section__title"><span>Assessment & structural Control</span></div>
-                  <div className="bg-white border-2 border-slate-50 shadow-xl shadow-slate-200/20 rounded-[3rem] p-10 space-y-8">
+                  <div className="bg-white border-2 border-slate-50 shadow-xl shadow-slate-200/20 rounded-[2rem] p-8 space-y-8">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="form-field">
                           <label className="form-label">Grading System Framework</label>
@@ -255,7 +261,7 @@ const ProgramsForm = () => {
 
                 <div className="form-section">
                   <div className="form-section__title"><span>Institutional Mapping</span></div>
-                  <div className="bg-white border-2 border-slate-50 shadow-xl shadow-slate-200/20 rounded-[3rem] p-10">
+                  <div className="bg-white border-2 border-slate-50 shadow-xl shadow-slate-200/20 rounded-[2rem] p-8">
                     <div className="form-field">
                       <label className="form-label mb-4 flex items-center gap-3 text-slate-400">
                          <div className="w-8 h-8 bg-indigo-50 text-indigo-500 rounded-lg flex items-center justify-center"><Layers size={16} /></div>
@@ -278,6 +284,8 @@ const ProgramsForm = () => {
                         className="form-react-select"
                         classNamePrefix="react-select"
                         placeholder="Link program to institutional departments..."
+                        menuPortalTarget={document.body}
+                        styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
                       />
                     </div>
                   </div>

@@ -92,72 +92,61 @@ const SemestersForm = () => {
         
         {/* Body */}
         <form onSubmit={handleSave}>
-          <div className="form-body">
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-              
-              {/* Left Column: Core Identity (5 cols) */}
-              <div className="xl:col-span-5 space-y-10">
+          <div className="form-body flex justify-center py-12">
+            <div className="max-w-2xl w-full space-y-10">
                 <div className="form-section">
                   <div className="form-section__title"><span>Tier Identity</span></div>
-                  <div className="space-y-8">
-                    {isEditing && (
-                      <div className="p-8 bg-slate-50 border-2 border-slate-100 rounded-[2.5rem] flex items-center justify-between shadow-inner">
-                         <div>
-                            <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-2">Structural Entry</p>
-                            <p className="text-sm font-black text-slate-900 font-mono tracking-tighter">SEM-SPEC-{id.padStart(3, '0')}</p>
-                         </div>
-                         <div className="w-12 h-12 bg-white rounded-2xl border border-slate-200 flex items-center justify-center text-slate-300 shadow-sm"><Hash size={20} /></div>
-                      </div>
-                    )}
-                    
-                    <div className="form-field">
-                      <label className="form-label form-label--required">Official Semester Designation</label>
-                      <div className="form-input-wrap h-16">
-                        <Activity size={22} className="form-input-wrap__icon text-indigo-500" />
-                        <input 
-                          type="text" 
-                          placeholder="e.g. Semester 01 or Odd Semester" 
-                          value={form.semester_name} 
-                          onChange={(e) => setForm({ ...form, semester_name: e.target.value })}
-                          className="form-input form-input--with-icon text-xl font-bold tracking-tight"
-                          required
-                        />
-                      </div>
-                      <div className="mt-4 p-5 bg-indigo-50 border border-indigo-100 rounded-[2rem] flex items-start gap-4">
-                         <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm mt-0.5"><Layers size={14} /></div>
-                         <p className="text-[11px] font-medium text-indigo-700 leading-relaxed">
-                            <span className="font-extrabold  block mb-1">Architectural Hint:</span> 
-                            Define a title that clearly identifies the semester rank or periodic nature within the academic program framework.
-                         </p>
+                  <div className="bg-white border-2 border-slate-50 shadow-xl shadow-slate-200/20 rounded-[2rem] p-8 space-y-8">
+                    <div className="space-y-8">
+                      {isEditing && (
+                        <div className="p-8 bg-slate-50 border-2 border-slate-100 rounded-[2.5rem] flex items-center justify-between shadow-inner">
+                           <div>
+                              <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-2">Structural Entry</p>
+                              <p className="text-sm font-black text-slate-900 font-mono tracking-tighter">SEM-SPEC-{id.padStart(3, '0')}</p>
+                           </div>
+                           <div className="w-12 h-12 bg-white rounded-2xl border border-slate-200 flex items-center justify-center text-slate-300 shadow-sm"><Hash size={20} /></div>
+                        </div>
+                      )}
+                      
+                      <div className="form-field">
+                        <label className="form-label form-label--required">Official Semester Designation</label>
+                        <div className="form-input-wrap h-16">
+                          <Activity size={22} className="form-input-wrap__icon text-indigo-500" />
+                          <input 
+                            type="text" 
+                            placeholder="e.g. Semester 01 or Odd Semester" 
+                            value={form.semester_name} 
+                            onChange={(e) => setForm({ ...form, semester_name: e.target.value })}
+                            className="form-input form-input--with-icon text-xl font-bold tracking-tight"
+                            required
+                          />
+                        </div>
+                        <div className="mt-4 p-5 bg-indigo-50 border border-indigo-100 rounded-[2rem] flex items-start gap-4">
+                           <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm mt-0.5"><Layers size={14} /></div>
+                           <p className="text-[11px] font-medium text-indigo-700 leading-relaxed">
+                              <span className="font-extrabold  block mb-1">Architectural Hint:</span> 
+                              Define a title that clearly identifies the semester rank or periodic nature within the academic program framework.
+                           </p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Right Column: Visual Summary (7 cols) */}
-              <div className="xl:col-span-7 space-y-10">
-                 <div className="h-full bg-indigo-950 rounded-[3rem] p-12 text-white relative overflow-hidden flex flex-col justify-between group">
-                    <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full -mr-40 -mt-40 blur-3xl group-hover:bg-white/10 transition-all duration-1000" />
-                    
-                    <div className="relative z-10 space-y-6">
-                       <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-indigo-300 shadow-2xl shadow-black/50"><Layers size={32} /></div>
-                       <h3 className="text-3xl font-black tracking-tight leading-loose">Curriculum Tier<br/>Master Profile</h3>
-                       <p className="text-indigo-200 font-medium leading-relaxed max-w-sm opacity-60">
-                          Semester definitions are synchronized across all department programs to maintain institutional academic structural integrity. 
-                       </p>
-                    </div>
-
-                    <div className="relative z-10 pt-10 border-t border-white/5 mt-10 flex items-center justify-between">
-                       <div className="flex items-center gap-4 text-[12px] font-black  tracking-[0.2em] text-indigo-400">
-                          <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
-                          Global Tier Logic Active
-                       </div>
-                       <div className="text-[12px] font-black text-white/20  tracking-widest">v2.01 // Tier-C</div>
-                    </div>
-                 </div>
-              </div>
-
+                <div className="p-8 bg-gradient-to-br from-indigo-900 to-slate-900 rounded-[2.5rem] text-white relative overflow-hidden group shadow-xl transition-all duration-500">
+                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+                   <div className="relative z-10 flex items-start gap-5">
+                      <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-white border border-white/20 flex-shrink-0">
+                         <Layers size={24} className="group-hover:scale-110 transition-transform duration-500" />
+                      </div>
+                      <div className="space-y-2">
+                         <h4 className="text-lg font-black tracking-tight leading-none">Curriculum Tier Master Profile</h4>
+                         <p className="text-xs text-indigo-100/70 font-medium leading-relaxed">
+                            Semester definitions are synchronized across all department programs to maintain institutional academic structural integrity.
+                         </p>
+                      </div>
+                   </div>
+                </div>
             </div>
           </div>
 

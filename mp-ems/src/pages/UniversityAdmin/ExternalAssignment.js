@@ -101,18 +101,19 @@ const ExternalAssignment = () => {
 
   return (
     <div className="max-w-[1600px] mx-auto p-4 sm:p-5 space-y-4 animate-in fade-in duration-500">
-      <div className="bg-indigo-600 rounded-2xl p-5 text-white shadow-2xl relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-black italic text-indigo-400">Exam Evaluation Control</h1>
-            <p className="text-slate-400 max-w-xl text-lg font-medium leading-relaxed">
-              Assign external faculty to Exams. Assigned faculty will see all registered students and all their subjects for that exam.
-            </p>
-          </div>
-          <div className="bg-slate-800 p-4 rounded-2xl">
-            <GraduationCap size={40} className="text-indigo-400" />
-          </div>
-        </div>
+      <div className="p-8 bg-gradient-to-br from-indigo-900 to-slate-900 rounded-[2.5rem] text-white relative overflow-hidden group shadow-xl transition-all duration-500">
+         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+         <div className="relative z-10 flex items-start gap-5">
+            <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-white border border-white/20 flex-shrink-0">
+               <GraduationCap size={24} className="group-hover:scale-110 transition-transform duration-500" />
+            </div>
+            <div className="space-y-2">
+               <h4 className="text-lg font-black tracking-tight leading-none">Exam Evaluation Control</h4>
+               <p className="text-xs text-indigo-100/70 font-medium leading-relaxed">
+                  Assign external faculty to Exams. Assigned faculty will see all registered students and all their subjects for that exam.
+               </p>
+            </div>
+         </div>
       </div>
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
@@ -171,7 +172,12 @@ const ExternalAssignment = () => {
 
           <div className="lg:col-span-4 space-y-4 sticky top-6">
             <div className="bg-white rounded-2xl border border-slate-100 shadow-xl overflow-hidden">
-               <div className="p-5 bg-indigo-600 text-white"><h3 className="text-xl font-black  tracking-tight">Assign Evaluator</h3></div>
+               <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
+                  <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
+                    <UserCheck size={16} />
+                  </div>
+                  <h3 className="text-sm font-black text-slate-900 tracking-tight">Assign Evaluator</h3>
+               </div>
                <div className="p-5 space-y-4">
                   <div className="space-y-3">
                     <label className="text-[13px] font-black text-slate-400  tracking-widest">External Faculty</label>
