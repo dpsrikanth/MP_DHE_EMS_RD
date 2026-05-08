@@ -924,37 +924,64 @@ const deleteProgram = async (req, res) => {
 
 const getStudents = async (req, res) => {
   try {
-    const { role, college_id } = req.user || {};
+    const { role, college_id, program_id, semester_id } = req.query || {};
     const university_id = req.user?.university_id || req.user?.universityId;
+
+    let programName = null;
+    let semesterName = null;
+
+    if (program_id && program_id !== 'null') {
+      const pRes = await client.query('SELECT name FROM master_programs WHERE id = $1', [program_id]);
+      if (pRes.rowCount > 0) programName = pRes.rows[0].name;
+    }
+    if (semester_id && semester_id !== 'null') {
+      const sRes = await client.query('SELECT semester_name FROM master_semesters WHERE id = $1', [semester_id]);
+      if (sRes.rowCount > 0) semesterName = sRes.rows[0].semester_name;
+    }
+
     let query = `SELECT s.* FROM public.students s`;
     const params = [];
+    const whereClauses = ["s.\"deleteStatus\" = true"];
 
-    if (role === 'university_admin') {
+    if (role === 'university_admin' || (req.user.role === 'university_admin' && !role)) {
       if (!university_id) return res.json([]);
       query = `
         SELECT s.*, md.department_code as department
         FROM public.students s
         JOIN public.colleges c ON s."collageName" ILIKE c.name
         LEFT JOIN public.master_departments md ON s.department = md.department_name
-        WHERE s."deleteStatus" = true AND c.university_id = $1
       `;
       params.push(university_id);
-    } else if (role === 'college_admin') {
+      whereClauses.push(`c.university_id = $${params.length}`);
+    } else if (role === 'college_admin' || (req.user.role === 'college_admin' && !role)) {
+      const cId = college_id || req.user.college_id;
       query = `
         SELECT s.*, md.department_code as department
         FROM public.students s
         JOIN public.colleges c ON s."collageName" ILIKE c.name
         LEFT JOIN public.master_departments md ON s.department = md.department_name
-        WHERE s."deleteStatus" = true AND c.id = $1
       `;
-      params.push(college_id);
+      params.push(cId);
+      whereClauses.push(`c.id = $${params.length}`);
     } else {
       query = `
         SELECT s.*, md.department_code as department
         FROM public.students s
         LEFT JOIN public.master_departments md ON s.department = md.department_name
-        WHERE s."deleteStatus" = true
       `;
+    }
+
+    if (programName) {
+      params.push(programName);
+      whereClauses.push(`s."programName" ILIKE $${params.length}`);
+    }
+    if (semesterName) {
+      params.push(semesterName);
+      whereClauses.push(`s."semister" ILIKE $${params.length}`);
+    }
+
+    if (whereClauses.length > 0) {
+      query += " WHERE " + whereClauses.join(" AND ");
     }
 
     query += ` ORDER BY s.id ASC`;

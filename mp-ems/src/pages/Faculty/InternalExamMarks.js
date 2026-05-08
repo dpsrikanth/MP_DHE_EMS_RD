@@ -112,7 +112,8 @@ const InternalExamMarks = () => {
                 college_id: subject.college_id,
                 semester_id: selectedSem.value,
                 academic_year_id: selectedYear.value,
-                section: subject.section
+                section: subject.section,
+                program_id: subject.program_id
             });
             
             if (data) {

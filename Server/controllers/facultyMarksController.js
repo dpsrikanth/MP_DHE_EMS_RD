@@ -69,16 +69,29 @@ exports.getStudentsForSubject = async (req, res) => {
             return res.status(200).json([]);
         }
 
-        // Intentionally NOT filtering by semister here — the subject/exam already defines the
-        // semester scope, and students must remain visible in their program rosters across
-        // all semesters after promotion.
-        // Use ILIKE for case-insensitive matching of names
+        let semesterName = null;
+        if (semester_id && semester_id !== 'null' && semester_id !== 'undefined') {
+            const semRes = await db.query('SELECT semester_name FROM master_semesters WHERE id = $1', [semester_id]);
+            if (semRes.rowCount > 0) {
+                semesterName = semRes.rows[0].semester_name;
+            }
+        }
+
+        if (!programName || !semesterName) {
+            console.warn(`[DEBUG] Program (${programName}) or Semester (${semesterName}) not found. Returning empty student list.`);
+            return res.status(200).json([]);
+        }
+
+        // Apply strict filtering by program AND semester
         const query = `
             SELECT * FROM students 
-            WHERE "collageName" ILIKE $1 AND "programName" ILIKE $2 AND "deleteStatus" = true
+            WHERE "collageName" ILIKE $1 
+              AND "programName" ILIKE $2 
+              AND "semister" ILIKE $3
+              AND "deleteStatus" = true
             ORDER BY rollnumber ASC NULLS LAST, name ASC
         `;
-        const result = await db.query(query, [collageName, programName]);
+        const result = await db.query(query, [collageName, programName, semesterName]);
         console.log(`[DEBUG] Found ${result.rows.length} students for ${collageName} / ${programName}`);
         res.status(200).json(result.rows);
     } catch (error) {
@@ -463,7 +476,7 @@ exports.getAvailableRounds = async (req, res) => {
 
 exports.getStudentsForRound = async (req, res) => {
     try {
-        const { subject_id, round_name, college_id, semester_id, academic_year_id, section } = req.query;
+        const { subject_id, round_name, college_id, semester_id, academic_year_id, section, program_id } = req.query;
 
         const structRes = await db.query(`
             SELECT id, max_marks, passing_marks 
@@ -481,18 +494,33 @@ exports.getStudentsForRound = async (req, res) => {
         const colRes = await db.query('SELECT name FROM colleges WHERE id = $1', [college_id]);
         const semRes = await db.query('SELECT semester_name FROM master_semesters WHERE id = $1', [semester_id]);
         
+        let programName = null;
+        if (program_id && program_id !== 'null' && program_id !== 'undefined') {
+            const progRes = await db.query('SELECT name FROM master_programs WHERE id = $1', [program_id]);
+            if (progRes.rowCount > 0) programName = progRes.rows[0].name;
+        }
+
         if (colRes.rowCount === 0 || semRes.rowCount === 0) {
             return res.status(400).json({ error: "Invalid context" });
         }
 
-        const studentsQuery = `
+        const collageName = colRes.rows[0].name;
+        const semesterName = semRes.rows[0].semester_name;
+
+        let studentsQuery = `
             SELECT DISTINCT s.id, s.name, s.rollnumber 
             FROM students s 
-            LEFT JOIN student_internal_marks sim ON s.id = sim.student_id
             WHERE s."collageName" ILIKE $1 
-            AND (s."semister" ILIKE $2 OR sim.subject_id = $3)
+              AND s."semister" ILIKE $2
         `;
-        const studentsRes = await db.query(studentsQuery, [colRes.rows[0].name, semRes.rows[0].semester_name, subject_id]);
+        let queryParams = [collageName, semesterName];
+
+        if (programName) {
+            studentsQuery += ` AND s."programName" ILIKE $3`;
+            queryParams.push(programName);
+        }
+
+        const studentsRes = await db.query(studentsQuery, queryParams);
 
         let marks = [];
         if (componentId) {

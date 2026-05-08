@@ -810,13 +810,47 @@ exports.getStudentsForAllocation = async (req, res) => {
         const { collegeId } = req.params;
         const { exam_id } = req.query;
 
+        let examFilter = "";
+        let params = [collegeId];
+        let pCount = 1;
+
+        if (exam_id) {
+            const examRes = await db.query(`
+                SELECT e.name as exam_name, mp.name as program_name, ms.semester_name 
+                FROM exams e
+                LEFT JOIN master_programs mp ON e.program_id = mp.id
+                LEFT JOIN master_semesters ms ON e.semester_id = ms.id
+                WHERE e.id = $1
+            `, [exam_id]);
+            
+            if (examRes.rowCount > 0) {
+                const { program_name, semester_name, exam_name } = examRes.rows[0];
+                console.log(`[DEBUG] Exam scope: Exam="${exam_name}", Program="${program_name}", Semester="${semester_name}"`);
+                
+                // If master links are present, use them for strict filtering
+                if (program_name) {
+                    pCount++;
+                    examFilter += ` AND REPLACE(REPLACE(s."programName", '.', ''), ' ', '') ILIKE REPLACE(REPLACE($${pCount}, '.', ''), ' ', '')`;
+                    params.push(program_name);
+                }
+                if (semester_name) {
+                    pCount++;
+                    examFilter += ` AND REPLACE(REPLACE(s."semister", '.', ''), ' ', '') ILIKE REPLACE(REPLACE($${pCount}, '.', ''), ' ', '')`;
+                    params.push(semester_name);
+                }
+            } else {
+                console.warn(`[DEBUG] Exam ID ${exam_id} not found in database!`);
+            }
+        }
+
+        console.log(`[DEBUG] Main query params:`, params);
+        console.log(`[DEBUG] examFilter: "${examFilter}"`);
+
         let query = `
             SELECT DISTINCT s.id, s.name, s.rollnumber, s."programName", s.semister, 
                    s.sitting_center_id,
                    c_personal.name as sitting_center_name,
-                   -- Actual seated college from seating_arrangements (most accurate)
                    c_seated.name as actual_seated_center_name,
-                   -- Bulk college-level mapping (fallback only)
                    hc_center.name as college_center_name,
                    sa.hall_code,
                    sa.row_no,
@@ -835,9 +869,9 @@ exports.getStudentsForAllocation = async (req, res) => {
                 ${exam_id ? 'WHERE sa_inner.exam_id = ' + parseInt(exam_id) : ''}
             ) sa ON sa.student_id = s.id
             LEFT JOIN colleges c_seated ON c_seated.id = sa.seated_college_id
-            WHERE hc.id = $1 AND s."deleteStatus" = true
+            WHERE hc.id = $1 AND s."deleteStatus" = true ${examFilter}
         `;
-        const params = [collegeId];
+
 
         query += ` ORDER BY s.rollnumber ASC`;
 
