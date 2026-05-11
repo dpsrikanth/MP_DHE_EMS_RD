@@ -1525,7 +1525,8 @@ const getExams = async (req, res) => {
           e.semester_id, 
           ms.semester_name,
           e.college_id, 
-          e.university_id,
+          COALESCE(e.university_id, c.university_id) as university_id,
+          u2.name as university_name,
           COALESCE(c.name, COALESCE(u.name, 'University-wide')) as college_name,
           e.exam_type, 
           et.type_name as exam_type_name,
@@ -1579,6 +1580,7 @@ const getExams = async (req, res) => {
         FROM exams e
         LEFT JOIN colleges c ON e.college_id = c.id
         LEFT JOIN universities u ON e.university_id = u.id
+        LEFT JOIN universities u2 ON COALESCE(e.university_id, c.university_id) = u2.id
         LEFT JOIN exam_types et ON e.exam_type = et.id
         LEFT JOIN master_departments md ON e.department_id = md.id
         LEFT JOIN master_programs mp ON e.program_id = mp.id
@@ -1597,6 +1599,7 @@ const getExams = async (req, res) => {
           ms.semester_name,
           ies.college_id, 
           c.university_id,
+          u.name as university_name,
           c.name as college_name,
           1 as exam_type, 
           'Internal Assessment' as exam_type_name,
@@ -1625,6 +1628,7 @@ const getExams = async (req, res) => {
         FROM internal_exam_schedules ies
         LEFT JOIN internal_exam_rounds ier ON (CASE WHEN ies.round_id ~ '^[0-9]+$' THEN ies.round_id::integer ELSE NULL END = ier.id)
         LEFT JOIN colleges c ON ies.college_id = c.id
+        LEFT JOIN universities u ON c.university_id = u.id
         LEFT JOIN master_programs mp ON ies.program_id = mp.id
         LEFT JOIN master_academic_years ay ON ies.academic_year_id = ay.id
         LEFT JOIN master_semesters ms ON ies.semester_id = ms.id
@@ -2383,15 +2387,11 @@ const getStudentResults = async (req, res) => {
             AND ims_o.component_name NOT ILIKE 'BEST_OF_3%'
           GROUP BY sim_o.student_id, sim_o.subject_id
       ),
-      raw_internal AS (
+      raw_internal_totals AS (
           SELECT 
               COALESCE(i.student_id, o.student_id) as student_id,
               COALESCE(i.subject_id, o.subject_id) as subject_id,
               (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0)) as total_raw,
-              json_agg(json_build_object(
-                 'name', 'Aggregated Internal',
-                 'marks', (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0))
-              )) as components,
               MAX(mws2.status) as batch_status
           FROM ia_summary i
           FULL OUTER JOIN other_summary o ON i.student_id = o.student_id AND i.subject_id = o.subject_id
@@ -2405,6 +2405,23 @@ const getStudentResults = async (req, res) => {
               AND ca.subject_id = COALESCE(i.subject_id, o.subject_id)
           WHERE (mws2.status IN ('Approved', 'Locked') OR ca.is_accepted = true)
           GROUP BY COALESCE(i.student_id, o.student_id), COALESCE(i.subject_id, o.subject_id), i.ia_total, o.other_total
+      ),
+      raw_internal AS (
+          SELECT 
+              t.*,
+              (
+                  SELECT json_agg(json_build_object(
+                      'name', ims_inner.component_name,
+                      'marks', sim_inner.marks_obtained::float
+                  ))
+                  FROM student_internal_marks sim_inner
+                  JOIN internal_marks_structure ims_inner ON sim_inner.component_id = ims_inner.id
+                  WHERE sim_inner.student_id = t.student_id 
+                    AND sim_inner.subject_id = t.subject_id
+                    AND ims_inner.component_name NOT ILIKE 'TOTAL%'
+                    AND ims_inner.component_name NOT ILIKE 'BEST_OF_3%'
+              ) as components
+          FROM raw_internal_totals t
       )
       
       SELECT 
@@ -4616,15 +4633,11 @@ const getResultSheetData = async (req, res) => {
             AND ims_o.component_name NOT ILIKE 'BEST_OF_3%'
           GROUP BY sim_o.student_id, sim_o.subject_id
       ),
-      raw_internal AS (
+      raw_internal_totals AS (
           SELECT 
               COALESCE(i.student_id, o.student_id) as student_id,
               COALESCE(i.subject_id, o.subject_id) as subject_id,
               (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0)) as total_raw,
-              json_agg(json_build_object(
-                 'name', 'Aggregated Internal',
-                 'marks', (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0))
-              )) as components,
               MAX(mws2.status) as batch_status
           FROM ia_summary i
           FULL OUTER JOIN other_summary o ON i.student_id = o.student_id AND i.subject_id = o.subject_id
@@ -4638,6 +4651,23 @@ const getResultSheetData = async (req, res) => {
               AND ca.subject_id = COALESCE(i.subject_id, o.subject_id)
           WHERE (mws2.status IN ('Approved', 'Locked') OR ca.is_accepted = true)
           GROUP BY COALESCE(i.student_id, o.student_id), COALESCE(i.subject_id, o.subject_id), i.ia_total, o.other_total
+      ),
+      raw_internal AS (
+          SELECT 
+              t.*,
+              (
+                  SELECT json_agg(json_build_object(
+                      'name', ims_inner.component_name,
+                      'marks', sim_inner.marks_obtained::float
+                  ))
+                  FROM student_internal_marks sim_inner
+                  JOIN internal_marks_structure ims_inner ON sim_inner.component_id = ims_inner.id
+                  WHERE sim_inner.student_id = t.student_id 
+                    AND sim_inner.subject_id = t.subject_id
+                    AND ims_inner.component_name NOT ILIKE 'TOTAL%'
+                    AND ims_inner.component_name NOT ILIKE 'BEST_OF_3%'
+              ) as components
+          FROM raw_internal_totals t
       )
       
       SELECT 

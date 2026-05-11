@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   FileText, Plus, Pencil, X, Check, Calendar, Book, Layers, Hash, ArrowRight,
@@ -24,6 +24,7 @@ const Exams = () => {
   const [examTypeFilter, setExamTypeFilter] = useState(isCollegeAdminRole ? 'internal' : 'all');
 
   // University Admin cascading filters
+  const [filterUniversity, setFilterUniversity] = useState('');
   const [filterCollege, setFilterCollege] = useState('');
   const [filterProgram, setFilterProgram] = useState('');
   const [filterSemester, setFilterSemester] = useState('');
@@ -80,6 +81,11 @@ const Exams = () => {
         marks_submitted: item.marks_submitted
       });
     });
+    // Sort subjects within each group by date ascending
+    Object.values(groups).forEach(group => {
+      group.subjects.sort((a, b) => new Date(a.exam_date) - new Date(b.exam_date));
+    });
+
     // Sort groups by ID (highest/latest first)
     let allGroups = Object.values(groups).sort((a, b) => b.id - a.id);
 
@@ -100,6 +106,9 @@ const Exams = () => {
     // Note: External exams (exam_type=2) are university-wide with college_id=NULL,
     // so we include them alongside the selected college's exams.
     if (isUniversityAdminRole) {
+      if (filterUniversity) {
+        allGroups = allGroups.filter(g => String(g.university_id) === String(filterUniversity));
+      }
       if (filterCollege) {
         allGroups = allGroups.filter(g => 
           String(g.college_id) === String(filterCollege) || !g.college_id
@@ -117,7 +126,7 @@ const Exams = () => {
     }
 
     return allGroups;
-  }, [data, examTypeFilter, isCollegeAdminRole, isUniversityAdminRole, filterCollege, filterProgram, filterSemester, filterExamType]);
+  }, [data, examTypeFilter, isCollegeAdminRole, isUniversityAdminRole, filterUniversity, filterCollege, filterProgram, filterSemester, filterExamType]);
 
   // Cascading filter options: derive available options from the actual data
   const filterOptions = useMemo(() => {
@@ -131,15 +140,25 @@ const Exams = () => {
     });
     const allGroups = Object.values(groups);
 
-    // Available colleges from actual exam data
-    const collegeSet = new Map();
+    // Available Universities from actual exam data
+    const universitySet = new Map();
     allGroups.forEach(g => {
+      if (g.university_id) universitySet.set(String(g.university_id), g.university_name || `University #${g.university_id}`);
+    });
+    const availableUniversities = Array.from(universitySet, ([id, name]) => ({ id, name }));
+
+    // Available colleges: filtered by selected university
+    let filteredForColleges = allGroups;
+    if (filterUniversity) filteredForColleges = filteredForColleges.filter(g => String(g.university_id) === String(filterUniversity));
+    const collegeSet = new Map();
+    filteredForColleges.forEach(g => {
       if (g.college_id) collegeSet.set(String(g.college_id), g.college_name || `College #${g.college_id}`);
     });
     const availableColleges = Array.from(collegeSet, ([id, name]) => ({ id, name }));
 
-    // Programs: filtered by selected college (include external/university-wide exams too)
+    // Programs: filtered by selected university + college (include external/university-wide exams too)
     let filteredForPrograms = allGroups;
+    if (filterUniversity) filteredForPrograms = filteredForPrograms.filter(g => String(g.university_id) === String(filterUniversity));
     if (filterCollege) filteredForPrograms = filteredForPrograms.filter(g => 
       String(g.college_id) === String(filterCollege) || !g.college_id
     );
@@ -149,8 +168,9 @@ const Exams = () => {
     });
     const availablePrograms = Array.from(programSet, ([id, name]) => ({ id, name }));
 
-    // Semesters: filtered by selected college + program (include external/university-wide exams too)
+    // Semesters: filtered by selected university + college + program (include external/university-wide exams too)
     let filteredForSemesters = allGroups;
+    if (filterUniversity) filteredForSemesters = filteredForSemesters.filter(g => String(g.university_id) === String(filterUniversity));
     if (filterCollege) filteredForSemesters = filteredForSemesters.filter(g => 
       String(g.college_id) === String(filterCollege) || !g.college_id
     );
@@ -161,8 +181,9 @@ const Exams = () => {
     });
     const availableSemesters = Array.from(semesterSet, ([id, name]) => ({ id, name }));
 
-    // Exam types: filtered by college + program + semester (include external/university-wide exams too)
+    // Exam types: filtered by university + college + program + semester (include external/university-wide exams too)
     let filteredForTypes = allGroups;
+    if (filterUniversity) filteredForTypes = filteredForTypes.filter(g => String(g.university_id) === String(filterUniversity));
     if (filterCollege) filteredForTypes = filteredForTypes.filter(g => 
       String(g.college_id) === String(filterCollege) || !g.college_id
     );
@@ -174,8 +195,8 @@ const Exams = () => {
     });
     const availableExamTypes = Array.from(typeSet, ([id, name]) => ({ id, name }));
 
-    return { availableColleges, availablePrograms, availableSemesters, availableExamTypes };
-  }, [data, filterCollege, filterProgram, filterSemester]);
+    return { availableUniversities, availableColleges, availablePrograms, availableSemesters, availableExamTypes };
+  }, [data, filterUniversity, filterCollege, filterProgram, filterSemester]);
 
   // College Admin filter options: derive from exams matching current tab (internal/external)
   const collegeAdminFilterOptions = useMemo(() => {
@@ -208,6 +229,13 @@ const Exams = () => {
   }, [data, isCollegeAdminRole, examTypeFilter, filterProgram]);
 
   // Reset downstream filters when a parent filter changes
+  const handleUniversityFilterChange = (val) => {
+    setFilterUniversity(val);
+    setFilterCollege('');
+    setFilterProgram('');
+    setFilterSemester('');
+    setFilterExamType('');
+  };
   const handleCollegeFilterChange = (val) => {
     setFilterCollege(val);
     setFilterProgram('');
@@ -224,12 +252,13 @@ const Exams = () => {
     setFilterExamType('');
   };
   const handleClearAllFilters = () => {
+    setFilterUniversity('');
     setFilterCollege('');
     setFilterProgram('');
     setFilterSemester('');
     setFilterExamType('');
   };
-  const hasActiveFilters = filterCollege || filterProgram || filterSemester || filterExamType;
+  const hasActiveFilters = filterUniversity || filterCollege || filterProgram || filterSemester || filterExamType;
 
 
   // Apply search/pagination to groupedData if needed, but useDataTable already handles 'data'.
@@ -496,15 +525,35 @@ const Exams = () => {
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              {/* University Filter */}
+              <div className="relative">
+                <select
+                  value={filterUniversity}
+                  onChange={(e) => handleUniversityFilterChange(e.target.value)}
+                  className="w-full appearance-none bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-indigo-500 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold text-slate-700 outline-none transition-all cursor-pointer shadow-sm"
+                >
+                  <option value="">All Universities</option>
+                  {filterOptions.availableUniversities.map(u => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+
               {/* College Filter */}
               <div className="relative">
                 <select
                   value={filterCollege}
                   onChange={(e) => handleCollegeFilterChange(e.target.value)}
-                  className="w-full appearance-none bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-indigo-500 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold text-slate-700 outline-none transition-all cursor-pointer shadow-sm"
+                  disabled={!filterUniversity}
+                  className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold outline-none transition-all cursor-pointer shadow-sm ${
+                    filterUniversity 
+                      ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-indigo-500 text-slate-700' 
+                      : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
+                  }`}
                 >
-                  <option value="">All Colleges</option>
+                  <option value="">{filterUniversity ? 'All Colleges' : 'Select University First'}</option>
                   {filterOptions.availableColleges.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
@@ -738,7 +787,7 @@ const Exams = () => {
                         <div key={sub.id} className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all group/sub">
                           <div className="flex items-center gap-4">
                             <div className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-slate-50 text-slate-400 border border-slate-100 group-hover/sub:bg-indigo-50 group-hover/sub:text-indigo-500 group-hover/sub:border-indigo-100 transition-colors shrink-0">
-                              <span className="text-[12px] font-black leading-tight text-center">{formatDate(sub.exam_date).split('-').slice(0,2).join('-')}<br/>{formatDate(sub.exam_date).split('-')[2]}</span>
+                              <span className="text-[10px] font-black leading-tight text-center">{formatDate(sub.exam_date)}</span>
                             </div>
                             <div>
                               <p className="text-sm font-bold text-slate-900 mb-0.5">{sub.subject_name}</p>

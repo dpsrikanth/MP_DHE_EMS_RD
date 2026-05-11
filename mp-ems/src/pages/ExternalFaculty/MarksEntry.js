@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   Save, Send, AlertCircle, Info, 
   Search, FileEdit, CheckCircle2,
@@ -16,6 +16,7 @@ const ExternalMarksEntry = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterExam, setFilterExam] = useState("all");
   const [modifiedMarks, setModifiedMarks] = useState({}); // { student_id_subject_id_exam_id: marks }
   const [showImportModal, setShowImportModal] = useState(false);
   const [activeSubjectForImport, setActiveSubjectForImport] = useState(null);
@@ -234,6 +235,10 @@ const ExternalMarksEntry = () => {
     return acc;
   }, {});
 
+  const uniqueExamNames = useMemo(() => {
+    return Object.keys(groupedData).sort();
+  }, [groupedData]);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 text-indigo-500">
@@ -256,20 +261,39 @@ const ExternalMarksEntry = () => {
           </div>
         </div>
 
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-          <input 
-            type="text" 
-            placeholder="Search by Roll, Name, or Subject..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-14 bg-white border-2 border-slate-100 rounded-2x shadow-sm pl-12 pr-4 text-sm font-bold focus:outline-none focus:border-indigo-500 transition-all placeholder:text-slate-400"
-          />
+        <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+          <div className="relative w-full md:w-80">
+            <select
+              value={filterExam}
+              onChange={(e) => setFilterExam(e.target.value)}
+              className="w-full h-14 bg-white border-2 border-slate-100 rounded-2xl shadow-sm pl-12 pr-10 text-sm font-bold focus:outline-none focus:border-indigo-500 appearance-none transition-all cursor-pointer"
+            >
+              <option value="all">All Exams</option>
+              {uniqueExamNames.map(name => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+            <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+          </div>
+
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+            <input 
+              type="text" 
+              placeholder="Search by Roll, Name, or Subject..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-14 bg-white border-2 border-slate-100 rounded-2xl shadow-sm pl-12 pr-4 text-sm font-bold focus:outline-none focus:border-indigo-500 transition-all placeholder:text-slate-400"
+            />
+          </div>
         </div>
       </div>
 
       {Object.values(groupedData).length > 0 ? (
-        Object.values(groupedData).map((exam, examIdx) => (
+        Object.values(groupedData)
+          .filter(exam => filterExam === 'all' || exam.exam_name === filterExam)
+          .map((exam, examIdx) => (
           <div key={examIdx} className="space-y-8">
             <div className="flex items-center gap-4 px-2">
               <div className="h-px flex-1 bg-slate-100"></div>
@@ -281,9 +305,9 @@ const ExternalMarksEntry = () => {
               {Object.values(exam.subjects).map((subject, subIdx) => {
                 // Check if any student matches the search
                 const filteredStudents = subject.students.filter(s => 
-                  s.student_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                  s.rollnumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  subject.subject_name.toLowerCase().includes(searchQuery.toLowerCase())
+                  (s.student_name || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
+                  (s.rollnumber || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  (subject.subject_name || "").toLowerCase().includes(searchQuery.toLowerCase())
                 );
 
                 if (filteredStudents.length === 0) return null;

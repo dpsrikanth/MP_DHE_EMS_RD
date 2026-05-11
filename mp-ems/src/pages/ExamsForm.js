@@ -77,7 +77,21 @@ const ExamsForm = () => {
         name: exam.exam_name || '', semester_id: exam.semester_id || '', college_id: exam.college_id || 'university_wide',
         exam_type: exam.exam_type || '', department_id: exam.department_id || '', program_id: exam.program_id || '',
         academic_year_id: exam.academic_year_id || '', status: exam.status,
-        subjects: series.map(s => ({ id: s.id, subject_id: s.subject_id, exam_date: s.exam_date ? new Date(s.exam_date).toISOString().split('T')[0] : '', start_time: s.start_time || '', end_time: s.end_time || '' }))
+        subjects: series.map(s => {
+          const d = s.exam_date ? new Date(s.exam_date) : null;
+          const dateStr = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
+          return { 
+            id: s.id, 
+            subject_id: s.subject_id, 
+            exam_date: dateStr, 
+            start_time: s.start_time || '', 
+            end_time: s.end_time || '' 
+          };
+        }).sort((a, b) => {
+          if (!a.exam_date) return 1;
+          if (!b.exam_date) return -1;
+          return a.exam_date.localeCompare(b.exam_date);
+        })
       });
     } catch (err) { toast.error(err.message); navigate('/exams'); } finally { setLoading(false); }
   };
@@ -306,11 +320,25 @@ const ExamsForm = () => {
                           <p className="text-[12px] text-slate-400 font-bold  tracking-widest">Construct the assessment series</p>
                        </div>
                     </div>
-                    <button type="button"
-                      onClick={() => setFormData({ ...formData, subjects: [...formData.subjects, { id: 'new-' + Date.now(), subject_id: '', exam_date: '', start_time: '', end_time: '' }] })}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-slate-100 text-indigo-600 font-black rounded-2xl hover:bg-indigo-50 hover:border-indigo-100 transition-all text-[11px]  tracking-widest shadow-sm">
-                      <Plus size={16} /> Add Subject Row
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button type="button"
+                        onClick={() => {
+                          const sorted = [...formData.subjects].sort((a, b) => {
+                            if (!a.exam_date) return 1;
+                            if (!b.exam_date) return -1;
+                            return new Date(a.exam_date) - new Date(b.exam_date);
+                          });
+                          setFormData({ ...formData, subjects: sorted });
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-3 bg-white border-2 border-slate-100 text-slate-500 font-black rounded-2xl hover:bg-slate-50 transition-all text-[11px] tracking-widest shadow-sm">
+                        Sort Chronologically
+                      </button>
+                      <button type="button"
+                        onClick={() => setFormData({ ...formData, subjects: [...formData.subjects, { id: 'new-' + Date.now(), subject_id: '', exam_date: '', start_time: '', end_time: '' }] })}
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-slate-100 text-indigo-600 font-black rounded-2xl hover:bg-indigo-50 hover:border-indigo-100 transition-all text-[11px]  tracking-widest shadow-sm">
+                        <Plus size={16} /> Add Subject Row
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-6">
@@ -337,20 +365,37 @@ const ExamsForm = () => {
                                 const mIds = subjectMappings.filter(m => m.program_id === pId && m.semester_id === sId).map(m => m.subject_id);
                                 const direct = subjects.filter(s => s.program_id === pId && s.semester_id === sId && (!dId || (s.department_ids && Array.isArray(s.department_ids) && s.department_ids.includes(dId))));
                                 const all = new Set([...mIds, ...direct.map(s => s.id)]);
-                                return subjects.filter(s => all.has(s.id));
+                                
+                                // Filter out subjects already selected in other rows
+                                const selectedInOtherRows = formData.subjects
+                                  .filter((_, i) => i !== index)
+                                  .map(s => parseInt(s.subject_id))
+                                  .filter(id => !isNaN(id));
+
+                                return subjects.filter(s => all.has(s.id) && !selectedInOtherRows.includes(s.id));
                               })().map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
                           </div>
                           
-                          <div className="form-field">
-                            <label className="form-label form-label--required">Exam Date</label>
-                            <div className="form-input-wrap">
-                              <Calendar size={16} className="form-input-wrap__icon" />
-                              <input required type="date" value={sub.exam_date}
-                                onChange={(e) => { const ns = [...formData.subjects]; ns[index].exam_date = e.target.value; setFormData({ ...formData, subjects: ns }); }}
-                                className="form-input form-input--with-icon" />
+                            <div className="form-field">
+                              <label className="form-label form-label--required">Exam Date</label>
+                              <div className="form-input-wrap relative">
+                                <Calendar size={16} className="form-input-wrap__icon" />
+                                <input required 
+                                  type="date"
+                                  value={sub.exam_date}
+                                  onChange={(e) => { const ns = [...formData.subjects]; ns[index].exam_date = e.target.value; setFormData({ ...formData, subjects: ns }); }}
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                                <div className="form-input form-input--with-icon flex items-center min-h-[44px]">
+                                  <span className={sub.exam_date ? 'text-slate-900' : 'text-slate-400'}>
+                                    {sub.exam_date ? (() => {
+                                      const [y, m, d] = sub.exam_date.split('-');
+                                      return `${d}-${m}-${y}`;
+                                    })() : "DD-MM-YYYY"}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                          </div>
 
                           <div className="form-field">
                              <div className="grid grid-cols-2 gap-2">

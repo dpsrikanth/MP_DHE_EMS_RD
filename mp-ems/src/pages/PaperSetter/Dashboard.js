@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Upload, FileText, Calendar, Clock, Loader2, FileUp, BookOpen, X, Search } from 'lucide-react';
 import { toast } from 'react-toastify';
 import authUtils from '../../utils/authUtils';
@@ -12,6 +12,7 @@ const PaperSetterDashboard = () => {
   const [dashData, setDashData] = useState({ assignedExams: [], submittedPapers: [] });
   const [selectedFiles, setSelectedFiles] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterSemester, setFilterSemester] = useState('all');
 
   useEffect(() => {
     fetchDashData();
@@ -68,10 +69,16 @@ const PaperSetterDashboard = () => {
   };
 
   const filteredExams = useMemo(() => {
-    if (!searchQuery.trim()) return dashData.assignedExams;
+    let exams = dashData.assignedExams;
+
+    if (filterSemester !== 'all') {
+      exams = exams.filter(exam => (exam.semester || "").toLowerCase() === filterSemester.toLowerCase());
+    }
+
+    if (!searchQuery.trim()) return exams;
     const query = searchQuery.toLowerCase().trim();
     
-    return dashData.assignedExams.filter(exam => {
+    return exams.filter(exam => {
       const sName = (exam.subject_name || "").toLowerCase();
       const eName = (exam.exam_name || "").toLowerCase();
       const eId = `ex${exam.exam_id}`.toLowerCase();
@@ -86,7 +93,15 @@ const PaperSetterDashboard = () => {
              sem.includes(query) || 
              eDate.includes(query);
     });
-  }, [dashData.assignedExams, searchQuery]);
+  }, [dashData.assignedExams, searchQuery, filterSemester]);
+
+  const uniqueSemesters = useMemo(() => {
+    const sems = new Set();
+    dashData.assignedExams.forEach(exam => {
+      if (exam.semester) sems.add(exam.semester);
+    });
+    return Array.from(sems).sort();
+  }, [dashData.assignedExams]);
 
   return (
     <div className="min-h-screen bg-slate-50/50 font-sans">
@@ -101,12 +116,29 @@ const PaperSetterDashboard = () => {
               <p className="text-slate-400 text-[12px] font-bold  tracking-widest">Assigned Exams Dashboard</p>
             </div>
           </div>
-          <div className="w-full md:w-80">
-            <TableSearch 
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Search subjects, exams, or dates..."
-            />
+          <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+            <div className="relative w-full md:w-48">
+              <select
+                value={filterSemester}
+                onChange={(e) => setFilterSemester(e.target.value)}
+                className="w-full appearance-none bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2.5 pr-10 text-[13px] font-bold text-slate-600 focus:border-indigo-500 outline-none transition-all cursor-pointer"
+              >
+                <option value="all">All Semesters</option>
+                {uniqueSemesters.map(sem => (
+                  <option key={sem} value={sem}>{sem}</option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <Calendar size={14} />
+              </div>
+            </div>
+            <div className="w-full md:w-80">
+              <TableSearch 
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search subjects, exams, or dates..."
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -128,12 +160,12 @@ const PaperSetterDashboard = () => {
                   <p className="text-slate-400 font-bold  tracking-widest text-[12px] mb-2">
                     {searchQuery ? "No matching assignments" : "No active assignments found"}
                   </p>
-                  {searchQuery && (
+                  { (searchQuery || filterSemester !== 'all') && (
                     <button 
-                      onClick={() => setSearchQuery('')}
+                      onClick={() => { setSearchQuery(''); setFilterSemester('all'); }}
                       className="text-[12px] font-black text-indigo-600 hover:text-indigo-700 underline  tracking-widest"
                     >
-                      Clear Search
+                      Clear All Filters
                     </button>
                   )}
                 </div>
