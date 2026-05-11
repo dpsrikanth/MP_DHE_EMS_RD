@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
-import { 
-    BookOpen, 
-    Users, 
-    Save, 
-    CheckCircle, 
-    Calendar, 
-    Search, 
-    ChevronRight, 
+import {
+    BookOpen,
+    Users,
+    Save,
+    CheckCircle,
+    Calendar,
+    Search,
+    ChevronRight,
     ArrowLeft,
     Clock,
     UserCircle,
@@ -31,7 +31,7 @@ const InternalExamMarks = () => {
     const [semesters, setSemesters] = useState([]);
     const [rounds, setRounds] = useState([]);
     const [assignedSubjects, setAssignedSubjects] = useState([]);
-    
+
     // Selection States
     const [selectedYear, setSelectedYear] = useState(null);
     const [selectedSem, setSelectedSem] = useState(null);
@@ -68,8 +68,8 @@ const InternalExamMarks = () => {
     const fetchFilteredRounds = async () => {
         try {
             const data = await facultyApi.getExamRounds(
-                teacherId, 
-                selectedYear?.value, 
+                teacherId,
+                selectedYear?.value,
                 selectedSem?.value
             );
             setRounds(data || []);
@@ -128,7 +128,7 @@ const InternalExamMarks = () => {
         setStudents([]);
         setMarksDraft({});
         setSelectedSubject(null);
-        
+
         try {
             const data = await facultyApi.getStudentsForRound({
                 subject_id: subject.subject_id,
@@ -139,7 +139,7 @@ const InternalExamMarks = () => {
                 section: subject.section,
                 program_id: subject.program_id
             });
-            
+
             if (data) {
                 setStudents(data.students || []);
                 setComponentInfo(data.structure);
@@ -198,7 +198,7 @@ const InternalExamMarks = () => {
                 academic_year_id: selectedYear.value,
                 section: selectedSubject.section
             });
-            
+
             if (!silent) toast.success('Marks updated successfully!');
             return true;
         } catch (err) {
@@ -208,7 +208,7 @@ const InternalExamMarks = () => {
             if (!silent) setIsSaving(false);
         }
     };
-    
+
     const handleSubmit = async () => {
         // --- Validation Check: Ensure all students have marks or are absent ---
         const missingMarks = students.filter(student => {
@@ -222,7 +222,7 @@ const InternalExamMarks = () => {
         }
 
         if (!window.confirm("Are you sure you want to submit these marks to HOD? You won't be able to edit them after submission.")) return;
-        
+
         // Auto-save any unsaved entries before submitting to HOD
         const isSaved = await handleSave(true);
         if (!isSaved) {
@@ -284,19 +284,19 @@ const InternalExamMarks = () => {
         document.body.removeChild(link);
     };
 
-    const filteredStudents = students.filter(s => 
-        s.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const filteredStudents = students.filter(s =>
+        s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.rollnumber?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const filteredSubjects = assignedSubjects.filter(s => 
-        s.academic_year_id === selectedYear?.value && 
+    const filteredSubjects = assignedSubjects.filter(s =>
+        s.academic_year_id === selectedYear?.value &&
         s.semester_id === (selectedSem?.value)
     );
 
     const getRoundSchedule = (subjectId) => {
-        return schedules.find(s => 
-            s.subject_id === subjectId && 
+        return schedules.find(s =>
+            s.subject_id === subjectId &&
             s.round_id === selectedRound?.value &&
             s.college_id === academicYears.find(y => y.id === selectedYear?.value)?.college_id // Not perfect check but help
         );
@@ -321,7 +321,7 @@ const InternalExamMarks = () => {
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 <div className="space-y-1.5">
                     <label className="text-[13px] font-black text-slate-500  tracking-widest ml-1">Academic Year</label>
-                    <Select 
+                    <Select
                         options={academicYears.map(y => ({ value: y.id, label: y.year_name }))}
                         value={selectedYear}
                         onChange={setSelectedYear}
@@ -331,7 +331,7 @@ const InternalExamMarks = () => {
                 </div>
                 <div className="space-y-1.5">
                     <label className="text-[13px] font-black text-slate-500  tracking-widest ml-1">Semester</label>
-                    <Select 
+                    <Select
                         options={semesters.map(s => ({ value: s.id, label: s.semester_name || `Semester ${s.semester_number}` }))}
                         value={selectedSem}
                         onChange={setSelectedSem}
@@ -341,7 +341,7 @@ const InternalExamMarks = () => {
                 </div>
                 <div className="space-y-1.5">
                     <label className="text-[13px] font-black text-slate-500  tracking-widest ml-1">Exam Round</label>
-                    <Select 
+                    <Select
                         options={rounds.map(r => ({ value: r.id, label: r.name }))}
                         value={selectedRound}
                         onChange={setSelectedRound}
@@ -349,7 +349,7 @@ const InternalExamMarks = () => {
                         styles={{ control: (b) => ({ ...b, borderRadius: '0.75rem', border: '1px solid #e2e8f0', padding: '2px' }) }}
                     />
                 </div>
-                <button 
+                <button
                     onClick={handleGo}
                     className="h-[46px] bg-indigo-600 text-white font-bold rounded-xl hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center gap-2"
                 >
@@ -364,7 +364,7 @@ const InternalExamMarks = () => {
                     {filteredSubjects.length > 0 ? filteredSubjects.map((sub) => {
                         const schedule = getRoundSchedule(sub.subject_id);
                         return (
-                            <button 
+                            <button
                                 key={sub.id}
                                 onClick={() => fetchStudentMarks(sub)}
                                 className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-300 transition-all text-left group"
@@ -410,7 +410,7 @@ const InternalExamMarks = () => {
                 <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
                     {/* Inline Header for Subject */}
                     <div className="flex items-center gap-4">
-                        <button 
+                        <button
                             onClick={() => setSelectedSubject(null)}
                             className="w-10 h-10 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors"
                         >
@@ -422,69 +422,69 @@ const InternalExamMarks = () => {
                                     {selectedSubject.subject_name} — {selectedRound.label}
                                 </h2>
                                 <span className={`px-3 py-1 rounded-full text-[12px] font-black  tracking-widest shadow-sm
-                                    ${workflowStatus === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 
-                                      workflowStatus === 'Submitted' ? 'bg-indigo-100 text-indigo-700' :
-                                      workflowStatus === 'Locked' ? 'bg-slate-200 text-slate-700' :
-                                      workflowStatus === 'Rejected' ? 'bg-red-100 text-red-700' :
-                                      'bg-amber-100 text-amber-700'}
+                                    ${workflowStatus === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
+                                        workflowStatus === 'Submitted' ? 'bg-indigo-100 text-indigo-700' :
+                                            workflowStatus === 'Locked' ? 'bg-slate-200 text-slate-700' :
+                                                workflowStatus === 'Rejected' ? 'bg-red-100 text-red-700' :
+                                                    'bg-amber-100 text-amber-700'}
                                 `}>
                                     {workflowStatus}
                                 </span>
                             </div>
                             <p className="text-sm text-slate-500 font-medium">Entering marks for section {selectedSubject.section}</p>
+                        </div>
+
+                        <div className="flex-1"></div>
+
+                        {/* Bulk Actions Dropdown */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowBulkDropdown(!showBulkDropdown)}
+                                className="flex items-center gap-2 px-4 py-2.5 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold text-sm hover:border-indigo-600 transition-all shadow-sm"
+                            >
+                                <FileSpreadsheet size={18} className="text-indigo-600" />
+                                <span>Bulk Actions</span>
+                                <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {showBulkDropdown && (
+                                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-[100] animate-in slide-in-from-top-2">
+                                    <button
+                                        onClick={() => {
+                                            setShowImportModal(true);
+                                            setShowBulkDropdown(false);
+                                        }}
+                                        disabled={['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
+                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors disabled:opacity-50"
+                                    >
+                                        <FileUp size={18} />
+                                        Import Marks CSV
+                                    </button>
+                                    <button
+                                        onClick={() => { downloadTemplate(); setShowBulkDropdown(false); }}
+                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <Download size={18} />
+                                        Download Template
+                                    </button>
+                                    <div className="h-px bg-slate-100 my-1"></div>
+                                    <button
+                                        onClick={() => { exportToCSV(); setShowBulkDropdown(false); }}
+                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <Download size={18} />
+                                        Export Current View
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
-
-                    <div className="flex-1"></div>
-
-                    {/* Bulk Actions Dropdown */}
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowBulkDropdown(!showBulkDropdown)}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold text-sm hover:border-indigo-600 transition-all shadow-sm"
-                        >
-                            <FileSpreadsheet size={18} className="text-indigo-600" />
-                            <span>Bulk Actions</span>
-                            <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />
-                        </button>
-
-                        {showBulkDropdown && (
-                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-[100] animate-in slide-in-from-top-2">
-                                <button
-                                    onClick={() => {
-                                        setShowImportModal(true);
-                                        setShowBulkDropdown(false);
-                                    }}
-                                    disabled={['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors disabled:opacity-50"
-                                >
-                                    <FileUp size={18} />
-                                    Import Marks CSV
-                                </button>
-                                <button
-                                    onClick={() => { downloadTemplate(); setShowBulkDropdown(false); }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
-                                >
-                                    <Download size={18} />
-                                    Download Template
-                                </button>
-                                <div className="h-px bg-slate-100 my-1"></div>
-                                <button
-                                    onClick={() => { exportToCSV(); setShowBulkDropdown(false); }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
-                                >
-                                    <Download size={18} />
-                                    Export Current View
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
 
                     <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
                         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div className="flex items-center gap-4 flex-1">
                                 <Search className="text-slate-400" size={20} />
-                                <input 
+                                <input
                                     type="text"
                                     placeholder="Filter students by name or roll number..."
                                     value={searchQuery}
@@ -535,7 +535,7 @@ const InternalExamMarks = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-8 py-4 text-center">
-                                                    <input 
+                                                    <input
                                                         type="number"
                                                         max={componentInfo?.max_marks}
                                                         disabled={entry.isAbsent || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
@@ -559,7 +559,7 @@ const InternalExamMarks = () => {
                                                     />
                                                 </td>
                                                 <td className="px-8 py-4 text-center">
-                                                    <button 
+                                                    <button
                                                         disabled={['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
                                                         onClick={() => handleMarkChange(student.id, 'isAbsent', !entry.isAbsent)}
                                                         className={`px-4 py-2 rounded-xl font-black text-[12px]  tracking-widest transition-all
@@ -594,14 +594,14 @@ const InternalExamMarks = () => {
                                 <Clock size={16} />
                                 Last saved: {new Date().toLocaleTimeString()}
                             </div>
-                             <div className="flex gap-4">
-                                <button 
+                            <div className="flex gap-4">
+                                <button
                                     onClick={() => setSelectedSubject(null)}
                                     className="px-6 py-3 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-colors"
                                 >
                                     Cancel
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => handleSave(false)}
                                     disabled={isSaving || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
                                     className={`px-10 py-3 rounded-xl font-black  tracking-widest text-sm transition-all flex items-center gap-2
@@ -611,7 +611,7 @@ const InternalExamMarks = () => {
                                     {isSaving ? <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" /> : <Save size={18} />}
                                     Save Draft
                                 </button>
-                                <button 
+                                <button
                                     onClick={handleSubmit}
                                     disabled={isSaving || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
                                     className={`px-10 py-3 rounded-xl font-black  tracking-widest text-sm shadow-xl transition-all flex items-center gap-2
