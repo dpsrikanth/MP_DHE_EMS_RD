@@ -53,7 +53,11 @@ const ExamsForm = () => {
       ]);
       setColleges(colData);
       setUniversities(uniData);
-      setSemesters(semData);
+      setSemesters(semData.sort((a, b) => {
+          const numA = parseInt(a.semester_name?.match(/\d+/)?.[0]) || 0;
+          const numB = parseInt(b.semester_name?.match(/\d+/)?.[0]) || 0;
+          return numA - numB;
+      }));
       setExamTypes(typeData);
       setDepartments(depData);
       setPrograms(progData);

@@ -300,7 +300,10 @@ const CollegesForm = () => {
                              Semester Control
                           </label>
                           <Select isMulti hideSelectedOptions={false} closeMenuOnSelect={false} components={{ Option: CheckboxOption }}
-                            options={masterData.semesters.filter(s => universityConfig.semesters.includes(s.id)).map(s => ({ value: s.id, label: s.semester_name }))}
+                            options={masterData.semesters
+                            .filter(s => universityConfig.semesters.includes(s.id))
+                            .sort((a, b) => a.semester_name.localeCompare(b.semester_name, undefined, { numeric: true }))
+                            .map(s => ({ value: s.id, label: s.semester_name }))}
                             value={selectedConfig.semesters.map(id => ({ value: id, label: masterData.semesters.find(s => s.id === id)?.semester_name || id }))}
                             onChange={(vals) => setSelectedConfig({ ...selectedConfig, semesters: vals.map(v => v.value) })}
                             className="form-react-select" classNamePrefix="react-select" />

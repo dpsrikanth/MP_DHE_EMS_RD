@@ -90,10 +90,10 @@ const StudentsForm = () => {
         masterDataApi.getDepartments()
       ]);
       let loadedColleges = [];
-      if (yearRes) setAcademicYears(yearRes || []);
+      if (yearRes) setAcademicYears((yearRes || []).sort((a, b) => b.year_name.localeCompare(a.year_name, undefined, { numeric: true })));
       if (policyRes) setPolicies(policyRes || []);
       if (programRes) setPrograms(programRes || []);
-      if (semesterRes) setSemesters(semesterRes || []);
+      if (semesterRes) setSemesters((semesterRes || []).sort((a, b) => a.semester_name.localeCompare(b.semester_name, undefined, { numeric: true })));
       if (batchRes) setBatches(batchRes || []);
       if (deptRes) setDepartments(deptRes || []);
       if (collegeRes) { loadedColleges = collegeRes || []; setColleges(loadedColleges); }
@@ -312,7 +312,7 @@ const StudentsForm = () => {
                       })()} 
                       placeholder={form.programName ? "Select Department" : "Select Program First"} />
                     <Sel form={form} onChange={handleChange} errors={errors} label="Admission Cycle" name="admission_year" icon={Calendar} req disabled={!form.collageName}
-                      options={collegeAcademicYears.slice(-1).map(y => ({ value: y.year_name, label: y.year_name }))} placeholder={form.collageName ? 'Select Year' : 'Select College First'} />
+                      options={[...collegeAcademicYears].sort((a, b) => b.year_name.localeCompare(a.year_name, undefined, { numeric: true, sensitivity: 'base' })).map(y => ({ value: y.year_name, label: y.year_name }))} placeholder={form.collageName ? 'Select Year' : 'Select College First'} />
                     <Sel form={form} onChange={handleChange} errors={errors} label="Current Semester" name="semister" icon={Layers} req disabled={!form.collageName}
                       options={[...collegeSemesters].sort((a, b) => a.semester_name.localeCompare(b.semester_name, undefined, { numeric: true, sensitivity: 'base' })).map(s => ({ value: s.semester_name, label: s.semester_name }))} placeholder={form.collageName ? 'Select Semester' : 'Select College First'} />
                     <Sel form={form} onChange={handleChange} errors={errors} label="Academic Batches" name="batch" icon={Layers} req disabled={!form.programName}
