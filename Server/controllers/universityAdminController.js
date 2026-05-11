@@ -309,7 +309,7 @@ exports.getResultHubData = async (req, res) => {
             const studentMarks = studentGroups[stuId];
             const passThreshold = Number(studentMarks[0].pass_threshold) || 40;
             const isGraceEnabled = studentMarks[0].is_grace_enabled;
-            const maxPerSubject = Number(studentMarks[0].max_grace) || 5;
+            const maxPerSubject = Number(studentMarks[0].max_grace) || seriesSubjectCount;
 
             if (isGraceEnabled) {
                 const budget = seriesSubjectCount;

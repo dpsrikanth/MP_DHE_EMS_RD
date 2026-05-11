@@ -17,11 +17,9 @@ async function applyGraceMarks(student_id, exam_name, university_id, user_id = n
         const policy = typeof config.grace_policy === 'string' ? JSON.parse(config.grace_policy) : config.grace_policy;
         const passThreshold = config.pass_threshold || 40;
 
-        // Use the configured per-subject cap, or default to 5
-        const maxPerSubjectGrace = policy.max_per_subject_grace || 5;
 
-        if (!policy || !policy.is_enabled || maxPerSubjectGrace === 0) {
-            console.log(`[GRACE] Policy disabled or limit is 0 for university ${university_id}. Skipping.`);
+        if (!policy || !policy.is_enabled) {
+            console.log(`[GRACE] Policy disabled for university ${university_id}. Skipping.`);
             return 0;
         }
 
@@ -78,6 +76,7 @@ async function applyGraceMarks(student_id, exam_name, university_id, user_id = n
         const totalSubjectsCount = marks.length;
         const aggregateMaxMarks = totalSubjectsCount * 100;
         const graceBudget = Math.floor(aggregateMaxMarks * 0.01); // 1% of aggregate
+        const maxPerSubjectGrace = policy.max_per_subject_grace || graceBudget;
 
         // 4. Identify Fails
         const failingSubjects = marks.filter(m => {
