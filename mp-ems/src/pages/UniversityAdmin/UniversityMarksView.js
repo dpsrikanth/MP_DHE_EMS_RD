@@ -125,7 +125,8 @@ const UniversityMarksView = () => {
       toast.success(`Results ${newState ? 'published' : 'unpublished'} successfully for the entire series!`);
       setSummary(prev => ({ ...prev, resultsPublished: newState }));
     } catch (err) {
-      toast.error("Network error");
+      console.error("Publish error:", err);
+      toast.error(err.response?.data?.message || "Network error");
     } finally {
       setPublishing(false);
     }

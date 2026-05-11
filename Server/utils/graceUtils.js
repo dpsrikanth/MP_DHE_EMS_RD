@@ -52,8 +52,7 @@ async function applyGraceMarks(student_id, exam_name, university_id, user_id = n
             SELECT 
                 m.*, 
                 sub.name as subject_name,
-                COALESCE(i.total_internal, 0) + COALESCE(o.total_other, 0) as calculated_internal,
-                m.internal_marks as entered_internal,
+                COALESCE(m.internal_marks, (COALESCE(i.total_internal, 0) + COALESCE(o.total_other, 0)), 0) as calculated_internal,
                 COALESCE(e.moderation_marks, 0) as moderation_marks,
                 (
                     COALESCE(m.internal_marks, (COALESCE(i.total_internal, 0) + COALESCE(o.total_other, 0)), 0) + 
@@ -65,18 +64,23 @@ async function applyGraceMarks(student_id, exam_name, university_id, user_id = n
             JOIN exams e ON m.exam_id = e.id
             LEFT JOIN ia_summary i ON m.student_id = i.student_id AND m.subject_id = i.subject_id
             LEFT JOIN other_summary o ON m.student_id = o.student_id AND m.subject_id = o.subject_id
-            WHERE m.student_id = $1 AND e.name = $2
+            WHERE m.student_id = $1 AND TRIM(e.name) ILIKE TRIM($2)
         `, [student_id, exam_name]);
 
         const marks = marksRes.rows;
         if (marks.length === 0) return 0;
 
         // 3. Calculate Aggregate Marks & 1% Budget
-        // Assuming 100 max marks per subject for the aggregate calculation
-        const totalSubjectsCount = marks.length;
-        const aggregateMaxMarks = totalSubjectsCount * 100;
-        const graceBudget = Math.floor(aggregateMaxMarks * 0.01); // 1% of aggregate
-        const maxPerSubjectGrace = policy.max_per_subject_grace || graceBudget;
+        // Align budget calculation with preview logic: Use the higher of series count or student's subject count
+        const seriesInfo = await db.query(
+            "SELECT COUNT(DISTINCT subject_id) as count FROM exams WHERE TRIM(name) ILIKE TRIM($1)",
+            [exam_name]
+        );
+        const seriesCount = parseInt(seriesInfo.rows[0].count) || 0;
+        const totalSubjectsCount = Math.max(seriesCount, marks.length);
+        
+        const graceBudget = totalSubjectsCount; // 1% of (count * 100)
+        const maxPerSubjectGrace = Math.max(graceBudget, Number(policy.max_per_subject_grace) || 0);
 
         // 4. Identify Fails
         const failingSubjects = marks.filter(m => {
@@ -94,12 +98,10 @@ async function applyGraceMarks(student_id, exam_name, university_id, user_id = n
         }
 
         // CRITICAL RULE 2: Internals check
-        // Grace marks cannot save a student who failed their internal assessments.
         for (const m of failingSubjects) {
-            const internal = Number(m.entered_internal) || Number(m.calculated_internal) || 0;
-            // Assuming passing internal is required. If internal is 0, they failed internals.
+            const internal = Number(m.calculated_internal) || 0;
             if (internal === 0) {
-                console.log(`[GRACE] Disqualified: Student ${student_id} failed internals in ${m.subject_name}.`);
+                console.log(`[GRACE] Disqualified: Student ${student_id} failed internals (0 marks) in ${m.subject_name}.`);
                 return 0;
             }
         }
@@ -111,7 +113,7 @@ async function applyGraceMarks(student_id, exam_name, university_id, user_id = n
             
             // CRITICAL RULE 3: Single subject cap
             if (gap > maxPerSubjectGrace) {
-                console.log(`[GRACE] Disqualified: Gap (${gap}) exceeds single subject cap (${maxPerSubjectGrace}) for ${m.subject_name}.`);
+                console.log(`[GRACE] Disqualified: Gap (${gap}) exceeds cap (${maxPerSubjectGrace}) for ${m.subject_name}. Student ID: ${student_id}`);
                 return 0;
             }
             totalGraceNeeded += gap;

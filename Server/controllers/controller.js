@@ -2303,11 +2303,18 @@ const publishResults = async (req, res) => {
     if (results_published && exam.exam_type == 2) {
       const seriesRes = await client.query(
         `SELECT e.id, sub.name as subject_name,
-                    (SELECT EXISTS (
-                        SELECT 1 FROM external_faculty_assignments efa
-                        WHERE efa.exam_id = e.id AND (efa.subject_id = e.subject_id OR efa.subject_id IS NULL) 
-                          AND efa.status IN ('Submitted', 'Approved', 'Finalized')
-                    )) as is_external_submitted
+                    (
+                        EXISTS (
+                            SELECT 1 FROM external_faculty_assignments efa
+                            WHERE efa.exam_id = e.id AND (efa.subject_id = e.subject_id OR efa.subject_id IS NULL) 
+                              AND efa.status IN ('Submitted', 'Approved', 'Finalized')
+                        )
+                        OR
+                        EXISTS (
+                            SELECT 1 FROM marks m 
+                            WHERE m.exam_id = e.id AND m.external_marks IS NOT NULL
+                        )
+                    ) as is_external_submitted
              FROM exams e
              JOIN master_subjects sub ON e.subject_id = sub.id
              WHERE e.name = $1 AND e.semester_id = $2 AND e.program_id = (SELECT program_id FROM exams WHERE id = $3)`,

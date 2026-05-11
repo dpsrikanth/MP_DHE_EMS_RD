@@ -466,7 +466,10 @@ exports.getResultHubData = async (req, res) => {
                 // Also ensure that internal marks are locked by all relevant colleges if the user expects it.
                 const externalCheck = await db.query(`
                     SELECT COUNT(DISTINCT e.subject_id) as total_subjects,
-                           COUNT(DISTINCT e.subject_id) FILTER (WHERE efa.status IN ('Submitted', 'Approved', 'Finalized')) as submitted_count,
+                           COUNT(DISTINCT e.subject_id) FILTER (
+                               WHERE efa.status IN ('Submitted', 'Approved', 'Finalized')
+                               OR EXISTS (SELECT 1 FROM marks m WHERE m.exam_id = e.id AND m.external_marks IS NOT NULL)
+                           ) as submitted_count,
                            -- Also check if internal marks are locked for these subjects across all colleges that have registrations
                            (SELECT COUNT(DISTINCT mws.id) FROM marks_workflow_status mws 
                             WHERE mws.subject_id IN (SELECT subject_id FROM exams WHERE name = $1)
