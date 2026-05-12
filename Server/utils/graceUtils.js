@@ -132,8 +132,14 @@ async function applyGraceMarks(student_id, exam_name, university_id, user_id = n
             
             for (const m of failingSubjects) {
                 const gap = passThreshold - Number(m.projected_total_marks);
-                const oldTotal = m.total_marks;
                 const finalTotal = Number(m.projected_total_marks) + gap;
+
+                // Double check: If even with the gap we don't reach threshold, something is wrong
+                if (finalTotal < passThreshold) {
+                    console.log(`[GRACE] Warning: Final total ${finalTotal} still below threshold ${passThreshold}. Skipping student ${student_id}.`);
+                    await client.query('ROLLBACK');
+                    return 0;
+                }
 
                 await client.query(`
                     UPDATE marks 
@@ -143,6 +149,8 @@ async function applyGraceMarks(student_id, exam_name, university_id, user_id = n
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = $2
                 `, [gap, m.id, finalTotal]);
+                
+                console.log(`[GRACE] Applied +${gap} to mark ID ${m.id} for student ${student_id}. New Status: Pass.`);
                 
                 if (user_id) {
                     await client.query(`

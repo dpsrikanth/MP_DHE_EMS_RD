@@ -318,6 +318,8 @@ exports.getResultHubData = async (req, res) => {
                 const hasNoInternalFails = fails.every(m => Number(m.internal_marks) > 0);
                 const withinFailureLimit = fails.length > 0 && fails.length <= 2;
 
+                let graceApplied = false;
+
                 if (withinFailureLimit && hasNoInternalFails) {
                     let totalNeeded = 0;
                     let withinCaps = true;
@@ -327,17 +329,46 @@ exports.getResultHubData = async (req, res) => {
                         totalNeeded += gap;
                     });
 
+                    // Strict all-or-nothing grace application
                     if (withinCaps && totalNeeded <= budget) {
                         fails.forEach(m => {
                             m.grace_marks = passThreshold - Number(m.raw_total);
                             m.total_marks = passThreshold;
                             m.result_status = 'Pass';
                         });
+                        graceApplied = true;
                     }
                 }
+
+                // If grace was NOT applied (disqualified or over budget), 
+                // reset any existing grace marks to 0 for preview accuracy
+                if (!graceApplied) {
+                    studentMarks.forEach(m => {
+                        // Only reset if they were originally failing (avoid clearing legitimately passed subjects)
+                        if (Number(m.raw_total) < passThreshold) {
+                            m.grace_marks = 0;
+                            m.total_marks = Number(m.raw_total);
+                            m.result_status = 'Fail';
+                        }
+                    });
+                }
             }
-            // Add budget info for frontend display
-            studentMarks.forEach(m => m.grace_budget = seriesSubjectCount);
+
+            // Calculate Credit Summary per Student for Promotion Logic
+            const totalSeriesCredits = studentMarks.reduce((sum, m) => sum + (Number(m.credits) || 0), 0);
+            const earnedCredits = studentMarks.reduce((sum, m) => {
+                const isPass = Number(m.total_marks) >= passThreshold;
+                return isPass ? sum + (Number(m.credits) || 0) : sum;
+            }, 0);
+
+            const isEligibleForPromotion = earnedCredits >= (totalSeriesCredits / 2);
+            
+            studentMarks.forEach(m => {
+                m.grace_budget = seriesSubjectCount;
+                m.total_series_credits = totalSeriesCredits;
+                m.earned_credits = earnedCredits;
+                m.promotion_status = isEligibleForPromotion ? 'Promoted' : 'Not Promoted';
+            });
         });
 
         // Calculate Grade and Grade Points for each row based on the scale
@@ -370,8 +401,9 @@ exports.getResultHubData = async (req, res) => {
         const totalStudents = new Set(rows.map(r => r.student_id)).size;
         const totalSubjects = new Set(rows.map(r => r.subject_name)).size;
         const totalWithMarks = rows.filter(r => r.mark_id !== null);
-        const passCount = totalWithMarks.filter(r => Number(r.total_marks) >= 40).length;
-        const failCount = totalWithMarks.filter(r => Number(r.total_marks) < 40).length;
+        const passThreshold = rows.length > 0 ? (Number(rows[0].pass_threshold) || 40) : 40;
+        const passCount = totalWithMarks.filter(r => Number(r.total_marks) >= passThreshold).length;
+        const failCount = totalWithMarks.filter(r => Number(r.total_marks) < passThreshold).length;
         const avgMarks = totalWithMarks.length > 0
             ? (totalWithMarks.reduce((s, r) => s + Number(r.total_marks), 0) / totalWithMarks.length).toFixed(1)
             : '0.0';
@@ -385,9 +417,13 @@ exports.getResultHubData = async (req, res) => {
             // If such students exist, isPromoted should be false so the admin can click the button.
             const pendingPromotion = await db.query(`
                 WITH series_stats AS (
-                    SELECT program_id, COUNT(DISTINCT subject_id) as total_subjects
-                    FROM exams
-                    WHERE name = $1
+                    SELECT program_id, SUM(credit) as total_credits
+                    FROM (
+                        SELECT DISTINCT e.program_id, e.subject_id, sub.credit
+                        FROM exams e
+                        JOIN master_subjects sub ON e.subject_id = sub.id
+                        WHERE e.name = $1
+                    ) as unique_series_subjects
                     GROUP BY program_id
                 ),
                 target_subjects AS (
@@ -430,9 +466,10 @@ exports.getResultHubData = async (req, res) => {
                 student_passed_stats AS (
                     SELECT m.student_id, 
                            e.program_id,
-                           COUNT(DISTINCT m.subject_id) as passed_subjects
+                           SUM(sub.credit) as earned_credits
                     FROM marks m
                     JOIN exams e ON m.exam_id = e.id
+                    JOIN master_subjects sub ON e.subject_id = sub.id
                     LEFT JOIN raw_internal ri ON ri.student_id = m.student_id AND ri.subject_id = m.subject_id
                     WHERE e.name = $1
                       AND (COALESCE(m.internal_marks, ri.total_raw, 0) + COALESCE(m.external_marks, 0) + COALESCE(e.moderation_marks, 0) + COALESCE(m.grace_marks, 0)) >= 40
@@ -441,7 +478,7 @@ exports.getResultHubData = async (req, res) => {
                 SELECT 1 FROM students s
                 JOIN student_passed_stats sps ON s.id = sps.student_id
                 JOIN series_stats ss ON sps.program_id = ss.program_id
-                WHERE sps.passed_subjects >= ss.total_subjects
+                WHERE sps.earned_credits >= (ss.total_credits / 2.0)
                   AND s.semister ~ (
                       SELECT (regexp_matches(ms.semester_name, '\\d+'))[1]
                       FROM exams e
@@ -1101,9 +1138,13 @@ exports.promoteStudents = async (req, res) => {
 
         const query = `
             WITH series_stats AS (
-                SELECT program_id, COUNT(DISTINCT subject_id) as total_subjects
-                FROM exams
-                WHERE name = $1
+                SELECT program_id, SUM(credit) as total_credits
+                FROM (
+                    SELECT DISTINCT e.program_id, e.subject_id, sub.credit
+                    FROM exams e
+                    JOIN master_subjects sub ON e.subject_id = sub.id
+                    WHERE e.name = $1
+                ) as unique_series_subjects
                 GROUP BY program_id
             ),
             target_subjects AS (
@@ -1146,19 +1187,23 @@ exports.promoteStudents = async (req, res) => {
             student_passed_stats AS (
                 SELECT m.student_id, 
                        e.program_id,
-                       COUNT(DISTINCT m.subject_id) as passed_subjects
+                       SUM(sub.credit) as earned_credits
                 FROM marks m
+                JOIN students s ON m.student_id = s.id
                 JOIN exams e ON m.exam_id = e.id
+                JOIN master_subjects sub ON e.subject_id = sub.id
                 LEFT JOIN raw_internal ri ON ri.student_id = m.student_id AND ri.subject_id = m.subject_id
+                LEFT JOIN colleges c ON TRIM(s."collageName") ILIKE TRIM(c.name)
+                LEFT JOIN grading_configs gc ON gc.university_id = COALESCE(e.university_id, c.university_id)
                 WHERE e.name = $1
-                  AND (COALESCE(m.internal_marks, ri.total_raw, 0) + COALESCE(m.external_marks, 0) + COALESCE(e.moderation_marks, 0) + COALESCE(m.grace_marks, 0)) >= 40
+                  AND (COALESCE(m.internal_marks, ri.total_raw, 0) + COALESCE(m.external_marks, 0) + COALESCE(e.moderation_marks, 0) + COALESCE(m.grace_marks, 0)) >= COALESCE(gc.pass_threshold, 40)
                 GROUP BY m.student_id, e.program_id
             )
             SELECT DISTINCT s.id, s.semister, s.name
             FROM students s
             JOIN student_passed_stats sps ON s.id = sps.student_id
             JOIN series_stats ss ON sps.program_id = ss.program_id
-            WHERE sps.passed_subjects >= ss.total_subjects
+            WHERE sps.earned_credits >= (ss.total_credits / 2.0)
               AND s.semister ~ (SELECT (regexp_matches($2, '\\d+'))[1])
         `;
         const result = await db.query(query, [exam_name, examSem]);
