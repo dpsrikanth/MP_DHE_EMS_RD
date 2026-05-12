@@ -202,8 +202,8 @@ const Marks = () => {
   };
 
   const availableColumns = [
-    { key: 'id', label: 'ID' },
-    { key: 'student', label: 'Student Info' },
+    { key: 'id', label: 'Enrollment No', mandatory: true },
+    { key: 'student', label: 'Student Info', mandatory: true },
     { key: 'exam', label: 'Exam Details' },
     { key: 'performance', label: 'Performance' }
   ];

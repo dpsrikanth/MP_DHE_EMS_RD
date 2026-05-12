@@ -40,21 +40,25 @@ export const ColumnVisibilitySelector = ({ columns, visibleColumns, onToggle }) 
               {columns.map(col => (
                 <label 
                   key={col.key}
-                  className="w-full flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl cursor-pointer transition-colors text-left group"
+                  className={`w-full flex items-center justify-between p-3 rounded-xl transition-colors text-left group ${col.mandatory ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-slate-50'}`}
+                  title={col.mandatory ? "Mandatory field cannot be hidden" : ""}
                 >
-                  <span className="text-sm font-bold text-slate-700">{col.label}</span>
+                  <span className="text-sm font-bold text-slate-700">
+                    {col.label} {col.mandatory && <span className="text-[10px] text-indigo-400 font-black ml-1">(REQUIRED)</span>}
+                  </span>
                   <div className="relative flex items-center">
                     <input 
                       type="checkbox"
                       checked={!!visibleColumns[col.key]}
+                      disabled={col.mandatory}
                       onChange={(e) => {
                         e.stopPropagation();
-                        // Call the parent
+                        if (col.mandatory) return;
                         onToggle(col.key, e.target.checked);
                       }}
                       className="peer sr-only"
                     />
-                    <div className="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:bg-indigo-500 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-4 peer-checked:after:border-white shadow-sm"></div>
+                    <div className={`w-10 h-6 bg-slate-200 rounded-full peer peer-checked:bg-indigo-500 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-4 peer-checked:after:border-white shadow-sm ${col.mandatory ? 'opacity-50' : ''}`}></div>
                   </div>
                 </label>
               ))}

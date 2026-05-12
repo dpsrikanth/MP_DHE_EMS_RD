@@ -48,8 +48,8 @@ const Exams = () => {
   const [shortageLoading, setShortageLoading] = useState(false);
 
   const availableColumns = [
-    { key: 'id', label: 'ID Reference' },
-    { key: 'details', label: 'Assessment Details' },
+    { key: 'id', label: 'ID Reference', mandatory: true },
+    { key: 'details', label: 'Assessment Details', mandatory: true },
     { key: 'context', label: 'Academic Context' },
     { key: 'date', label: 'Timeline' }
   ];

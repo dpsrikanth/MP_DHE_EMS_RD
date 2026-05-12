@@ -54,7 +54,7 @@ const Teachers = () => {
 
   const availableColumns = [
     { key: 'id', label: 'ID' },
-    { key: 'name', label: 'Name' },
+    { key: 'name', label: 'Name', mandatory: true },
     { key: 'email', label: 'Email' },
     ...(authUtils.isUniversityAdmin() ? [{ key: 'college_name', label: 'College' }] : []),
     { key: 'department', label: 'Department' },

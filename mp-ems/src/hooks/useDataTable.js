@@ -97,6 +97,10 @@ export const useDataTable = (data = [], {
   };
 
   const toggleColumn = (key, forcedValue) => {
+    // Check if column is mandatory
+    const columnDef = availableColumns.find(c => c.key === key);
+    if (columnDef?.mandatory && forcedValue === false) return; // Prevent hiding mandatory columns
+
     setVisibleColumns(prev => ({
       ...prev,
       [key]: forcedValue !== undefined ? forcedValue : !prev[key]

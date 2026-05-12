@@ -28,8 +28,8 @@ const Departments = () => {
 
   const availableColumns = [
     { key: 'id', label: 'ID Reference' },
-    { key: 'department_code', label: 'Department Code' },
-    { key: 'department_name', label: 'Department Name' },
+    { key: 'department_code', label: 'Department Code', mandatory: true },
+    { key: 'department_name', label: 'Department Name', mandatory: true },
     { key: 'college_id', label: 'College ID' },
     { key: 'status', label: 'Status' }
   ];

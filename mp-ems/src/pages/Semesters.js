@@ -33,7 +33,7 @@ const Semesters = () => {
 
   const availableColumns = [
     { key: 'id', label: 'ID Reference' },
-    { key: 'semester_name', label: 'Semester Title' },
+    { key: 'semester_name', label: 'Semester Title', mandatory: true },
     { key: 'status', label: 'Status' },
     { key: 'log', label: 'System Log' }
   ];

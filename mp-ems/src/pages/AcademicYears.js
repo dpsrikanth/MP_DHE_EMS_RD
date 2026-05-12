@@ -31,7 +31,7 @@ const AcademicYears = () => {
 
   const availableColumns = [
     { key: 'id', label: 'ID' },
-    { key: 'year_name', label: 'Session Name' },
+    { key: 'year_name', label: 'Session Name', mandatory: true },
     { key: 'timeline', label: 'Timeline' }
   ];
 

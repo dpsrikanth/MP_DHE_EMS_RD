@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Select from "react-select";
 import { toast } from 'react-toastify';
@@ -78,7 +78,7 @@ const Subjects = () => {
     { key: 'program_name', label: 'Course Name' },
     { key: 'class_name', label: 'Class' },
     { key: 'batch', label: 'Batch' },
-    { key: 'name', label: 'Subject' },
+    { key: 'name', label: 'Subject', mandatory: true },
     { key: 'mapping_type', label: 'Type' },
     { key: 'credit', label: 'Credits' },
     { key: 'teacher_name', label: 'Faculty' },

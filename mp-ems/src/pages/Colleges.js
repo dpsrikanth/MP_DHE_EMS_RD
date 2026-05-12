@@ -47,8 +47,8 @@ const Colleges = () => {
 
   const availableColumns = [
     { key: 'id', label: 'ID' },
-    { key: 'college_code', label: 'Code' },
-    { key: 'college_name', label: 'College Name' },
+    { key: 'college_code', label: 'Code', mandatory: true },
+    { key: 'college_name', label: 'College Name', mandatory: true },
     { key: 'university_name', label: 'University' }
   ];
 

@@ -74,7 +74,7 @@ const Programs = () => {
 
   const availableColumns = [
     { key: 'id', label: 'ID' },
-    { key: 'name', label: 'Program Name' },
+    { key: 'name', label: 'Program Name', mandatory: true },
     { key: 'duration_years', label: 'Duration' },
     { key: 'status', label: 'Status' },
     { key: 'created_at', label: 'Created On' }

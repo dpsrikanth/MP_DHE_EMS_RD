@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { 
@@ -54,7 +54,7 @@ const Batches = () => {
 
   const availableColumns = [
     { key: 'id', label: 'ID' },
-    { key: 'batch_name', label: 'Batch Name' },
+    { key: 'batch_name', label: 'Batch Name', mandatory: true },
     { key: 'policy_name', label: 'Policy' },
     { key: 'start_date', label: 'Start Date' },
     { key: 'end_date', label: 'End Date' },

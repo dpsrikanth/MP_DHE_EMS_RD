@@ -34,8 +34,8 @@ const Students = () => {
 
   const availableColumns = [
     { key: 'id', label: 'Student ID' },
-    { key: 'admission_no', label: 'Admission Number' },
-    { key: 'policies', label: 'Policy' },
+    { key: 'admission_no', label: 'Admission Number', mandatory: true },
+    { key: 'policies', label: 'Policy', mandatory: true },
     { key: 'programName', label: 'Program' },
     { key: 'admission_year', label: 'Academic Year' },
     { key: 'semister', label: 'Semester' }

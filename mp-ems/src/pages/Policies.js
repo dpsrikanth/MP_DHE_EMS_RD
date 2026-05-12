@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { 
@@ -32,7 +32,7 @@ const Policies = () => {
 
   const availableColumns = [
     { key: 'id', label: 'ID Reference' },
-    { key: 'name', label: 'Policy Name' },
+    { key: 'name', label: 'Policy Name', mandatory: true },
     { key: 'description', label: 'Description' },
     { key: 'log', label: 'System Log' }
   ];
