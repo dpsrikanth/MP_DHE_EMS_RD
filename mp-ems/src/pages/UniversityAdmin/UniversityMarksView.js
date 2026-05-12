@@ -207,7 +207,7 @@ const UniversityMarksView = () => {
     const headers = ["Roll No", "Student Name", "College", "Program", "Subject", "Internal"];
     if (!isInternalOnly) headers.push("External");
     const budget = marks[0]?.grace_budget || 6;
-    headers.push("Total", `Grace(${budget})`, "Grade", "GP", "Credits", "Credit Pts", "Result");
+    headers.push("Total", `Grace(${budget})`, "Grade", "GP", "Credits", "Credits Earned", "Credit Pts", "Result");
 
     const csvRows = [headers.join(",")];
     marks.forEach(row => {
@@ -217,13 +217,15 @@ const UniversityMarksView = () => {
       const external = Number(row.external_marks || 0);
       const total = Number(row.total_marks || 0);
       const grace = Number(row.grace_marks || 0);
-      let pass = row.result_status || (isPass(total, gradingConfig.pass_threshold) ? 'Pass' : 'Fail');
-      if (grace > 0 && pass.includes('Pass')) pass += ' (G)';
+      const subjectIsPass = row.result_status ? (row.result_status === 'Pass') : isPass(total, gradingConfig.pass_threshold);
+      let passDisplay = row.result_status || (subjectIsPass ? 'Pass' : 'Fail');
+      if (grace > 0 && passDisplay.includes('Pass')) passDisplay += ' (G)';
 
       const { grade, gradePoint } = getGradeAndPoints(total, gradingConfig.grade_scale);
       const subjectId = row.subject_id || row.id;
       const overrideCredits = gradingConfig.subject_credits?.[subjectId];
       const credits = overrideCredits !== undefined ? Number(overrideCredits) : Number(row.credits || 0);
+      const creditsEarned = subjectIsPass ? credits : 0;
       const creditPoints = gradePoint * credits;
 
       const rowData = [
@@ -232,7 +234,7 @@ const UniversityMarksView = () => {
       ];
       if (!isInternalOnly) rowData.push(external);
       const graceDisplay = grace > 0 ? `+${grace}` : '0';
-      rowData.push(total, graceDisplay, grade, gradePoint, credits, creditPoints, `"${pass}"`);
+      rowData.push(total, graceDisplay, grade, gradePoint, credits, creditsEarned, creditPoints, `"${passDisplay}"`);
 
       csvRows.push(rowData.join(","));
     });
@@ -263,6 +265,7 @@ const UniversityMarksView = () => {
       const subjectId = curr.subject_id || curr.id;
       const overrideCredits = gradingConfig.subject_credits?.[subjectId];
       const credits = overrideCredits !== undefined ? Number(overrideCredits) : Number(curr.credits || 0);
+      const creditsEarned = subjectIsPass ? credits : 0;
 
       acc[curr.subject_name].push({
         ...curr,
@@ -270,6 +273,7 @@ const UniversityMarksView = () => {
         grade,
         grade_point: gradePoint,
         credits,
+        credits_earned: creditsEarned,
         credit_points: curr.credit_points !== undefined ? Number(curr.credit_points) : (gradePoint * credits),
         result_status: subjectIsPass ? 'Pass' : 'Fail'
       });
@@ -301,6 +305,7 @@ const UniversityMarksView = () => {
       const subjectId = curr.subject_id || curr.id;
       const overrideCredits = gradingConfig.subject_credits?.[subjectId];
       const credits = overrideCredits !== undefined ? Number(overrideCredits) : Number(curr.credits || 0);
+      const creditsEarned = subjectIsPass ? credits : 0;
 
       acc[curr.student_id].subjects.push({
         ...curr,
@@ -308,6 +313,7 @@ const UniversityMarksView = () => {
         grade,
         grade_point: gradePoint,
         credits,
+        credits_earned: creditsEarned,
         credit_points: curr.credit_points !== undefined ? Number(curr.credit_points) : (gradePoint * credits),
         result_status: subjectIsPass ? 'Pass' : 'Fail'
       });
@@ -316,7 +322,8 @@ const UniversityMarksView = () => {
     return Object.values(grouped).map(student => {
       const sgpa = calculateSGPA(student.subjects, gradingConfig);
       const totalCredits = student.subjects.reduce((sum, s) => sum + s.credits, 0);
-      return { ...student, sgpa, totalCredits };
+      const totalCreditsEarned = student.subjects.reduce((sum, s) => sum + s.credits_earned, 0);
+      return { ...student, sgpa, totalCredits, totalCreditsEarned };
     });
   }, [marks, gradingConfig, summary]);
 
@@ -654,6 +661,7 @@ const UniversityMarksView = () => {
                         <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Grade</th>
                         <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">GP</th>
                         <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Credits</th>
+                        <th className="px-6 py-3.5 text-[11px] font-black text-emerald-500  tracking-widest text-center bg-emerald-50/30">Cr. Earned</th>
                         <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Cr. Pts</th>
                         <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Result</th>
                       </tr>
@@ -697,6 +705,11 @@ const UniversityMarksView = () => {
                             <td className="px-8 py-5 text-center font-black text-slate-700">{item.grade}</td>
                             <td className="px-8 py-5 text-center font-bold text-slate-500 text-[13px] italic">{item.grade_point}</td>
                             <td className="px-8 py-5 text-center font-bold text-slate-600">{item.credits || 0}</td>
+                            <td className="px-8 py-5 text-center bg-emerald-50/30">
+                              <span className={`text-sm font-black ${item.credits_earned > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                                {item.credits_earned || 0}
+                              </span>
+                            </td>
                             <td className="px-8 py-5 text-center font-black text-indigo-500">{item.credit_points || 0}</td>
                             <td className="px-8 py-5 text-center">
                               <div className={`inline-flex items-center gap-1.5 text-[8px] font-black px-2.5 py-1 rounded-full  tracking-wider border ${item.result_status?.includes('Pass')
@@ -743,6 +756,7 @@ const UniversityMarksView = () => {
                       <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest">College / Program</th>
                       <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Subjects</th>
                       <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Credits</th>
+                      <th className="px-6 py-3.5 text-[11px] font-black text-emerald-500  tracking-widest text-center bg-emerald-50/30">Earned Credits</th>
                       <th className="px-6 py-3.5 text-[11px] font-black text-indigo-600  tracking-widest text-center bg-indigo-50">SGPA</th>
                     </tr>
                   </thead>
@@ -779,6 +793,11 @@ const UniversityMarksView = () => {
                           </td>
                           <td className="px-8 py-5 text-center">
                             <span className="text-sm font-black text-slate-700">{student.totalCredits}</span>
+                          </td>
+                          <td className="px-8 py-5 text-center bg-emerald-50/30">
+                            <span className={`text-sm font-black ${student.totalCreditsEarned === student.totalCredits ? 'text-emerald-600' : 'text-rose-500'}`}>
+                              {student.totalCreditsEarned}
+                            </span>
                           </td>
                           <td className="px-8 py-5 text-center bg-indigo-50/30">
                             <div className="inline-flex flex-col items-center">
