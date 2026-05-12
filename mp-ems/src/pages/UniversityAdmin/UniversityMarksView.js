@@ -3,7 +3,7 @@ import {
   CheckCircle2, AlertCircle, Loader2, BookOpen,
   Search, Users, GraduationCap, ClipboardCheck,
   TrendingUp, Download, Eye, EyeOff,
-  BarChart3
+  BarChart3, Info
 } from "lucide-react";
 import { toast } from 'react-toastify';
 import { getGradeAndPoints, isPass, calculateSGPA } from "../../utils/gradingUtils";
@@ -206,8 +206,8 @@ const UniversityMarksView = () => {
     const isInternalOnly = summary?.examType === 1;
     const headers = ["Roll No", "Student Name", "College", "Program", "Subject", "Internal"];
     if (!isInternalOnly) headers.push("External");
-    const budget = marks[0]?.grace_budget ? ` (${marks[0].grace_budget})` : '';
-    headers.push("Total", `Grace${budget}`, "Grade", "GP", "Credits", "Credit Pts", "Result");
+    const budget = marks[0]?.grace_budget || 6;
+    headers.push("Total", `Grace(${budget})`, "Grade", "GP", "Credits", "Credit Pts", "Result");
 
     const csvRows = [headers.join(",")];
     marks.forEach(row => {
@@ -321,6 +321,7 @@ const UniversityMarksView = () => {
   }, [marks, gradingConfig, summary]);
 
   const subjectNames = Object.keys(subjectWiseData);
+  const graceBudget = marks[0]?.grace_budget || 6;
 
   const passRate = summary && summary.totalRecords > 0
     ? ((summary.passCount / summary.totalRecords) * 100).toFixed(1)
@@ -480,6 +481,47 @@ const UniversityMarksView = () => {
         </div>
       )}
 
+      {/* ─── Policies Info ─── */}
+      {summary && marks.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in slide-in-from-top-2 duration-700">
+          <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 flex gap-4">
+            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 shrink-0">
+              <Info size={20} />
+            </div>
+            <div>
+              <h4 className="text-[11px] font-black text-amber-900 tracking-widest uppercase mb-1">Grace Marks (+{graceBudget})</h4>
+              <p className="text-[12px] text-amber-800/80 font-medium leading-relaxed">
+                Applied per subject to borderline students (max 2 subjects) within a total budget of {graceBudget} marks (or series subject count).
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4 flex gap-4">
+            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
+              <TrendingUp size={20} />
+            </div>
+            <div>
+              <h4 className="text-[11px] font-black text-indigo-900 tracking-widest uppercase mb-1">Moderation</h4>
+              <p className="text-[12px] text-indigo-800/80 font-medium leading-relaxed">
+                Per-subject bulk adjustment applied uniformly to all students to compensate for difficulty or errors before results are published.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 flex gap-4">
+            <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 shrink-0">
+              <CheckCircle2 size={20} />
+            </div>
+            <div>
+              <h4 className="text-[11px] font-black text-emerald-900 tracking-widest uppercase mb-1">Promote</h4>
+              <p className="text-[12px] text-emerald-800/80 font-medium leading-relaxed">
+                After publishing, eligible students who have passed all subjects in this series advance to the next semester.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ─── No Data State ─── */}
       {!loading && marks.length === 0 && (
         <div className="bg-white rounded-2xl p-16 text-center border-2 border-dashed border-slate-100 flex flex-col items-center gap-6">
@@ -607,7 +649,7 @@ const UniversityMarksView = () => {
                         <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Total</th>
                         <th className="px-6 py-3.5 text-[11px] font-black text-violet-500  tracking-widest text-center">Mod</th>
                         {summary?.isGraceEnabled && (
-                          <th className="px-6 py-3.5 text-[11px] font-black text-indigo-500  tracking-widest text-center">Grace {subjectWiseData[activeSubject]?.[0]?.grace_budget ? `(${subjectWiseData[activeSubject][0].grace_budget})` : ''}</th>
+                          <th className="px-6 py-3.5 text-[11px] font-black text-indigo-500  tracking-widest text-center">Grace({graceBudget})</th>
                         )}
                         <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">Grade</th>
                         <th className="px-6 py-3.5 text-[11px] font-black text-slate-400  tracking-widest text-center">GP</th>
