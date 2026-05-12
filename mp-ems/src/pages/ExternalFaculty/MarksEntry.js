@@ -37,7 +37,12 @@ const ExternalMarksEntry = () => {
         const initials = {};
         data.forEach(a => {
           const key = `${a.student_id}_${a.subject_id}_${a.exam_id}`;
-          initials[key] = a.external_marks !== null ? a.external_marks : "";
+          if (a.external_marks !== null) {
+             const val = parseFloat(a.external_marks);
+             initials[key] = val.toFixed(2);
+          } else {
+             initials[key] = "";
+          }
         });
         setModifiedMarks(initials);
       }
@@ -443,17 +448,25 @@ const ExternalMarksEntry = () => {
                                 <td className="px-10 py-5 text-center">
                                   <div className="flex flex-col items-center">
                                     <input 
-                                      type="number"
-                                      max="70"
+                                      type="text"
                                       disabled={subject.assignment_status === 'Submitted' || submitting}
-                                      value={modifiedMarks[key] || ""}
+                                      value={modifiedMarks[key] ?? ""}
                                       onChange={(e) => {
                                         const val = e.target.value;
-                                        if (val === "" || (Number(val) >= 0 && Number(val) <= 70)) {
-                                          handleMarkChange(item.student_id, item.subject_id, item.exam_id, val);
+                                        // Allow digits and a single decimal point
+                                        if (val === "" || (/^\d*\.?\d{0,2}$/.test(val) && val.length <= 5)) {
+                                          if (val === "" || (Number(val) >= 0 && Number(val) <= 70)) {
+                                            handleMarkChange(item.student_id, item.subject_id, item.exam_id, val);
+                                          }
                                         }
                                       }}
-                                      placeholder="00"
+                                      onBlur={(e) => {
+                                        const val = e.target.value;
+                                        if (val !== "" && !isNaN(val)) {
+                                          handleMarkChange(item.student_id, item.subject_id, item.exam_id, parseFloat(val).toFixed(2));
+                                        }
+                                      }}
+                                      placeholder="00.00"
                                       className="w-24 h-11 bg-white border-2 border-slate-100 rounded-xl px-4 text-center text-lg font-black text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all disabled:opacity-30"
                                     />
                                     <p className="text-[8px] font-black text-slate-300 mt-1  tracking-tighter">Subject Pass: 28</p>
