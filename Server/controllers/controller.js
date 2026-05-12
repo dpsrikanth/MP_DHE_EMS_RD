@@ -2340,7 +2340,7 @@ const publishResults = async (req, res) => {
         [exam.name, exam.semester_id]
       );
       for (const row of studentsRes.rows) {
-        await applyGraceMarks(row.student_id, exam.name, universityId, req.user.id);
+        await applyGraceMarks(row.student_id, exam.name, universityId, req.user.id, client);
       }
     }
 

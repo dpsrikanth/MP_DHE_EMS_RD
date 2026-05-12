@@ -6,11 +6,13 @@ const db = require('../config/db');
  * @param {string} exam_name - Name of the exam series (e.g. 'B.Tech Sem 1')
  * @param {number} university_id 
  * @param {number} user_id 
+ * @param {object} externalClient - Optional DB client for transaction sharing
  */
-async function applyGraceMarks(student_id, exam_name, university_id, user_id = null) {
+async function applyGraceMarks(student_id, exam_name, university_id, user_id = null, externalClient = null) {
+    const client = externalClient || db;
     try {
-        // 1. Fetch Grading Policy
-        const configRes = await db.query('SELECT * FROM grading_configs WHERE university_id = $1', [university_id]);
+        // 1. Fetch Grading Policy (Global for University)
+        const configRes = await client.query('SELECT * FROM grading_configs WHERE university_id = $1', [university_id]);
         if (configRes.rows.length === 0) return 0;
         
         const config = configRes.rows[0];
@@ -72,7 +74,7 @@ async function applyGraceMarks(student_id, exam_name, university_id, user_id = n
 
         // 3. Calculate Aggregate Marks & 1% Budget
         // Align budget calculation with preview logic: Use the higher of series count or student's subject count
-        const seriesInfo = await db.query(
+        const seriesInfo = await client.query(
             "SELECT COUNT(DISTINCT subject_id) as count FROM exams WHERE TRIM(name) ILIKE TRIM($1)",
             [exam_name]
         );
@@ -89,59 +91,72 @@ async function applyGraceMarks(student_id, exam_name, university_id, user_id = n
         });
 
         // If no failures, no grace needed
-        if (failingSubjects.length === 0) return 0;
-
-        // CRITICAL RULE 1: Disqualify if failing > 2 subjects
-        if (failingSubjects.length > 2) {
-            console.log(`[GRACE] Disqualified: Student ${student_id} failed > 2 subjects (${failingSubjects.length} fails).`);
-            return 0;
-        }
-
-        // CRITICAL RULE 2: Internals check
-        for (const m of failingSubjects) {
-            const internal = Number(m.calculated_internal) || 0;
-            if (internal === 0) {
-                console.log(`[GRACE] Disqualified: Student ${student_id} failed internals (0 marks) in ${m.subject_name}.`);
-                return 0;
-            }
-        }
-
-        // 5. Calculate total grace needed and check caps
-        let totalGraceNeeded = 0;
-        for (const m of failingSubjects) {
-            const gap = passThreshold - Number(m.projected_total_marks);
-            
-            // CRITICAL RULE 3: Single subject cap
-            if (gap > maxPerSubjectGrace) {
-                console.log(`[GRACE] Disqualified: Gap (${gap}) exceeds cap (${maxPerSubjectGrace}) for ${m.subject_name}. Student ID: ${student_id}`);
-                return 0;
-            }
-            totalGraceNeeded += gap;
-        }
-
-        // CRITICAL RULE 4: Budget Check (All-or-Nothing)
-        if (totalGraceNeeded > graceBudget) {
-            console.log(`[GRACE] Disqualified: Total grace needed (${totalGraceNeeded}) exceeds 1% budget (${graceBudget}).`);
-            return 0;
-        }
-
-        // 6. Apply Grace Marks (Transaction)
-        const client = await db.connect();
+        // 5. Clean Slate: Reset any existing grace marks first (Transaction)
+        const internalClient = externalClient ? null : await db.connect();
+        const activeClient = externalClient || internalClient;
+        
         try {
-            await client.query('BEGIN');
+            if (!externalClient) await activeClient.query('BEGIN');
+            
+            // ALWAYS reset grace marks to 0 for this student in this series first
+            for (const m of marks) {
+                await activeClient.query(`
+                    UPDATE marks 
+                    SET grace_marks = 0, 
+                        total_marks = $2::numeric,
+                        status = CASE WHEN $2::numeric >= $3 THEN 'Pass' ELSE 'Fail' END,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = $1
+                `, [m.id, m.projected_total_marks, passThreshold]);
+            }
+
+            // 6. Eligibility Validation (After Reset)
+            const failingSubjects = marks.filter(m => Number(m.projected_total_marks) < passThreshold && Number(m.projected_total_marks) > 0);
+            
+            if (failingSubjects.length === 0) {
+                if (!externalClient) await activeClient.query('COMMIT');
+                return 0;
+            }
+
+            // Rule 1: Failing subjects limit (max 2)
+            if (failingSubjects.length > 2) {
+                console.log(`[GRACE] Disqualified: Student ${student_id} has ${failingSubjects.length} failures (limit 2).`);
+                if (!externalClient) await activeClient.query('COMMIT');
+                return 0;
+            }
+
+            // Rule 2: No internal failures allowed in the failing subjects
+            const hasInternalFail = failingSubjects.some(m => Number(m.calculated_internal) <= 0);
+            if (hasInternalFail) {
+                console.log(`[GRACE] Disqualified: Student ${student_id} has internal failures.`);
+                if (!externalClient) await activeClient.query('COMMIT');
+                return 0;
+            }
+
+            // Rule 3: Single subject gap cap & Total budget
+            const maxGracePerSubject = Number(config.max_per_subject_grace) || 0;
+            let totalGraceNeeded = 0;
+            let withinCaps = true;
             
             for (const m of failingSubjects) {
                 const gap = passThreshold - Number(m.projected_total_marks);
+                if (gap > maxGracePerSubject) withinCaps = false;
+                totalGraceNeeded += gap;
+            }
+
+            if (!withinCaps || totalGraceNeeded > graceBudget) {
+                console.log(`[GRACE] Disqualified: Needed ${totalGraceNeeded}, Budget ${graceBudget}, WithinCaps ${withinCaps}.`);
+                if (!externalClient) await activeClient.query('COMMIT');
+                return 0;
+            }
+
+            // 7. Apply New Grace Marks
+            for (const m of failingSubjects) {
+                const gap = passThreshold - Number(m.projected_total_marks);
+                const oldTotal = m.total_marks;
                 const finalTotal = Number(m.projected_total_marks) + gap;
 
-                // Double check: If even with the gap we don't reach threshold, something is wrong
-                if (finalTotal < passThreshold) {
-                    console.log(`[GRACE] Warning: Final total ${finalTotal} still below threshold ${passThreshold}. Skipping student ${student_id}.`);
-                    await client.query('ROLLBACK');
-                    return 0;
-                }
-
-                await client.query(`
+                await activeClient.query(`
                     UPDATE marks 
                     SET grace_marks = $1::numeric, 
                         total_marks = $3::numeric,
@@ -150,31 +165,30 @@ async function applyGraceMarks(student_id, exam_name, university_id, user_id = n
                     WHERE id = $2
                 `, [gap, m.id, finalTotal]);
                 
-                console.log(`[GRACE] Applied +${gap} to mark ID ${m.id} for student ${student_id}. New Status: Pass.`);
-                
                 if (user_id) {
-                    await client.query(`
+                    await activeClient.query(`
                         INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_values, new_values)
                         VALUES ($1, $2, $3, $4, $5, $6)
                     `, [
-                        user_id, 
-                        'APPLY_GRACE', 
-                        'marks', 
-                        m.id, 
+                        user_id, 'APPLY_GRACE', 'marks', m.id, 
                         JSON.stringify({ total_marks: oldTotal, status: m.status }), 
                         JSON.stringify({ total_marks: finalTotal, status: 'Pass', grace_marks: gap, exam_series: exam_name })
                     ]);
                 }
             }
-            
-            await client.query('COMMIT');
-            console.log(`[GRACE] Success: Applied ${totalGraceNeeded} total grace marks to student ${student_id} across ${failingSubjects.length} subject(s). Budget was ${graceBudget}.`);
+
+            if (!externalClient) {
+                await activeClient.query('COMMIT');
+                console.log(`[GRACE] Success: Applied ${totalGraceNeeded} total grace marks to student ${student_id}.`);
+            }
             return totalGraceNeeded;
+
         } catch (err) {
-            await client.query('ROLLBACK');
+            if (!externalClient) await activeClient.query('ROLLBACK');
+            console.error(`[GRACE ERROR] Student ${student_id}:`, err);
             throw err;
         } finally {
-            client.release();
+            if (internalClient) internalClient.release();
         }
 
     } catch (error) {
