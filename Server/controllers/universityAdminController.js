@@ -353,7 +353,7 @@ exports.getResultHubData = async (req, res) => {
             for (const s of sortedScale) {
                 if (total >= s.min) {
                     grade = s.grade;
-                    gradePoint = s.point;
+                    gradePoint = s.points;
                     break;
                 }
             }
