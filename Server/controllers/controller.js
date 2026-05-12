@@ -4352,9 +4352,14 @@ const getStudentExams = async (req, res) => {
 
     const student = studentRes.rows[0];
 
-    // Fetch exams matching the student's program, semester, and college
-    // Internal exams (type 1): show when published — no registration/enrollment needed
-    // External exams (type 2): show when published AND application is open
+    const { semester } = req.query;
+    const filterSemester = semester || student.semister;
+
+    // Fetch exams matching the student's program, semester (or requested), and college
+    // Include exams if:
+    // 1. Enrollment is open (current)
+    // 2. Student is already registered (past or current)
+    // 3. It's an internal exam (always visible when published)
     const query = `
       SELECT 
         e.id, 
@@ -4369,8 +4374,10 @@ const getStudentExams = async (req, res) => {
         e.exam_date, 
         e.start_time,
         e.end_time,
+        e.student_application_open,
         er.payment_status,
-        er.registration_date
+        er.registration_date,
+        COALESCE(esl.is_locked, false) as seating_locked
       FROM exams e
       JOIN master_semesters ms ON e.semester_id = ms.id
       LEFT JOIN colleges c ON e.college_id = c.id
@@ -4378,16 +4385,16 @@ const getStudentExams = async (req, res) => {
       JOIN master_subjects sub ON e.subject_id = sub.id
       JOIN master_programs mp ON e.program_id = mp.id
       LEFT JOIN exam_registrations er ON er.exam_id = e.id AND er.student_id = $1
+      LEFT JOIN exam_seating_locks esl ON e.id = esl.exam_id AND esl.college_id = (SELECT id FROM colleges WHERE name ILIKE $4 LIMIT 1)
       WHERE e.is_published = true 
         AND mp.name = $2
         AND ms.semester_name = $3
         AND (c.name = $4 OR (e.college_id IS NULL AND e.exam_type = 2))
-        -- Internal exams: always visible when published; External: only when enrollment is open
-        AND (e.exam_type = 1 OR e.student_application_open = true)
-      ORDER BY e.exam_type ASC, e.exam_date ASC, e.start_time ASC
+        AND (e.exam_type = 1 OR e.student_application_open = true OR er.id IS NOT NULL)
+      ORDER BY e.exam_date DESC, e.start_time ASC
     `;
 
-    const result = await client.query(query, [student.id, student.programName, student.semister, student.collageName]);
+    const result = await client.query(query, [student.id, student.programName, filterSemester, student.collageName]);
     res.json(result.rows);
   } catch (error) {
     console.error("Get student exams error:", error);

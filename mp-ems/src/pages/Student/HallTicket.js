@@ -164,7 +164,7 @@ const HallTicket = () => {
                       <td className="p-1.5 text-[#1e3a8a] font-medium border-b border-[#1e3a8a]">Semester</td>
                     </tr>
                     <tr>
-                      <td className="p-1.5 font-bold text-black border-b border-[#1e3a8a]">{student.semister}</td>
+                      <td className="p-1.5 font-bold text-black border-b border-[#1e3a8a]">{exams[0]?.semester_name}</td>
                     </tr>
                     <tr>
                       <td className="p-1.5 text-[#1e3a8a] font-medium border-b border-[#1e3a8a]">Gender</td>

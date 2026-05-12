@@ -5,19 +5,50 @@ import authUtils from '../../utils/authUtils';
 import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
 import { studentApi } from '../../api/studentApi';
+import { masterDataApi } from '../../api/masterDataApi';
 
 const StudentExams = () => {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSemester, setSelectedSemester] = useState('');
+  const [availableSemesters, setAvailableSemesters] = useState([]);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const sems = await masterDataApi.getSemesters();
+        // Sort semesters numerically by name (Semester 1, Semester 2, etc.)
+        const sortedSems = [...sems].sort((a, b) => {
+          const numA = parseInt(a.semester_name.match(/\d+/) || 0);
+          const numB = parseInt(b.semester_name.match(/\d+/) || 0);
+          return numA - numB;
+        });
+        setAvailableSemesters(sortedSems);
+        
+        // Try to get student's current semester from user object
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          if (user.semister) {
+            setSelectedSemester(user.semister);
+          }
+        }
+      } catch (err) {
+        console.error('Error initializing semesters:', err);
+      }
+    };
+    init();
+  }, []);
 
   useEffect(() => {
     fetchExams();
-  }, []);
+  }, [selectedSemester]);
 
   const fetchExams = async () => {
     try {
-      const data = await studentApi.getExams();
+      setLoading(true);
+      const data = await studentApi.getExams({ semester: selectedSemester });
       setExams(data);
     } catch (error) {
       console.error('Error fetching exams:', error);
@@ -88,22 +119,32 @@ const StudentExams = () => {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <div className="mb-8 flex justify-between items-center">
+      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-100">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Exam Schedule</h1>
-          <p className="text-slate-500 font-medium">View and register for your upcoming examinations</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-1">Exam <span className="text-indigo-600">Schedule</span></h1>
+          <p className="text-slate-500 font-bold text-sm tracking-tight italic">View and register for your {selectedSemester || 'current'} examinations</p>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+          {availableSemesters.length > 0 && (
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <span className="text-[12px] font-black text-slate-400 tracking-widest whitespace-nowrap">Semester:</span>
+              <select
+                value={selectedSemester}
+                onChange={(e) => setSelectedSemester(e.target.value)}
+                className="bg-white border border-slate-200 text-slate-700 text-[13px] font-bold rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm cursor-pointer transition-all hover:bg-slate-50 min-w-[160px] w-full md:w-auto"
+              >
+                {availableSemesters.map(sem => (
+                  <option key={sem.id} value={sem.semester_name}>{sem.semester_name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="w-full md:w-80">
             <TableSearch 
               value={searchQuery}
               onChange={setSearchQuery}
               placeholder="Search subjects or dates..."
             />
-          </div>
-          <div className="bg-indigo- px-4 py-2 rounded-2xl border border-sky-100 flex items-center gap-2 text-sky-700 font-bold text-sm h-12">
-            <Calendar size={18} />
-            {formatDate(new Date())}
           </div>
         </div>
       </div>
