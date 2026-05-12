@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { Calendar, Clock, BookOpen, CreditCard, CheckCircle, AlertCircle, Printer, Search, X } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
@@ -64,11 +64,13 @@ const StudentExams = () => {
           exam_type: exam.exam_type,        // 1 = Internal, 2 = External
           subjects: [],
           allRegistered: true,
+          seatingLocked: false,
           ids: []
         };
       }
       groups[key].subjects.push(exam);
       groups[key].ids.push(exam.id);
+      if (exam.seating_locked) groups[key].seatingLocked = true;
       if (exam.exam_type !== 1 && exam.payment_status !== 'Paid') {
         groups[key].allRegistered = false;
       }
@@ -160,7 +162,7 @@ const StudentExams = () => {
                     <CreditCard size={16} className="relative z-10" />
                     <span className="relative z-10">Register for Full Series</span>
                   </button>
-                ) : (
+                ) : group.seatingLocked ? (
                   <button
                     onClick={() => window.open(`/student/hall-ticket/${group.exam_name}/${group.subjects[0].semester_id}`, '_blank')}
                     className="mt-4 md:mt-0 group relative inline-flex items-center gap-3 bg-emerald-600 text-white px-8 py-3.5 rounded-2xl font-black text-[13px]  tracking-widest shadow-2xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
@@ -169,6 +171,11 @@ const StudentExams = () => {
                     <Printer size={16} className="relative z-10" />
                     <span className="relative z-10">Download Hall Ticket</span>
                   </button>
+                ) : (
+                  <div className="mt-4 md:mt-0 flex items-center gap-2 px-5 py-3 bg-amber-50 border border-amber-200 rounded-2xl text-amber-700 font-bold text-[13px]">
+                    <Clock size={14} />
+                    <span>Hall Ticket Pending (Seat Allocation in Progress)</span>
+                  </div>
                 )}
               </div>
 

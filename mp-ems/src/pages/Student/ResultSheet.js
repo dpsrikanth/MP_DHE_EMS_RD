@@ -181,8 +181,8 @@ const ResultSheet = () => {
             <InfoItem label="Associated Institution" value={student.collageName} icon={<Building size={16}/>} />
           </div>
           <div className="space-y-6">
-            <InfoItem label="Program of Study" value={student.programName} icon={<BookOpen size={16}/>} />
-            <InfoItem label="Semester" value={student.semister} icon={<Calendar size={16}/>} />
+            <InfoItem label="Program of Study" value={subjects[0]?.program_name} icon={<BookOpen size={16}/>} />
+            <InfoItem label="Semester" value={subjects[0]?.semester_name} icon={<Calendar size={16}/>} />
             <InfoItem label="Examination Series" value={examName} icon={<Calendar size={16}/>} />
             <InfoItem label="Center Name" value={student.collageName} icon={<MapPin size={16}/>} />
           </div>
