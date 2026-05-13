@@ -58,7 +58,6 @@ const SubjectsForm = () => {
       if (semRes) semsData = semRes.map(s => ({ value: s.id, label: s.semester_name }));
       if (teaRes) teasData = teaRes.map(t => ({ value: t.id, label: t.name }));
       if (depRes) depsData = depRes.map(d => ({ value: d.id, label: d.department_name }));
-
       setPrograms(progsData); setSemesters(semsData); setTeachers(teasData); setDepartments(depsData);
 
       if (!isEditing) {

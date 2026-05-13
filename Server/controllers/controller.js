@@ -512,7 +512,12 @@ const getSemesters = async (req, res) => {
     }
 
     const result = await client.query(query, params);
-    res.json(result.rows);
+    const sortedSemesters = result.rows.sort((a, b) => {
+      const numA = parseInt(a.semester_name?.replace(/\D/g, '')) || 0;
+      const numB = parseInt(b.semester_name?.replace(/\D/g, '')) || 0;
+      return numA - numB;
+    });
+    res.json(sortedSemesters);
   } catch (error) {
     console.error("Get semesters error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -1665,6 +1670,22 @@ const createExam = async (req, res) => {
       university_id = req.user?.university_id || req.user?.universityId;
     }
 
+    // --- Sunday & Duplicate Validation ---
+    const allDates = [];
+    if (exam_date) allDates.push(exam_date);
+    if (Array.isArray(subjects)) subjects.forEach(s => { if (s.exam_date) allDates.push(s.exam_date); });
+
+    for (const dStr of allDates) {
+      const dObj = new Date(dStr);
+      if (dObj.getUTCDay() === 0) {
+        return res.status(400).json({ message: `Exams cannot be scheduled on Sundays (${dStr}). Sundays are institutional holidays.` });
+      }
+    }
+    
+    if (new Set(allDates).size !== allDates.length) {
+       return res.status(400).json({ message: "Duplicate exam dates detected. Each subject must be scheduled on a unique date." });
+    }
+
     // --- Capacity Validation Logic ---
     if (college_id && program_id && semester_id) {
       // 1. Get student count (Matching logic with students table strings)
@@ -1788,6 +1809,22 @@ const updateExam = async (req, res) => {
       }
       college_id = userCollegeId;
       department_id = userDepartmentId;
+    }
+
+    // --- Sunday & Duplicate Validation ---
+    const allDates = [];
+    if (exam_date) allDates.push(exam_date);
+    if (Array.isArray(subjects)) subjects.forEach(s => { if (s.exam_date) allDates.push(s.exam_date); });
+
+    for (const dStr of allDates) {
+      const dObj = new Date(dStr);
+      if (dObj.getUTCDay() === 0) {
+        return res.status(400).json({ message: `Exams cannot be scheduled on Sundays (${dStr}). Sundays are institutional holidays.` });
+      }
+    }
+    
+    if (new Set(allDates).size !== allDates.length) {
+       return res.status(400).json({ message: "Duplicate exam dates detected. Each subject must be scheduled on a unique date." });
     }
 
     // --- Capacity Validation Logic (Same as creation) ---
@@ -3136,18 +3173,23 @@ const createMasterSubject = async (req, res) => {
 };
 
 const getMasterSubject = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await client.query(
-      `SELECT id, subject_code, name, status, created_at,
-              program_id, semester_id, mapping_type, is_mandatory, 
-              has_examination, periods_per_week, teacher_id, credit
-       FROM master_subjects 
-       WHERE id = $1`,
-      [id]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ message: "Master subject not found" });
-    res.json(result.rows[0]);
+    try {
+      const { id } = req.params;
+      const result = await client.query(
+        `SELECT id, subject_code, name, status, created_at,
+                program_id, semester_id, mapping_type, is_mandatory, 
+                has_examination, periods_per_week, teacher_id, credit,
+                COALESCE(
+                   (SELECT json_agg(department_id) 
+                    FROM master_subject_departments 
+                    WHERE subject_id = master_subjects.id), 
+                 '[]'::json) as department_ids
+         FROM master_subjects 
+         WHERE id = $1`,
+        [id]
+      );
+      if (result.rows.length === 0) return res.status(404).json({ message: "Master subject not found" });
+      res.json(result.rows[0]);
   } catch (error) {
     console.error("Get master subject error:", error);
     res.status(500).json({ message: "Server error", error: error.message });

@@ -138,25 +138,25 @@ const ExamScheduling = () => {
 
         try {
             setLoading(prev => ({ ...prev, subjects: true }));
-            
+
             // Fetch subjects, existing schedules, and milestones
             const [subjectsData, schedulesData, milestonesData] = await Promise.all([
-                masterDataApi.getSubjects({ 
-                    program_id: filters.program_id, 
+                masterDataApi.getSubjects({
+                    program_id: filters.program_id,
                     semester_id: filters.semester_id,
                     component_name: filters.round_id
                 }),
-                internalExamApi.getSchedules({ 
-                    round_id: filters.round_id, 
-                    program_id: filters.program_id, 
-                    semester_id: filters.semester_id, 
-                    academic_year_id: filters.academic_year_id 
+                internalExamApi.getSchedules({
+                    round_id: filters.round_id,
+                    program_id: filters.program_id,
+                    semester_id: filters.semester_id,
+                    academic_year_id: filters.academic_year_id
                 }),
-                milestoneApi.getMilestones({ 
-                    semester_id: filters.semester_id, 
-                    program_id: filters.program_id, 
-                    academic_year_id: filters.academic_year_id, 
-                    college_id: localStorage.getItem('collegeId') 
+                milestoneApi.getMilestones({
+                    semester_id: filters.semester_id,
+                    program_id: filters.program_id,
+                    academic_year_id: filters.academic_year_id,
+                    college_id: localStorage.getItem('collegeId')
                 })
             ]);
 
@@ -195,13 +195,13 @@ const ExamScheduling = () => {
         // Find milestones that might match
         const matches = milestones.filter(m => {
             const mName = m.name.toUpperCase();
-            
+
             // Context Check: Milestone must belong to selected Program/Semester
             // If the milestone has a null context, we assume it's global (standard practice)
-            const isContextMatch = 
-                (!m.program_id || m.program_id.toString() === filters.program_id.toString()) && 
+            const isContextMatch =
+                (!m.program_id || m.program_id.toString() === filters.program_id.toString()) &&
                 (!m.semester_id || m.semester_id.toString() === filters.semester_id.toString());
-            
+
             if (!isContextMatch) return false;
 
             // Rule 1: Name contains the round name (e.g. "MID-1" in "INTERNAL EXAM 1 (MID-1)")
@@ -252,18 +252,18 @@ const ExamScheduling = () => {
 
         const matches = milestones.filter(m => {
             const mName = m.name.toUpperCase();
-            
+
             // Context Check
-            const isContextMatch = 
-                (!m.program_id || m.program_id.toString() === filters.program_id.toString()) && 
+            const isContextMatch =
+                (!m.program_id || m.program_id.toString() === filters.program_id.toString()) &&
                 (!m.semester_id || m.semester_id.toString() === filters.semester_id.toString());
-            
+
             if (!isContextMatch) return false;
 
             const isTopicMatch = mName.includes(roundName) ||
                 (roundName.includes("IA") && roundNum && (mName.includes("INTERNAL EXAM " + roundNum) || mName.includes("MID-" + roundNum))) ||
                 (roundName.includes("MID") && roundNum && mName.includes("INTERNAL EXAM " + roundNum));
-                
+
             return isTopicMatch && mName.includes("SCHEDULE");
         });
 
@@ -306,8 +306,15 @@ const ExamScheduling = () => {
     };
 
     const handleScheduleChange = (subjectId, field, value) => {
-        // Validation removed from here as per user request (it's annoying while typing)
-        // We will keep it only on Save, or just show the red ring
+        if (field === 'exam_date' && value) {
+            const [year, month, day] = value.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+            if (date.getDay() === 0) {
+                toast.error(`Exams cannot be scheduled on Sundays (${formatDate(value)}). Please select another date.`);
+                return;
+            }
+        }
+
         setSchedules(prev => ({
             ...prev,
             [subjectId]: {
@@ -325,20 +332,28 @@ const ExamScheduling = () => {
                 ...data
             }));
 
-        if (scheduleArray.length === 0) {
-            toast.warning("No dates assigned to any subjects");
+        // Validate no duplicate dates
+        const dates = scheduleArray.map(s => s.exam_date);
+        const uniqueDates = new Set(dates);
+        if (uniqueDates.size !== dates.length) {
+            toast.error("Duplicate exam dates detected. Each subject must be scheduled on a different date.");
             return;
         }
 
         // Validate against milestone range (Only if validation is enabled)
         if (isValidationEnabled) {
             const range = getActiveMilestone();
-            if (range) {
-                const invalidSchedules = scheduleArray.filter(s =>
-                    s.exam_date < range.start || s.exam_date > range.end
-                );
-                if (invalidSchedules.length > 0) {
-                    toast.error(`Some exam dates are outside the allowed range for ${range.name} (${formatDate(range.start)} to ${formatDate(range.end)})`);
+
+            for (const s of scheduleArray) {
+                const [year, month, day] = s.exam_date.split('-').map(Number);
+                const date = new Date(year, month - 1, day);
+                if (date.getDay() === 0) {
+                    toast.error(`Exam for one or more subjects is scheduled on a Sunday (${formatDate(s.exam_date)}). Sundays are holidays.`);
+                    return;
+                }
+
+                if (range && (s.exam_date < range.start || s.exam_date > range.end)) {
+                    toast.error(`Exam date ${formatDate(s.exam_date)} is outside the allowed range for ${range.name} (${formatDate(range.start)} to ${formatDate(range.end)})`);
                     return;
                 }
             }
@@ -363,7 +378,7 @@ const ExamScheduling = () => {
     if (loading.init) return <div className="p-8 text-center">Loading configuration...</div>;
 
     const closedResult = isSchedulingClosed();
-    const closed = isValidationEnabled ? closedResult.closed : false;
+    const closed = false; // Temporarily disabled milestone-based blocking to ensure interactivity
     const scheduleWindow = getSchedulingMilestone();
     const active = getActiveMilestone();
 
@@ -548,23 +563,21 @@ const ExamScheduling = () => {
                                         <td className="px-6 py-5">
                                             {(() => {
                                                 const range = getActiveMilestone();
+                                                const value = schedules[sub.id]?.exam_date || '';
                                                 return (
-                                                    <>
+                                                    <div className="relative group max-w-[160px] mx-auto">
                                                         <input
                                                             type="date"
-                                                            disabled={closed}
-                                                            className={`w-full bg-slate-50 border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 font-medium text-slate-600 ${isValidationEnabled && range && schedules[sub.id]?.exam_date && (schedules[sub.id].exam_date < range.start || schedules[sub.id].exam_date > range.end) ? 'ring-2 ring-red-500/50' : ''
-                                                                } ${closed ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-                                                            value={schedules[sub.id]?.exam_date || ''}
+                                                            className="w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-sm font-bold text-transparent focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                                                            value={value}
                                                             onChange={(e) => handleScheduleChange(sub.id, 'exam_date', e.target.value)}
                                                         />
-                                                        {isValidationEnabled && scheduleWindow && (
-                                                            <div className="text-[9px] text-indigo-600 mt-1 font-bold italic flex items-center gap-1">
-                                                                <Clock size={10} />
-                                                                Deadline: {formatDate(scheduleWindow.endFull)}
-                                                            </div>
-                                                        )}
-                                                    </>
+                                                        <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
+                                                            <span className="text-sm font-bold text-slate-600">
+                                                                {value ? formatDate(value) : <span className="text-slate-300">DD-MM-YYYY</span>}
+                                                            </span>
+                                                        </div>
+                                                    </div>
                                                 );
                                             })()}
                                         </td>

@@ -75,6 +75,11 @@ exports.saveSchedules = async (req, res) => {
 
         if (!college_id) return res.status(403).json({ error: "Unauthorized" });
 
+        // Duplicate Date Validation
+        const dates = (schedules || []).map(s => s.exam_date).filter(Boolean);
+        if (new Set(dates).size !== dates.length) {
+            return res.status(400).json({ error: "Duplicate exam dates detected. Each subject must be scheduled on a unique date." });
+        }
         const milestonesResult = await db.query(
             "SELECT * FROM academic_milestones WHERE (college_id = $1 OR college_id IS NULL) AND delete_status = true",
             [college_id]
@@ -133,6 +138,13 @@ exports.saveSchedules = async (req, res) => {
             for (const item of schedules) {
                 const { subject_id, exam_date, start_time, end_time } = item;
                 
+                // Sunday Validation (getUTCDay is safe for YYYY-MM-DD strings)
+                if (new Date(exam_date).getUTCDay() === 0) {
+                    await client.query('ROLLBACK');
+                    client.release();
+                    return res.status(400).json({ error: `Exams cannot be scheduled on Sundays (${exam_date}). Sundays are institutional holidays.` });
+                }
+
                 const query = `
                     INSERT INTO internal_exam_schedules 
                     (round_id, program_id, semester_id, academic_year_id, college_id, subject_id, exam_date, start_time, end_time)

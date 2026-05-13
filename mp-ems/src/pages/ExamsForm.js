@@ -135,6 +135,28 @@ const ExamsForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault(); setSubmitLoading(true); setError(null);
     try {
+      // Validations
+      const dates = (formData.subjects || []).map(s => s.exam_date).filter(Boolean);
+      
+      // 1. Sunday Validation
+      for (const dateStr of dates) {
+          const [year, month, day] = dateStr.split('-').map(Number);
+          const date = new Date(year, month - 1, day);
+          if (date.getDay() === 0) {
+              const formatted = `${day}-${month}-${year}`;
+              toast.error(`Exams cannot be scheduled on Sundays (${formatted}). Sundays are institutional holidays.`);
+              setSubmitLoading(false);
+              return;
+          }
+      }
+
+      // 2. Duplicate Date Validation
+      if (new Set(dates).size !== dates.length) {
+          toast.error("Duplicate exam dates detected. Each subject must be scheduled on a unique date.");
+          setSubmitLoading(false);
+          return;
+      }
+
       const normalizedFormData = { ...formData, college_id: formData.college_id === 'university_wide' ? '' : formData.college_id };
       const payload = editingId ? { ...normalizedFormData } : { ...normalizedFormData, subjects: normalizedFormData.subjects };
       
@@ -352,8 +374,8 @@ const ExamsForm = () => {
                           </button>
                         )}
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                          <div className="form-field lg:col-span-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 items-end">
+                          <div className="form-field lg:col-span-4">
                             <label className="form-label form-label--required">Subject Designation</label>
                             <select required value={sub.subject_id}
                               onChange={(e) => { const ns = [...formData.subjects]; ns[index].subject_id = e.target.value; setFormData({ ...formData, subjects: ns }); }}
@@ -377,14 +399,28 @@ const ExamsForm = () => {
                             </select>
                           </div>
                           
-                            <div className="form-field">
+                          <div className="form-field lg:col-span-3">
                               <label className="form-label form-label--required">Exam Date</label>
                               <div className="form-input-wrap relative">
                                 <Calendar size={16} className="form-input-wrap__icon" />
                                 <input required 
                                   type="date"
                                   value={sub.exam_date}
-                                  onChange={(e) => { const ns = [...formData.subjects]; ns[index].exam_date = e.target.value; setFormData({ ...formData, subjects: ns }); }}
+                                  onChange={(e) => { 
+                                    const value = e.target.value;
+                                    if (value) {
+                                        const [year, month, day] = value.split('-').map(Number);
+                                        const date = new Date(year, month - 1, day);
+                                        if (date.getDay() === 0) {
+                                            const formatted = `${day}-${month}-${year}`;
+                                            toast.error(`Exams cannot be scheduled on Sundays (${formatted}). Sundays are institutional holidays.`);
+                                            return;
+                                        }
+                                    }
+                                    const ns = [...formData.subjects]; 
+                                    ns[index].exam_date = value; 
+                                    setFormData({ ...formData, subjects: ns }); 
+                                  }}
                                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                                 <div className="form-input form-input--with-icon flex items-center min-h-[44px]">
                                   <span className={sub.exam_date ? 'text-slate-900' : 'text-slate-400'}>
@@ -397,22 +433,22 @@ const ExamsForm = () => {
                               </div>
                             </div>
 
-                          <div className="form-field">
-                             <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                   <label className="form-label">Start</label>
-                                   <input type="text" placeholder="09:00 AM" value={sub.start_time}
-                                      onChange={(e) => { const ns = [...formData.subjects]; ns[index].start_time = e.target.value; setFormData({ ...formData, subjects: ns }); }}
-                                      className="form-input px-3" style={{ fontSize: '0.75rem' }} />
+                            <div className="lg:col-span-5">
+                              <div className="flex gap-3">
+                                <div className="flex-1">
+                                  <label className="form-label">Start</label>
+                                  <input type="time" value={sub.start_time}
+                                    onChange={(e) => { const ns = [...formData.subjects]; ns[index].start_time = e.target.value; setFormData({ ...formData, subjects: ns }); }}
+                                    className="form-input w-full px-2 py-2" style={{ fontSize: '0.85rem' }} />
                                 </div>
-                                <div>
-                                   <label className="form-label">End</label>
-                                   <input type="text" placeholder="12:00 PM" value={sub.end_time}
-                                      onChange={(e) => { const ns = [...formData.subjects]; ns[index].end_time = e.target.value; setFormData({ ...formData, subjects: ns }); }}
-                                      className="form-input px-3" style={{ fontSize: '0.75rem' }} />
+                                <div className="flex-1">
+                                  <label className="form-label">End</label>
+                                  <input type="time" value={sub.end_time}
+                                    onChange={(e) => { const ns = [...formData.subjects]; ns[index].end_time = e.target.value; setFormData({ ...formData, subjects: ns }); }}
+                                    className="form-input w-full px-2 py-2" style={{ fontSize: '0.85rem' }} />
                                 </div>
-                             </div>
-                          </div>
+                              </div>
+                            </div>
                         </div>
                       </div>
                     ))}
