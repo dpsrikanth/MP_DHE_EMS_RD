@@ -6,10 +6,11 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const app = express();
 const port = process.env.PORT || 8080;
+const logger = require('./utils/logger');
+
 const routes = require('./routes/routes');
 const collegeAdminRoutes = require('./routes/collegeAdminRoutes');
 const facultyMarksRoutes = require('./routes/facultyMarksRoutes');
-
 const universityAdminRoutes = require('./routes/universityAdminRoutes');
 const externalFacultyRoutes = require('./routes/externalFacultyRoutes');
 const gradingRoutes = require('./routes/gradingRoutes');
@@ -29,16 +30,20 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// 1. Request Logging Middleware
+app.use((req, res, next) => {
+  logger.info(`${req.method} ${req.originalUrl}`, { ip: req.ip, user: req.user?.id });
+  next();
+});
+
 // Security Middlewares
-// 1. HTTP Security Headers
 app.use(helmet({
-  crossOriginResourcePolicy: false, // Allow cross-origin images/resources if needed
+  crossOriginResourcePolicy: false,
 }));
 
-// 2. Global Rate Limiting
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10000, // Limit each IP to 10000 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 10000,
   message: { message: 'Too many requests from this IP, please try again after 15 minutes' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -67,9 +72,27 @@ app.get('/api', (req, res) => {
   res.json({ message: 'API is running' });
 });
 
+app.get('/api/test-error', (req, res) => {
+  throw new Error("This is a manual test error to verify logging functionality.");
+});
+
+// 4. Global Error Handling Middleware
+app.use((err, req, res, next) => {
+  logger.error(`Unhandled Exception: ${req.method} ${req.originalUrl}`, {
+    user: req.user?.id,
+    params: req.params,
+    query: req.query,
+    body: req.method !== 'GET' ? req.body : undefined
+  }, err);
+
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'An unexpected error occurred'
+  });
+});
 
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  logger.info(`Server is running on port ${port}`);
 });
 
 module.exports = app;

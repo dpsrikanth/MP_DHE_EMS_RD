@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const logger = require('../utils/logger');
 
 // --- University Admin APIs (External Faculty Management) ---
 
@@ -577,9 +578,10 @@ exports.getResultHubData = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("getResultHubData error:", error);
+        logger.error("getResultHubData failure", { exam_name, college_id, program_id }, error);
         res.status(500).json({
-            error: "Failed to fetch result hub data"
+            error: "Failed to fetch result hub data",
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };

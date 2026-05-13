@@ -1,4 +1,5 @@
 require("dotenv").config();
+const logger = require('../utils/logger');
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const client = require('../config/db');
@@ -99,7 +100,7 @@ const initiateRegistration = async (req, res) => {
 
     res.status(200).json({ message: "Verification OTP has been sent. For testing, you can use 123456." });
   } catch (error) {
-    console.error("Initiate registration error:", error);
+    logger.error("Initiate registration failure", { email }, error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -121,7 +122,7 @@ const verifyOtp = async (req, res) => {
     await client.query("UPDATE public.users SET is_verified = true, otp = null, otp_expiry = null WHERE email = $1", [email]);
     res.status(200).json({ message: "Identity verified! Please set your new password." });
   } catch (error) {
-    console.error("Verify OTP error:", error);
+    logger.error("Verify OTP failure", { email }, error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -144,7 +145,7 @@ const setInitialPassword = async (req, res) => {
 
     res.status(200).json({ message: "Password set successfully! You can now log in." });
   } catch (error) {
-    console.error("Set password error:", error);
+    logger.error("Set password failure", { email }, error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -681,7 +682,7 @@ const Login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Login Error:", error);
+    logger.error("Login failure", { email }, error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -2349,8 +2350,9 @@ const publishResults = async (req, res) => {
       [results_published, realId]
     );
     res.json({ message: `Results ${results_published ? 'published' : 'unpublished'} successfully`, data: result.rows[0] });
+    logger.info(`Results ${results_published ? 'published' : 'unpublished'} for series: ${series_name}`);
   } catch (error) {
-    console.error("Publish results error:", error);
+    logger.error("publishResults failure", { series_name, semester_id, results_published }, error);
     res.status(500).json({ message: "Server error" });
   }
 };

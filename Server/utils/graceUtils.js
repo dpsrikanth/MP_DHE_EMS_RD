@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const logger = require('./logger');
 
 /**
  * Applies grace marks to a student for a specific exam series using strict budgeting rules.
@@ -179,20 +180,20 @@ async function applyGraceMarks(student_id, exam_name, university_id, user_id = n
 
             if (!externalClient) {
                 await activeClient.query('COMMIT');
-                console.log(`[GRACE] Success: Applied ${totalGraceNeeded} total grace marks to student ${student_id}.`);
+                logger.info(`Grace applied successfully for student ${student_id} in ${exam_name}`, { totalGraceNeeded });
             }
             return totalGraceNeeded;
 
         } catch (err) {
             if (!externalClient) await activeClient.query('ROLLBACK');
-            console.error(`[GRACE ERROR] Student ${student_id}:`, err);
+            logger.error(`Grace Transaction failed for student ${student_id} in ${exam_name}`, { student_id, exam_name }, err);
             throw err;
         } finally {
             if (internalClient) internalClient.release();
         }
 
     } catch (error) {
-        console.error(`[GRACE ERROR] Failed for student ${student_id}:`, error);
+        logger.error(`Failed to apply grace marks for student ${student_id}`, { student_id, exam_name }, error);
         return 0;
     }
 }
