@@ -24,6 +24,7 @@ import Policies from "./pages/Policies";
 import Departments from "./pages/Departments";
 import InternalCalendar from "./pages/InternalCalendar";
 import MilestoneManagement from "./pages/MilestoneManagement";
+import MilestonesForm from "./pages/MilestonesForm";
 import PolicyConfig from "./pages/CollegeAdmin/PolicyConfig";
 import MarksConfig from "./pages/CollegeAdmin/MarksConfig";
 import FacultyAssignment from "./pages/CollegeAdmin/FacultyAssignment";
@@ -160,6 +161,9 @@ const AppRoutes = () => {
 
       <Route path="/departments/add" element={<Layout><ProtectedRoute element={<DepartmentsForm />} /></Layout>} />
       <Route path="/departments/edit/:id" element={<Layout><ProtectedRoute element={<DepartmentsForm />} /></Layout>} />
+
+      <Route path="/milestones/add" element={<Layout><ProtectedRoute element={<MilestonesForm />} /></Layout>} />
+      <Route path="/milestones/edit/:id" element={<Layout><ProtectedRoute element={<MilestonesForm />} /></Layout>} />
 
       {/* College Admin Routes */}
       <Route path="/college-admin/dashboard" element={<Layout><ProtectedRoute element={<CollegeAdminDashboard />} /></Layout>} />

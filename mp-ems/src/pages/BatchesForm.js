@@ -62,6 +62,13 @@ const BatchesForm = () => {
     }
   };
 
+  const toInputDate = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
   const loadBatch = async (batchId, loadedPrograms, loadedPolicies) => {
     try {
       const data = await masterDataApi.getBatches();
@@ -75,8 +82,8 @@ const BatchesForm = () => {
           batch_name: item.batch_name || '', 
           start_year: item.start_year || '',
           end_year: item.end_year || '',
-          start_date: item.start_date ? item.start_date.split('T')[0] : '', 
-          end_date: item.end_date ? item.end_date.split('T')[0] : '',
+          start_date: toInputDate(item.start_date), 
+          end_date: toInputDate(item.end_date),
           policy_id: selectedPol,
           import_fees_flag: item.import_fees_flag || 'N',
           program_id: selectedProg
@@ -120,6 +127,25 @@ const BatchesForm = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const DateInput = ({ value, onChange, className }) => {
+    const [isFocused, setIsFocused] = useState(false);
+  
+    const displayValue = value && !isFocused ? 
+      `${value.split('-')[2]}-${value.split('-')[1]}-${value.split('-')[0]}` : 
+      value;
+  
+    return (
+      <input 
+        type={isFocused ? "date" : (value ? "text" : "date")}
+        value={displayValue}
+        onChange={onChange}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        className={className}
+      />
+    );
   };
 
   if (loading) return (
@@ -214,7 +240,7 @@ const BatchesForm = () => {
                   <label className="form-label">Start Date</label>
                   <div className="form-input-wrap">
                     <Calendar size={18} className="form-input-wrap__icon" />
-                    <input type="date" value={form.start_date} 
+                    <DateInput value={form.start_date} 
                       onChange={(e) => setForm({ ...form, start_date: e.target.value })} 
                       className="form-input form-input--with-icon" />
                   </div>
@@ -223,7 +249,7 @@ const BatchesForm = () => {
                   <label className="form-label">End Date</label>
                   <div className="form-input-wrap">
                     <Calendar size={18} className="form-input-wrap__icon" />
-                    <input type="date" value={form.end_date} 
+                    <DateInput value={form.end_date} 
                       onChange={(e) => setForm({ ...form, end_date: e.target.value })} 
                       className="form-input form-input--with-icon" />
                   </div>

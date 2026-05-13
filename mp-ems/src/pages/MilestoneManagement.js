@@ -29,21 +29,8 @@ const MilestoneManagement = () => {
   const [updatingSettings, setUpdatingSettings] = useState(false);
   const roleName = localStorage.getItem('roleName');
   const canEdit = roleName === 'university_admin';
-  const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [formData, setFormData] = useState({
-    id: null,
-    name: '',
-    start_date: '',
-    end_date: '',
-    responsibility: '',
-    type: 'General',
-    description: '',
-    semester_id: '',
-    program_id: '',
-    academic_year_id: ''
-  });
 
   const [filters, setFilters] = useState({
     academic_year_id: '',
@@ -172,35 +159,11 @@ const MilestoneManagement = () => {
   };
 
   const handleAddClick = () => {
-    setFormData({ 
-      id: null, 
-      name: '', 
-      start_date: '', 
-      end_date: '', 
-      responsibility: '', 
-      type: 'General', 
-      description: '',
-      semester_id: filters.semester_id || '',
-      program_id: filters.program_id || '',
-      academic_year_id: filters.academic_year_id || ''
-    });
-    setShowModal(true);
+    navigate('/milestones/add');
   };
 
   const handleEditClick = (item) => {
-    setFormData({
-      id: item.id,
-      name: item.name,
-      start_date: item.start_date.split('T')[0],
-      end_date: item.end_date.split('T')[0],
-      responsibility: item.responsibility,
-      type: item.type,
-      description: item.description || '',
-      semester_id: item.semester_id || '',
-      program_id: item.program_id || '',
-      academic_year_id: item.academic_year_id || ''
-    });
-    setShowModal(true);
+    navigate(`/milestones/edit/${item.id}`);
   };
 
   const handleDeleteClick = (item) => {
@@ -208,27 +171,7 @@ const MilestoneManagement = () => {
     setShowDeleteModal(true);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (formData.id) {
-        await milestoneApi.updateMilestone(formData.id, formData);
-      } else {
-        await milestoneApi.createMilestone(formData);
-      }
-      
-      toast.success(`Milestone ${formData.id ? 'updated' : 'created'} successfully`);
-      setShowModal(false);
-      fetchData();
-    } catch (err) {
-      toast.error('Error: ' + (err.response?.data?.message || err.message));
-    }
-  };
 
   const confirmDelete = async () => {
     try {
@@ -244,6 +187,8 @@ const MilestoneManagement = () => {
   const handleCloneSubmit = async (e) => {
     // Hidden per request
   };
+
+
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
@@ -396,89 +341,7 @@ const MilestoneManagement = () => {
         <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={totalItems} pageSize={pageSize} onPageSizeChange={setPageSize} />
       </div>
 
-      {/* Entry Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-indigo-600/40 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <form onSubmit={handleSubmit} className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 leading-none">{formData.id ? 'Edit' : 'New'} Milestone</h2>
-                <p className="text-[12px] font-black text-indigo-500  tracking-[0.2em] mt-2">Institutional Roadmap Data</p>
-              </div>
-              <button type="button" onClick={() => setShowModal(false)} className="p-3 bg-white text-slate-400 hover:bg-slate-100 rounded-2xl transition-all shadow-sm border border-slate-100"><X size={20} /></button>
-            </div>
-            
-            <div className="p-8 space-y-6">
-              <div className="space-y-2">
-                <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1">Activity Name</label>
-                <input required type="text" name="name" value={formData.name} onChange={handleInputChange} className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-500 focus:bg-white outline-none transition-all" />
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1">Start Date</label>
-                  <input required type="date" name="start_date" value={formData.start_date} onChange={handleInputChange} className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-500 focus:bg-white outline-none transition-all" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1">End Date</label>
-                  <input required type="date" name="end_date" value={formData.end_date} onChange={handleInputChange} className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-500 focus:bg-white outline-none transition-all" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1">Responsibility</label>
-                  <input required type="text" name="responsibility" placeholder="e.g. Faculty, HOD" value={formData.responsibility} onChange={handleInputChange} className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-500 focus:bg-white outline-none transition-all" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1">Event Type</label>
-                  <select name="type" value={formData.type} onChange={handleInputChange} className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-500 focus:bg-white outline-none transition-all">
-                    <option value="General">General</option>
-                    <option value="Internal">Internal</option>
-                    <option value="External">External</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-4 border-t border-slate-50 pt-6">
-                <p className="text-[12px] font-black text-indigo-500  tracking-widest leading-none">Milestone Scope (Leave blank for global)</p>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400  tracking-widest ml-1">Year</label>
-                    <select name="academic_year_id" value={formData.academic_year_id} onChange={handleInputChange} className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold focus:border-indigo-500 outline-none transition-all">
-                      <option value="">Global</option>
-                      {metadata.academicYears.map(y => <option key={y.id} value={y.id}>{y.year_name || `${y.start_year}-${y.end_year}`}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400  tracking-widest ml-1">Program</label>
-                    <select name="program_id" value={formData.program_id} onChange={handleInputChange} className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold focus:border-indigo-500 outline-none transition-all">
-                      <option value="">Global</option>
-                      {metadata.programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400  tracking-widest ml-1">Semester</label>
-                    <select name="semester_id" value={formData.semester_id} onChange={handleInputChange} className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold focus:border-indigo-500 outline-none transition-all">
-                      <option value="">Global</option>
-                      {metadata.semesters.map(s => <option key={s.id} value={s.id}>{s.semester_name}</option>)}
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4">
-              <button type="button" onClick={() => setShowModal(false)} className="text-sm font-bold text-slate-400 hover:text-slate-600 px-4">Cancel</button>
-              <button type="submit" className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 transition-all  text-[13px] tracking-widest flex items-center gap-2">
-                <Check size={20} />
-                <span>{formData.id ? 'Save Changes' : 'Create Milestone'}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
 
       {/* Clone Semester Modal removed per request */}
       
