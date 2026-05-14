@@ -2617,6 +2617,9 @@ const getStudentAttendance = async (req, res) => {
         CASE 
           WHEN COALESCE(ts.total_sessions, 0) > 0 
           THEN ROUND((COALESCE(sp.present_count, 0)::numeric / ts.total_sessions::numeric) * 100, 2)
+          -- Default to 100% if no sessions have been taken yet (for Semester 1-3)
+          WHEN $2 IN (SELECT id FROM master_semesters WHERE semester_name ILIKE '%1%' OR semester_name ILIKE '%2%' OR semester_name ILIKE '%3%')
+          THEN 100
           ELSE 0 
         END as attendance_percentage
       FROM master_subjects sub

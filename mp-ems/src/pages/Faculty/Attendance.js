@@ -18,6 +18,7 @@ const Attendance = () => {
     const [assignedSubjects, setAssignedSubjects] = useState([]);
     const [students, setStudents] = useState([]);
     const [attendanceDraft, setAttendanceDraft] = useState({});
+    const [existingAttendance, setExistingAttendance] = useState([]);
     const [selectedAssignment, setSelectedAssignment] = useState(null);
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -157,6 +158,7 @@ const Attendance = () => {
             }
 
             // 5. Prepare Draft
+            setExistingAttendance(existingAtt);
             const draft = {};
             studentsData.forEach(st => {
                 const rec = existingAtt.find(e => e.student_id === st.id);
@@ -434,7 +436,23 @@ const Attendance = () => {
                                 <tbody className="divide-y divide-slate-50">
                                     {filteredStudents.map((st) => {
                                         const presentCount = summaryStats.studentMap[st.id] || 0;
-                                        const percentage = summaryStats.totalSessions > 0 ? Math.round((presentCount / summaryStats.totalSessions) * 100) : 0;
+                                        const isEdit = existingAttendance.length > 0;
+                                        const currentStatus = attendanceDraft[st.id] || 'Present';
+
+                                        // Total sessions if we include the current one (if it's new)
+                                        const virtualTotal = isEdit ? summaryStats.totalSessions : summaryStats.totalSessions + 1;
+
+                                        // Current present count adjusted for the draft
+                                        let virtualPresent = presentCount;
+                                        if (isEdit) {
+                                            const wasPresent = existingAttendance.find(e => e.student_id === st.id)?.status === 'Present';
+                                            if (wasPresent && currentStatus === 'Absent') virtualPresent -= 1;
+                                            if (!wasPresent && currentStatus === 'Present') virtualPresent += 1;
+                                        } else {
+                                            if (currentStatus === 'Present') virtualPresent += 1;
+                                        }
+
+                                        const percentage = virtualTotal > 0 ? Math.round((virtualPresent / virtualTotal) * 100) : 100;
                                         
                                         return (
                                             <tr key={st.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer" onClick={() => activeTab === 'mark' && setAttendanceDraft(p => ({ ...p, [st.id]: p[st.id] === 'Present' ? 'Absent' : 'Present' }))}>
@@ -470,7 +488,7 @@ const Attendance = () => {
                                                             {percentage}%
                                                         </div>
                                                         <div className="w-24 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                                                            <div className={`h-full rounded-full transition-all duration-1000 ${percentage >= 75 ? 'bg-emerald-500' : (percentage >= 60 ? 'bg-indigo-' : 'bg-red-500')}`} style={{ width: `${percentage}%` }} />
+                                                            <div className={`h-full rounded-full transition-all duration-1000 ${percentage >= 75 ? 'bg-emerald-500' : (percentage >= 60 ? 'bg-indigo-600' : 'bg-red-500')}`} style={{ width: `${percentage}%` }} />
                                                         </div>
                                                     </div>
                                                 </td>
