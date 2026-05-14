@@ -2443,10 +2443,10 @@ const getStudentResults = async (req, res) => {
           FULL OUTER JOIN other_summary o ON i.student_id = o.student_id AND i.subject_id = o.subject_id
           JOIN students s2 ON COALESCE(i.student_id, o.student_id) = s2.id
           JOIN colleges c2 ON LOWER(s2."collageName") = LOWER(c2.name)
-          JOIN master_semesters sem2 ON s2.semister = sem2.semester_name
+          JOIN master_subjects sub2 ON COALESCE(i.subject_id, o.subject_id) = sub2.id
           LEFT JOIN marks_workflow_status mws2 ON COALESCE(i.subject_id, o.subject_id) = mws2.subject_id 
               AND mws2.college_id = c2.id 
-              AND mws2.semester_id = sem2.id
+              AND mws2.semester_id = sub2.semester_id
           LEFT JOIN component_acceptance ca ON ca.college_id = c2.id 
               AND ca.subject_id = COALESCE(i.subject_id, o.subject_id)
           WHERE (mws2.status IN ('Approved', 'Locked') OR ca.is_accepted = true)

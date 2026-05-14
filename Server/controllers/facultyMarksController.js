@@ -82,16 +82,17 @@ exports.getStudentsForSubject = async (req, res) => {
             return res.status(200).json([]);
         }
 
-        // Apply strict filtering by program AND semester
+        // Relaxed filtering: We intentionally do NOT strictly filter by s."semister" here.
+        // If a student is promoted to Sem 2, they should still be visible in Sem 1 roster
+        // for historical data entry/viewing. The subject/semester_id context defines the scope.
         const query = `
             SELECT * FROM students 
             WHERE "collageName" ILIKE $1 
               AND "programName" ILIKE $2 
-              AND "semister" ILIKE $3
               AND "deleteStatus" = true
             ORDER BY rollnumber ASC NULLS LAST, name ASC
         `;
-        const result = await db.query(query, [collageName, programName, semesterName]);
+        const result = await db.query(query, [collageName, programName]);
         console.log(`[DEBUG] Found ${result.rows.length} students for ${collageName} / ${programName}`);
         res.status(200).json(result.rows);
     } catch (error) {
@@ -612,16 +613,18 @@ exports.getStudentsForRound = async (req, res) => {
         const collageName = colRes.rows[0].name;
         const semesterName = semRes.rows[0].semester_name;
 
+        // Relaxed filtering: We intentionally do NOT strictly filter by s."semister" here.
+        // This ensures promoted students remain visible in their previous semester's exam rounds.
         let studentsQuery = `
             SELECT DISTINCT s.id, s.name, s.rollnumber 
             FROM students s 
             WHERE s."collageName" ILIKE $1 
-              AND s."semister" ILIKE $2
+              AND s."deleteStatus" = true
         `;
-        let queryParams = [collageName, semesterName];
+        let queryParams = [collageName];
 
         if (programName) {
-            studentsQuery += ` AND s."programName" ILIKE $3`;
+            studentsQuery += ` AND s."programName" ILIKE $2`;
             queryParams.push(programName);
         }
 
