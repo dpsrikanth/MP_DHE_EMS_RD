@@ -8,7 +8,7 @@ exports.getAssignedSubjects = async (req, res) => {
         console.log(`[DEBUG] getAssignedSubjects called for teacher_id: ${teacher_id}`);
         const query = `
             SELECT fs.*, ms.name as subject_name, ms.subject_code, 
-                   COALESCE(pps.program_id, ims.program_id) as program_id, 
+                   COALESCE(pps.program_id, ims.program_id, ms.program_id) as program_id, 
                    sem.semester_name,
                    EXISTS (
                        SELECT 1 FROM internal_exam_schedules ies
@@ -82,17 +82,16 @@ exports.getStudentsForSubject = async (req, res) => {
             return res.status(200).json([]);
         }
 
-        // Relaxed filtering: We intentionally do NOT strictly filter by s."semister" here.
-        // If a student is promoted to Sem 2, they should still be visible in Sem 1 roster
-        // for historical data entry/viewing. The subject/semester_id context defines the scope.
+        // Re-adding strict semester filtering to prevent cross-semester student mixups.
         const query = `
             SELECT * FROM students 
             WHERE "collageName" ILIKE $1 
               AND "programName" ILIKE $2 
+              AND "semister" ILIKE $3
               AND "deleteStatus" = true
             ORDER BY rollnumber ASC NULLS LAST, name ASC
         `;
-        const result = await db.query(query, [collageName, programName]);
+        const result = await db.query(query, [collageName, programName, semesterName]);
         console.log(`[DEBUG] Found ${result.rows.length} students for ${collageName} / ${programName}`);
         res.status(200).json(result.rows);
     } catch (error) {
@@ -613,18 +612,18 @@ exports.getStudentsForRound = async (req, res) => {
         const collageName = colRes.rows[0].name;
         const semesterName = semRes.rows[0].semester_name;
 
-        // Relaxed filtering: We intentionally do NOT strictly filter by s."semister" here.
-        // This ensures promoted students remain visible in their previous semester's exam rounds.
+        // Re-adding strict semester filtering to prevent cross-semester and cross-program student mixups.
         let studentsQuery = `
             SELECT DISTINCT s.id, s.name, s.rollnumber 
             FROM students s 
             WHERE s."collageName" ILIKE $1 
+              AND s."semister" ILIKE $2
               AND s."deleteStatus" = true
         `;
-        let queryParams = [collageName];
+        let queryParams = [collageName, semesterName];
 
         if (programName) {
-            studentsQuery += ` AND s."programName" ILIKE $2`;
+            studentsQuery += ` AND s."programName" ILIKE $3`;
             queryParams.push(programName);
         }
 
