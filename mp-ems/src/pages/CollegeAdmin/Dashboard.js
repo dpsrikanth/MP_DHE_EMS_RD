@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { 
   Users, 
@@ -69,7 +69,7 @@ const Dashboard = () => {
     { 
       label: 'Total Students', 
       value: stats.totalStudents, 
-      icon: <GraduationCap className="text-indigo-" />, 
+      icon: <GraduationCap className="text-indigo-600" />, 
       color: 'blue',
       path: '/students'
     },
@@ -91,7 +91,7 @@ const Dashboard = () => {
     { 
       label: 'Active Exams', 
       value: stats.activeExams, 
-      icon: <Calendar className="text-indigo-" />, 
+      icon: <Calendar className="text-indigo-600" />, 
       color: 'purple',
       path: '/exams'
     }
@@ -111,8 +111,8 @@ const Dashboard = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-            <LayoutDashboard className="text-indigo- size-8" /> 
-            College <span className="text-indigo-">Admin</span> Dashboard
+            <LayoutDashboard className="text-indigo-600 size-8" /> 
+            College <span className="text-indigo-600">Admin</span> Dashboard
           </h1>
           <p className="text-slate-500 font-medium mt-2">Institution oversight, logistics, and academic performance tracking.</p>
         </div>
@@ -167,13 +167,13 @@ const Dashboard = () => {
               <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm relative overflow-hidden">
                 <div className="flex items-center justify-between mb-8">
                   <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                    <FileCheck size={24} className="text-indigo-" />
+                    <FileCheck size={24} className="text-indigo-600" />
                     Pending Task Summary
                   </h3>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className={`p-6 rounded-3xl border ${stats.pendingApprovals > 0 ? 'bg-indigo- border-amber-100' : 'bg-slate-50 border-slate-100'} transition-all`}>
+                  <div className={`p-6 rounded-3xl border ${stats.pendingApprovals > 0 ? 'bg-amber-50 border-amber-100' : 'bg-slate-50 border-slate-100'} transition-all`}>
                     <p className="text-[12px] font-black text-slate-400  tracking-widest mb-3">Marks Approval Status</p>
                     <div className="flex items-center justify-between">
                       <div>
@@ -205,10 +205,10 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                <div className="mt-8 p-6 bg-indigo- rounded-3xl text-white shadow-lg -indigo-/30 flex items-center justify-between">
+                <div className="mt-8 p-6 bg-indigo-600 rounded-3xl text-white shadow-lg shadow-indigo-600/30 flex items-center justify-between">
                   <div>
                     <h4 className="font-black text-lg">Infrastructure Readiness</h4>
-                    <p className="text-blue-100 text-sm font-medium mt-1">Total exam capacity of {stats.totalCapacity} students approved.</p>
+                    <p className="text-indigo-100 text-sm font-medium mt-1">Total exam capacity of {stats.totalCapacity} students approved.</p>
                   </div>
                   <button className="bg-white/10 hover:bg-white/20 p-3 rounded-2xl transition-all">
                     <TrendingUp size={24} />
@@ -221,12 +221,12 @@ const Dashboard = () => {
                 <div className={`absolute top-0 right-0 w-64 h-64 -mt-20 -mr-20 bg-indigo-/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000`}></div>
                 <div className="flex items-center justify-between mb-10 relative z-10">
                   <div>
-                    <h3 className="text-2xl font-black">Performance Analytics</h3>
-                    <p className="text-slate-400 font-medium text-sm mt-1">Subject-wise pass rate and institutional metrics.</p>
+                    <h3 className="text-2xl font-black text-white">Performance Analytics</h3>
+                    <p className="text-indigo-100 font-medium text-sm mt-1">Subject-wise pass rate and institutional metrics.</p>
                   </div>
                   <button 
                     onClick={() => navigate('/college-admin/performance')}
-                    className="bg-indigo- hover:bg-indigo- px-6 py-3 rounded-2xl font-black text-[13px]  tracking-widest transition-all shadow-xl shadow-indigo-600/20"
+                    className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-2xl font-black text-[13px]  tracking-widest transition-all shadow-xl shadow-indigo-900/20"
                   >
                     View Report
                   </button>
@@ -234,20 +234,20 @@ const Dashboard = () => {
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 relative z-10">
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                    <p className="text-[9px] font-black text-slate-500  tracking-[0.2em] mb-1">Efficiency</p>
-                    <p className="text-xl font-black">94%</p>
+                    <p className="text-[9px] font-black text-indigo-200  tracking-[0.2em] mb-1 uppercase">Efficiency</p>
+                    <p className="text-xl font-black text-white">94%</p>
                   </div>
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                    <p className="text-[9px] font-black text-slate-500  tracking-[0.2em] mb-1">Avg Pass %</p>
-                    <p className="text-xl font-black">82.5%</p>
+                    <p className="text-[9px] font-black text-indigo-200  tracking-[0.2em] mb-1 uppercase">Avg Pass %</p>
+                    <p className="text-xl font-black text-white">82.5%</p>
                   </div>
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                    <p className="text-[9px] font-black text-slate-500  tracking-[0.2em] mb-1">Active Labs</p>
-                    <p className="text-xl font-black">12</p>
+                    <p className="text-[9px] font-black text-indigo-200  tracking-[0.2em] mb-1 uppercase">Active Labs</p>
+                    <p className="text-xl font-black text-white">12</p>
                   </div>
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                    <p className="text-[9px] font-black text-slate-500  tracking-[0.2em] mb-1">Completion</p>
-                    <p className="text-xl font-black">100%</p>
+                    <p className="text-[9px] font-black text-indigo-200  tracking-[0.2em] mb-1 uppercase">Completion</p>
+                    <p className="text-xl font-black text-white">100%</p>
                   </div>
                 </div>
               </div>
@@ -261,9 +261,9 @@ const Dashboard = () => {
                   <button 
                     key={idx}
                     onClick={() => navigate(link.path)}
-                    className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100 hover:border-indigo- hover:shadow-lg hover:-indigo-/5 transition-all text-left group"
+                    className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100 hover:border-indigo-600 hover:shadow-lg hover:shadow-indigo-600/5 transition-all text-left group"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo- group-hover:text-indigo-600 transition-colors">
+                    <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                       {link.icon}
                     </div>
                     <span className="font-bold text-slate-700 text-sm">{link.name}</span>
@@ -278,7 +278,7 @@ const Dashboard = () => {
                     notifications.map(notif => (
                       <div key={notif.id} className="bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm relative group overflow-hidden">
                         <div className="flex gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-indigo- flex items-center justify-center text-indigo- shrink-0">
+                          <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
                             <Clock size={16} />
                           </div>
                           <div className="flex-1">

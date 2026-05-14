@@ -1235,11 +1235,11 @@ exports.getCollegeDashboardStats = async (req, res) => {
             [college_id]
         );
 
-        // Get Total Faculty
+        // Get Total Faculty (Count from master_teachers roster)
         const facultyCountRes = await db.query(
-            `SELECT COUNT(*) FROM public.users 
+            `SELECT COUNT(*) FROM public.master_teachers 
              WHERE college_id = $1 
-             AND role_id IN (SELECT id FROM public.roles WHERE role_name IN ('Faculty', 'Teacher', 'HOD'))`,
+             AND (status = 'Active' OR status IS NULL)`,
             [college_id]
         );
 
@@ -1258,10 +1258,11 @@ exports.getCollegeDashboardStats = async (req, res) => {
             [college_id]
         );
 
-        // Get Active Exams (Assigned to this college or university wide)
+        // Get Active Exams (Assigned to this college OR university-wide exams for this university)
         const activeExamsRes = await db.query(
             `SELECT COUNT(*) FROM public.exams 
-             WHERE (college_id = $1 OR college_id IS NULL) AND (status = true OR status IS NULL)`,
+             WHERE (college_id = $1 OR (college_id IS NULL AND university_id = (SELECT university_id FROM colleges WHERE id = $1))) 
+             AND (status = true OR status IS NULL)`,
             [college_id]
         );
 

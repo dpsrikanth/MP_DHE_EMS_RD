@@ -1,4 +1,4 @@
-﻿import {
+import {
     Users,
     GraduationCap,
     BookOpen,
@@ -48,6 +48,10 @@ const HODDashboard = () => {
                 const students = await masterDataApi.getStudents({ college_id: collegeId, department_id: departmentId });
                 setStats(prev => ({ ...prev, totalStudents: students.length }));
 
+                // 4. Fetch Department Subject Count
+                const subjects = await masterDataApi.getSubjects({ college_id: collegeId, department_id: departmentId });
+                setStats(prev => ({ ...prev, activeSubjects: subjects.length }));
+
             } catch (err) {
                 console.error("Dashboard error:", err);
                 setError(err.message);
@@ -65,10 +69,10 @@ const HODDashboard = () => {
     );
 
     const dashboardStats = [
-        { label: 'Pending Approvals', value: stats.pendingApprovals, icon: <Clock size={24} />, color: 'bg-indigo-', shadow: 'shadow-indigo-500/20' },
-        { label: 'Total Faculty', value: stats.totalFaculty, icon: <Users size={24} />, color: 'bg-indigo-', shadow: 'shadow-indigo-500/20' },
-        { label: 'Total Students', value: stats.totalStudents, icon: <GraduationCap size={24} />, color: 'bg-emerald-500', shadow: 'shadow-indigo-500/20' },
-        { label: 'Active Subjects', value: stats.activeSubjects || '---', icon: <BookOpen size={24} />, color: 'bg-indigo-', shadow: 'shadow-indigo-500/20' },
+        { label: 'Pending Approvals', value: stats.pendingApprovals, icon: <Clock size={24} />, color: 'bg-indigo-600', shadow: 'shadow-indigo-500/20' },
+        { label: 'Total Faculty', value: stats.totalFaculty, icon: <Users size={24} />, color: 'bg-indigo-500', shadow: 'shadow-indigo-500/20' },
+        { label: 'Total Students', value: stats.totalStudents, icon: <GraduationCap size={24} />, color: 'bg-emerald-500', shadow: 'shadow-emerald-500/20' },
+        { label: 'Active Subjects', value: stats.activeSubjects, icon: <BookOpen size={24} />, color: 'bg-blue-600', shadow: 'shadow-blue-500/20' },
     ];
 
     return (
@@ -77,7 +81,7 @@ const HODDashboard = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-black text-slate-900 tracking-tight">HOD Dashboard</h1>
-                    <p className="text-slate-500 font-medium tracking-tight mt-1">Management Overview for <span className="text-indigo- font-bold">{departmentName}</span></p>
+                    <p className="text-slate-500 font-medium tracking-tight mt-1">Management Overview for <span className="text-indigo-600 font-bold">{departmentName}</span></p>
                 </div>
                 <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-2xl border border-slate-200 shadow-sm">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
@@ -111,15 +115,15 @@ const HODDashboard = () => {
                 <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                            <Activity size={24} className="text-indigo-" /> Quick Actions
+                            <Activity size={24} className="text-indigo-600" /> Quick Actions
                         </h2>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <button 
                             onClick={() => navigate('/hod/marks-approval')}
-                            className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-indigo- hover:text-white transition-all duration-300 border border-slate-100 font-bold group"
+                            className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-indigo-600 hover:text-white transition-all duration-300 border border-slate-100 font-bold group"
                         >
-                            <div className="w-10 h-10 rounded-xl bg-white text-indigo- flex items-center justify-center shadow-sm group-hover:text-indigo-600">
+                            <div className="w-10 h-10 rounded-xl bg-white text-indigo-600 flex items-center justify-center shadow-sm group-hover:text-indigo-600">
                                 <CheckCircle size={20} />
                             </div>
                             <span className="text-sm">Approve Pending Marks</span>
@@ -140,15 +144,15 @@ const HODDashboard = () => {
                 <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
                     <h2 className="text-xl font-black text-slate-900 tracking-tight mb-8">Recent Activity</h2>
                     <div className="space-y-4">
-                        <div className="flex items-start gap-4 p-4 rounded-2xl bg-indigo- border border-amber-100">
-                            <AlertCircle size={20} className="text-indigo- mt-1" />
+                        <div className="flex items-start gap-4 p-4 rounded-2xl bg-indigo-50 border border-indigo-100">
+                            <AlertCircle size={20} className="text-indigo-600 mt-1" />
                             <div>
                                 <p className="text-sm font-bold text-slate-900">Marks Submission Overdue</p>
                                 <p className="text-[13px] text-slate-500">Physics 1st Sem Internal marks are still pending from Prof. Sharma.</p>
                             </div>
                         </div>
-                        <div className="flex items-start gap-4 p-4 rounded-2xl bg-indigo- border border-sky-100">
-                            <FileText size={20} className="text-indigo- mt-1" />
+                        <div className="flex items-start gap-4 p-4 rounded-2xl bg-blue-50 border border-blue-100">
+                            <FileText size={20} className="text-blue-600 mt-1" />
                             <div>
                                 <p className="text-sm font-bold text-slate-900">New Result Template</p>
                                 <p className="text-[13px] text-slate-500">A new template for marksheets has been uploaded by College Admin.</p>

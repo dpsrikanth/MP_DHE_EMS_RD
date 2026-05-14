@@ -166,8 +166,8 @@ const getDashboardStats = async (req, res) => {
     if (uId) {
       const p = [uId];
       statsQueries = {
-        totalTeachers: { q: `SELECT COUNT(*) FROM master_teachers mt JOIN colleges c ON mt.college_id = c.id WHERE c.university_id = $1 AND (mt.status = 'Active' OR mt.status IS NULL) AND (c.status = true OR c.status IS NULL)`, p },
-        activeExams: { q: `SELECT COUNT(*) FROM exams e JOIN colleges c ON e.college_id = c.id WHERE c.university_id = $1 AND (e.status = true OR e.status IS NULL) AND (c.status = true OR c.status IS NULL)`, p },
+        totalTeachers: { q: `SELECT COUNT(*) FROM master_teachers mt LEFT JOIN colleges c ON mt.college_id = c.id WHERE c.university_id = $1 AND (mt.status = 'Active' OR mt.status IS NULL) AND (c.status = true OR c.status IS NULL OR mt.college_id IS NULL)`, p },
+        activeExams: { q: `SELECT COUNT(*) FROM exams e LEFT JOIN colleges c ON e.college_id = c.id WHERE (e.university_id = $1 OR c.university_id = $1) AND (e.status = true OR e.status IS NULL) AND (c.status = true OR c.status IS NULL OR e.college_id IS NULL)`, p },
         totalPrograms: { q: `SELECT COUNT(*) FROM university_master_programs WHERE university_id = $1`, p },
         totalSemesters: { q: `SELECT COUNT(*) FROM university_master_semesters WHERE university_id = $1`, p },
         totalSubjects: { q: `SELECT COUNT(*) FROM master_subjects s JOIN university_master_programs ump ON s.program_id = ump.program_id WHERE ump.university_id = $1 AND (s.status = 'Active' OR s.status IS NULL)`, p },
@@ -2562,18 +2562,34 @@ const getStudentAttendance = async (req, res) => {
     if (studentRes.rows.length === 0) return res.status(404).json({ message: "Student record not found" });
     const student = studentRes.rows[0];
 
+    // Clean up input names
+    const colName = student.collageName?.trim();
+    const progName = student.programName?.trim();
+    const semName = student.semister?.trim();
+
     // Find College, Program, and Semester IDs
-    const colRes = await client.query('SELECT id FROM colleges WHERE name ILIKE $1', [student.collageName]);
-    const progRes = await client.query('SELECT id FROM master_programs WHERE name ILIKE $1', [student.programName]);
-    const semRes = await client.query('SELECT id FROM master_semesters WHERE semester_name ILIKE $1', [student.semister]);
+    const colRes = await client.query('SELECT id FROM colleges WHERE name ILIKE $1', [colName]);
+    const progRes = await client.query('SELECT id FROM master_programs WHERE name ILIKE $1', [progName]);
+    
+    // Robust semester matching: handle "3" vs "Semester 3" vs "III Semester"
+    let semRes = await client.query('SELECT id, semester_name FROM master_semesters WHERE semester_name ILIKE $1', [semName]);
+    if (semRes.rows.length === 0) {
+      // Try adding "Semester " prefix if it was just a number
+      semRes = await client.query('SELECT id, semester_name FROM master_semesters WHERE semester_name ILIKE $1 OR semester_name ILIKE $2', [`Semester ${semName}`, `%${semName}%`]);
+    }
 
     if (colRes.rows.length === 0 || progRes.rows.length === 0 || semRes.rows.length === 0) {
-      return res.status(400).json({ message: "Invalid student academic profile" });
+      console.warn(`[Attendance] Academic profile mismatch for user ${userId}:`, {
+        college: colName, foundCol: colRes.rowCount > 0,
+        program: progName, foundProg: progRes.rowCount > 0,
+        semester: semName, foundSem: semRes.rowCount > 0
+      });
+      return res.status(200).json([]); // Return empty list instead of 400 to avoid UI crashes
     }
 
     const collegeId = colRes.rows[0].id;
     const programId = progRes.rows[0].id;
-    const semesterId = semRes.rows[0].semester_id || semRes.rows[0].id; // Fallback for schema variance
+    const semesterId = semRes.rows[0].id;
 
     const query = `
       WITH total_sessions AS (
@@ -2604,9 +2620,10 @@ const getStudentAttendance = async (req, res) => {
           ELSE 0 
         END as attendance_percentage
       FROM master_subjects sub
-      INNER JOIN policy_program_subjects pps ON sub.id = pps.subject_id AND pps.college_id = $1 AND pps.semester_id = $2
+      LEFT JOIN policy_program_subjects pps ON sub.id = pps.subject_id AND pps.college_id = $1 AND pps.semester_id = $2
       LEFT JOIN total_sessions ts ON sub.id = ts.subject_id
       LEFT JOIN student_present sp ON sub.id = sp.subject_id
+      WHERE pps.subject_id IS NOT NULL OR sp.subject_id IS NOT NULL
       ORDER BY sub.name
     `;
 

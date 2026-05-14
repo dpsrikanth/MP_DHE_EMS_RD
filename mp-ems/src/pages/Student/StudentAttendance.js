@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Calendar, BookOpen, Clock, AlertCircle, 
   CheckCircle2, XCircle, ChevronRight, LayoutDashboard,
@@ -169,7 +169,7 @@ const CombinedHistory = ({ dateFilter }) => {
                         <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
                             <td className="px-8 py-5">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex flex-col items-center justify-center font-black group-hover:bg-indigo- group-hover:text-white transition-colors duration-300">
+                                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex flex-col items-center justify-center font-black group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
                                         <div className="text-[12px] italic">{formatDate(row.attendance_date)}</div>
                                     </div>
                                     <div>
@@ -231,13 +231,13 @@ const StudentAttendance = () => {
 
     const getStatusColor = (percentage) => {
         if (percentage >= 75) return 'text-emerald-600 bg-emerald-50 border-emerald-100';
-        if (percentage >= 60) return 'text-indigo- bg-indigo- border-amber-100';
+        if (percentage >= 60) return 'text-indigo-600 bg-indigo-50 border-indigo-100';
         return 'text-red-600 bg-red-50 border-red-100';
     };
 
     const getProgressColor = (percentage) => {
         if (percentage >= 75) return 'bg-emerald-500';
-        if (percentage >= 60) return 'bg-indigo-';
+        if (percentage >= 60) return 'bg-indigo-600';
         return 'bg-red-500';
     };
 
@@ -262,20 +262,20 @@ const StudentAttendance = () => {
                         <History size={26} />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight italic">Attendance <span className="text-indigo- not-italic">Analytics</span></h1>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight italic">Attendance <span className="text-indigo-600 not-italic">Analytics</span></h1>
                         <p className="text-[13px] text-slate-400 font-black tracking-[0.2em] mt-1 ">Advanced academic engagement tracking</p>
                     </div>
                 </div>
                 <div className="flex bg-slate-100 p-1.5 rounded-2xl shadow-inner border border-slate-200">
                     <button 
                         onClick={() => setActiveTab('subject')}
-                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black  tracking-widest transition-all duration-300 ${activeTab === 'subject' ? 'bg-white text-indigo- shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black  tracking-widest transition-all duration-300 ${activeTab === 'subject' ? 'bg-white text-indigo-600 shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         By Subject
                     </button>
                     <button 
                         onClick={() => setActiveTab('history')}
-                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black  tracking-widest transition-all duration-300 ${activeTab === 'history' ? 'bg-white text-indigo- shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black  tracking-widest transition-all duration-300 ${activeTab === 'history' ? 'bg-white text-indigo-600 shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         Combined History
                     </button>
@@ -296,14 +296,14 @@ const StudentAttendance = () => {
                             key={f.id}
                             onClick={() => setDateFilter(f.id)}
                             className={`px-4 py-1.5 rounded-full text-[12px] font-black  tracking-widest transition-all whitespace-nowrap ${
-                                dateFilter === f.id ? 'bg-indigo- text-white shadow-md shadow-indigo-500/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                                dateFilter === f.id ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
                             }`}
                         >
                             {f.label}
                         </button>
                     ))}
                 </div>
-                <div className="flex items-center gap-2 text-indigo- text-[12px] font-black  tracking-widest italic animate-pulse">
+                <div className="flex items-center gap-2 text-indigo-600 text-[12px] font-black  tracking-widest italic animate-pulse">
                     <Info size={12} /> Live synchronization enabled
                 </div>
             </div>
@@ -313,8 +313,8 @@ const StudentAttendance = () => {
                     {/* Top Metrics (only shown in subject view) */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo- rounded-full blur-[60px] opacity-10 group-hover:opacity-20 transition-opacity" />
-                            <BarChart3 className="text-indigo- mb-4" size={32} />
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[60px] opacity-10 group-hover:opacity-20 transition-opacity" />
+                            <BarChart3 className="text-indigo-600 mb-4" size={32} />
                             <h3 className="text-sm font-black text-slate-400  tracking-widest mb-1">Overall Percentage</h3>
                             <div className="flex items-baseline gap-2">
                                 <span className="text-4xl font-black text-slate-900 tracking-tighter">{overallAttendance}%</span>
@@ -331,8 +331,8 @@ const StudentAttendance = () => {
                         </div>
 
                         <div className="bg-indigo-600 rounded-[2rem] p-8 text-white relative overflow-hidden group">
-                             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo- rounded-full blur-[60px] opacity-20" />
-                             <AlertCircle className="text-indigo-400 mb-4" size={32} />
+                             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[60px] opacity-20" />
+                             <AlertCircle className="text-indigo-200 mb-4" size={32} />
                              <h3 className="text-sm font-black opacity-60  tracking-widest mb-1 italic">Exam Eligibility</h3>
                              <p className="text-[13px] font-bold leading-relaxed">Ensure a minimum of <span className="text-indigo-400 font-black">75%</span> engagement per course for hall ticket validation.</p>
                         </div>
@@ -364,7 +364,7 @@ const StudentAttendance = () => {
                                                 </div>
                                                 <div>
                                                     <div className="flex items-center gap-2 mb-1">
-                                                        <span className="text-[12px] font-black text-indigo- bg-indigo- px-2 py-0.5 rounded  tracking-wider border border-sky-100">
+                                                        <span className="text-[12px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded  tracking-wider border border-indigo-100">
                                                             {sub.subject_code}
                                                         </span>
                                                     </div>
@@ -396,7 +396,7 @@ const StudentAttendance = () => {
                                                         )}
                                                     </div>
                                                 </div>
-                                                <div className={`text-slate-300 transition-transform duration-300 ${expandedSubject === sub.subject_id ? 'rotate-180 text-indigo-' : ''}`}>
+                                                <div className={`text-slate-300 transition-transform duration-300 ${expandedSubject === sub.subject_id ? 'rotate-180 text-indigo-600' : ''}`}>
                                                     <ChevronDown size={24} />
                                                 </div>
                                             </div>

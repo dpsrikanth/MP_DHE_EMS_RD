@@ -1,4 +1,4 @@
-﻿import { 
+import { 
   Users, 
   GraduationCap, 
   BookOpen, 
@@ -150,47 +150,49 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-8">
-        {/* Teacher Overview */}
-        <div>
-          <div className="stitch-card p-6 h-full flex flex-col">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h4 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                  <Users size={20} className="text-blue-500" /> Personnel Overview
-                </h4>
-                <p className="text-[12px] font-black text-slate-400  tracking-widest mt-1">Teaching Faculty Roster</p>
-              </div>
-              <button className="text-[12px] font-black text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-xl  tracking-widest transition-colors">See all</button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto pr-2 space-y-3 scrollbar-hide">
-              {teachers.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 opacity-50 grayscale">
-                  <User size={48} className="text-slate-300 mb-4" />
-                  <p className="text-sm font-bold text-slate-400">No personnel records found</p>
+        {/* Only show Teacher Overview for non-University Admin roles or if desired */}
+        {!authUtils.isUniversityAdmin() && (
+          <div>
+            <div className="stitch-card p-6 h-full flex flex-col">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h4 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                    <Users size={20} className="text-blue-500" /> Personnel Overview
+                  </h4>
+                  <p className="text-[12px] font-black text-slate-400  tracking-widest mt-1">Teaching Faculty Roster</p>
                 </div>
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {teachers.map((t) => (
-                  <div key={t.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-white hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/5 transition-all duration-300 group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-blue-500 font-black text-lg shadow-sm group-hover:bg-blue-500 group-hover:text-white transition-all duration-500">
-                        {(t.teacher_name || t.name || 'U').charAt(0)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-black text-slate-900 truncate group-hover:text-blue-600 transition-colors">{t.teacher_name || t.name || 'Unknown'}</p>
-                        <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5 truncate">
-                          <Mail size={12} className="text-slate-300" /> {t.email || ''}
-                        </p>
-                      </div>
-                        <TrendingUp className="animate-pulse" size={18} />
-                    </div>
+                <button className="text-[12px] font-black text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-xl  tracking-widest transition-colors">See all</button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto pr-2 space-y-3 scrollbar-hide">
+                {teachers.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-12 opacity-50 grayscale">
+                    <User size={48} className="text-slate-300 mb-4" />
+                    <p className="text-sm font-bold text-slate-400">No personnel records found</p>
                   </div>
-                ))}
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {teachers.map((t) => (
+                    <div key={t.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-white hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/5 transition-all duration-300 group">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-blue-500 font-black text-lg shadow-sm group-hover:bg-blue-500 group-hover:text-white transition-all duration-500">
+                          {(t.teacher_name || t.name || 'U').charAt(0)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-black text-slate-900 truncate group-hover:text-blue-600 transition-colors">{t.teacher_name || t.name || 'Unknown'}</p>
+                          <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5 truncate">
+                            <Mail size={12} className="text-slate-300" /> {t.email || ''}
+                          </p>
+                        </div>
+                          <TrendingUp className="animate-pulse" size={18} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

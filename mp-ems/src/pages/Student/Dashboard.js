@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Mail, GraduationCap, School, Calendar, BookOpen, AlertCircle, FileText } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
 
@@ -8,7 +8,7 @@ const StudentDashboard = () => {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight italic">Student<span className="text-indigo- not-italic ml-1">Portal</span></h1>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tight italic">Student<span className="text-indigo-600 not-italic ml-1">Portal</span></h1>
         <p className="text-slate-500 font-medium">Welcome back, {user.name}!</p>
       </div>
 
@@ -16,12 +16,12 @@ const StudentDashboard = () => {
         {/* Profile Card */}
         <div className="md:col-span-2 bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50">
           <div className="flex items-center gap-6 mb-8 pb-8 border-b border-slate-50">
-            <div className="w-20 h-20 bg-indigo- rounded-3xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+            <div className="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
               <User size={40} />
             </div>
             <div>
               <h2 className="text-2xl font-black text-slate-900 leading-tight">{user.name}</h2>
-              <p className="text-indigo- font-black text-sm  tracking-widest mt-1">Undergraduate Student</p>
+              <p className="text-indigo-600 font-black text-sm  tracking-widest mt-1 uppercase">Undergraduate Student</p>
             </div>
           </div>
 
@@ -72,11 +72,11 @@ const StudentDashboard = () => {
         {/* Quick Links / Actions */}
         <div className="space-y-6">
           <div className="bg-indigo-600 rounded-[2rem] p-8 text-white relative overflow-hidden group">
-             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo- rounded-full blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity" />
-             <Calendar className="text-indigo-400 mb-4" size={32} />
+             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity" />
+             <Calendar className="text-indigo-200 mb-4" size={32} />
              <h3 className="text-xl font-black mb-2 tracking-tight">Examinations</h3>
-             <p className="text-slate-400 text-sm font-medium mb-6 leading-relaxed">View scheduled exams, register for seating, and download hall tickets.</p>
-             <a href="/student/exams" className="inline-flex items-center gap-2 text-indigo-400 font-black text-[13px]  tracking-widest hover:text-sky-300 transition-colors">
+             <p className="text-indigo-100 text-sm font-medium mb-6 leading-relaxed">View scheduled exams, register for seating, and download hall tickets.</p>
+             <a href="/student/exams" className="inline-flex items-center gap-2 text-white font-black text-[13px]  tracking-widest hover:text-sky-300 transition-colors">
                Access Exams <div className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
              </a>
           </div>
@@ -92,20 +92,20 @@ const StudentDashboard = () => {
           </div>
 
           <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50 relative overflow-hidden group">
-             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo- rounded-full blur-[60px] opacity-5 group-hover:opacity-10 transition-opacity" />
-             <Calendar className="text-indigo- mb-4" size={32} />
+             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[60px] opacity-5 group-hover:opacity-10 transition-opacity" />
+             <Calendar className="text-indigo-600 mb-4" size={32} />
              <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Attendance Record</h3>
              <p className="text-slate-500 text-sm font-medium mb-6 leading-relaxed">Track your subject-wise attendance and verify eligibility for examinations.</p>
-             <a href="/student/attendance" className="inline-flex items-center gap-2 text-indigo- font-black text-[13px]  tracking-widest hover:text-indigo- transition-colors">
-               Track Attendance <div className="w-2 h-2 rounded-full bg-indigo- animate-pulse" />
+             <a href="/student/attendance" className="inline-flex items-center gap-2 text-indigo-600 font-black text-[13px]  tracking-widest hover:text-indigo-500 transition-colors">
+               Track Attendance <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
              </a>
           </div>
 
           <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50">
             <h3 className="text-lg font-black text-slate-900 mb-4 tracking-tight">Important Notice</h3>
-            <div className="flex gap-4 p-4 bg-indigo- rounded-2xl border border-amber-100 italic">
-              <AlertCircle className="text-indigo- shrink-0" size={20} />
-              <p className="text-[13px] text-amber-800 font-medium leading-relaxed">
+            <div className="flex gap-4 p-4 bg-indigo-50 rounded-2xl border border-indigo-100 italic">
+              <AlertCircle className="text-indigo-600 shrink-0" size={20} />
+              <p className="text-[13px] text-indigo-800 font-medium leading-relaxed">
                 Exam registration for Semester 1 (2026 Batch) is now open. Please complete your registration before March 20th.
               </p>
             </div>
