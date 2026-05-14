@@ -42,8 +42,13 @@ exports.getAssignedSubjects = async (req, res) => {
 
 exports.getStudentsForSubject = async (req, res) => {
     try {
-        const { college_id, program_id, semester_id } = req.query;
-        console.log(`[DEBUG] getStudentsForSubject called with: college_id=${college_id}, program_id=${program_id}, semester_id=${semester_id}`);
+        const { college_id, program_id, semester_id, subject_id, academic_year_id } = req.query;
+        console.log(`[DEBUG] getStudentsForSubject called with: college_id=${college_id}, program_id=${program_id}, semester_id=${semester_id}, subject_id=${subject_id}, academic_year_id=${academic_year_id}`);
+
+        // Sanitize IDs
+        const s_id = (semester_id && semester_id !== 'null' && semester_id !== 'undefined') ? parseInt(semester_id) : null;
+        const ay_id = (academic_year_id && academic_year_id !== 'null' && academic_year_id !== 'undefined') ? parseInt(academic_year_id) : null;
+        const sub_id = (subject_id && subject_id !== 'null' && subject_id !== 'undefined') ? parseInt(subject_id) : null;
 
         // Fetch string names for matching with students table
         const colRes = await db.query('SELECT name FROM colleges WHERE id = $1', [college_id]);
@@ -70,8 +75,8 @@ exports.getStudentsForSubject = async (req, res) => {
         }
 
         let semesterName = null;
-        if (semester_id && semester_id !== 'null' && semester_id !== 'undefined') {
-            const semRes = await db.query('SELECT semester_name FROM master_semesters WHERE id = $1', [semester_id]);
+        if (s_id) {
+            const semRes = await db.query('SELECT semester_name FROM master_semesters WHERE id = $1', [s_id]);
             if (semRes.rowCount > 0) {
                 semesterName = semRes.rows[0].semester_name;
             }
@@ -82,17 +87,42 @@ exports.getStudentsForSubject = async (req, res) => {
             return res.status(200).json([]);
         }
 
-        // Re-adding strict semester filtering to prevent cross-semester student mixups.
+        // Updated query to include historical students (those who have been promoted)
+        // by checking for their attendance or marks in this specific semester context.
         const query = `
-            SELECT * FROM students 
-            WHERE "collageName" ILIKE $1 
-              AND "programName" ILIKE $2 
-              AND "semister" ILIKE $3
-              AND "deleteStatus" = true
-            ORDER BY rollnumber ASC NULLS LAST, name ASC
+            SELECT DISTINCT s.* FROM students s
+            WHERE s."collageName" ILIKE $1 
+              AND s."programName" ILIKE $2 
+              AND s."deleteStatus" = true
+              AND (
+                  s."semister" ILIKE $3
+                  OR EXISTS (
+                      SELECT 1 FROM student_attendance sa
+                      WHERE sa.student_id = s.id
+                        AND sa.semester_id = $4
+                        AND ($5::int IS NULL OR sa.academic_year_id = $5)
+                        AND ($6::int IS NULL OR sa.subject_id = $6)
+                  )
+                  OR EXISTS (
+                      SELECT 1 FROM marks m
+                      JOIN master_subjects ms ON m.subject_id = ms.id
+                      WHERE m.student_id = s.id
+                        AND ms.semester_id = $4
+                        AND ($5::int IS NULL OR m.academic_year_id = $5)
+                        AND ($6::int IS NULL OR m.subject_id = $6)
+                  )
+              )
+            ORDER BY s.rollnumber ASC NULLS LAST, s.name ASC
         `;
-        const result = await db.query(query, [collageName, programName, semesterName]);
-        console.log(`[DEBUG] Found ${result.rows.length} students for ${collageName} / ${programName}`);
+        const result = await db.query(query, [
+            collageName, 
+            programName, 
+            semesterName, 
+            s_id, 
+            ay_id, 
+            sub_id
+        ]);
+        console.log(`[DEBUG] Found ${result.rows.length} students for ${collageName} / ${programName} (Semester: ${semesterName})`);
         res.status(200).json(result.rows);
     } catch (error) {
         console.error(error);
@@ -285,14 +315,34 @@ exports.submitMarks = async (req, res) => {
                 SELECT COUNT(DISTINCT s.id) as total_students 
                 FROM students s 
                 WHERE s."collageName" ILIKE $1 
-                  AND s."semister" ILIKE $2
+                  AND ($3::text IS NULL OR s."programName" ILIKE $3)
                   AND s."deleteStatus" = true
+                  AND (
+                      s."semister" ILIKE $2
+                      OR EXISTS (
+                          SELECT 1 FROM student_internal_marks sim
+                          WHERE sim.student_id = s.id
+                            AND sim.subject_id = $4
+                            AND ($5::int IS NULL OR sim.component_id = $5)
+                      )
+                      OR EXISTS (
+                          SELECT 1 FROM student_attendance sa
+                          WHERE sa.student_id = s.id
+                            AND sa.semester_id = $6
+                            AND ($7::int IS NULL OR sa.academic_year_id = $7)
+                            AND ($4::int IS NULL OR sa.subject_id = $4)
+                      )
+                      OR EXISTS (
+                          SELECT 1 FROM marks m
+                          JOIN master_subjects ms ON m.subject_id = ms.id
+                          WHERE m.student_id = s.id
+                            AND ms.semester_id = $6
+                            AND ($7::int IS NULL OR m.academic_year_id = $7)
+                            AND ($4::int IS NULL OR m.subject_id = $4)
+                      )
+                  )
             `;
-            let queryParams = [collageName, semesterName];
-            if (programName) {
-                studentsQuery += ` AND s."programName" ILIKE $3`;
-                queryParams.push(programName);
-            }
+            let queryParams = [collageName, semesterName, programName || null, subject_id, component_id, semester_id, academic_year_id];
             const studentsCountRes = await client.query(studentsQuery, queryParams);
             const totalStudents = parseInt(studentsCountRes.rows[0].total_students);
 
@@ -336,12 +386,37 @@ exports.submitMarks = async (req, res) => {
             }
 
             // 2. Count expected total records (Students * Components)
-            let studentCountQuery = `SELECT COUNT(DISTINCT id) as count FROM students WHERE "collageName" ILIKE $1 AND "semister" ILIKE $2 AND "deleteStatus" = true`;
-            let scParams = [collageName, semesterName];
-            if (programName) {
-                studentCountQuery += ` AND "programName" ILIKE $3`;
-                scParams.push(programName);
-            }
+            let studentCountQuery = `
+                SELECT COUNT(DISTINCT s.id) as count 
+                FROM students s 
+                WHERE s."collageName" ILIKE $1 
+                  AND ($3::text IS NULL OR s."programName" ILIKE $3)
+                  AND s."deleteStatus" = true
+                  AND (
+                      s."semister" ILIKE $2
+                      OR EXISTS (
+                          SELECT 1 FROM student_internal_marks sim
+                          WHERE sim.student_id = s.id
+                            AND sim.subject_id = $4
+                      )
+                      OR EXISTS (
+                          SELECT 1 FROM student_attendance sa
+                          WHERE sa.student_id = s.id
+                            AND sa.semester_id = $5
+                            AND ($6::int IS NULL OR sa.academic_year_id = $6)
+                            AND ($4::int IS NULL OR sa.subject_id = $4)
+                      )
+                      OR EXISTS (
+                          SELECT 1 FROM marks m
+                          JOIN master_subjects ms ON m.subject_id = ms.id
+                          WHERE m.student_id = s.id
+                            AND ms.semester_id = $5
+                            AND ($6::int IS NULL OR m.academic_year_id = $6)
+                            AND ($4::int IS NULL OR m.subject_id = $4)
+                      )
+                  )
+            `;
+            let scParams = [collageName, semesterName, programName || null, subject_id, semester_id, academic_year_id];
             const scRes = await client.query(studentCountQuery, scParams);
             const totalStudents = parseInt(scRes.rows[0].count);
 
@@ -612,22 +687,95 @@ exports.getStudentsForRound = async (req, res) => {
         const collageName = colRes.rows[0].name;
         const semesterName = semRes.rows[0].semester_name;
 
-        // Re-adding strict semester filtering to prevent cross-semester and cross-program student mixups.
+        const s_id = (semester_id && semester_id !== 'null' && semester_id !== 'undefined') ? parseInt(semester_id) : null;
+        const ay_id = (academic_year_id && academic_year_id !== 'null' && academic_year_id !== 'undefined') ? parseInt(academic_year_id) : null;
+        const sub_id = (subject_id && subject_id !== 'null' && subject_id !== 'undefined') ? parseInt(subject_id) : null;
+
+        // Updated query to include historical students (those who have been promoted)
+        // by checking for their internal marks, attendance or regular marks in this specific semester context.
         let studentsQuery = `
             SELECT DISTINCT s.id, s.name, s.rollnumber 
             FROM students s 
             WHERE s."collageName" ILIKE $1 
-              AND s."semister" ILIKE $2
               AND s."deleteStatus" = true
+              AND (
+                  (s."semister" ILIKE $2 ${programName ? 'AND s."programName" ILIKE $3' : ''})
+                  OR EXISTS (
+                      SELECT 1 FROM student_internal_marks sim
+                      WHERE sim.student_id = s.id
+                        AND sim.subject_id = $4
+                        AND sim.component_id = $5
+                  )
+                  OR EXISTS (
+                      SELECT 1 FROM student_attendance sa
+                      WHERE sa.student_id = s.id
+                        AND sa.semester_id = $6
+                        AND ($7::int IS NULL OR sa.academic_year_id = $7)
+                        AND ($4::int IS NULL OR sa.subject_id = $4)
+                  )
+                  OR EXISTS (
+                      SELECT 1 FROM marks m
+                      JOIN master_subjects ms ON m.subject_id = ms.id
+                      WHERE m.student_id = s.id
+                        AND ms.semester_id = $6
+                        AND ($7::int IS NULL OR m.academic_year_id = $7)
+                        AND ($4::int IS NULL OR m.subject_id = $4)
+                  )
+              )
+            ORDER BY s.rollnumber ASC NULLS LAST, s.name ASC
         `;
         let queryParams = [collageName, semesterName];
+        if (programName) queryParams.push(programName);
 
-        if (programName) {
-            studentsQuery += ` AND s."programName" ILIKE $3`;
-            queryParams.push(programName);
-        }
-
-        const studentsRes = await db.query(studentsQuery, queryParams);
+        // Add additional IDs to params
+        // index mapping: 1:col, 2:sem, 3:prog(optional), 4:sub_id, 5:comp_id, 6:s_id, 7:ay_id
+        const nextIdx = programName ? 4 : 3;
+        const finalParams = [...queryParams];
+        finalParams.push(sub_id); // $4 or $3 (wait, logic is tricky with dynamic SQL)
+        
+        // Actually, let's just make the query more standard to avoid index confusion
+        const standardizedQuery = `
+            SELECT DISTINCT s.id, s.name, s.rollnumber 
+            FROM students s 
+            WHERE s."collageName" ILIKE $1 
+              AND ($3::text IS NULL OR s."programName" ILIKE $3)
+              AND s."deleteStatus" = true
+              AND (
+                  s."semister" ILIKE $2
+                  OR EXISTS (
+                      SELECT 1 FROM student_internal_marks sim
+                      WHERE sim.student_id = s.id
+                        AND sim.subject_id = $4
+                        AND ($5::int IS NULL OR sim.component_id = $5)
+                  )
+                  OR EXISTS (
+                      SELECT 1 FROM student_attendance sa
+                      WHERE sa.student_id = s.id
+                        AND sa.semester_id = $6
+                        AND ($7::int IS NULL OR sa.academic_year_id = $7)
+                        AND ($4::int IS NULL OR sa.subject_id = $4)
+                  )
+                  OR EXISTS (
+                      SELECT 1 FROM marks m
+                      JOIN master_subjects ms ON m.subject_id = ms.id
+                      WHERE m.student_id = s.id
+                        AND ms.semester_id = $6
+                        AND ($7::int IS NULL OR m.academic_year_id = $7)
+                        AND ($4::int IS NULL OR m.subject_id = $4)
+                  )
+              )
+            ORDER BY s.rollnumber ASC NULLS LAST, s.name ASC
+        `;
+        
+        const studentsRes = await db.query(standardizedQuery, [
+            collageName,
+            semesterName,
+            programName || null,
+            sub_id,
+            componentId,
+            s_id,
+            ay_id
+        ]);
 
         let marks = [];
         if (componentId) {

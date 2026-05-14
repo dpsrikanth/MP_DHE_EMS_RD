@@ -63,6 +63,8 @@ const InternalExamMarks = () => {
             setRounds([]);
             setSelectedRound(null);
         }
+        // Always clear selected subject when filters change to avoid inconsistent state
+        setSelectedSubject(null);
     }, [selectedYear, selectedSem]);
 
     const fetchFilteredRounds = async () => {
@@ -132,10 +134,10 @@ const InternalExamMarks = () => {
         try {
             const data = await facultyApi.getStudentsForRound({
                 subject_id: subject.subject_id,
-                round_name: selectedRound.label,
+                round_name: selectedRound?.label,
                 college_id: subject.college_id,
-                semester_id: selectedSem.value,
-                academic_year_id: selectedYear.value,
+                semester_id: selectedSem?.value,
+                academic_year_id: selectedYear?.value,
                 section: subject.section,
                 program_id: subject.program_id
             });
@@ -419,7 +421,7 @@ const InternalExamMarks = () => {
                         <div>
                             <div className="flex items-center gap-3">
                                 <h2 className="text-xl font-black text-slate-900 tracking-tight  tracking-tighter">
-                                    {selectedSubject.subject_name} — {selectedRound.label}
+                                    {selectedSubject.subject_name} — {selectedRound?.label || 'Assessment'}
                                 </h2>
                                 <span className={`px-3 py-1 rounded-full text-[12px] font-black  tracking-widest shadow-sm
                                     ${workflowStatus === 'Approved' ? 'bg-emerald-100 text-emerald-700' :

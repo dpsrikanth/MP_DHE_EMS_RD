@@ -9,6 +9,7 @@ import {
 import { useLocation } from 'react-router-dom';
 import { TableSearch } from '../../components/TableControls';
 import { facultyApi } from '../../api/facultyApi';
+import { milestoneApi } from '../../api/milestoneApi';
 
 
 const Attendance = () => {
@@ -27,6 +28,7 @@ const Attendance = () => {
     // Analytics specific state
     const [analyticsFilter, setAnalyticsFilter] = useState('all'); // 'all', 'week', 'month', 'year'
     const [summaryStats, setSummaryStats] = useState({ totalSessions: 0, studentMap: {} });
+    const [roadmapDates, setRoadmapDates] = useState({ start: '', end: '' });
 
     useEffect(() => {
         fetchAssignedSubjects();
@@ -55,6 +57,9 @@ const Attendance = () => {
                     fetchAnalytics(assignment, analyticsFilter);
                 }
             }
+        } else {
+            setStudents([]);
+            setSummaryStats({ totalSessions: 0, studentMap: {} });
         }
     }, [selectedAssignment, attendanceDate, periodNumber, analyticsFilter, activeTab]);
 
@@ -77,12 +82,14 @@ const Attendance = () => {
             setLoading(true);
             
             // 1. Fetch Students
-            const studentsData = await facultyApi.getStudentsByAssignment({
+            const studentsData = await facultyApi.getStudentsForSubject({
                 college_id: assignment.college_id,
                 semester_id: assignment.semester_id,
-                program_id: assignment.program_id
+                program_id: assignment.program_id,
+                subject_id: assignment.subject_id,
+                academic_year_id: assignment.academic_year_id
             });
-            setStudents(studentsData);
+            setStudents(studentsData || []);
 
             // 2. Fetch Existing Attendance
             const existingAtt = await facultyApi.getAttendance({
@@ -108,7 +115,48 @@ const Attendance = () => {
             sData.summary.forEach(s => map[s.student_id] = parseInt(s.present_count));
             setSummaryStats({ totalSessions: sData.totalSessions, studentMap: map });
 
-            // 4. Prepare Draft
+            // 4. Fetch Roadmap Milestones
+            try {
+                const milestones = await milestoneApi.getMilestones({
+                    college_id: assignment.college_id,
+                    program_id: assignment.program_id,
+                    semester_id: assignment.semester_id,
+                    academic_year_id: assignment.academic_year_id
+                });
+                
+                const startMs = milestones.find(m => m.name.toLowerCase().includes('commencement of classes'));
+                const endMs = milestones.find(m => m.name.toLowerCase().includes('last working day'));
+                
+                const formatDatePart = (dateInput) => {
+                    if (!dateInput) return '';
+                    const d = new Date(dateInput);
+                    if (isNaN(d.getTime())) return '';
+                    
+                    // Use local date methods to correctly interpret dates shifted by UTC storage
+                    // (e.g. 2024-07-13 18:30 UTC is 2024-07-14 local in India)
+                    const year = d.getFullYear();
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                };
+
+                if (startMs && endMs) {
+                    const start = formatDatePart(startMs.start_date);
+                    const end = formatDatePart(endMs.end_date);
+                    setRoadmapDates({ start, end });
+                    
+                    // If current date is outside range, adjust it to the start of classes
+                    if (attendanceDate < start || attendanceDate > end) {
+                        setAttendanceDate(start);
+                    }
+                } else {
+                    setRoadmapDates({ start: '', end: '' });
+                }
+            } catch (err) {
+                console.error("Error fetching roadmap:", err);
+            }
+
+            // 5. Prepare Draft
             const draft = {};
             studentsData.forEach(st => {
                 const rec = existingAtt.find(e => e.student_id === st.id);
@@ -140,6 +188,10 @@ const Attendance = () => {
             } else if (filter === 'year') {
                 const d = new Date(now.getFullYear(), 0, 1);
                 startDate = d.toISOString().split('T')[0];
+            } else if (filter === 'all' && roadmapDates.start) {
+                // If "All-Time" is selected, scope it to the Roadmap dates
+                startDate = roadmapDates.start;
+                endDate = roadmapDates.end;
             }
 
             const params = {
@@ -161,12 +213,14 @@ const Attendance = () => {
 
             // Also fetch student list if not loaded
             if (students.length === 0) {
-                const studentsData = await facultyApi.getStudentsByAssignment({
+                const studentsData = await facultyApi.getStudentsForSubject({
                     college_id: assignment.college_id,
                     semester_id: assignment.semester_id,
-                    program_id: assignment.program_id
+                    program_id: assignment.program_id,
+                    subject_id: assignment.subject_id,
+                    academic_year_id: assignment.academic_year_id
                 });
-                setStudents(studentsData);
+                setStudents(studentsData || []);
             }
         } catch (err) {
             toast.error('Error fetching analytics');
@@ -176,7 +230,7 @@ const Attendance = () => {
     };
 
     const handleSaveAttendance = async () => {
-        const assignment = assignedSubjects.find(a => a.id === selectedAssignment.value);
+        const assignment = assignedSubjects.find(a => a.id === selectedAssignment?.value);
         if (!assignment) return;
         setIsSaving(true);
         try {
@@ -209,7 +263,10 @@ const Attendance = () => {
     const filteredStudents = useMemo(() => {
         if (!searchQuery.trim()) return students;
         const q = searchQuery.toLowerCase();
-        return students.filter(s => s.name.toLowerCase().includes(q) || s.rollnumber?.toLowerCase().includes(q));
+        return students.filter(s => 
+            (s.name || "").toLowerCase().includes(q) || 
+            (s.rollnumber || "").toLowerCase().includes(q)
+        );
     }, [students, searchQuery]);
 
     const options = assignedSubjects.map(a => ({
@@ -271,12 +328,23 @@ const Attendance = () => {
                 {activeTab === 'mark' ? (
                     <>
                         <div className="md:col-span-6 lg:col-span-4 space-y-2">
-                            <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1 italic">Attendance Date</label>
+                            <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1 italic flex justify-between">
+                                Attendance Date
+                                {roadmapDates.start && (
+                                    <span className="text-[10px] text-emerald-600 opacity-60">Roadmap: {roadmapDates.start} to {roadmapDates.end}</span>
+                                )}
+                            </label>
                             <input 
                                 type="date"
                                 value={attendanceDate}
+                                min={roadmapDates.start}
+                                max={roadmapDates.end}
                                 onChange={(e) => setAttendanceDate(e.target.value)}
-                                className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all font-bold text-sm"
+                                className={`w-full px-5 py-3 bg-slate-50 border rounded-2xl outline-none focus:bg-white focus:ring-2 transition-all font-bold text-sm ${
+                                    roadmapDates.start && (attendanceDate < roadmapDates.start || attendanceDate > roadmapDates.end)
+                                    ? 'border-red-300 focus:ring-red-500/20' 
+                                    : 'border-slate-100 focus:ring-indigo-500/20'
+                                }`}
                             />
                         </div>
                         <div className="md:col-span-6 lg:col-span-3 space-y-2">
