@@ -605,8 +605,8 @@ const deleteRole = async (req, res) => {
 };
 
 const Login = async (req, res) => {
+  const { email, password, rememberMe } = req.body;
   try {
-    const { email, password, rememberMe } = req.body;
     const user = await client.query(
       `SELECT u.id, u.name, u.email, u.password, u.password_hash, u.is_verified,
               COALESCE(mt.college_id, u.college_id, sc.id) as college_id, 

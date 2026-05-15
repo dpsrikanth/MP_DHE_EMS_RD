@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const logger = require('../utils/logger');
 
 // Add a new examination hall (Starts as Draft)
 exports.createHall = async (req, res) => {
@@ -59,6 +60,7 @@ exports.getHalls = async (req, res) => {
             ORDER BY created_at DESC;
         `;
         const result = await db.query(query, [college_id]);
+        logger.info(`getHalls - College: ${college_id}, Found: ${result.rowCount}`);
         res.status(200).json(result.rows);
     } catch (error) {
         console.error("Get halls error:", error);
@@ -403,9 +405,15 @@ exports.getSeatingRequirement = async (req, res) => {
         if (!college_id) return res.status(403).json({ error: "Unauthorized" });
 
         const { exam_id } = req.query;
+        logger.info(`getSeatingRequirement - College: ${college_id}, Exam: ${exam_id}`);
 
-        // Build exam filter clause if a specific exam is selected
-        const examFilter = exam_id ? `AND er.exam_id = ${parseInt(exam_id)}` : '';
+        // Build exam filter clause using positional parameter
+        const params = [college_id];
+        let examFilter = '';
+        if (exam_id) {
+            params.push(parseInt(exam_id));
+            examFilter = `AND er.exam_id = $2`;
+        }
 
         const query = `
             WITH seating_metrics AS (
@@ -478,7 +486,8 @@ exports.getSeatingRequirement = async (req, res) => {
                 ) as exam_breakdown
             FROM seating_metrics;
         `;
-        const result = await db.query(query, [college_id]);
+        const result = await db.query(query, params);
+        logger.info(`getSeatingRequirement Result: ${JSON.stringify(result.rows[0])}`);
         res.status(200).json(result.rows[0]);
     } catch (error) {
         console.error("Get seating requirement error:", error);
