@@ -49,6 +49,7 @@ const InternalExamMarks = () => {
     const [workflowStatus, setWorkflowStatus] = useState('Pending');
     const [showBulkDropdown, setShowBulkDropdown] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
+    const [pendingDiscrepancies, setPendingDiscrepancies] = useState([]);
 
     const teacherId = JSON.parse(localStorage.getItem('user'))?.teacher_id || 1;
 
@@ -146,6 +147,17 @@ const InternalExamMarks = () => {
                 setStudents(data.students || []);
                 setComponentInfo(data.structure);
 
+                // Fetch pending discrepancies
+                try {
+                    const disc = await facultyApi.getPendingDiscrepancies({
+                        subject_id: subject.subject_id,
+                        component_name: selectedRound?.label
+                    });
+                    setPendingDiscrepancies(disc || []);
+                } catch (discErr) {
+                    console.error("Failed to load pending discrepancies:", discErr);
+                }
+
                 // Populate draft
                 const draft = {};
                 data.students.forEach(student => {
@@ -160,13 +172,34 @@ const InternalExamMarks = () => {
                 setSelectedSubject(subject);
             } else {
                 toast.error('Failed to load students');
+                setPendingDiscrepancies([]);
             }
         } catch (err) {
             toast.error('Error fetching marks data');
+            setPendingDiscrepancies([]);
         } finally {
             setLoading(false);
         }
     };
+
+    const handleResolveDiscrepancy = async (discrepancyId) => {
+        try {
+            await facultyApi.resolveDiscrepancy({ discrepancy_id: discrepancyId });
+            toast.success('Discrepancy resolved successfully');
+            
+            // Refresh discrepancies list
+            if (selectedSubject) {
+                const disc = await facultyApi.getPendingDiscrepancies({
+                    subject_id: selectedSubject.subject_id,
+                    component_name: selectedRound?.label
+                });
+                setPendingDiscrepancies(disc || []);
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.error || 'Failed to resolve discrepancy');
+        }
+    };
+
 
     const handleMarkChange = (studentId, field, value) => {
         setMarksDraft(prev => ({
@@ -211,7 +244,7 @@ const InternalExamMarks = () => {
         }
     };
 
-    const handleSubmit = async () => {
+    const handlePublish = async () => {
         // --- Validation Check: Ensure all students have marks or are absent ---
         const missingMarks = students.filter(student => {
             const entry = marksDraft[student.id];
@@ -223,9 +256,9 @@ const InternalExamMarks = () => {
             return;
         }
 
-        if (!window.confirm("Are you sure you want to submit these marks to HOD? You won't be able to edit them after submission.")) return;
+        if (!window.confirm("Are you sure you want to publish these marks to students? They will be locked for editing.")) return;
 
-        // Auto-save any unsaved entries before submitting to HOD
+        // Auto-save any unsaved entries before publishing
         const isSaved = await handleSave(true);
         if (!isSaved) {
             setIsSaving(false);
@@ -234,7 +267,7 @@ const InternalExamMarks = () => {
 
         setIsSaving(true);
         try {
-            await facultyApi.submitMarks({
+            await facultyApi.publishRound({
                 subject_id: selectedSubject.subject_id,
                 component_id: componentInfo.id,
                 faculty_id: teacherId,
@@ -244,10 +277,35 @@ const InternalExamMarks = () => {
                 section: selectedSubject.section
             });
 
-            toast.success('Marks submitted to HOD successfully!');
-            setWorkflowStatus('Submitted');
+            toast.success('Marks published successfully!');
+            setWorkflowStatus('Published');
         } catch (err) {
-            toast.error('Submission failed');
+            toast.error('Publishing failed');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleRequestUnlock = async () => {
+        const reason = window.prompt("Please enter a reason for requesting edit access:");
+        if (reason === null) return; // Cancelled
+        
+        setIsSaving(true);
+        try {
+            await facultyApi.requestRoundUnlock({
+                subject_id: selectedSubject.subject_id,
+                component_id: componentInfo.id,
+                college_id: selectedSubject.college_id,
+                semester_id: selectedSem.value,
+                academic_year_id: selectedYear.value,
+                section: selectedSubject.section,
+                reason: reason || 'Requested by faculty'
+            });
+
+            toast.success('Unlock request sent to HOD!');
+            setWorkflowStatus('Unlock Requested');
+        } catch (err) {
+            toast.error('Failed to send unlock request');
         } finally {
             setIsSaving(false);
         }
@@ -423,15 +481,14 @@ const InternalExamMarks = () => {
                                 <h2 className="text-xl font-black text-slate-900 tracking-tight  tracking-tighter">
                                     {selectedSubject.subject_name} — {selectedRound?.label || 'Assessment'}
                                 </h2>
-                                <span className={`px-3 py-1 rounded-full text-[12px] font-black  tracking-widest shadow-sm
-                                    ${workflowStatus === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
-                                        workflowStatus === 'Submitted' ? 'bg-indigo-100 text-indigo-700' :
-                                            workflowStatus === 'Locked' ? 'bg-slate-200 text-slate-700' :
-                                                workflowStatus === 'Rejected' ? 'bg-red-100 text-red-700' :
-                                                    'bg-amber-100 text-amber-700'}
-                                `}>
-                                    {workflowStatus}
-                                </span>
+                                    <span className={`px-3 py-1 rounded-full text-[12px] font-black tracking-widest shadow-sm
+                                        ${workflowStatus === 'Published' ? 'bg-emerald-100 text-emerald-700' :
+                                            workflowStatus === 'Unlock Requested' ? 'bg-amber-100 text-amber-700' :
+                                                workflowStatus === 'Approved' || workflowStatus === 'Locked' ? 'bg-slate-200 text-slate-700' :
+                                                    'bg-indigo-100 text-indigo-700'}
+                                    `}>
+                                        {workflowStatus}
+                                    </span>
                             </div>
                             <p className="text-sm text-slate-500 font-medium">Entering marks for section {selectedSubject.section}</p>
                         </div>
@@ -456,7 +513,7 @@ const InternalExamMarks = () => {
                                             setShowImportModal(true);
                                             setShowBulkDropdown(false);
                                         }}
-                                        disabled={['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
+                                        disabled={['Published', 'Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus)}
                                         className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors disabled:opacity-50"
                                     >
                                         <FileUp size={18} />
@@ -483,6 +540,14 @@ const InternalExamMarks = () => {
                     </div>
 
                     <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                        {pendingDiscrepancies.length > 0 && (
+                            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-100 px-8 py-4 flex items-center gap-3">
+                                <AlertCircle className="text-amber-600 animate-pulse flex-shrink-0" size={18} />
+                                <span className="text-xs text-amber-800 font-black tracking-wide uppercase">
+                                    Attention: {pendingDiscrepancies.length} student{pendingDiscrepancies.length > 1 ? 's have' : ' has'} reported marks discrepancies. Please review and resolve their issues in the roster below.
+                                </span>
+                            </div>
+                        )}
                         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div className="flex items-center gap-4 flex-1">
                                 <Search className="text-slate-400" size={20} />
@@ -521,6 +586,7 @@ const InternalExamMarks = () => {
                                     {filteredStudents.map((student, idx) => {
                                         const entry = marksDraft[student.id] || { marks: '', isAbsent: false };
                                         const isFailed = !entry.isAbsent && entry.marks !== '' && parseFloat(entry.marks) < (componentInfo?.passing_marks || 0);
+                                        const studentDisc = pendingDiscrepancies.find(d => d.student_id === student.id);
 
                                         return (
                                             <tr key={student.id} className="group hover:bg-slate-50/50 transition-colors">
@@ -535,12 +601,29 @@ const InternalExamMarks = () => {
                                                             <p className="text-[12px]  font-bold text-slate-400 tracking-wider">Reg: {student.rollnumber}</p>
                                                         </div>
                                                     </div>
+                                                    {studentDisc && (
+                                                        <div className="mt-2 bg-amber-50 border border-amber-200 rounded-xl p-3 flex flex-col gap-2 max-w-md shadow-sm">
+                                                            <div className="flex items-start gap-2">
+                                                                <AlertCircle size={14} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                                                                <div className="text-xs text-amber-800 font-bold leading-normal">
+                                                                    <span className="opacity-75 uppercase text-[9px] tracking-wider block mb-0.5">Reported Issue ({studentDisc.component_name}):</span>
+                                                                    "{studentDisc.message}"
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => handleResolveDiscrepancy(studentDisc.id)}
+                                                                className="self-start inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors shadow-sm"
+                                                            >
+                                                                Resolve & Close Issue
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td className="px-8 py-4 text-center">
                                                     <input
                                                         type="number"
                                                         max={componentInfo?.max_marks}
-                                                        disabled={entry.isAbsent || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
+                                                        disabled={entry.isAbsent || ['Published', 'Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus)}
                                                         value={entry.marks}
                                                         onChange={(e) => {
                                                             let val = e.target.value;
@@ -555,18 +638,18 @@ const InternalExamMarks = () => {
                                                             handleMarkChange(student.id, 'marks', val);
                                                         }}
                                                         className={`w-24 text-center px-4 py-2 bg-white border-2 rounded-xl font-black text-slate-700 outline-none transition-all
-                                                            ${(entry.isAbsent || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus)) ? 'opacity-30 bg-slate-50 cursor-not-allowed' : isFailed ? 'border-red-100 bg-red-50/30 text-red-600 focus:border-red-300' : 'border-slate-100 focus:border-indigo-500 focus:shadow-lg focus:shadow-indigo-500/10'}
+                                                            ${(entry.isAbsent || ['Published', 'Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus)) ? 'opacity-30 bg-slate-50 cursor-not-allowed' : isFailed ? 'border-red-100 bg-red-50/30 text-red-600 focus:border-red-300' : 'border-slate-100 focus:border-indigo-500 focus:shadow-lg focus:shadow-indigo-500/10'}
                                                         `}
                                                         placeholder="Marks"
                                                     />
                                                 </td>
                                                 <td className="px-8 py-4 text-center">
                                                     <button
-                                                        disabled={['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
+                                                        disabled={['Published', 'Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus)}
                                                         onClick={() => handleMarkChange(student.id, 'isAbsent', !entry.isAbsent)}
                                                         className={`px-4 py-2 rounded-xl font-black text-[12px]  tracking-widest transition-all
                                                             ${entry.isAbsent ? 'bg-red-500 text-white shadow-lg shadow-red-200' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}
-                                                            ${['Submitted', 'Approved', 'Locked'].includes(workflowStatus) ? 'opacity-50 cursor-not-allowed' : ''}
+                                                            ${['Published', 'Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus) ? 'opacity-50 cursor-not-allowed' : ''}
                                                         `}
                                                     >
                                                         {entry.isAbsent ? 'ABSENT' : 'PRESENT'}
@@ -605,24 +688,46 @@ const InternalExamMarks = () => {
                                 </button>
                                 <button
                                     onClick={() => handleSave(false)}
-                                    disabled={isSaving || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
-                                    className={`px-10 py-3 rounded-xl font-black  tracking-widest text-sm transition-all flex items-center gap-2
-                                        ${isSaving || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm active:scale-95'}
+                                    disabled={isSaving || ['Published', 'Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus)}
+                                    className={`px-10 py-3 rounded-xl font-black tracking-widest text-sm transition-all flex items-center gap-2
+                                        ${isSaving || ['Published', 'Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm active:scale-95'}
                                     `}
                                 >
                                     {isSaving ? <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" /> : <Save size={18} />}
                                     Save Draft
                                 </button>
-                                <button
-                                    onClick={handleSubmit}
-                                    disabled={isSaving || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus)}
-                                    className={`px-10 py-3 rounded-xl font-black  tracking-widest text-sm shadow-xl transition-all flex items-center gap-2
-                                        ${isSaving || ['Submitted', 'Approved', 'Locked'].includes(workflowStatus) ? 'bg-slate-400 text-white cursor-not-allowed shadow-none' : 'bg-indigo-600 text-white shadow-indigo-200 hover:bg-indigo-700 active:scale-95'}
-                                    `}
-                                >
-                                    {isSaving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <CheckCircle size={18} />}
-                                    {workflowStatus === 'Rejected' ? 'Re-Submit to HOD' : 'Submit to HOD'}
-                                </button>
+                                
+                                {workflowStatus === 'Published' ? (
+                                    <button
+                                        onClick={handleRequestUnlock}
+                                        disabled={isSaving}
+                                        className={`px-10 py-3 rounded-xl font-black tracking-widest text-sm shadow-xl transition-all flex items-center gap-2
+                                            ${isSaving ? 'bg-slate-400 text-white cursor-not-allowed shadow-none' : 'bg-amber-500 text-white shadow-amber-200 hover:bg-amber-600 active:scale-95'}
+                                        `}
+                                    >
+                                        {isSaving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <AlertCircle size={18} />}
+                                        Request Edit Access
+                                    </button>
+                                ) : workflowStatus === 'Unlock Requested' ? (
+                                    <button
+                                        disabled={true}
+                                        className="px-10 py-3 rounded-xl font-black tracking-widest text-sm shadow-xl transition-all flex items-center gap-2 bg-slate-300 text-slate-500 cursor-not-allowed shadow-none"
+                                    >
+                                        <Clock size={18} />
+                                        Unlock Pending...
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handlePublish}
+                                        disabled={isSaving || ['Approved', 'Locked'].includes(workflowStatus)}
+                                        className={`px-10 py-3 rounded-xl font-black tracking-widest text-sm shadow-xl transition-all flex items-center gap-2
+                                            ${isSaving || ['Approved', 'Locked'].includes(workflowStatus) ? 'bg-slate-400 text-white cursor-not-allowed shadow-none' : 'bg-indigo-600 text-white shadow-indigo-200 hover:bg-indigo-700 active:scale-95'}
+                                        `}
+                                    >
+                                        {isSaving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <CheckCircle size={18} />}
+                                        Publish Marks
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>

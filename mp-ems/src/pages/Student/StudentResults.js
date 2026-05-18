@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, Award, CheckCircle, XCircle, BookOpen, Clock, Download, 
-  LayoutDashboard, Search, GraduationCap, CheckCircle2 
+  LayoutDashboard, Search, GraduationCap, CheckCircle2, AlertCircle, HelpCircle, MessageSquare
 } from 'lucide-react';
 import { useGradingPolicy } from '../../hooks/useGradingPolicy';
 import { getGradeAndPoints, isPass, calculateSGPA } from '../../utils/gradingUtils';
@@ -19,9 +19,18 @@ const StudentResults = () => {
   const [resultTypeFilter, setResultTypeFilter] = useState('external');
   const [selectedSemester, setSelectedSemester] = useState('All');
 
+  const [discrepancyModalOpen, setDiscrepancyModalOpen] = useState(false);
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [selectedComponent, setSelectedComponent] = useState('');
+  const [discrepancyMessage, setDiscrepancyMessage] = useState('');
+  const [reportedDiscrepancies, setReportedDiscrepancies] = useState([]);
+  const [submittingDiscrepancy, setSubmittingDiscrepancy] = useState(false);
+
   useEffect(() => {
     fetchResults();
+    fetchDiscrepancies();
   }, []);
+
 
   const fetchResults = async () => {
     try {
@@ -34,6 +43,47 @@ const StudentResults = () => {
       setLoading(false);
     }
   };
+
+  const fetchDiscrepancies = async () => {
+    try {
+      const data = await studentApi.getDiscrepancies();
+      setReportedDiscrepancies(data);
+    } catch (err) {
+      console.error("Fetch discrepancies error:", err);
+    }
+  };
+
+  const handleOpenDiscrepancyModal = (sub) => {
+    setSelectedSubject(sub);
+    const comps = sub.assessment_components || [];
+    setSelectedComponent(comps.length > 0 ? comps[0].name : 'General');
+    setDiscrepancyMessage('');
+    setDiscrepancyModalOpen(true);
+  };
+
+  const handleSubmitDiscrepancy = async (e) => {
+    e.preventDefault();
+    if (!discrepancyMessage.trim()) {
+      toast.error('Please enter discrepancy details');
+      return;
+    }
+    setSubmittingDiscrepancy(true);
+    try {
+      await studentApi.submitDiscrepancy({
+        subject_id: selectedSubject.subject_id,
+        component_name: selectedComponent,
+        message: discrepancyMessage
+      });
+      toast.success('Discrepancy reported successfully');
+      setDiscrepancyModalOpen(false);
+      fetchDiscrepancies();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to report discrepancy');
+    } finally {
+      setSubmittingDiscrepancy(false);
+    }
+  };
+
 
   const examSeriesResults = React.useMemo(() => {
     if (!gradingConfig) return [];
@@ -281,14 +331,52 @@ const StudentResults = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {series.subjects.map((sub, sIdx) => (
-                        <tr key={sIdx} className="hover:bg-violet-50/30 transition-colors">
-                          <td className="px-6 py-4 font-bold text-slate-400 text-[13px]">{sIdx + 1}</td>
-                          <td className="px-4 py-4">
-                            <p className="text-sm font-black text-slate-900">{sub.subject_name}</p>
-                            <p className="text-[12px] font-bold text-slate-400  tracking-wider">{sub.subject_code}</p>
-                          </td>
-                          {internalComponents.length > 0 ? (
+                      {series.subjects.map((sub, sIdx) => {
+                        const subjectIssues = reportedDiscrepancies.filter(d => d.subject_id === sub.subject_id);
+                        const pendingIssue = subjectIssues.find(d => d.status === 'Pending');
+                        const resolvedIssue = subjectIssues.find(d => d.status === 'Resolved');
+                        
+                        return (
+                          <tr key={sIdx} className="hover:bg-violet-50/30 transition-colors">
+                            <td className="px-6 py-4 font-bold text-slate-400 text-[13px]">{sIdx + 1}</td>
+                            <td className="px-4 py-4">
+                              <div className="flex items-center justify-between gap-4">
+                                <div>
+                                  <p className="text-sm font-black text-slate-900">{sub.subject_name}</p>
+                                  <p className="text-[12px] font-bold text-slate-400 tracking-wider">{sub.subject_code}</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {pendingIssue ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200 rounded-full shadow-sm">
+                                      <AlertCircle size={10} />
+                                      Issue Pending
+                                    </span>
+                                  ) : resolvedIssue ? (
+                                    <div className="flex flex-col items-end gap-1">
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full shadow-sm">
+                                        <CheckCircle2 size={10} />
+                                        Issue Resolved
+                                      </span>
+                                      <button
+                                        onClick={() => handleOpenDiscrepancyModal(sub)}
+                                        className="text-[10px] font-extrabold text-violet-600 hover:text-violet-800 hover:underline"
+                                      >
+                                        Report New
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleOpenDiscrepancyModal(sub)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-extrabold text-violet-700 hover:text-white bg-violet-50 hover:bg-violet-600 border border-violet-100 hover:border-violet-600 rounded-lg transition-all duration-200 shadow-sm"
+                                    >
+                                      <MessageSquare size={12} />
+                                      Report Issue
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            {internalComponents.length > 0 ? (
                             internalComponents.map(compName => {
                               const match = (sub.assessment_components || []).find(c => c.name === compName);
                               return (
@@ -326,7 +414,8 @@ const StudentResults = () => {
                           )}
                           <td className="px-4 py-4 text-center font-black text-violet-700 text-sm">{sub.total_marks}</td>
                         </tr>
-                      ))}
+                      );
+                    })}
                     </tbody>
                   </table>
                   <div className="px-6 py-4 bg-violet-50/30 border-t border-violet-100">
@@ -441,6 +530,88 @@ const StudentResults = () => {
             </div>
           );
         })}
+        </div>
+      )}
+      {/* Premium Discrepancy Reporting Modal */}
+      {discrepancyModalOpen && selectedSubject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-lg w-full overflow-hidden transform scale-100 transition-all duration-300">
+            {/* Header */}
+            <div className="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white relative">
+              <button 
+                onClick={() => setDiscrepancyModalOpen(false)}
+                className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all duration-200"
+              >
+                <XCircle size={20} />
+              </button>
+              <h3 className="text-lg font-black tracking-tight flex items-center gap-2">
+                <AlertCircle size={22} className="text-violet-200 animate-pulse" />
+                Report Marks Discrepancy
+              </h3>
+              <p className="text-[12px] font-bold text-violet-100 mt-2 uppercase tracking-widest">
+                {selectedSubject.subject_name} ({selectedSubject.subject_code})
+              </p>
+            </div>
+
+            {/* Form Body */}
+            <form onSubmit={handleSubmitDiscrepancy} className="p-6 space-y-6">
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3">
+                <HelpCircle className="text-amber-600 flex-shrink-0 mt-0.5" size={18} />
+                <p className="text-xs text-amber-800 font-medium leading-relaxed">
+                  Please specify which assessment component has incorrect marks. Provide clear details (e.g. your actual marks vs. entered marks) to help the faculty verify.
+                </p>
+              </div>
+
+              {/* Component Dropdown */}
+              <div className="space-y-2">
+                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Assessment Round / Component</label>
+                <select
+                  value={selectedComponent}
+                  onChange={(e) => setSelectedComponent(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm font-bold rounded-2xl px-4 py-3.5 focus:bg-white focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all outline-none"
+                >
+                  {selectedSubject.assessment_components && selectedSubject.assessment_components.length > 0 ? (
+                    selectedSubject.assessment_components.map(c => (
+                      <option key={c.name} value={c.name}>{c.name} (Current Marks: {c.marks})</option>
+                    ))
+                  ) : (
+                    <option value="General">General / Total Internal Marks ({selectedSubject.internal_marks || 0})</option>
+                  )}
+                </select>
+              </div>
+
+              {/* Message Textarea */}
+              <div className="space-y-2">
+                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Correction Details</label>
+                <textarea
+                  required
+                  rows={4}
+                  value={discrepancyMessage}
+                  onChange={(e) => setDiscrepancyMessage(e.target.value)}
+                  placeholder="E.g., I received 18 marks in IA1, but it is entered as 12 in the portal. Please verify my answer sheet."
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm font-medium rounded-2xl px-4 py-3.5 focus:bg-white focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all outline-none resize-none"
+                ></textarea>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDiscrepancyModalOpen(false)}
+                  className="px-5 py-3 text-sm font-black text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingDiscrepancy}
+                  className="px-6 py-3 text-sm font-black text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 rounded-2xl shadow-lg shadow-violet-500/20 disabled:opacity-50 transition-all flex items-center gap-2"
+                >
+                  {submittingDiscrepancy ? 'Submitting...' : 'Submit Report'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

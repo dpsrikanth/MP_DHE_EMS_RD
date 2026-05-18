@@ -306,75 +306,11 @@ exports.submitMarks = async (req, res) => {
             if (progRes.rowCount > 0) programName = progRes.rows[0].name;
         }
 
-        // --- VALIDATION: Ensure all students have marks entered ---
-        if (component_id) {
-            // Case A: Single Component Submission (Internal Exam Round)
+        // --- VALIDATION: Ensure all students have marks entered for Final Submission ---
+        // Case: General Marks Workflow (Submit all rounds to HOD)
             
-            // Count expected students
-            let studentsQuery = `
-                SELECT COUNT(DISTINCT s.id) as total_students 
-                FROM students s 
-                WHERE s."collageName" ILIKE $1 
-                  AND ($3::text IS NULL OR s."programName" ILIKE $3)
-                  AND s."deleteStatus" = true
-                  AND (
-                      s."semister" ILIKE $2
-                      OR EXISTS (
-                          SELECT 1 FROM student_internal_marks sim
-                          WHERE sim.student_id = s.id
-                            AND sim.subject_id = $4
-                            AND ($5::int IS NULL OR sim.component_id = $5)
-                      )
-                      OR EXISTS (
-                          SELECT 1 FROM student_attendance sa
-                          WHERE sa.student_id = s.id
-                            AND sa.semester_id = $6
-                            AND ($7::int IS NULL OR sa.academic_year_id = $7)
-                            AND ($4::int IS NULL OR sa.subject_id = $4)
-                      )
-                      OR EXISTS (
-                          SELECT 1 FROM marks m
-                          JOIN master_subjects ms ON m.subject_id = ms.id
-                          WHERE m.student_id = s.id
-                            AND ms.semester_id = $6
-                            AND ($7::int IS NULL OR m.academic_year_id = $7)
-                            AND ($4::int IS NULL OR m.subject_id = $4)
-                      )
-                  )
-            `;
-            let queryParams = [collageName, semesterName, programName || null, subject_id, component_id, semester_id, academic_year_id];
-            const studentsCountRes = await client.query(studentsQuery, queryParams);
-            const totalStudents = parseInt(studentsCountRes.rows[0].total_students);
+        // 1. Get components for this subject
 
-            // Count students with entered marks (or absent status)
-            const marksCountRes = await client.query(`
-                SELECT COUNT(DISTINCT student_id) as entered_count 
-                FROM student_internal_marks 
-                WHERE subject_id = $1 AND component_id = $2
-            `, [subject_id, component_id]);
-            const enteredCount = parseInt(marksCountRes.rows[0].entered_count);
-
-            if (enteredCount < totalStudents) {
-                await client.query('ROLLBACK');
-                return res.status(400).json({ 
-                    error: `Incomplete marks. Only ${enteredCount} of ${totalStudents} students have marks recorded for this round. Please ensure all students have marks or are marked as Absent before submitting.` 
-                });
-            }
-
-            // Update Workflow status for this specific component
-            const caQuery = `
-                INSERT INTO component_acceptance 
-                (college_id, subject_id, semester_id, academic_year_id, section, component_id, is_accepted, accepted_by)
-                VALUES ($1, $2, $3, $4, $5, $6, FALSE, NULL)
-                ON CONFLICT (college_id, subject_id, semester_id, academic_year_id, section, component_id)
-                DO UPDATE SET is_accepted = FALSE
-            `;
-            await client.query(caQuery, [college_id, subject_id, semester_id, academic_year_id, section, component_id]);
-
-        } else {
-            // Case B: General Marks Workflow (Submit all rounds to HOD)
-            
-            // 1. Get components for this subject
             const compQuery = `SELECT id, component_name FROM internal_marks_structure WHERE subject_id = $1 AND college_id = $2`;
             const compRes = await client.query(compQuery, [subject_id, college_id]);
             const components = compRes.rows;
@@ -467,7 +403,8 @@ exports.submitMarks = async (req, res) => {
                     VALUES ($1, $2, $3, $4, $5, 'Submitted')
                 `, [college_id, subject_id, semester_id, academic_year_id, section]);
             }
-        }
+        // End of General Marks Workflow check
+
 
         await client.query('COMMIT');
 
@@ -482,6 +419,140 @@ exports.submitMarks = async (req, res) => {
         res.status(500).json({ error: "Failed to submit marks" });
     } finally {
         if (client) client.release();
+    }
+};
+
+exports.publishRoundMarks = async (req, res) => {
+    const client = await db.connect();
+    try {
+        const { subject_id, component_id, section, faculty_id, college_id, semester_id, academic_year_id } = req.body;
+
+        await client.query('BEGIN');
+
+        // 1. Get shared context (College, Semester, Program)
+        const colRes = await client.query('SELECT name FROM colleges WHERE id = $1', [college_id]);
+        const semRes = await client.query('SELECT semester_name FROM master_semesters WHERE id = $1', [semester_id]);
+        const subRes = await client.query('SELECT program_id FROM master_subjects WHERE id = $1', [subject_id]);
+        
+        if (colRes.rowCount === 0 || semRes.rowCount === 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: "Invalid college or semester ID" });
+        }
+
+        const collageName = colRes.rows[0].name;
+        const semesterName = semRes.rows[0].semester_name;
+        const programId = subRes.rows[0]?.program_id;
+
+        let programName = null;
+        if (programId && programId !== 'null' && programId !== 'undefined') {
+            const progRes = await client.query('SELECT name FROM master_programs WHERE id = $1', [programId]);
+            if (progRes.rowCount > 0) programName = progRes.rows[0].name;
+        }
+
+        // Count expected students
+        let studentsQuery = `
+            SELECT COUNT(DISTINCT s.id) as total_students 
+            FROM students s 
+            WHERE s."collageName" ILIKE $1 
+                AND ($3::text IS NULL OR s."programName" ILIKE $3)
+                AND s."deleteStatus" = true
+                AND (
+                    s."semister" ILIKE $2
+                    OR EXISTS (
+                        SELECT 1 FROM student_internal_marks sim
+                        WHERE sim.student_id = s.id
+                        AND sim.subject_id = $4
+                        AND sim.component_id = $5
+                    )
+                    OR EXISTS (
+                        SELECT 1 FROM student_attendance sa
+                        WHERE sa.student_id = s.id
+                        AND sa.semester_id = $6
+                        AND ($7::int IS NULL OR sa.academic_year_id = $7)
+                        AND sa.subject_id = $4
+                    )
+                    OR EXISTS (
+                        SELECT 1 FROM marks m
+                        JOIN master_subjects ms ON m.subject_id = ms.id
+                        WHERE m.student_id = s.id
+                        AND ms.semester_id = $6
+                        AND ($7::int IS NULL OR m.academic_year_id = $7)
+                        AND m.subject_id = $4
+                    )
+                )
+        `;
+        let queryParams = [collageName, semesterName, programName || null, subject_id, component_id, semester_id, academic_year_id];
+        const studentsCountRes = await client.query(studentsQuery, queryParams);
+        const totalStudents = parseInt(studentsCountRes.rows[0].total_students);
+
+        // Count students with entered marks (or absent status)
+        const marksCountRes = await client.query(`
+            SELECT COUNT(DISTINCT student_id) as entered_count 
+            FROM student_internal_marks 
+            WHERE subject_id = $1 AND component_id = $2
+        `, [subject_id, component_id]);
+        const enteredCount = parseInt(marksCountRes.rows[0].entered_count);
+
+        if (enteredCount < totalStudents) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ 
+                error: `Incomplete marks. Only ${enteredCount} of ${totalStudents} students have marks recorded for this round. Please ensure all students have marks or are marked as Absent before publishing.` 
+            });
+        }
+
+        // Set as Published (is_accepted = true)
+        const caQuery = `
+            INSERT INTO component_acceptance 
+            (college_id, subject_id, semester_id, academic_year_id, section, component_id, is_accepted, accepted_by)
+            VALUES ($1, $2, $3, $4, $5, $6, TRUE, NULL)
+            ON CONFLICT (college_id, subject_id, semester_id, academic_year_id, section, component_id)
+            DO UPDATE SET is_accepted = TRUE, accepted_at = CURRENT_TIMESTAMP
+        `;
+        await client.query(caQuery, [college_id, subject_id, semester_id, academic_year_id, section, component_id]);
+
+        await client.query('COMMIT');
+
+        if (req.user && req.user.id) {
+            await db.query(`INSERT INTO audit_logs (user_id, action, entity_type, entity_id) VALUES ($1, 'MARKS_PUBLISHED', 'ASSESSMENT', $2)`, [req.user.id, component_id]);
+        }
+
+        res.status(200).json({ message: "Marks published to students successfully" });
+    } catch (error) {
+        if (client) await client.query('ROLLBACK');
+        console.error("Error in publishRoundMarks:", error);
+        res.status(500).json({ error: "Failed to publish marks" });
+    } finally {
+        if (client) client.release();
+    }
+};
+
+exports.requestRoundUnlock = async (req, res) => {
+    try {
+        const { subject_id, component_id, section, college_id, semester_id, academic_year_id, reason } = req.body;
+        const faculty_id = req.user ? req.user.id : null;
+
+        if (!faculty_id) return res.status(401).json({ error: "Unauthorized" });
+
+        // Set to Unlock Requested (is_accepted = false)
+        const caQuery = `
+            UPDATE component_acceptance 
+            SET is_accepted = FALSE, accepted_at = CURRENT_TIMESTAMP, unlock_reason = $7
+            WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5 AND component_id = $6
+            RETURNING *;
+        `;
+        const result = await db.query(caQuery, [college_id, subject_id, semester_id, academic_year_id, section, component_id, reason]);
+
+        if (result.rowCount === 0) {
+            return res.status(400).json({ error: "Could not find a published round to unlock." });
+        }
+
+        await db.query(`INSERT INTO audit_logs (user_id, action, entity_type, entity_id) VALUES ($1, 'ROUND_UNLOCK_REQUESTED', 'ASSESSMENT', $2)`,
+            [faculty_id, component_id]);
+
+        res.status(200).json({ message: "Unlock request sent to HOD", data: result.rows[0] });
+    } catch (error) {
+        console.error("requestRoundUnlock error:", error);
+        res.status(500).json({ error: "Failed to send unlock request" });
     }
 };
 
@@ -805,7 +876,10 @@ exports.getStudentsForRound = async (req, res) => {
              `;
              const caRes = await db.query(caQuery, [college_id, subject_id, componentId, section]);
              if (caRes.rowCount > 0) {
-                 workflowStatus = caRes.rows[0].is_accepted ? 'Approved' : 'Submitted';
+                 // is_accepted = true means Published, false means Unlock Requested
+                 workflowStatus = caRes.rows[0].is_accepted ? 'Published' : 'Unlock Requested';
+             } else {
+                 workflowStatus = 'Draft';
              }
         }
 
@@ -956,6 +1030,72 @@ exports.bulkUploadInternalMarks = async (req, res) => {
         res.status(500).json({ error: "Failed to perform bulk upload of internal marks", details: error.message });
     } finally {
         if (client) client.release();
+    }
+};
+
+exports.getPendingDiscrepancies = async (req, res) => {
+    try {
+        const { subject_id, component_name } = req.query;
+
+        if (!subject_id) {
+            return res.status(400).json({ error: "Missing required query parameter: subject_id" });
+        }
+
+        let query = `
+            SELECT 
+                smd.id,
+                smd.student_id,
+                smd.subject_id,
+                smd.component_name,
+                smd.message,
+                smd.status,
+                smd.created_at,
+                s.name as student_name,
+                s.rollnumber as student_roll
+            FROM student_mark_discrepancies smd
+            JOIN students s ON smd.student_id = s.id
+            WHERE smd.subject_id = $1 AND smd.status = 'Pending'
+        `;
+        const params = [subject_id];
+
+        if (component_name) {
+            query += ` AND smd.component_name = $2`;
+            params.push(component_name);
+        }
+
+        const result = await db.query(query, params);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("getPendingDiscrepancies error:", error);
+        res.status(500).json({ error: "Failed to fetch discrepancies" });
+    }
+};
+
+exports.resolveDiscrepancy = async (req, res) => {
+    try {
+        const { discrepancy_id } = req.body;
+        const faculty_id = req.user ? req.user.id : null;
+
+        if (!discrepancy_id) {
+            return res.status(400).json({ error: "Missing required parameter: discrepancy_id" });
+        }
+
+        await db.query(
+            `UPDATE student_mark_discrepancies 
+             SET status = 'Resolved', resolved_at = CURRENT_TIMESTAMP 
+             WHERE id = $1`,
+            [discrepancy_id]
+        );
+
+        if (faculty_id) {
+            await db.query(`INSERT INTO audit_logs (user_id, action, entity_type, entity_id) VALUES ($1, 'DISCREPANCY_RESOLVED', 'DISCREPANCY', $2)`,
+                [faculty_id, discrepancy_id]);
+        }
+
+        res.status(200).json({ message: "Discrepancy resolved successfully" });
+    } catch (error) {
+        console.error("resolveDiscrepancy error:", error);
+        res.status(500).json({ error: "Failed to resolve discrepancy" });
     }
 };
 

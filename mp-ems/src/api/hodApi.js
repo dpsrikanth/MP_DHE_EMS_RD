@@ -19,10 +19,10 @@ export const hodApi = {
     },
 
     /**
-     * Accept a component mark
+     * Approve a component unlock request
      */
-    acceptComponent: async (data) => {
-        const response = await apiClient.post('/college-admin/accept-component', data);
+    approveComponentUnlock: async (data) => {
+        const response = await apiClient.post('/college-admin/approve-component-unlock', data);
         return response.data;
     },
 
@@ -31,6 +31,15 @@ export const hodApi = {
      */
     rejectComponent: async (data) => {
         const response = await apiClient.post('/college-admin/reject-component', data);
+        return response.data;
+    },
+
+    /**
+     * Fetch students + their marks for a specific component (for HOD inline view)
+     */
+    getComponentStudentMarks: async (params) => {
+        const queryParams = new URLSearchParams(params).toString();
+        const response = await apiClient.get(`/college-admin/component-student-marks?${queryParams}`);
         return response.data;
     }
 };

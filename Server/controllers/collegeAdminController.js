@@ -1351,7 +1351,8 @@ exports.getPendingComponentApprovals = async (req, res) => {
                 ims.id as component_id, ims.component_name, ims.max_marks,
                 COUNT(DISTINCT sim.student_id) as student_count,
                 COALESCE(ca.is_accepted, FALSE) as is_accepted,
-                ca.accepted_at
+                ca.accepted_at,
+                ca.unlock_reason
             FROM faculty_subjects fs
             JOIN master_subjects ms ON fs.subject_id = ms.id
             JOIN master_semesters mse ON fs.semester_id = mse.id
@@ -1364,11 +1365,11 @@ exports.getPendingComponentApprovals = async (req, res) => {
                 AND ca.academic_year_id = fs.academic_year_id
                 AND ca.section = fs.section
                 AND ca.component_id = ims.id
-            WHERE fs.college_id = $1
+            WHERE fs.college_id = $1 AND ca.is_accepted = FALSE
             GROUP BY 
                 fs.subject_id, fs.semester_id, fs.academic_year_id, fs.section,
                 ms.name, ms.subject_code, mse.semester_name, may.year_name,
-                ims.id, ims.component_name, ims.max_marks, ca.is_accepted, ca.accepted_at
+                ims.id, ims.component_name, ims.max_marks, ca.is_accepted, ca.accepted_at, ca.unlock_reason
             HAVING COUNT(DISTINCT sim.student_id) > 0
             ORDER BY fs.subject_id, fs.section, ims.id
         `;
@@ -1381,7 +1382,7 @@ exports.getPendingComponentApprovals = async (req, res) => {
     }
 };
 
-exports.acceptComponent = async (req, res) => {
+exports.approveComponentUnlock = async (req, res) => {
     try {
         const { college_id, id: user_id, role } = req.user;
         if (role !== 'HOD' && role !== 'college_admin') {
@@ -1391,32 +1392,78 @@ exports.acceptComponent = async (req, res) => {
         const { subject_id, semester_id, academic_year_id, section, component_id } = req.body;
 
         const query = `
-            INSERT INTO component_acceptance 
-                (college_id, subject_id, semester_id, academic_year_id, section, component_id, is_accepted, accepted_by)
-            VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7)
-            ON CONFLICT (college_id, subject_id, semester_id, academic_year_id, section, component_id)
-            DO UPDATE SET 
-                is_accepted = TRUE,
-                accepted_by = $7,
-                accepted_at = CURRENT_TIMESTAMP
+            DELETE FROM component_acceptance 
+            WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5 AND component_id = $6
             RETURNING *
         `;
 
         const result = await db.query(query, [
-            college_id, subject_id, semester_id, academic_year_id, section, component_id, user_id
+            college_id, subject_id, semester_id, academic_year_id, section, component_id
         ]);
 
         // Audit Log
         await db.query(
             `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_values) 
-             VALUES ($1, 'COMPONENT_ACCEPTED', 'ASSESSMENT', $2, $3)`,
+             VALUES ($1, 'COMPONENT_UNLOCK_APPROVED', 'ASSESSMENT', $2, $3)`,
             [user_id, component_id, JSON.stringify(req.body)]
         );
 
-        res.status(200).json({ message: "Assessment accepted successfully", data: result.rows[0] });
+        res.status(200).json({ message: "Assessment unlock approved successfully", data: result.rows[0] });
     } catch (error) {
-        console.error("acceptComponent error:", error);
-        res.status(500).json({ error: "Failed to accept assessment" });
+        console.error("approveComponentUnlock error:", error);
+        res.status(500).json({ error: "Failed to approve unlock" });
     }
 };
+
+exports.getComponentStudentMarks = async (req, res) => {
+    try {
+        const { college_id } = req.user;
+        const { component_id, subject_id, section, semester_id, academic_year_id } = req.query;
+
+        if (!component_id || !subject_id || !section || !semester_id || !academic_year_id) {
+            return res.status(400).json({ error: "Missing required query parameters" });
+        }
+
+        // Get passing_marks / max_marks and component_name for this component
+        const structRes = await db.query(
+            `SELECT component_name, passing_marks, max_marks FROM internal_marks_structure WHERE id = $1 AND college_id = $2`,
+            [parseInt(component_id), parseInt(college_id)]
+        );
+        const passingMarks = structRes.rowCount > 0 ? parseFloat(structRes.rows[0].passing_marks) : null;
+        const componentName = structRes.rowCount > 0 ? structRes.rows[0].component_name : null;
+
+        // Get college name for student fuzzy-matching
+        const colRes = await db.query('SELECT name FROM colleges WHERE id = $1', [parseInt(college_id)]);
+        if (colRes.rowCount === 0) return res.status(400).json({ error: "College not found" });
+        const collageName = colRes.rows[0].name;
+
+        const result = await db.query(`
+            SELECT 
+                s.id, s.name, s.rollnumber,
+                sim.marks_obtained, sim.is_absent
+            FROM students s
+            JOIN student_internal_marks sim ON sim.student_id = s.id
+            WHERE sim.component_id = $1
+              AND sim.subject_id = $2
+              AND s."collageName" ILIKE $3
+              AND s."deleteStatus" = true
+              AND EXISTS (
+                  SELECT 1 FROM student_mark_discrepancies smd
+                  WHERE smd.student_id = s.id
+                    AND smd.subject_id = $2
+                    AND smd.component_name = $4
+              )
+            ORDER BY s.rollnumber ASC NULLS LAST, s.name ASC
+        `, [parseInt(component_id), parseInt(subject_id), `%${collageName}%`, componentName]);
+
+        res.status(200).json({
+            students: result.rows,
+            passing_marks: passingMarks
+        });
+    } catch (error) {
+        console.error("getComponentStudentMarks error:", error);
+        res.status(500).json({ error: "Failed to fetch student marks for component" });
+    }
+};
+
 

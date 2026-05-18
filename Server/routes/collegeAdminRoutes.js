@@ -511,7 +511,8 @@ router.get('/dashboard-stats', collegeAdminController.getCollegeDashboardStats);
 
 // HOD Assessment Acceptance
 router.get('/pending-component-approvals', collegeAdminController.getPendingComponentApprovals);
-router.post('/accept-component', collegeAdminController.acceptComponent);
+router.post('/approve-component-unlock', collegeAdminController.approveComponentUnlock);
+router.get('/component-student-marks', collegeAdminController.getComponentStudentMarks);
 
 module.exports = router;
 

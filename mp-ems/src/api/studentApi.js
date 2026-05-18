@@ -36,5 +36,13 @@ export const studentApi = {
     getHallTicket: async (examName, semesterId) => {
         const response = await apiClient.get(`/student/hall-ticket/${encodeURIComponent(examName)}/${semesterId}`);
         return response.data;
+    },
+    submitDiscrepancy: async (data) => {
+        const response = await apiClient.post('/student/marks-discrepancy', data);
+        return response.data;
+    },
+    getDiscrepancies: async () => {
+        const response = await apiClient.get('/student/marks-discrepancies');
+        return response.data;
     }
 };

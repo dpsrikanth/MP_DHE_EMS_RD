@@ -1,14 +1,97 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { 
-    CheckCircle, Clock, FileText, ChevronRight, 
-    ShieldCheck, Building, Search, X, ClipboardCheck,
-    Users, AlertCircle
+    CheckCircle, FileText, 
+    ShieldCheck, AlertCircle, ClipboardCheck,
+    ChevronDown, ChevronUp, User
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
 import { hodApi } from '../../api/hodApi';
+
+// Inline student marks panel, fetched lazily per component
+const ComponentStudentPanel = ({ comp }) => {
+    const [students, setStudents] = useState([]);
+    const [passingMarks, setPassingMarks] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [expanded, setExpanded] = useState(true);
+
+    useEffect(() => {
+        let cancelled = false;
+        const fetchStudents = async () => {
+            try {
+                setLoading(true);
+                const data = await hodApi.getComponentStudentMarks({
+                    component_id: comp.component_id,
+                    subject_id: comp.subject_id,
+                    section: comp.section,
+                    semester_id: comp.semester_id,
+                    academic_year_id: comp.academic_year_id
+                });
+                if (!cancelled) {
+                    setStudents(data.students || []);
+                    setPassingMarks(data.passing_marks);
+                }
+            } catch (err) {
+                if (!cancelled) setStudents([]);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
+        fetchStudents();
+        return () => { cancelled = true; };
+    }, [comp.component_id, comp.subject_id, comp.section, comp.semester_id, comp.academic_year_id]);
+
+    return (
+        <div className="mt-4 border-t border-slate-100 pt-4">
+            <button
+                onClick={() => setExpanded(!expanded)}
+                className="flex items-center justify-between w-full text-left mb-3"
+            >
+                <span className="text-[11px] font-black text-slate-400 tracking-widest uppercase flex items-center gap-1.5">
+                    <User size={11} />
+                    Students &amp; Marks
+                </span>
+                {expanded ? <ChevronUp size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
+            </button>
+
+            {expanded && (
+                loading ? (
+                    <div className="flex items-center justify-center py-4">
+                        <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                ) : students.length === 0 ? (
+                    <p className="text-[11px] text-slate-400 font-bold text-center py-3">
+                        No specific student discrepancies linked to this request.
+                    </p>
+                ) : (
+                    <div className="space-y-1.5">
+                        {students.map((s) => {
+                            const marks = s.is_absent ? null : parseFloat(s.marks_obtained);
+                            const isFail = !s.is_absent && marks !== null && passingMarks !== null && marks < passingMarks;
+                            return (
+                                <div key={s.id} className={`flex items-center justify-between rounded-lg px-3 py-2 text-[11px] font-bold
+                                    ${s.is_absent ? 'bg-slate-50 text-slate-400' : isFail ? 'bg-red-50 text-red-700' : 'bg-emerald-50/60 text-slate-700'}`}>
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <span className="w-5 h-5 rounded bg-white/70 border border-current/10 flex items-center justify-center text-[9px] font-black flex-shrink-0">
+                                            {s.name ? s.name.charAt(0) : '?'}
+                                        </span>
+                                        <span className="truncate">{s.name}</span>
+                                        <span className="text-[9px] opacity-60 font-black tracking-wider flex-shrink-0">{s.rollnumber}</span>
+                                    </div>
+                                    <span className={`ml-2 flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-black
+                                        ${s.is_absent ? 'bg-slate-200 text-slate-500' : isFail ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                        {s.is_absent ? 'ABSENT' : `${s.marks_obtained}`}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )
+            )}
+        </div>
+    );
+};
 
 const AssessmentAcceptance = () => {
     const [assessments, setAssessments] = useState([]);
@@ -16,9 +99,6 @@ const AssessmentAcceptance = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedSemester, setSelectedSemester] = useState('');
     const [processingId, setProcessingId] = useState(null);
-    const navigate = useNavigate();
-
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     useEffect(() => {
         fetchAssessments();
@@ -47,18 +127,14 @@ const AssessmentAcceptance = () => {
     }, [assessments]);
 
     const groupedData = useMemo(() => {
-        // First filter by search query and semester
         const filtered = assessments.filter(item => {
             const matchesSearch = item.subject_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 item.subject_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 item.section.toLowerCase().includes(searchQuery.toLowerCase());
-            
             const matchesSemester = !selectedSemester || item.semester_id.toString() === selectedSemester.toString();
-            
             return matchesSearch && matchesSemester;
         });
 
-        // Then group by batch (subject + section)
         const groups = {};
         filtered.forEach(item => {
             const key = `${item.subject_id}-${item.section}-${item.semester_id}-${item.academic_year_id}`;
@@ -83,20 +159,18 @@ const AssessmentAcceptance = () => {
     const handleAccept = async (component) => {
         const id = `${component.subject_id}-${component.section}-${component.component_id}`;
         setProcessingId(id);
-        
         try {
-            await hodApi.acceptComponent({
+            await hodApi.approveComponentUnlock({
                 subject_id: component.subject_id,
                 semester_id: component.semester_id,
                 academic_year_id: component.academic_year_id,
                 section: component.section,
                 component_id: component.component_id
             });
-
-            toast.success(`'${component.component_name}' accepted. Students can now view these marks.`);
-            fetchAssessments(); // Refresh
+            toast.success(`'${component.component_name}' unlocked. Faculty can now edit marks.`);
+            fetchAssessments();
         } catch (error) {
-            toast.error(error.response?.data?.error || "Failed to accept assessment");
+            toast.error(error.response?.data?.error || "Failed to approve unlock");
         } finally {
             setProcessingId(null);
         }
@@ -104,21 +178,21 @@ const AssessmentAcceptance = () => {
 
     return (
         <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto animate-in fade-in duration-500">
-            {/* Header section with specific HOD Branding */}
+            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
                     <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">
                         <ClipboardCheck size={32} />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Assessment <span className="text-emerald-500 italic">Acceptance</span></h1>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Unlock <span className="text-amber-500 italic">Requests</span></h1>
                         <p className="text-slate-500 font-medium text-sm mt-1 flex items-center gap-2">
-                            <Users size={16} className="text-slate-400" />
-                            Review and authorize individual assessment components for student visibility.
+                            <AlertCircle size={16} className="text-slate-400" />
+                            Review and approve faculty requests to unlock and edit published assessment marks.
                         </p>
                     </div>
                 </div>
-                
+
                 <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
                     <div className="relative w-full md:w-60">
                         <select
@@ -132,12 +206,12 @@ const AssessmentAcceptance = () => {
                             ))}
                         </select>
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                            <ChevronRight size={16} className="rotate-90" />
+                            <ChevronDown size={16} />
                         </div>
                     </div>
 
                     <div className="w-full md:w-80">
-                        <TableSearch 
+                        <TableSearch
                             value={searchQuery}
                             onChange={setSearchQuery}
                             placeholder="Search subjects or sections..."
@@ -149,22 +223,22 @@ const AssessmentAcceptance = () => {
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-32 space-y-4">
                     <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-slate-400 font-black  tracking-widest text-[12px]">Loading pending assessments...</p>
+                    <p className="text-slate-400 font-black tracking-widest text-[12px]">Loading unlock requests...</p>
                 </div>
             ) : groupedData.length === 0 ? (
                 <div className="bg-white rounded-[2.5rem] p-20 text-center border-2 border-dashed border-slate-200 shadow-sm">
                     <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
                         <ShieldCheck size={40} className="text-slate-300" />
                     </div>
-                    <h3 className="text-xl font-black text-slate-900 mb-2  tracking-tight">Everything is up to date</h3>
+                    <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Everything is up to date</h3>
                     <p className="text-slate-500 max-w-xs mx-auto text-sm font-medium">
-                        No pending assessments require your acceptance at this time.
+                        No pending unlock requests from faculty at this time.
                     </p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-8">
                     {groupedData.map((batch, index) => (
-                        <div key={index} className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden transform transition-all hover:border-emerald-200">
+                        <div key={index} className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden transform transition-all hover:border-amber-200">
                             {/* Batch Header */}
                             <div className="p-6 bg-slate-50/50 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                 <div className="flex items-center gap-4">
@@ -173,28 +247,18 @@ const AssessmentAcceptance = () => {
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2 mb-0.5">
-                                            <span className="px-2 py-0.5 bg-indigo-600 text-white text-[9px] font-black rounded  tracking-widest">
+                                            <span className="px-2 py-0.5 bg-indigo-600 text-white text-[9px] font-black rounded tracking-widest">
                                                 {batch.subject_code}
                                             </span>
                                             <span className="text-slate-400 text-[13px] font-bold">•</span>
-                                            <span className="text-[13px] font-black text-slate-400  tracking-widest">Section {batch.section}</span>
+                                            <span className="text-[13px] font-black text-slate-400 tracking-widest">Section {batch.section}</span>
                                         </div>
                                         <h3 className="text-lg font-black text-slate-900 tracking-tight">{batch.subject_name}</h3>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-6">
-                                    <div className="text-right">
-                                        <p className="text-[12px] font-black text-slate-400  tracking-widest mb-0.5">Program & Semester</p>
-                                        <p className="text-[13px] font-bold text-slate-700  tracking-tight">{batch.semester_name} • {batch.year_name}</p>
-                                    </div>
-                                    <button 
-                                        onClick={() => navigate(`/admin/marks-review/${batch.subject_id}/${batch.section}`, {
-                                            state: { semester_id: batch.semester_id, academic_year_id: batch.academic_year_id }
-                                        })}
-                                        className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50 transition-all shadow-sm group"
-                                    >
-                                        <ChevronRight size={20} className="group-hover:translate-x-0.5 transition-transform" />
-                                    </button>
+                                <div className="text-right">
+                                    <p className="text-[12px] font-black text-slate-400 tracking-widest mb-0.5">Program &amp; Semester</p>
+                                    <p className="text-[13px] font-bold text-slate-700 tracking-tight">{batch.semester_name} • {batch.year_name}</p>
                                 </div>
                             </div>
 
@@ -205,76 +269,65 @@ const AssessmentAcceptance = () => {
                                     const isProcessing = processingId === procId;
 
                                     return (
-                                        <div key={comp.component_id} className={`p-5 rounded-2xl border-2 transition-all flex flex-col justify-between h-full ${comp.is_accepted ? 'bg-emerald-50/30 border-emerald-100' : 'bg-white border-slate-100 hover:border-slate-200 shadow-sm'}`}>
+                                        <div key={comp.component_id} className="p-5 rounded-2xl border-2 bg-white border-amber-100 hover:border-amber-200 shadow-sm flex flex-col">
                                             <div>
                                                 <div className="flex justify-between items-start mb-4">
-                                                    <div className={`p-2 rounded-lg ${comp.is_accepted ? 'bg-indigo-500/10 text-emerald-600' : 'bg-indigo-/10 text-indigo-'}`}>
-                                                        {comp.is_accepted ? <ShieldCheck size={20} /> : <AlertCircle size={20} />}
+                                                    <div className="p-2 rounded-lg bg-amber-50 text-amber-600">
+                                                        <AlertCircle size={20} />
                                                     </div>
-                                                    {comp.is_accepted && (
-                                                        <span className="text-[9px] font-black text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full  tracking-widest">
-                                                            Authorized
-                                                        </span>
-                                                    )}
+                                                    <span className="text-[9px] font-black text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full tracking-widest">
+                                                        Unlock Requested
+                                                    </span>
                                                 </div>
-                                                
+
                                                 <h4 className="font-black text-slate-900 text-base leading-tight mb-1">{comp.component_name}</h4>
                                                 <div className="flex items-center gap-2 mb-4">
-                                                    <span className="text-[12px] font-bold text-slate-400  tracking-widest">Weightage: {comp.max_marks} Marks</span>
+                                                    <span className="text-[12px] font-bold text-slate-400 tracking-widest">Weightage: {comp.max_marks} Marks</span>
                                                 </div>
 
-                                                <div className="space-y-3 mb-6">
-                                                    <div className="flex justify-between items-end">
-                                                        <span className="text-[12px] font-black text-slate-400  tracking-widest">Marks Entered</span>
-                                                        <span className="text-[13px] font-black text-slate-900">{comp.student_count} Students</span>
+                                                {/* Faculty Reason */}
+                                                {comp.unlock_reason && (
+                                                    <div className="mb-4 bg-amber-50/70 border border-amber-200 rounded-xl p-3 flex gap-2">
+                                                        <AlertCircle size={14} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                                                        <div className="text-[11px] font-bold text-amber-800 leading-normal">
+                                                            <span className="opacity-75 uppercase text-[9px] tracking-wider block mb-0.5">Faculty Reason:</span>
+                                                            "{comp.unlock_reason}"
+                                                        </div>
                                                     </div>
-                                                    <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                        <div 
-                                                            className={`h-full transition-all duration-1000 ${comp.is_accepted ? 'bg-emerald-500' : 'bg-indigo-'}`}
-                                                            style={{ width: '100%' }} // Note: total_students could be added to query if needed
-                                                        />
-                                                    </div>
-                                                </div>
+                                                )}
+
+                                                {/* Inline Student Marks */}
+                                                <ComponentStudentPanel comp={comp} />
                                             </div>
 
-                                            {comp.is_accepted ? (
-                                                <div className="flex items-center gap-2 text-emerald-600 text-[12px] font-black  tracking-widest bg-emerald-100/50 p-2.5 rounded-xl border border-emerald-100">
-                                                    <CheckCircle size={14} />
-                                                    Accepted {formatDate(comp.accepted_at, true)}
-                                                </div>
-                                            ) : (
-                                                <button 
+                                            {/* Approve Button */}
+                                            <div className="mt-4">
+                                                <button
                                                     onClick={() => handleAccept(comp)}
                                                     disabled={isProcessing}
-                                                    className="w-full py-3 bg-emerald-500 text-white text-[12px] font-black  tracking-[0.2em] rounded-xl shadow-lg shadow-indigo-500/20 hover:bg-emerald-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                                    className="w-full py-3 bg-amber-500 text-white text-[12px] font-black tracking-[0.2em] rounded-xl shadow-lg shadow-amber-500/20 hover:bg-amber-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                                                 >
                                                     {isProcessing ? (
                                                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                                     ) : (
                                                         <>
                                                             <ShieldCheck size={14} />
-                                                            Authorize Assessment
+                                                            Approve Unlock
                                                         </>
                                                     )}
                                                 </button>
-                                            )}
+                                            </div>
                                         </div>
                                     );
                                 })}
                             </div>
 
-                            {/* Section Footer */}
+                            {/* Footer */}
                             <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                                <span className="text-[12px] font-black text-slate-400  tracking-[0.15em]">
-                                    {batch.components.filter(c => c.is_accepted).length} of {batch.components.length} Assessments Accepted
+                                <span className="text-[12px] font-black text-slate-400 tracking-[0.15em]">
+                                    {batch.components.length} Unlock {batch.components.length === 1 ? 'Request' : 'Requests'}
                                 </span>
-                                <div className="flex -space-x-2">
-                                    {[1, 2, 3].map(i => (
-                                        <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[8px] font-black text-slate-500">
-                                            {String.fromCharCode(64 + i)}
-                                        </div>
-                                    ))}
-                                </div>
+                                <span className="text-[11px] font-bold text-slate-400">{batch.section}</span>
                             </div>
                         </div>
                     ))}

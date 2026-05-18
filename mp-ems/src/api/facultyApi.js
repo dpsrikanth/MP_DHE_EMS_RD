@@ -43,6 +43,16 @@ export const facultyApi = {
         return response.data;
     },
 
+    publishRound: async (data) => {
+        const response = await apiClient.post('/faculty-marks/publish-round', data);
+        return response.data;
+    },
+
+    requestRoundUnlock: async (data) => {
+        const response = await apiClient.post('/faculty-marks/request-round-unlock', data);
+        return response.data;
+    },
+
     requestUnlock: async (data) => {
         const response = await apiClient.post('/faculty-marks/request-unlock', data);
         return response.data;
@@ -96,6 +106,15 @@ export const facultyApi = {
      */
     saveAttendance: async (data) => {
         const response = await apiClient.post('/faculty-marks/attendance', data);
+        return response.data;
+    },
+    getPendingDiscrepancies: async (params) => {
+        const queryParams = new URLSearchParams(params).toString();
+        const response = await apiClient.get(`/faculty-marks/pending-discrepancies?${queryParams}`);
+        return response.data;
+    },
+    resolveDiscrepancy: async (data) => {
+        const response = await apiClient.post('/faculty-marks/resolve-discrepancy', data);
         return response.data;
     }
 };

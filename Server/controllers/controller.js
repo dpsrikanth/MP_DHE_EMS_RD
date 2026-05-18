@@ -2708,6 +2708,84 @@ const getMarks = async (req, res) => {
   }
 };
 
+const submitMarksDiscrepancy = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { subject_id, component_name, message } = req.body;
+
+    if (!subject_id || !component_name || !message) {
+      return res.status(400).json({ message: "Missing required fields: subject_id, component_name, message" });
+    }
+
+    // Find student record for this user
+    const studentRes = await client.query('SELECT id, "collageName", semister FROM students WHERE user_id = $1', [userId]);
+    if (studentRes.rows.length === 0) return res.status(404).json({ message: "Student record not found" });
+    const student = studentRes.rows[0];
+
+    // Find college and semester to store robust metadata
+    const colRes = await client.query('SELECT id FROM colleges WHERE name ILIKE $1', [student.collageName]);
+    const semRes = await client.query('SELECT id FROM master_semesters WHERE semester_name ILIKE $1 OR semester_name ILIKE $2', [student.semister, `%${student.semister}%`]);
+    
+    const collegeId = colRes.rows.length > 0 ? colRes.rows[0].id : null;
+    const semesterId = semRes.rows.length > 0 ? semRes.rows[0].id : null;
+
+    // Check if there is already a pending discrepancy for this student, subject, and component
+    const checkRes = await client.query(
+      `SELECT id FROM student_mark_discrepancies 
+       WHERE student_id = $1 AND subject_id = $2 AND component_name = $3 AND status = 'Pending'`,
+      [student.id, subject_id, component_name]
+    );
+
+    if (checkRes.rows.length > 0) {
+      return res.status(400).json({ message: "You have already reported a pending issue for this component. Please wait for the faculty to review." });
+    }
+
+    await client.query(
+      `INSERT INTO student_mark_discrepancies (student_id, subject_id, college_id, semester_id, component_name, message, status) 
+       VALUES ($1, $2, $3, $4, $5, $6, 'Pending')`,
+      [student.id, subject_id, collegeId, semesterId, component_name, message]
+    );
+
+    res.status(201).json({ message: "Discrepancy reported successfully" });
+  } catch (error) {
+    console.error("Submit marks discrepancy error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getStudentDiscrepancies = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Find student record for this user
+    const studentRes = await client.query('SELECT id FROM students WHERE user_id = $1', [userId]);
+    if (studentRes.rows.length === 0) return res.status(404).json({ message: "Student record not found" });
+    const studentId = studentRes.rows[0].id;
+
+    const query = `
+      SELECT 
+        smd.id,
+        smd.subject_id,
+        smd.component_name,
+        smd.message,
+        smd.status,
+        smd.created_at,
+        sub.name as subject_name,
+        sub.subject_code
+      FROM student_mark_discrepancies smd
+      JOIN master_subjects sub ON smd.subject_id = sub.id
+      WHERE smd.student_id = $1
+      ORDER BY smd.created_at DESC
+    `;
+
+    const result = await client.query(query, [studentId]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get student discrepancies error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 // --- MARKS MANAGEMENT MODULE ---
 
 const getStudentsForMarks = async (req, res) => {
@@ -5121,5 +5199,7 @@ module.exports = {
   unmapMasterAcademicYear,
   mapMasterPolicy,
   unmapMasterPolicy,
-  getNextAdmissionSerial: getNextAdmissionSerialRoute
+  getNextAdmissionSerial: getNextAdmissionSerialRoute,
+  submitMarksDiscrepancy,
+  getStudentDiscrepancies
 };

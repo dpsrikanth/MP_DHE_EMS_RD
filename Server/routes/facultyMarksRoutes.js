@@ -153,7 +153,12 @@ router.get('/attendance-summary', facultyMarksController.getAttendanceSummary);
  *     security:
  *       - bearerAuth: []
  */
+router.post('/publish-round', facultyMarksController.publishRoundMarks);
+router.post('/request-round-unlock', facultyMarksController.requestRoundUnlock);
 router.post('/request-unlock', facultyMarksController.requestUnlock);
 router.post('/bulk-upload', facultyMarksController.bulkUploadInternalMarks);
+router.get('/pending-discrepancies', facultyMarksController.getPendingDiscrepancies);
+router.post('/resolve-discrepancy', facultyMarksController.resolveDiscrepancy);
 
 module.exports = router;
+
