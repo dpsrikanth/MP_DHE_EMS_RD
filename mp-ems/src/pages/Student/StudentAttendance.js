@@ -3,7 +3,7 @@ import {
   Calendar, BookOpen, Clock, AlertCircle, 
   CheckCircle2, XCircle, ChevronRight, LayoutDashboard,
   Filter, BarChart3, Info, ChevronDown, CalendarDays,
-  History, Search
+  History, Search, ClipboardCheck
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { formatDate } from '../../utils/dateUtils';
@@ -207,12 +207,29 @@ const StudentAttendance = () => {
     const [attendance, setAttendance] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedSubject, setExpandedSubject] = useState(null);
-    const [activeTab, setActiveTab] = useState('subject'); // 'subject' | 'history'
-    const [dateFilter, setDateFilter] = useState('all'); // 'all', 'week', 'month', 'year'
+    const [activeTab, setActiveTab] = useState('subject'); // 'subject' | 'history' | 'internal'
+    const [dateFilter, setDateFilter] = useState('all');
+    const [internalExamData, setInternalExamData] = useState([]);
+    const [internalLoading, setInternalLoading] = useState(false);
+    const [expandedSemester, setExpandedSemester] = useState(null);
 
     useEffect(() => {
         fetchAttendance();
     }, []);
+
+    const fetchInternalExamAttendance = async () => {
+        if (internalExamData.length > 0) return; // already loaded
+        setInternalLoading(true);
+        try {
+            const data = await studentApi.getInternalExamAttendance();
+            setInternalExamData(data || []);
+            if (data && data.length > 0) setExpandedSemester(data[0].semester_name);
+        } catch (err) {
+            toast.error('Failed to load internal exam attendance');
+        } finally {
+            setInternalLoading(false);
+        }
+    };
 
     const fetchAttendance = async () => {
         try {
@@ -266,18 +283,24 @@ const StudentAttendance = () => {
                         <p className="text-[13px] text-slate-400 font-black tracking-[0.2em] mt-1 ">Advanced academic engagement tracking</p>
                     </div>
                 </div>
-                <div className="flex bg-slate-100 p-1.5 rounded-2xl shadow-inner border border-slate-200">
+                <div className="flex bg-slate-100 p-1.5 rounded-2xl shadow-inner border border-slate-200 gap-1">
                     <button 
                         onClick={() => setActiveTab('subject')}
-                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black  tracking-widest transition-all duration-300 ${activeTab === 'subject' ? 'bg-white text-indigo-600 shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-5 py-2.5 rounded-xl text-[13px] font-black tracking-widest transition-all duration-300 ${activeTab === 'subject' ? 'bg-white text-indigo-600 shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         By Subject
                     </button>
                     <button 
                         onClick={() => setActiveTab('history')}
-                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black  tracking-widest transition-all duration-300 ${activeTab === 'history' ? 'bg-white text-indigo-600 shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-5 py-2.5 rounded-xl text-[13px] font-black tracking-widest transition-all duration-300 ${activeTab === 'history' ? 'bg-white text-indigo-600 shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        Combined History
+                        History
+                    </button>
+                    <button 
+                        onClick={() => { setActiveTab('internal'); fetchInternalExamAttendance(); }}
+                        className={`px-5 py-2.5 rounded-xl text-[13px] font-black tracking-widest transition-all duration-300 flex items-center gap-1.5 ${activeTab === 'internal' ? 'bg-white text-violet-600 shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                        <ClipboardCheck size={14} /> Internal Exams
                     </button>
                 </div>
             </div>
@@ -413,8 +436,109 @@ const StudentAttendance = () => {
                         )}
                     </div>
                 </>
-            ) : (
+            ) : activeTab === 'history' ? (
                 <CombinedHistory dateFilter={dateFilter} />
+            ) : (
+                /* ── Internal Exam Attendance Tab ── */
+                <div className="space-y-6 animate-in fade-in duration-500">
+                    {/* Summary Header */}
+                    {internalExamData.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {internalExamData.map((sem) => (
+                                <div key={sem.semester_name} className="bg-white rounded-2xl border border-slate-100 shadow-md p-5 text-center hover:shadow-lg transition-shadow">
+                                    <p className="text-[11px] font-black text-slate-400 tracking-widest mb-1">{sem.semester_name}</p>
+                                    <p className={`text-3xl font-black tracking-tighter ${
+                                        sem.semester_percentage >= 75 ? 'text-emerald-600' :
+                                        sem.semester_percentage >= 50 ? 'text-amber-500' : 'text-red-500'
+                                    }`}>{sem.semester_percentage}%</p>
+                                    <p className="text-[11px] text-slate-400 font-bold mt-1">{sem.semester_present}/{sem.semester_total} Present</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {internalLoading ? (
+                        <div className="flex justify-center py-20">
+                            <div className="w-10 h-10 border-4 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                    ) : internalExamData.length === 0 ? (
+                        <div className="bg-white rounded-[2.5rem] border border-slate-100 p-20 text-center shadow-sm">
+                            <ClipboardCheck size={40} className="text-slate-200 mx-auto mb-4" />
+                            <h3 className="text-lg font-black text-slate-800">No Internal Exam Records</h3>
+                            <p className="text-sm text-slate-400 mt-1">Your exam attendance will appear here once faculty enters marks.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {internalExamData.map((sem) => (
+                                <div key={sem.semester_name} className="bg-white rounded-[1.5rem] border border-slate-100 shadow-xl shadow-slate-100/60 overflow-hidden">
+                                    {/* Semester Header */}
+                                    <button
+                                        onClick={() => setExpandedSemester(expandedSemester === sem.semester_name ? null : sem.semester_name)}
+                                        className="w-full px-8 py-5 flex items-center justify-between bg-gradient-to-r from-violet-50 to-indigo-50/30 border-b border-violet-100/50 hover:from-violet-100/60 transition-all"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center">
+                                                <ClipboardCheck size={18} className="text-white" />
+                                            </div>
+                                            <div className="text-left">
+                                                <p className="text-base font-black text-slate-900 tracking-tight">{sem.semester_name}</p>
+                                                <p className="text-[12px] font-bold text-slate-400">{sem.subjects.length} Subjects · {sem.semester_present}/{sem.semester_total} Exams Attended</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <span className={`px-4 py-1.5 rounded-full text-[13px] font-black ${
+                                                sem.semester_percentage >= 75 ? 'bg-emerald-100 text-emerald-700' :
+                                                sem.semester_percentage >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                                            }`}>{sem.semester_percentage}% Attendance</span>
+                                            <ChevronDown size={20} className={`text-slate-400 transition-transform duration-300 ${expandedSemester === sem.semester_name ? 'rotate-180' : ''}`} />
+                                        </div>
+                                    </button>
+
+                                    {/* Subject rows */}
+                                    {expandedSemester === sem.semester_name && (
+                                        <div className="divide-y divide-slate-50">
+                                            {sem.subjects.map((sub) => (
+                                                <div key={sub.subject_id} className="px-8 py-6">
+                                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                                                        <div>
+                                                            <span className="text-[11px] font-black text-violet-600 bg-violet-50 px-2 py-0.5 rounded border border-violet-100 tracking-wider">{sub.subject_code}</span>
+                                                            <h4 className="text-base font-black text-slate-900 mt-1">{sub.subject_name}</h4>
+                                                        </div>
+                                                        <div className="flex items-center gap-3 shrink-0">
+                                                            <span className="text-[12px] font-bold text-slate-400">{sub.present_count}/{sub.total_components}</span>
+                                                            <span className={`px-3 py-1 rounded-full text-[12px] font-black ${
+                                                                sub.attendance_percentage >= 75 ? 'bg-emerald-100 text-emerald-700' :
+                                                                sub.attendance_percentage >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                                                            }`}>{sub.attendance_percentage}%</span>
+                                                        </div>
+                                                    </div>
+                                                    {/* Component Pills */}
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {sub.components.map((comp) => (
+                                                            <div key={comp.component_name} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[12px] font-black ${
+                                                                comp.status === 'Present'
+                                                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                                                    : 'bg-red-50 border-red-200 text-red-700'
+                                                            }`}>
+                                                                {comp.status === 'Present'
+                                                                    ? <CheckCircle2 size={12} />
+                                                                    : <XCircle size={12} />}
+                                                                {comp.component_name}
+                                                                {comp.marks_obtained !== null && comp.status === 'Present' && (
+                                                                    <span className="ml-1 text-[10px] opacity-70">({comp.marks_obtained})</span>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             )}
             
             <div className="flex items-center justify-center gap-2 p-6 bg-slate-100/50 rounded-[2rem] border border-slate-200/50">

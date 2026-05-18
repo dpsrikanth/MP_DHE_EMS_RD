@@ -360,5 +360,13 @@ export const collegeAdminApi = {
     updateTotalRooms: async (data) => {
         const response = await apiClient.put('/college-admin/total-rooms', data);
         return response.data;
+    },
+
+    /**
+     * Get internal exam attendance report for all students in a semester
+     */
+    getInternalExamAttendance: async (params) => {
+        const response = await apiClient.get('/college-admin/internal-exam-attendance', { params });
+        return response.data;
     }
 };

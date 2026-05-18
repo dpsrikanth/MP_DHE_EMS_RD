@@ -41,9 +41,11 @@ import FacultyDashboard from "./pages/Faculty/Dashboard";
 import MarksEntry from "./pages/Faculty/MarksEntry";
 import InternalExamMarks from "./pages/Faculty/InternalExamMarks";
 import Attendance from "./pages/Faculty/Attendance";
+import FacultyInternalAttendance from "./pages/Faculty/InternalExamAttendance";
 import MarksVerification from "./pages/CollegeAdmin/MarksVerification";
 import MarksReview from "./pages/CollegeAdmin/MarksReview";
 import MarksReports from "./pages/CollegeAdmin/MarksReports";
+import InternalExamAttendance from "./pages/CollegeAdmin/InternalExamAttendance";
 import CollegeAdminDashboard from "./pages/CollegeAdmin/Dashboard";
 import StudentDashboard from "./pages/Student/Dashboard";
 import StudentExams from "./pages/Student/StudentExams";
@@ -177,6 +179,7 @@ const AppRoutes = () => {
       <Route path="/college-admin/faculty-status" element={<Layout><ProtectedRoute element={<FacultyStatus />} /></Layout>} />
       <Route path="/college-admin/performance" element={<Layout><ProtectedRoute element={<CollegePerformance />} /></Layout>} />
       <Route path="/college-admin/seating-arrangement" element={<Layout><ProtectedRoute element={<SeatingArrangement />} /></Layout>} />
+      <Route path="/college-admin/internal-attendance" element={<Layout><ProtectedRoute element={<InternalExamAttendance />} /></Layout>} />
       {/* Internal Exam Routes */}
       <Route path="/college-admin/internal-exams/rounds" element={<Layout><ProtectedRoute element={<RoundManagement />} /></Layout>} />
       <Route path="/college-admin/internal-exams/schedules" element={<Layout><ProtectedRoute element={<ExamScheduling />} /></Layout>} />
@@ -186,6 +189,7 @@ const AppRoutes = () => {
       <Route path="/faculty/marks-entry" element={<Layout><ProtectedRoute element={<MarksEntry />} /></Layout>} />
       <Route path="/faculty/internal-marks" element={<Layout><ProtectedRoute element={<InternalExamMarks />} /></Layout>} />
       <Route path="/faculty/attendance" element={<Layout><ProtectedRoute element={<Attendance />} /></Layout>} />
+      <Route path="/faculty/internal-attendance" element={<Layout><ProtectedRoute element={<FacultyInternalAttendance />} /></Layout>} />
 
       {/* HOD Routes */}
       <Route path="/hod/dashboard" element={<Layout><ProtectedRoute element={<HODDashboard />} /></Layout>} />

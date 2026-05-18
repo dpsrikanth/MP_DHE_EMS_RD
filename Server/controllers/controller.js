@@ -2786,6 +2786,296 @@ const getStudentDiscrepancies = async (req, res) => {
   }
 };
 
+// --- INTERNAL EXAM ATTENDANCE MODULE ---
+
+/**
+ * GET /student/internal-exam-attendance
+ * Returns the logged-in student's internal exam attendance grouped by semester.
+ * Uses master_subjects.semester_id which is always populated.
+ */
+const getStudentInternalExamAttendance = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const studentRes = await client.query(
+      'SELECT id FROM students WHERE user_id = $1',
+      [userId]
+    );
+    if (studentRes.rows.length === 0)
+      return res.status(404).json({ message: 'Student record not found' });
+    const studentId = studentRes.rows[0].id;
+
+    const query = `
+      SELECT
+        ms.id            AS semester_id,
+        ms.semester_name,
+        sub.id           AS subject_id,
+        sub.name         AS subject_name,
+        sub.subject_code,
+        ims.id           AS component_id,
+        ims.component_name,
+        sim.is_absent,
+        sim.marks_obtained
+      FROM student_internal_marks sim
+      JOIN internal_marks_structure ims ON sim.component_id = ims.id
+      JOIN master_subjects sub           ON sim.subject_id  = sub.id
+      JOIN faculty_subjects fs           ON fs.subject_id = sim.subject_id AND fs.teacher_id = sim.entered_by_faculty_id
+      JOIN master_semesters ms           ON fs.semester_id = ms.id
+      WHERE sim.student_id = $1
+        AND ims.component_name NOT ILIKE 'TOTAL%'
+        AND ims.component_name NOT ILIKE 'BEST_OF_3%'
+      ORDER BY ms.id ASC, sub.name ASC, ims.component_name ASC
+    `;
+
+    const result = await client.query(query, [studentId]);
+    const rows = result.rows;
+
+    const semesterMap = {};
+    for (const row of rows) {
+      const semKey = row.semester_name;
+      if (!semesterMap[semKey]) {
+        semesterMap[semKey] = { semester_name: semKey, subjects: {} };
+      }
+      const subKey = row.subject_id;
+      if (!semesterMap[semKey].subjects[subKey]) {
+        semesterMap[semKey].subjects[subKey] = {
+          subject_id: row.subject_id,
+          subject_name: row.subject_name,
+          subject_code: row.subject_code,
+          components: []
+        };
+      }
+      semesterMap[semKey].subjects[subKey].components.push({
+        component_id: row.component_id,
+        component_name: row.component_name,
+        status: row.is_absent ? 'Absent' : 'Present',
+        marks_obtained: row.marks_obtained
+      });
+    }
+
+    const semesters = Object.values(semesterMap).map(sem => {
+      const subjects = Object.values(sem.subjects).map(sub => {
+        const total = sub.components.length;
+        const present = sub.components.filter(c => c.status === 'Present').length;
+        return {
+          ...sub,
+          total_components: total,
+          present_count: present,
+          absent_count: total - present,
+          attendance_percentage: total > 0 ? Math.round((present / total) * 100) : 0
+        };
+      });
+      const semTotal   = subjects.reduce((a, s) => a + s.total_components, 0);
+      const semPresent = subjects.reduce((a, s) => a + s.present_count, 0);
+      return {
+        semester_name: sem.semester_name,
+        subjects,
+        semester_total: semTotal,
+        semester_present: semPresent,
+        semester_absent: semTotal - semPresent,
+        semester_percentage: semTotal > 0 ? Math.round((semPresent / semTotal) * 100) : 0
+      };
+    });
+
+    res.json(semesters);
+  } catch (error) {
+    console.error('getStudentInternalExamAttendance error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * GET /college-admin/internal-exam-attendance?semester_id=&subject_id=
+ * Returns ALL students in a college for a given semester with their internal exam
+ * present/absent status. Uses sub.semester_id — always reliable.
+ */
+const getAdminInternalExamAttendance = async (req, res) => {
+  try {
+    const { semester_id, subject_id } = req.query;
+    const { college_id } = req.user;
+
+    if (!semester_id) {
+      return res.status(400).json({ message: 'semester_id is required' });
+    }
+
+    let query = `
+      SELECT DISTINCT
+        s.id               AS student_id,
+        TRIM(s.name)       AS student_name,
+        TRIM(s.rollnumber) AS enrollment_number,
+        ms.semester_name,
+        sub.id             AS subject_id,
+        sub.name           AS subject_name,
+        sub.subject_code,
+        ims.component_name,
+        sim.is_absent
+      FROM student_internal_marks sim
+      JOIN internal_marks_structure ims ON sim.component_id = ims.id
+      JOIN master_subjects sub           ON sim.subject_id  = sub.id
+      JOIN students s                    ON sim.student_id  = s.id
+      JOIN colleges c                    ON LOWER(s."collageName") = LOWER(c.name)
+      JOIN faculty_subjects fs           ON fs.subject_id = sim.subject_id AND fs.teacher_id = sim.entered_by_faculty_id
+      JOIN master_semesters ms           ON fs.semester_id = ms.id
+      WHERE ms.id = $1
+        AND c.id = $2
+        AND ims.component_name NOT ILIKE 'TOTAL%'
+        AND ims.component_name NOT ILIKE 'BEST_OF_3%'
+    `;
+    const values = [semester_id, college_id];
+
+    if (subject_id) {
+      query += ` AND sim.subject_id = $3`;
+      values.push(subject_id);
+    }
+
+    query += ` ORDER BY TRIM(s.rollnumber) ASC, sub.name ASC, ims.component_name ASC`;
+
+    const result = await client.query(query, values);
+    const rows = result.rows;
+
+    const studentMap = {};
+    for (const row of rows) {
+      const sKey = row.student_id;
+      if (!studentMap[sKey]) {
+        studentMap[sKey] = {
+          student_id: row.student_id,
+          student_name: row.student_name,
+          enrollment_number: row.enrollment_number,
+          semester_name: row.semester_name,
+          subjects: {}
+        };
+      }
+      const subKey = row.subject_id;
+      if (!studentMap[sKey].subjects[subKey]) {
+        studentMap[sKey].subjects[subKey] = {
+          subject_id: row.subject_id,
+          subject_name: row.subject_name,
+          subject_code: row.subject_code,
+          components: []
+        };
+      }
+      studentMap[sKey].subjects[subKey].components.push({
+        component_name: row.component_name,
+        status: row.is_absent ? 'Absent' : 'Present'
+      });
+    }
+
+    const students = Object.values(studentMap).map(stu => {
+      const subjects = Object.values(stu.subjects).map(sub => {
+        const total = sub.components.length;
+        const present = sub.components.filter(c => c.status === 'Present').length;
+        return { ...sub, total_components: total, present_count: present, absent_count: total - present, attendance_percentage: total > 0 ? Math.round((present / total) * 100) : 0 };
+      });
+      const semTotal   = subjects.reduce((a, s) => a + s.total_components, 0);
+      const semPresent = subjects.reduce((a, s) => a + s.present_count, 0);
+      return {
+        ...stu,
+        subjects,
+        overall_total: semTotal,
+        overall_present: semPresent,
+        overall_absent: semTotal - semPresent,
+        overall_percentage: semTotal > 0 ? Math.round((semPresent / semTotal) * 100) : 0
+      };
+    });
+
+    res.json(students);
+  } catch (error) {
+    console.error('getAdminInternalExamAttendance error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * GET /faculty/internal-exam-attendance
+ * Returns each subject assigned to the faculty (across all semesters) with a
+ * summary of how many students were Present/Absent per component.
+ */
+const getFacultyInternalExamAttendance = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Resolve the teacher record
+    const teacherRes = await client.query(
+      `SELECT mt.id, mt.college_id
+       FROM master_teachers mt
+       JOIN users u ON mt.user_id = u.id
+       WHERE u.id = $1
+       LIMIT 1`,
+      [userId]
+    );
+    if (teacherRes.rows.length === 0)
+      return res.status(404).json({ message: 'Teacher record not found' });
+    const { id: teacherId, college_id: collegeId } = teacherRes.rows[0];
+
+    // Get all subjects assigned to this faculty across all semesters
+    const assignedRes = await client.query(
+      `SELECT DISTINCT fs.subject_id, fs.semester_id,
+              sub.name        AS subject_name,
+              sub.subject_code,
+              ms.semester_name,
+              ms.id AS ms_id
+       FROM faculty_subjects fs
+       JOIN master_subjects sub  ON fs.subject_id  = sub.id
+       JOIN master_semesters ms  ON fs.semester_id = ms.id
+       WHERE fs.teacher_id = $1
+       ORDER BY ms.id ASC, sub.name ASC`,
+      [teacherId]
+    );
+
+    if (assignedRes.rows.length === 0) return res.json([]);
+
+    // For each assigned subject, get present/absent counts per component
+    const results = [];
+    for (const sub of assignedRes.rows) {
+      const compRes = await client.query(
+        `SELECT
+           ims.component_name,
+           COUNT(*)                                      AS total_students,
+           COUNT(*) FILTER (WHERE sim.is_absent = false) AS present_count,
+           COUNT(*) FILTER (WHERE sim.is_absent = true)  AS absent_count
+         FROM student_internal_marks sim
+         JOIN internal_marks_structure ims ON sim.component_id = ims.id
+         WHERE sim.subject_id = $1
+           AND ims.component_name NOT ILIKE 'TOTAL%'
+           AND ims.component_name NOT ILIKE 'BEST_OF_3%'
+         GROUP BY ims.component_name
+         ORDER BY ims.component_name ASC`,
+        [sub.subject_id]
+      );
+
+      const components = compRes.rows.map(r => ({
+        component_name: r.component_name,
+        total_students: parseInt(r.total_students),
+        present_count:  parseInt(r.present_count),
+        absent_count:   parseInt(r.absent_count),
+        attendance_percentage: parseInt(r.total_students) > 0
+          ? Math.round((parseInt(r.present_count) / parseInt(r.total_students)) * 100)
+          : 0
+      }));
+
+      const grandTotal   = components.reduce((a, c) => a + c.total_students, 0);
+      const grandPresent = components.reduce((a, c) => a + c.present_count, 0);
+
+      results.push({
+        subject_id:   sub.subject_id,
+        subject_name: sub.subject_name,
+        subject_code: sub.subject_code,
+        semester_id:  sub.semester_id,
+        semester_name: sub.semester_name,
+        components,
+        total_entries:   grandTotal,
+        total_present:   grandPresent,
+        total_absent:    grandTotal - grandPresent,
+        overall_percentage: grandTotal > 0 ? Math.round((grandPresent / grandTotal) * 100) : 0
+      });
+    }
+
+    res.json(results);
+  } catch (error) {
+    console.error('getFacultyInternalExamAttendance error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 // --- MARKS MANAGEMENT MODULE ---
 
 const getStudentsForMarks = async (req, res) => {
@@ -5201,5 +5491,8 @@ module.exports = {
   unmapMasterPolicy,
   getNextAdmissionSerial: getNextAdmissionSerialRoute,
   submitMarksDiscrepancy,
-  getStudentDiscrepancies
+  getStudentDiscrepancies,
+  getStudentInternalExamAttendance,
+  getAdminInternalExamAttendance,
+  getFacultyInternalExamAttendance
 };

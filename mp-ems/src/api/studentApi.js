@@ -44,5 +44,9 @@ export const studentApi = {
     getDiscrepancies: async () => {
         const response = await apiClient.get('/student/marks-discrepancies');
         return response.data;
+    },
+    getInternalExamAttendance: async () => {
+        const response = await apiClient.get('/student/internal-exam-attendance');
+        return response.data;
     }
 };

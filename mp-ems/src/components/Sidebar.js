@@ -131,6 +131,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             { id: 17, name: 'Marks Verification', path: '/admin/marks-verification', icon: <ShieldCheck size={18} /> },
             { id: 15, name: 'Faculty Status', path: '/college-admin/faculty-status', icon: <CheckCircle2 size={18} /> },
             { id: 16, name: 'College Performance', path: '/college-admin/performance', icon: <TrendingUp size={18} /> },
+            { id: 51, name: 'Exam Attendance', path: '/college-admin/internal-attendance', icon: <ClipboardCheck size={18} /> },
           ]
         }
       ];
@@ -209,6 +210,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           ]
         },
         { id: 4, name: 'Attendance', path: '/faculty/attendance', icon: <Calendar size={20} /> },
+        { id: 52, name: 'Exam Attendance', path: '/faculty/internal-attendance', icon: <ClipboardCheck size={20} /> },
         { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> }
       ];
       if (isAssignedPaperSetter) {
