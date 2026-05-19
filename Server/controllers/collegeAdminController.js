@@ -480,16 +480,49 @@ exports.getMarksAuditLog = async (req, res) => {
         }
 
         const query = `
-            SELECT al.action, al.created_at, u.name as user_name, mr.role_name
-            FROM audit_logs al
-            JOIN users u ON al.user_id = u.id
-            JOIN master_roles mr ON u.role_id = mr.id
-            WHERE al.entity_type = 'MARKS_WORKFLOW' 
-              AND al.entity_id IN ($1, $2)
-            ORDER BY al.created_at ASC
+            WITH combined_logs AS (
+                SELECT 
+                    CASE 
+                        WHEN al.entity_type = 'DISCREPANCY' THEN al.action || ' (Student: ' || s_disp.name || ')'
+                        ELSE al.action
+                    END as action, 
+                    al.created_at, 
+                    u.name as user_name,
+                    COALESCE(md.designation_name, mr.role_name) as role_name
+                FROM audit_logs al
+                JOIN users u ON al.user_id = u.id
+                JOIN master_roles mr ON u.role_id = mr.id
+                LEFT JOIN master_teachers mt ON mt.user_id = u.id
+                LEFT JOIN master_designations md ON mt.designation_id = md.id
+                LEFT JOIN student_mark_discrepancies smd ON al.entity_type = 'DISCREPANCY' AND al.entity_id = smd.id
+                LEFT JOIN students s_disp ON smd.student_id = s_disp.id
+                WHERE 
+                  (al.entity_type = 'MARKS_WORKFLOW' AND al.entity_id IN ($1, $2))
+                  OR 
+                  (al.entity_type = 'ASSESSMENT' AND al.entity_id IN (
+                      SELECT id FROM internal_marks_structure WHERE subject_id = $1
+                  ))
+                  OR
+                  (al.entity_type = 'DISCREPANCY' AND al.entity_id IN (
+                      SELECT id FROM student_mark_discrepancies WHERE subject_id = $1
+                  ))
+
+                UNION ALL
+
+                SELECT 
+                    'DISCREPANCY_REPORTED (Student: ' || s.name || ')' as action, 
+                    smd.created_at, 
+                    s.name as user_name, 
+                    'Student' as role_name
+                FROM student_mark_discrepancies smd
+                JOIN students s ON smd.student_id = s.id
+                WHERE smd.subject_id = $1
+            )
+            SELECT * FROM combined_logs
+            ORDER BY created_at ASC
         `;
 
-        const result = await db.query(query, [subject_id, workflow_id || -1]);
+        const result = await db.query(query, [parseInt(subject_id), parseInt(workflow_id || -1)]);
         
         // Calculate dynamic revision
         let currentRevision = 1;

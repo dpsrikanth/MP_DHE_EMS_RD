@@ -316,15 +316,16 @@ const MarksVerification = () => {
                                         <tbody className="divide-y divide-slate-100">
                                             {auditLogs.map((log, index) => {
                                                 const date = new Date(log.created_at);
-                                                const isSubmit = log.action === 'MARKS_SUBMITTED';
-                                                const isApproved = log.action === 'STATUS_CHANGED_TO_Approved' || log.action === 'CORRECTION_APPROVED_BY_HOD';
-                                                const isLocked = log.action === 'STATUS_CHANGED_TO_Locked' || log.action === 'MARKS_LOCKED';
-                                                const isRejected = log.action === 'CORRECTION_REJECTED_BY_COLLEGE' || log.action === 'MARKS_REJECTED' || log.action === 'CORRECTION_SENT_BACK_TO_COLLEGE';
+                                                const isSubmit = log.action.startsWith('MARKS_SUBMITTED') || log.action.startsWith('MARKS_PUBLISHED');
+                                                const isApproved = log.action.startsWith('STATUS_CHANGED_TO_Approved') || log.action.startsWith('CORRECTION_APPROVED_BY_HOD') || log.action.startsWith('STATUS_CHANGED_TO_Locked') || log.action.startsWith('MARKS_LOCKED') || log.action.startsWith('COMPONENT_UNLOCK_APPROVED') || log.action.startsWith('DISCREPANCY_RESOLVED');
+                                                const isRejected = log.action.startsWith('CORRECTION_REJECTED_BY_COLLEGE') || log.action.startsWith('MARKS_REJECTED') || log.action.startsWith('CORRECTION_SENT_BACK_TO_COLLEGE');
+                                                const isRequest = log.action.startsWith('ROUND_UNLOCK_REQUESTED') || log.action.startsWith('CORRECTION_REQUESTED') || log.action.startsWith('DISCREPANCY_REPORTED');
                                                 
-                                                let badgeColor = "bg-slate-100 text-slate-600";
+                                                let badgeColor = "bg-slate-100 text-slate-600 border border-slate-200";
                                                 if (isSubmit) badgeColor = "bg-indigo-50 text-indigo-700 border border-indigo-200";
-                                                else if (isApproved || isLocked) badgeColor = "bg-emerald-50 text-emerald-700 border border-emerald-200";
+                                                else if (isApproved) badgeColor = "bg-emerald-50 text-emerald-700 border border-emerald-200";
                                                 else if (isRejected) badgeColor = "bg-red-50 text-red-700 border border-red-200";
+                                                else if (isRequest) badgeColor = "bg-amber-50 text-amber-700 border border-amber-200";
 
                                                 return (
                                                     <tr key={index} className="hover:bg-slate-50/50 transition-colors">
