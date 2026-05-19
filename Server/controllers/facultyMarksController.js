@@ -1089,7 +1089,7 @@ exports.getPendingDiscrepancies = async (req, res) => {
                 s.rollnumber as student_roll
             FROM student_mark_discrepancies smd
             JOIN students s ON smd.student_id = s.id
-            WHERE smd.subject_id = $1 AND smd.status = 'Pending'
+            WHERE smd.subject_id = $1 AND smd.status IN ('Pending', 'HOD_Approved')
         `;
         const params = [subject_id];
 

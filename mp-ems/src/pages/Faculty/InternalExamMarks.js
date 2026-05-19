@@ -712,7 +712,7 @@ const InternalExamMarks = () => {
                                     Save Draft
                                 </button>
                                 
-                                {workflowStatus === 'Published' ? (
+                                {(workflowStatus === 'Published' && unlockedStudentIds.length === 0) ? (
                                     <button
                                         onClick={handleRequestUnlock}
                                         disabled={isSaving}

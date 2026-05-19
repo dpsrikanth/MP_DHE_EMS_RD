@@ -1417,7 +1417,7 @@ exports.approveComponentUnlock = async (req, res) => {
             // 1. Transition pending discrepancies for this subject, college, component to 'HOD_Approved'
             await db.query(
                 `UPDATE student_mark_discrepancies 
-                 SET status = 'HOD_Approved', approved_at = CURRENT_TIMESTAMP
+                 SET status = 'HOD_Approved'
                  WHERE subject_id = $1 AND college_id = $2 AND component_name = $3 AND status = 'Pending'`,
                 [parseInt(subject_id), parseInt(college_id), componentName]
             );
