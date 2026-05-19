@@ -116,6 +116,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             { id: 4, name: 'Exams', path: '/exams', icon: <FileText size={18} /> },
             { id: 8, name: 'Exam Halls', path: '/college-admin/examination-halls', icon: <Building2 size={18} /> },
             { id: 11, name: 'Seat Allocation', path: '/college-admin/seating-arrangement', icon: <Monitor size={18} /> },
+            { id: 53, name: 'Invigilator Assign', path: '/college-admin/invigilator-assignment', icon: <UserPlus size={18} /> },
             { id: 50, name: 'Internal Schedule', path: '/college-admin/internal-exams/schedules', icon: <Calendar size={18} /> },
           ]
         },
@@ -178,6 +179,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             { id: 29, name: 'Exam Analytics', path: '/university/exam-analytics', icon: <PieChart size={18} /> },
             { id: 30, name: 'Institutional Ranking', path: '/university/institutional-ranking', icon: <Trophy size={18} /> },
             { id: 28, name: 'Infrastructure', path: '/university/infrastructure-analytics', icon: <Map size={18} /> },
+            { id: 51, name: 'Exam Attendance', path: '/university/exam-attendance', icon: <ClipboardCheck size={18} /> },
           ]
         },
         {
@@ -211,6 +213,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         },
         { id: 4, name: 'Attendance', path: '/faculty/attendance', icon: <Calendar size={20} /> },
         { id: 52, name: 'Exam Attendance', path: '/faculty/internal-attendance', icon: <ClipboardCheck size={20} /> },
+        { id: 54, name: 'Invigilation Duty', path: '/faculty/invigilation-duty', icon: <Building2 size={20} /> },
         { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> }
       ];
       if (isAssignedPaperSetter) {

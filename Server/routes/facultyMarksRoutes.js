@@ -160,5 +160,10 @@ router.post('/bulk-upload', facultyMarksController.bulkUploadInternalMarks);
 router.get('/pending-discrepancies', facultyMarksController.getPendingDiscrepancies);
 router.post('/resolve-discrepancy', facultyMarksController.resolveDiscrepancy);
 
+// --- Invigilation Duties ---
+router.get('/invigilation/duties', facultyMarksController.getInvigilationDuties);
+router.get('/invigilation/hall-students', facultyMarksController.getInvigilationHallStudents);
+router.post('/invigilation/attendance/save', facultyMarksController.saveExternalAttendance);
+
 module.exports = router;
 

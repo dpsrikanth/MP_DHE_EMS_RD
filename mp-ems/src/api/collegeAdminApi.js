@@ -368,5 +368,49 @@ export const collegeAdminApi = {
     getInternalExamAttendance: async (params) => {
         const response = await apiClient.get('/college-admin/internal-exam-attendance', { params });
         return response.data;
+    },
+
+    /**
+     * Get only external exams (exam_type=2) for this college's university
+     */
+    getExternalExams: async () => {
+        const response = await apiClient.get('/college-admin/external-exams');
+        return response.data;
+    },
+
+    /**
+     * Get examination halls with their assigned invigilators for a specific exam
+     */
+    getExternalAttendanceHalls: async (examId) => {
+        const response = await apiClient.get(`/college-admin/external-attendance/halls?exam_id=${examId}`);
+        return response.data;
+    },
+
+    /**
+     * Get all active faculty members for the college
+     */
+    getCollegeFaculty: async () => {
+        const response = await apiClient.get('/college-admin/college-faculty');
+        return response.data;
+    },
+
+    /**
+     * Assign invigilators to an examination hall
+     */
+    assignInvigilators: async (data) => {
+        const response = await apiClient.post('/college-admin/invigilator-assignment/assign', data);
+        return response.data;
+    },
+
+    /**
+     * Get external exam attendance report for all halls of a specific exam
+     */
+    getExternalExamAttendance: async (examId, collegeId = null) => {
+        let url = `/college-admin/external-attendance/report?exam_id=${examId}`;
+        if (collegeId) {
+            url += `&college_id=${collegeId}`;
+        }
+        const response = await apiClient.get(url);
+        return response.data;
     }
 };

@@ -1466,4 +1466,206 @@ exports.getComponentStudentMarks = async (req, res) => {
     }
 };
 
+// --- External Exam Attendance & Invigilator Assignment ---
 
+// Returns only external exams (exam_type=2) visible to this college's university
+exports.getExternalExams = async (req, res) => {
+    try {
+        let university_id = req.user.university_id;
+
+        if (!university_id && req.user.college_id) {
+            // Get the university_id for this college
+            const collegeRes = await db.query(`SELECT university_id FROM colleges WHERE id = $1`, [req.user.college_id]);
+            if (collegeRes.rows.length > 0) {
+                university_id = collegeRes.rows[0].university_id;
+            }
+        }
+
+        if (!university_id) {
+            return res.status(400).json({ error: 'University context not found' });
+        }
+
+        const query = `
+            SELECT DISTINCT ON (e.name, e.exam_date)
+                e.id, e.name as exam_name, e.exam_date, e.subject_id,
+                ms.semester_name
+            FROM exams e
+            LEFT JOIN master_semesters ms ON e.semester_id = ms.id
+            WHERE e.exam_type = 2
+              AND (e.university_id = $1 OR e.university_id IS NULL)
+            ORDER BY e.name, e.exam_date, e.id
+        `;
+        const result = await db.query(query, [university_id]);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error('getExternalExams error:', error);
+        res.status(500).json({ error: 'Failed to fetch external exams' });
+    }
+};
+
+// Returns all approved halls belonging to this college (for invigilator assignment)
+exports.getExternalAttendanceHalls = async (req, res) => {
+    try {
+        const { college_id } = req.user;
+        const { exam_id } = req.query;
+
+        if (!exam_id) return res.status(400).json({ error: 'exam_id is required' });
+
+        // Load the college's halls directly, then look up any existing invigilator assignments
+        const query = `
+            SELECT
+                h.id   AS hall_id,
+                h.hall_code AS hall_name,
+                h.total_capacity AS capacity,
+                (
+                    SELECT COUNT(DISTINCT hi2.faculty_user_id)
+                    FROM hall_invigilators hi2
+                    WHERE hi2.exam_id = $2 AND hi2.hall_id = h.id
+                ) AS assigned_invigilators,
+                (
+                    SELECT json_agg(json_build_object('user_id', u.id, 'name', u.name))
+                    FROM hall_invigilators hi
+                    JOIN users u ON hi.faculty_user_id = u.id
+                    WHERE hi.exam_id = $2 AND hi.hall_id = h.id
+                ) AS invigilators
+            FROM examination_halls h
+            WHERE h.college_id = $1
+              AND h.status = 'Approved'
+            ORDER BY h.hall_code
+        `;
+
+        const result = await db.query(query, [college_id, exam_id]);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error('getExternalAttendanceHalls error:', error);
+        res.status(500).json({ error: 'Failed to fetch attendance halls' });
+    }
+};
+
+exports.getCollegeFaculty = async (req, res) => {
+    try {
+        const { college_id } = req.user;
+        
+        const query = `
+            SELECT 
+                u.id, u.name, u.email
+            FROM master_teachers t
+            JOIN users u ON t.user_id = u.id
+            WHERE t.college_id = $1
+        `;
+        
+        const result = await db.query(query, [college_id]);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("getCollegeFaculty error:", error);
+        res.status(500).json({ error: "Failed to fetch college faculty" });
+    }
+};
+
+exports.assignInvigilators = async (req, res) => {
+    try {
+        const { college_id, id: assigned_by } = req.user;
+        const { exam_id, hall_id, faculty_user_ids } = req.body;
+
+        if (!exam_id || !hall_id || !Array.isArray(faculty_user_ids)) {
+            return res.status(400).json({ error: "Invalid assignment payload" });
+        }
+
+        const client = await db.connect();
+        try {
+            await client.query('BEGIN');
+
+            // Clear existing assignments for this hall and exam
+            await client.query(
+                `DELETE FROM hall_invigilators WHERE exam_id = $1 AND hall_id = $2`,
+                [exam_id, hall_id]
+            );
+
+            // Insert new assignments
+            for (const faculty_id of faculty_user_ids) {
+                await client.query(
+                    `INSERT INTO hall_invigilators (exam_id, hall_id, faculty_user_id, assigned_by)
+                     VALUES ($1, $2, $3, $4)`,
+                    [exam_id, hall_id, faculty_id, assigned_by]
+                );
+            }
+
+            await client.query('COMMIT');
+            res.status(200).json({ message: "Invigilators assigned successfully" });
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+    } catch (error) {
+        console.error("assignInvigilators error:", error);
+        res.status(500).json({ error: "Failed to assign invigilators" });
+    }
+};
+
+// GET /college-admin/external-attendance/report
+// Returns attendance report for all halls of a given external exam
+exports.getExternalExamAttendance = async (req, res) => {
+    try {
+        let college_id = req.user.college_id;
+        const { exam_id } = req.query;
+
+        if (req.user.role === 'university_admin') {
+            college_id = req.query.college_id;
+        }
+
+        if (!exam_id) return res.status(400).json({ error: 'exam_id is required' });
+        if (!college_id) return res.status(400).json({ error: 'college_id is required' });
+
+        const query = `
+            SELECT
+                h.id            AS hall_id,
+                h.hall_code     AS hall_name,
+                s.id            AS student_id,
+                s.name          AS student_name,
+                s.rollnumber,
+                sa.row_no,
+                sa.seat_no,
+                COALESCE(eea.status, 'Not Marked') AS status,
+                u.name          AS marked_by_name
+            FROM seating_arrangements sa
+            JOIN students s ON sa.student_id = s.id
+            JOIN examination_halls h ON sa.hall_id = h.id
+            LEFT JOIN external_exam_attendance eea
+                ON eea.exam_id = sa.exam_id AND eea.hall_id = sa.hall_id AND eea.student_id = sa.student_id
+            LEFT JOIN users u ON eea.marked_by = u.id
+            WHERE sa.exam_id = $1
+              AND h.college_id = $2
+            ORDER BY h.hall_code, sa.row_no, sa.seat_no, s.rollnumber
+        `;
+
+        const result = await db.query(query, [exam_id, college_id]);
+
+        // Group by hall
+        const halls = {};
+        for (const row of result.rows) {
+            if (!halls[row.hall_id]) {
+                halls[row.hall_id] = {
+                    hall_id: row.hall_id,
+                    hall_name: row.hall_name,
+                    students: []
+                };
+            }
+            halls[row.hall_id].students.push({
+                student_id:    row.student_id,
+                student_name:  row.student_name,
+                rollnumber:    row.rollnumber,
+                row_no:        row.row_no,
+                seat_no:       row.seat_no,
+                status:        row.status,
+                marked_by:     row.marked_by_name
+            });
+        }
+
+        res.status(200).json(Object.values(halls));
+    } catch (error) {
+        console.error('getExternalExamAttendance error:', error);
+        res.status(500).json({ error: 'Failed to fetch attendance report' });
+    }
+};

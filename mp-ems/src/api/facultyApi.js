@@ -116,5 +116,22 @@ export const facultyApi = {
     resolveDiscrepancy: async (data) => {
         const response = await apiClient.post('/faculty-marks/resolve-discrepancy', data);
         return response.data;
+    },
+
+    // --- Invigilation Duties ---
+    getInvigilationDuties: async () => {
+        const response = await apiClient.get('/faculty-marks/invigilation/duties');
+        return response.data;
+    },
+
+    getInvigilationHallStudents: async (examId, hallId) => {
+        const response = await apiClient.get(`/faculty-marks/invigilation/hall-students?exam_id=${examId}&hall_id=${hallId}`);
+        return response.data;
+    },
+
+    saveExternalAttendance: async (data) => {
+        const response = await apiClient.post('/faculty-marks/invigilation/attendance/save', data);
+        return response.data;
     }
 };
+

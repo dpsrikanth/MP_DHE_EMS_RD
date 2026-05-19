@@ -37,11 +37,13 @@ import InstitutionalRanking from "./pages/UniversityAdmin/InstitutionalRanking";
 import FacultyStatus from "./pages/CollegeAdmin/FacultyStatus";
 import CollegePerformance from "./pages/CollegeAdmin/CollegePerformance";
 import SeatingArrangement from "./pages/CollegeAdmin/SeatingArrangement";
+import InvigilatorAssignment from './pages/CollegeAdmin/InvigilatorAssignment';
 import FacultyDashboard from "./pages/Faculty/Dashboard";
 import MarksEntry from "./pages/Faculty/MarksEntry";
 import InternalExamMarks from "./pages/Faculty/InternalExamMarks";
 import Attendance from "./pages/Faculty/Attendance";
 import FacultyInternalAttendance from "./pages/Faculty/InternalExamAttendance";
+import InvigilationDuty from "./pages/Faculty/InvigilationDuty";
 import MarksVerification from "./pages/CollegeAdmin/MarksVerification";
 import MarksReview from "./pages/CollegeAdmin/MarksReview";
 import MarksReports from "./pages/CollegeAdmin/MarksReports";
@@ -64,6 +66,7 @@ import ManageCredits from "./pages/UniversityAdmin/ManageCredits";
 import HallApprovals from "./pages/UniversityAdmin/HallApprovals";
 import StudentCenterAllocations from "./pages/UniversityAdmin/StudentCenterAllocations";
 import StudentGlobalSearch from "./pages/UniversityAdmin/StudentGlobalSearch";
+import UniversityExamAttendance from "./pages/UniversityAdmin/UniversityExamAttendance";
 import PaperSetterDashboard from "./pages/PaperSetter/Dashboard";
 import PaperSetterSubmittedPapers from "./pages/PaperSetter/SubmittedPapers";
 import PaperSetterGuidelines from "./pages/PaperSetter/Guidelines";
@@ -179,6 +182,7 @@ const AppRoutes = () => {
       <Route path="/college-admin/faculty-status" element={<Layout><ProtectedRoute element={<FacultyStatus />} /></Layout>} />
       <Route path="/college-admin/performance" element={<Layout><ProtectedRoute element={<CollegePerformance />} /></Layout>} />
       <Route path="/college-admin/seating-arrangement" element={<Layout><ProtectedRoute element={<SeatingArrangement />} /></Layout>} />
+      <Route path="/college-admin/invigilator-assignment" element={<Layout><ProtectedRoute element={<InvigilatorAssignment />} /></Layout>} />
       <Route path="/college-admin/internal-attendance" element={<Layout><ProtectedRoute element={<InternalExamAttendance />} /></Layout>} />
       {/* Internal Exam Routes */}
       <Route path="/college-admin/internal-exams/rounds" element={<Layout><ProtectedRoute element={<RoundManagement />} /></Layout>} />
@@ -190,6 +194,7 @@ const AppRoutes = () => {
       <Route path="/faculty/internal-marks" element={<Layout><ProtectedRoute element={<InternalExamMarks />} /></Layout>} />
       <Route path="/faculty/attendance" element={<Layout><ProtectedRoute element={<Attendance />} /></Layout>} />
       <Route path="/faculty/internal-attendance" element={<Layout><ProtectedRoute element={<FacultyInternalAttendance />} /></Layout>} />
+      <Route path="/faculty/invigilation-duty" element={<Layout><ProtectedRoute element={<InvigilationDuty />} /></Layout>} />
 
       {/* HOD Routes */}
       <Route path="/hod/dashboard" element={<Layout><ProtectedRoute element={<HODDashboard />} /></Layout>} />
@@ -235,6 +240,7 @@ const AppRoutes = () => {
       <Route path="/university/institutional-ranking" element={<Layout><ProtectedRoute element={<InstitutionalRanking />} /></Layout>} />
       <Route path="/university/student-allocations" element={<Layout><ProtectedRoute element={<StudentCenterAllocations />} /></Layout>} />
       <Route path="/university/student-search" element={<Layout><ProtectedRoute element={<StudentGlobalSearch />} /></Layout>} />
+      <Route path="/university/exam-attendance" element={<Layout><ProtectedRoute element={<UniversityExamAttendance />} /></Layout>} />
       <Route path="/profile" element={<Layout><ProtectedRoute element={<Profile />} /></Layout>} />
       <Route path="/smtp-settings" element={<Layout><ProtectedRoute element={<SmtpSettings />} /></Layout>} />
     </Routes>

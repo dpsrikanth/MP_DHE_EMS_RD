@@ -1099,3 +1099,114 @@ exports.resolveDiscrepancy = async (req, res) => {
     }
 };
 
+// --- Invigilation Duties ---
+
+exports.getInvigilationDuties = async (req, res) => {
+    try {
+        const { id: faculty_user_id } = req.user;
+
+        const query = `
+            SELECT 
+                hi.exam_id, e.name as exam_name, e.exam_date,
+                hi.hall_id, h.hall_code as hall_name, h.total_capacity as capacity,
+                COUNT(DISTINCT sa.student_id) as allocated_students
+            FROM hall_invigilators hi
+            JOIN exams e ON hi.exam_id = e.id
+            JOIN examination_halls h ON hi.hall_id = h.id
+            LEFT JOIN seating_arrangements sa ON h.id = sa.hall_id AND e.id = sa.exam_id
+            WHERE hi.faculty_user_id = $1
+            GROUP BY hi.exam_id, e.name, e.exam_date, hi.hall_id, h.hall_code, h.total_capacity
+            ORDER BY e.exam_date, h.hall_code
+        `;
+
+        const result = await db.query(query, [faculty_user_id]);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("getInvigilationDuties error:", error);
+        res.status(500).json({ error: "Failed to fetch invigilation duties" });
+    }
+};
+
+exports.getInvigilationHallStudents = async (req, res) => {
+    try {
+        const { id: faculty_user_id } = req.user;
+        const { exam_id, hall_id } = req.query;
+
+        if (!exam_id || !hall_id) {
+            return res.status(400).json({ error: "exam_id and hall_id are required" });
+        }
+
+        // Verify assignment
+        const checkResult = await db.query(
+            `SELECT 1 FROM hall_invigilators WHERE faculty_user_id = $1 AND exam_id = $2 AND hall_id = $3`,
+            [faculty_user_id, exam_id, hall_id]
+        );
+        if (checkResult.rowCount === 0) {
+            return res.status(403).json({ error: "Unauthorized: You are not assigned to this hall" });
+        }
+
+        // Fetch students from seating_arrangements (the actual allocation table)
+        const query = `
+            SELECT 
+                s.id as student_id, s.name as student_name, s.rollnumber,
+                sa.row_no, sa.seat_no,
+                COALESCE(eea.status, 'Present') as status
+            FROM seating_arrangements sa
+            JOIN students s ON sa.student_id = s.id
+            LEFT JOIN external_exam_attendance eea 
+                ON sa.exam_id = eea.exam_id AND sa.hall_id = eea.hall_id AND sa.student_id = eea.student_id
+            WHERE sa.exam_id = $1 AND sa.hall_id = $2
+            ORDER BY sa.row_no, sa.seat_no, s.rollnumber
+        `;
+
+        const result = await db.query(query, [exam_id, hall_id]);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("getInvigilationHallStudents error:", error);
+        res.status(500).json({ error: "Failed to fetch hall students" });
+    }
+};
+
+exports.saveExternalAttendance = async (req, res) => {
+    try {
+        const { id: faculty_user_id } = req.user;
+        const { exam_id, hall_id, attendance_data } = req.body;
+
+        if (!exam_id || !hall_id || !Array.isArray(attendance_data)) {
+            return res.status(400).json({ error: "Invalid payload" });
+        }
+
+        // Verify assignment
+        const checkQuery = `SELECT 1 FROM hall_invigilators WHERE faculty_user_id = $1 AND exam_id = $2 AND hall_id = $3`;
+        const checkResult = await db.query(checkQuery, [faculty_user_id, exam_id, hall_id]);
+        if (checkResult.rowCount === 0) {
+            return res.status(403).json({ error: "Unauthorized: You are not assigned to this hall" });
+        }
+
+        const client = await db.connect();
+        try {
+            await client.query('BEGIN');
+
+            for (const record of attendance_data) {
+                const { student_id, status } = record;
+                await client.query(`
+                    INSERT INTO external_exam_attendance (exam_id, hall_id, student_id, status, marked_by)
+                    VALUES ($1, $2, $3, $4, $5)
+                    ON CONFLICT (exam_id, hall_id, student_id)
+                    DO UPDATE SET status = EXCLUDED.status, marked_by = EXCLUDED.marked_by, updated_at = CURRENT_TIMESTAMP
+                `, [exam_id, hall_id, student_id, status, faculty_user_id]);
+            }
+
+            await client.query('COMMIT');
+            res.status(200).json({ message: "Attendance saved successfully" });
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+    } catch (error) {
+        console.error("saveExternalAttendance error:", error);
+        res.status(500).json({ error: "Failed to save attendance" });
+    }
+};

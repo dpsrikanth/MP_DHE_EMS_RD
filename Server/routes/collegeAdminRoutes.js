@@ -514,5 +514,12 @@ router.get('/pending-component-approvals', collegeAdminController.getPendingComp
 router.post('/approve-component-unlock', collegeAdminController.approveComponentUnlock);
 router.get('/component-student-marks', collegeAdminController.getComponentStudentMarks);
 
+// External Exam Attendance & Invigilator Assignment
+router.get('/external-exams', collegeAdminController.getExternalExams);
+router.get('/external-attendance/halls', collegeAdminController.getExternalAttendanceHalls);
+router.get('/external-attendance/report', collegeAdminController.getExternalExamAttendance);
+router.post('/invigilator-assignment/assign', collegeAdminController.assignInvigilators);
+router.get('/college-faculty', collegeAdminController.getCollegeFaculty);
+
 module.exports = router;
 
