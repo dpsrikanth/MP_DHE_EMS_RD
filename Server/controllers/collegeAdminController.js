@@ -1391,15 +1391,57 @@ exports.approveComponentUnlock = async (req, res) => {
 
         const { subject_id, semester_id, academic_year_id, section, component_id } = req.body;
 
-        const query = `
-            DELETE FROM component_acceptance 
-            WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5 AND component_id = $6
-            RETURNING *
-        `;
+        // Retrieve component name from structure
+        const structRes = await db.query(
+            `SELECT component_name FROM internal_marks_structure WHERE id = $1 AND college_id = $2`,
+            [parseInt(component_id), parseInt(college_id)]
+        );
+        const componentName = structRes.rowCount > 0 ? structRes.rows[0].component_name : null;
 
-        const result = await db.query(query, [
-            college_id, subject_id, semester_id, academic_year_id, section, component_id
-        ]);
+        let hasPendingDiscrepancies = false;
+        if (componentName) {
+            const discCheck = await db.query(
+                `SELECT 1 FROM student_mark_discrepancies 
+                 WHERE subject_id = $1 AND college_id = $2 AND component_name = $3 AND status = 'Pending' LIMIT 1`,
+                [parseInt(subject_id), parseInt(college_id), componentName]
+            );
+            if (discCheck.rowCount > 0) {
+                hasPendingDiscrepancies = true;
+            }
+        }
+
+        let resultData = null;
+
+        if (hasPendingDiscrepancies) {
+            // Student-Selective Unlock Mode:
+            // 1. Transition pending discrepancies for this subject, college, component to 'HOD_Approved'
+            await db.query(
+                `UPDATE student_mark_discrepancies 
+                 SET status = 'HOD_Approved', approved_at = CURRENT_TIMESTAMP
+                 WHERE subject_id = $1 AND college_id = $2 AND component_name = $3 AND status = 'Pending'`,
+                [parseInt(subject_id), parseInt(college_id), componentName]
+            );
+
+            // 2. Keep/re-publish the round (is_accepted = TRUE) and clear the unlock_reason in component_acceptance
+            const caRes = await db.query(
+                `UPDATE component_acceptance 
+                 SET is_accepted = TRUE, unlock_reason = NULL, accepted_at = CURRENT_TIMESTAMP
+                 WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5 AND component_id = $6
+                 RETURNING *`,
+                [college_id, subject_id, semester_id, academic_year_id, section, component_id]
+            );
+            resultData = caRes.rows[0];
+        } else {
+            // Full Round Unlock Mode:
+            // Delete component_acceptance record to open the entire round
+            const delRes = await db.query(
+                `DELETE FROM component_acceptance 
+                 WHERE college_id = $1 AND subject_id = $2 AND semester_id = $3 AND academic_year_id = $4 AND section = $5 AND component_id = $6
+                 RETURNING *`,
+                [college_id, subject_id, semester_id, academic_year_id, section, component_id]
+            );
+            resultData = delRes.rows[0];
+        }
 
         // Audit Log
         await db.query(
@@ -1408,7 +1450,7 @@ exports.approveComponentUnlock = async (req, res) => {
             [user_id, component_id, JSON.stringify(req.body)]
         );
 
-        res.status(200).json({ message: "Assessment unlock approved successfully", data: result.rows[0] });
+        res.status(200).json({ message: "Assessment unlock approved successfully", data: resultData });
     } catch (error) {
         console.error("approveComponentUnlock error:", error);
         res.status(500).json({ error: "Failed to approve unlock" });
@@ -1452,6 +1494,7 @@ exports.getComponentStudentMarks = async (req, res) => {
                   WHERE smd.student_id = s.id
                     AND smd.subject_id = $2
                     AND smd.component_name = $4
+                    AND smd.status IN ('Pending', 'HOD_Approved')
               )
             ORDER BY s.rollnumber ASC NULLS LAST, s.name ASC
         `, [parseInt(component_id), parseInt(subject_id), `%${collageName}%`, componentName]);

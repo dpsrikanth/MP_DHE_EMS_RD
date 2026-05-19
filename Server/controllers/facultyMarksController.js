@@ -203,8 +203,32 @@ exports.enterStudentMarks = async (req, res) => {
             }
 
             if (['Approved', 'Locked', 'Submitted'].includes(globalStatus)) {
+                // Get component name for checking student-level discrepancies
+                const compNameRes = await db.query(
+                    `SELECT component_name FROM internal_marks_structure WHERE id = $1`,
+                    [marksData[0].component_id]
+                );
+                const componentName = compNameRes.rowCount > 0 ? compNameRes.rows[0].component_name : null;
+
                 // Check if EACH student in the batch is allowed to be edited
                 for (let data of marksData) {
+                    // Check if student has an active 'HOD_Approved' discrepancy for this subject and component
+                    let isStudentUnlocked = false;
+                    if (componentName) {
+                        const discRes = await db.query(
+                            `SELECT 1 FROM student_mark_discrepancies 
+                             WHERE student_id = $1 AND subject_id = $2 AND component_name = $3 AND status = 'HOD_Approved' LIMIT 1`,
+                            [data.student_id, subject_id, componentName]
+                        );
+                        if (discRes.rowCount > 0) {
+                            isStudentUnlocked = true;
+                        }
+                    }
+
+                    if (isStudentUnlocked) {
+                        continue; // Bypass check for this specific unlocked student!
+                    }
+
                     const studentReviewQuery = `
                         SELECT status FROM student_marks_review 
                         WHERE subject_id = $1 AND student_id = $2 AND college_id = $3 
@@ -232,7 +256,7 @@ exports.enterStudentMarks = async (req, res) => {
                             }
                         }
 
-                        return res.status(403).json({ error: `Marks entry is locked for student ID ${data.student_id}. Only rejected students can be modified.` });
+                        return res.status(403).json({ error: `Marks entry is locked for student ID ${data.student_id}. Only rejected students or HOD-approved student correction requests can be modified.` });
                     }
                 }
             }
@@ -883,12 +907,23 @@ exports.getStudentsForRound = async (req, res) => {
              }
         }
 
+        let unlockedStudentIds = [];
+        if (componentId) {
+            const unlockedRes = await db.query(
+                `SELECT student_id FROM student_mark_discrepancies 
+                 WHERE subject_id = $1 AND college_id = $2 AND component_name = $3 AND status = 'HOD_Approved'`,
+                [parseInt(subject_id), parseInt(college_id), round_name]
+            );
+            unlockedStudentIds = unlockedRes.rows.map(r => r.student_id);
+        }
+
         res.status(200).json({
             students: studentsRes.rows,
             marks: marks,
             component_id: componentId,
             structure: structure,
-            workflowStatus: workflowStatus
+            workflowStatus: workflowStatus,
+            unlockedStudentIds: unlockedStudentIds
         });
 
     } catch (error) {

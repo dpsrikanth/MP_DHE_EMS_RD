@@ -50,6 +50,7 @@ const InternalExamMarks = () => {
     const [showBulkDropdown, setShowBulkDropdown] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
     const [pendingDiscrepancies, setPendingDiscrepancies] = useState([]);
+    const [unlockedStudentIds, setUnlockedStudentIds] = useState([]);
 
     const teacherId = JSON.parse(localStorage.getItem('user'))?.teacher_id || 1;
 
@@ -146,6 +147,7 @@ const InternalExamMarks = () => {
             if (data) {
                 setStudents(data.students || []);
                 setComponentInfo(data.structure);
+                setUnlockedStudentIds(data.unlockedStudentIds || []);
 
                 // Fetch pending discrepancies
                 try {
@@ -548,6 +550,14 @@ const InternalExamMarks = () => {
                                 </span>
                             </div>
                         )}
+                        {unlockedStudentIds.length > 0 && (
+                            <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-8 py-4 flex items-center gap-3 shadow-md">
+                                <AlertCircle className="animate-pulse flex-shrink-0" size={18} />
+                                <span className="text-xs font-black tracking-wider uppercase">
+                                    Correction Mode Active: HOD has unlocked edit access for {unlockedStudentIds.length} student record(s). All other student records remain securely locked and published.
+                                </span>
+                            </div>
+                        )}
                         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div className="flex items-center gap-4 flex-1">
                                 <Search className="text-slate-400" size={20} />
@@ -587,6 +597,11 @@ const InternalExamMarks = () => {
                                         const entry = marksDraft[student.id] || { marks: '', isAbsent: false };
                                         const isFailed = !entry.isAbsent && entry.marks !== '' && parseFloat(entry.marks) < (componentInfo?.passing_marks || 0);
                                         const studentDisc = pendingDiscrepancies.find(d => d.student_id === student.id);
+                                        const isAttendanceDisabled = 
+                                            (['Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus)) ||
+                                            (workflowStatus === 'Published' && !unlockedStudentIds.includes(student.id)) ||
+                                            (unlockedStudentIds.length > 0 && !unlockedStudentIds.includes(student.id));
+                                        const isFieldDisabled = entry.isAbsent || isAttendanceDisabled;
 
                                         return (
                                             <tr key={student.id} className="group hover:bg-slate-50/50 transition-colors">
@@ -604,11 +619,11 @@ const InternalExamMarks = () => {
                                                     {studentDisc && (
                                                         <div className="mt-2 bg-amber-50 border border-amber-200 rounded-xl p-3 flex flex-col gap-2 max-w-md shadow-sm">
                                                             <div className="flex items-start gap-2">
-                                                                <AlertCircle size={14} className="text-amber-600 mt-0.5 flex-shrink-0" />
-                                                                <div className="text-xs text-amber-800 font-bold leading-normal">
-                                                                    <span className="opacity-75 uppercase text-[9px] tracking-wider block mb-0.5">Reported Issue ({studentDisc.component_name}):</span>
-                                                                    "{studentDisc.message}"
-                                                                </div>
+                                                                 <AlertCircle size={14} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                                                                 <div className="text-xs text-amber-800 font-bold leading-normal">
+                                                                     <span className="opacity-75 uppercase text-[9px] tracking-wider block mb-0.5">Reported Issue ({studentDisc.component_name}):</span>
+                                                                     "{studentDisc.message}"
+                                                                 </div>
                                                             </div>
                                                             <button
                                                                 onClick={() => handleResolveDiscrepancy(studentDisc.id)}
@@ -623,7 +638,7 @@ const InternalExamMarks = () => {
                                                     <input
                                                         type="number"
                                                         max={componentInfo?.max_marks}
-                                                        disabled={entry.isAbsent || ['Published', 'Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus)}
+                                                        disabled={isFieldDisabled}
                                                         value={entry.marks}
                                                         onChange={(e) => {
                                                             let val = e.target.value;
@@ -638,18 +653,18 @@ const InternalExamMarks = () => {
                                                             handleMarkChange(student.id, 'marks', val);
                                                         }}
                                                         className={`w-24 text-center px-4 py-2 bg-white border-2 rounded-xl font-black text-slate-700 outline-none transition-all
-                                                            ${(entry.isAbsent || ['Published', 'Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus)) ? 'opacity-30 bg-slate-50 cursor-not-allowed' : isFailed ? 'border-red-100 bg-red-50/30 text-red-600 focus:border-red-300' : 'border-slate-100 focus:border-indigo-500 focus:shadow-lg focus:shadow-indigo-500/10'}
+                                                            ${isFieldDisabled ? 'opacity-30 bg-slate-50 cursor-not-allowed' : isFailed ? 'border-red-100 bg-red-50/30 text-red-600 focus:border-red-300' : 'border-slate-100 focus:border-indigo-500 focus:shadow-lg focus:shadow-indigo-500/10'}
                                                         `}
                                                         placeholder="Marks"
                                                     />
                                                 </td>
                                                 <td className="px-8 py-4 text-center">
                                                     <button
-                                                        disabled={['Published', 'Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus)}
+                                                        disabled={isAttendanceDisabled}
                                                         onClick={() => handleMarkChange(student.id, 'isAbsent', !entry.isAbsent)}
                                                         className={`px-4 py-2 rounded-xl font-black text-[12px]  tracking-widest transition-all
                                                             ${entry.isAbsent ? 'bg-red-500 text-white shadow-lg shadow-red-200' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}
-                                                            ${['Published', 'Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus) ? 'opacity-50 cursor-not-allowed' : ''}
+                                                            ${isAttendanceDisabled ? 'opacity-50 cursor-not-allowed' : ''}
                                                         `}
                                                     >
                                                         {entry.isAbsent ? 'ABSENT' : 'PRESENT'}
@@ -688,9 +703,9 @@ const InternalExamMarks = () => {
                                 </button>
                                 <button
                                     onClick={() => handleSave(false)}
-                                    disabled={isSaving || ['Published', 'Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus)}
+                                    disabled={isSaving || (['Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus)) || (workflowStatus === 'Published' && unlockedStudentIds.length === 0)}
                                     className={`px-10 py-3 rounded-xl font-black tracking-widest text-sm transition-all flex items-center gap-2
-                                        ${isSaving || ['Published', 'Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm active:scale-95'}
+                                        ${(isSaving || (['Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus)) || (workflowStatus === 'Published' && unlockedStudentIds.length === 0)) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm active:scale-95'}
                                     `}
                                 >
                                     {isSaving ? <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" /> : <Save size={18} />}
