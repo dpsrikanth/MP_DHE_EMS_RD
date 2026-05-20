@@ -276,7 +276,7 @@ const MarksVerification = () => {
 
             {logModalOpen && selectedLogItem && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-indigo-600/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+                    <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
                         <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                             <div>
                                 <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
