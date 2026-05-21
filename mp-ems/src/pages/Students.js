@@ -511,6 +511,70 @@ const Students = () => {
           department: 'Department Code'
         }}
         optionalColumns={['admission_no', 'rollnumber', 'collageName', 'department']}
+        validate={(students) => {
+          const errors = [];
+          const emailsInBatch = new Set();
+          const admissionNosInBatch = new Set();
+          const rollNosInBatch = new Set();
+
+          const admissionNoRegex = /^\d{4}[A-Za-z]{3}\d{3}$/;
+          const rollNoRegex = /^\d{2}[A-Za-z]{2}\d{4}$/;
+          const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+          students.forEach((s, idx) => {
+            const rowNum = idx + 1;
+
+            // Duplicate email in batch check
+            if (s.email) {
+              const emailLower = s.email.toString().trim().toLowerCase();
+              if (!emailRegex.test(emailLower)) {
+                errors.push({ row: rowNum, message: `Invalid email format for '${s.email}'.` });
+              } else if (emailsInBatch.has(emailLower)) {
+                errors.push({ row: rowNum, message: `Duplicate email '${s.email}' found in the upload file.` });
+              } else {
+                emailsInBatch.add(emailLower);
+              }
+            }
+
+            // Format and duplicate Admission No in batch check
+            if (s.admission_no) {
+              const admTrim = s.admission_no.toString().trim();
+              if (admTrim !== '') {
+                if (!admissionNoRegex.test(admTrim)) {
+                  errors.push({
+                    row: rowNum,
+                    message: `Admission No '${s.admission_no}' is invalid. It must strictly follow the format: 4 digits + 3 letters + 3 digits (e.g., 2024CSE011).`
+                  });
+                }
+                if (admissionNosInBatch.has(admTrim.toUpperCase())) {
+                  errors.push({ row: rowNum, message: `Duplicate Admission No '${s.admission_no}' found in the upload file.` });
+                } else {
+                  admissionNosInBatch.add(admTrim.toUpperCase());
+                }
+              }
+            }
+
+            // Format and duplicate Roll Number in batch check
+            if (s.rollnumber) {
+              const rollTrim = s.rollnumber.toString().trim();
+              if (rollTrim !== '') {
+                if (!rollNoRegex.test(rollTrim)) {
+                  errors.push({
+                    row: rowNum,
+                    message: `Roll Number '${s.rollnumber}' is invalid. It must strictly follow the format: 2 digits + 2 letters + 4 digits (e.g., 25BT1311).`
+                  });
+                }
+                if (rollNosInBatch.has(rollTrim.toUpperCase())) {
+                  errors.push({ row: rowNum, message: `Duplicate Roll Number '${s.rollnumber}' found in the upload file.` });
+                } else {
+                  rollNosInBatch.add(rollTrim.toUpperCase());
+                }
+              }
+            }
+          });
+
+          return errors;
+        }}
       />
     </div>
   );

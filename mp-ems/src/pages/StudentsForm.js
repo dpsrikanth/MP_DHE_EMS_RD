@@ -149,13 +149,19 @@ const StudentsForm = () => {
     const errs = {};
     if (!f.first_name || !f.first_name.trim()) errs.first_name = 'First name is required';
     if (!f.admission_no || !f.admission_no.trim()) errs.admission_no = 'Admission No is required';
+    if (f.admission_no && f.admission_no.trim() && !/^\d{4}[A-Za-z]{3}\d{3}$/.test(f.admission_no.trim())) errs.admission_no = 'Admission No must follow the format: 4 digits + 3 letters + 3 digits (e.g., 2024CSE011)';
+    if (f.rollnumber && f.rollnumber.trim() && !/^\d{2}[A-Za-z]{2}\d{4}$/.test(f.rollnumber.trim())) errs.rollnumber = 'Roll Number must follow the format: 2 digits + 2 letters + 4 digits (e.g., 25BT1311)';
     if (!f.policies || !f.policies.trim()) errs.policies = 'Policy is required';
     if (!f.programName || !f.programName.trim()) errs.programName = 'Program is required';
     if (!f.department || !f.department.trim()) errs.department = 'Department is required';
     if (!f.admission_year) errs.admission_year = 'Admission year is required';
     if (!f.semister || !f.semister.trim()) errs.semister = 'Semester is required';
     if (!f.batch || !f.batch.trim()) errs.batch = 'Academic batch is required';
-    if (f.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) errs.email = 'Invalid email';
+    if (!f.email || !f.email.trim()) {
+      errs.email = 'Email is required';
+    } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(f.email.trim())) {
+      errs.email = 'Please enter a valid email address (e.g., student@example.com)';
+    }
     if (f.contactNumber && !/^\d{10}$/.test(f.contactNumber)) errs.contactNumber = 'Contact must be 10 digits';
     return errs;
   };

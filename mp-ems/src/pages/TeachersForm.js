@@ -108,7 +108,11 @@ const TeachersForm = () => {
   const validate = (f) => {
     const errs = {};
     if (!f.name) errs.name = 'Name is required';
-    if (!f.email) errs.email = 'Email is required';
+    if (!f.email) {
+  errs.email = 'Email is required';
+} else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(f.email)) {
+  errs.email = 'Invalid email format';
+}
     if (!f.designation_id) errs.designation_id = 'Designation is required';
     if (!f.college_id) errs.college_id = 'College is required';
     if (!f.department_id) errs.department_id = 'Department is required';
@@ -176,7 +180,7 @@ const TeachersForm = () => {
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSave}>
+        <form onSubmit={handleSave} noValidate>
           <div className="form-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
             {errorString && (
               <div className="form-error-banner">
@@ -199,7 +203,7 @@ const TeachersForm = () => {
               <div className="form-section__title"><span>Personal Information</span></div>
               <div className="form-grid form-grid--2">
                 <Field label="Full Name" name="name" icon={User} placeholder="e.g. Dr. Jane Doe" required half form={form} errors={errors} handleChange={handleChange} />
-                <Field label="Official Email" name="email" type="email" icon={Mail} placeholder="faculty@college.edu" required half form={form} errors={errors} handleChange={handleChange} />
+                <Field label="Official Email" name="email" type="text" icon={Mail} placeholder="faculty@college.edu" required half form={form} errors={errors} handleChange={handleChange} />
                 <Field label="First Name" name="first_name" icon={User} placeholder="First" half form={form} errors={errors} handleChange={handleChange} />
                 <Field label="Last Name" name="last_name" icon={User} placeholder="Last" half form={form} errors={errors} handleChange={handleChange} />
                 <Field label="Date of Birth" name="dob" type="date" icon={Calendar} required half form={form} errors={errors} handleChange={handleChange} />

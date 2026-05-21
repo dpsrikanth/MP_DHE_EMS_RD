@@ -1980,6 +1980,7 @@ const bulkUploadStudents = async (req, res) => {
 
     // Phase 1: Validate ALL rows first
     let errors = [];
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     const emailsInBatch = new Set();
     const admissionNosInBatch = new Set();
     const rollNosInBatch = new Set();
@@ -1989,6 +1990,7 @@ const bulkUploadStudents = async (req, res) => {
       const rowNum = i + 1;
       if (!s.name) errors.push({ row: rowNum, message: "Missing required field: name" });
       if (!s.email) errors.push({ row: rowNum, message: "Missing required field: email" });
+          else if (!emailRegex.test(s.email.trim())) errors.push({ row: rowNum, message: "Invalid email format" });
       if (!s.programName) errors.push({ row: rowNum, message: "Missing required field: programName" });
       if (!s.semister) errors.push({ row: rowNum, message: "Missing required field: semister" });
       if (!s.admission_year) errors.push({ row: rowNum, message: "Missing required field: admission_year" });
@@ -2001,16 +2003,38 @@ const bulkUploadStudents = async (req, res) => {
         emailsInBatch.add(s.email.toLowerCase());
       }
       if (s.admission_no) {
-        if (admissionNosInBatch.has(s.admission_no.toString().trim())) {
-          errors.push({ row: rowNum, message: `Duplicate Admission No ${s.admission_no} found in the upload file.` });
+        const admTrim = s.admission_no.toString().trim();
+        if (admTrim !== '') {
+          const admissionNoRegex = /^\d{4}[A-Za-z]{3}\d{3}$/;
+          if (!admissionNoRegex.test(admTrim)) {
+            errors.push({
+              row: rowNum,
+              message: `Admission No '${s.admission_no}' is invalid. It must strictly follow the format: 4 digits + 3 letters + 3 digits (e.g., 2024CSE011).`
+            });
+          }
+          if (admissionNosInBatch.has(admTrim.toUpperCase())) {
+            errors.push({ row: rowNum, message: `Duplicate Admission No '${s.admission_no}' found in the upload file.` });
+          } else {
+            admissionNosInBatch.add(admTrim.toUpperCase());
+          }
         }
-        admissionNosInBatch.add(s.admission_no.toString().trim());
       }
       if (s.rollnumber) {
-        if (rollNosInBatch.has(s.rollnumber.toString().trim())) {
-          errors.push({ row: rowNum, message: `Duplicate Roll No ${s.rollnumber} found in the upload file.` });
+        const rollTrim = s.rollnumber.toString().trim();
+        if (rollTrim !== '') {
+          const rollNoRegex = /^\d{2}[A-Za-z]{2}\d{4}$/;
+          if (!rollNoRegex.test(rollTrim)) {
+            errors.push({
+              row: rowNum,
+              message: `Roll Number '${s.rollnumber}' is invalid. It must strictly follow the format: 2 digits + 2 letters + 4 digits (e.g., 25BT1311).`
+            });
+          }
+          if (rollNosInBatch.has(rollTrim.toUpperCase())) {
+            errors.push({ row: rowNum, message: `Duplicate Roll No '${s.rollnumber}' found in the upload file.` });
+          } else {
+            rollNosInBatch.add(rollTrim.toUpperCase());
+          }
         }
-        rollNosInBatch.add(s.rollnumber.toString().trim());
       }
 
       // Check for duplicates in the database (only active students)
@@ -2021,17 +2045,17 @@ const bulkUploadStudents = async (req, res) => {
         }
       }
       if (s.admission_no) {
-        const cleanVal = s.admission_no.toString().trim();
-        const checkRes = await client.query('SELECT id FROM public.students WHERE TRIM(admission_no) = $1 AND "deleteStatus" = true', [cleanVal]);
+        const cleanVal = s.admission_no.toString().trim().toUpperCase();
+        const checkRes = await client.query('SELECT id FROM public.students WHERE UPPER(TRIM(admission_no)) = $1 AND "deleteStatus" = true', [cleanVal]);
         if (checkRes.rows.length > 0) {
-          errors.push({ row: rowNum, message: `Admission No ${cleanVal} already exists as an active record.` });
+          errors.push({ row: rowNum, message: `Admission No ${s.admission_no} already exists as an active record.` });
         }
       }
       if (s.rollnumber) {
-        const cleanVal = s.rollnumber.toString().trim();
-        const checkRes = await client.query('SELECT id FROM public.students WHERE TRIM(rollnumber) = $1 AND "deleteStatus" = true', [cleanVal]);
+        const cleanVal = s.rollnumber.toString().trim().toUpperCase();
+        const checkRes = await client.query('SELECT id FROM public.students WHERE UPPER(TRIM(rollnumber)) = $1 AND "deleteStatus" = true', [cleanVal]);
         if (checkRes.rows.length > 0) {
-          errors.push({ row: rowNum, message: `Roll No ${cleanVal} already exists as an active record.` });
+          errors.push({ row: rowNum, message: `Roll No ${s.rollnumber} already exists as an active record.` });
         }
       }
     }

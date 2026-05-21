@@ -50,8 +50,9 @@ const InfoItem = ({ label, value, isMono = false, className = "" }) => (
 const Teachers = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [existingEmails, setExistingEmails] = useState([]);
   const [error, setError] = useState(null);
-
   const availableColumns = [
     { key: 'id', label: 'ID' },
     { key: 'name', label: 'Name', mandatory: true },
@@ -207,10 +208,36 @@ const Teachers = () => {
     return errs;
   };
 
+  // Validation for bulk import rows (email format)
+  const bulkValidate = (rows) => {
+    const errors = [];
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    rows.forEach((row, idx) => {
+      const email = row.email?.toString()?.trim();
+      const rowNumber = idx + 2; // accounting for header row
+      if (!email) {
+        errors.push({ row: rowNumber, message: 'Email is required' });
+      } else {
+        if (!emailRegex.test(email)) {
+          errors.push({ row: rowNumber, message: `Invalid email format: ${email}` });
+        }
+        // Duplicate check against existing emails (case‑insensitive)
+        if (existingEmails.includes(email.toLowerCase())) {
+          errors.push({ row: rowNumber, message: `Email already exists: ${email}` });
+        }
+      }
+    });
+    return errors;
+  };
+
   const fetchData = useCallback(async () => {
     try {
       const result = await masterDataApi.getTeachers();
-      setData(result || []);
+      const teachers = result || [];
+      setData(teachers);
+      // Populate existing emails for duplicate check (lowercased)
+      const emails = teachers.map(t => (t.email || '').toLowerCase());
+      setExistingEmails(emails);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     } finally {
@@ -829,7 +856,7 @@ const Teachers = () => {
           'address',
           'status'
         ]}
-      />
+      validate={bulkValidate} />
     </div>
   );
 };
