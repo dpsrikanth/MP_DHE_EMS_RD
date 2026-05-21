@@ -799,8 +799,36 @@ const Teachers = () => {
         expectedColumns={{
           name: 'Name',
           email: 'Email',
-          departmentCode: 'Department Code'
+          departmentCode: ['Department Code', 'Department'],
+          designation: 'Designation',
+          designation_type: ['Designation Type', 'Staff Type', 'Category'],
+          qualification: 'Qualification',
+          experience: 'Experience',
+          specialization: 'Specialization',
+          pan_no: ['PAN Number', 'PAN No', 'PAN'],
+          aadhaar_no: ['Aadhaar Number', 'Aadhaar No', 'Aadhaar'],
+          dob: ['Date of Birth', 'DOB'],
+          gender: 'Gender',
+          joining_date: ['Joining Date', 'Date of Joining'],
+          phone: ['Phone Number', 'Phone', 'Contact Number', 'Mobile'],
+          address: 'Address',
+          status: 'Status'
         }}
+        optionalColumns={[
+          'designation',
+          'designation_type',
+          'qualification',
+          'experience',
+          'specialization',
+          'pan_no',
+          'aadhaar_no',
+          'dob',
+          'gender',
+          'joining_date',
+          'phone',
+          'address',
+          'status'
+        ]}
       />
     </div>
   );

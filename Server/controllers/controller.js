@@ -2122,6 +2122,12 @@ const bulkUploadStudents = async (req, res) => {
 
 // Start: Bulk Teacher API
 const bulkUploadTeachers = async (req, res) => {
+  const cleanVal = (val) => {
+    if (val === undefined || val === null) return null;
+    const str = String(val).trim();
+    return str === '' ? null : str;
+  };
+
   try {
     const { teachers } = req.body;
     if (!teachers || !Array.isArray(teachers) || teachers.length === 0) {
@@ -2135,6 +2141,13 @@ const bulkUploadTeachers = async (req, res) => {
     // We will collect resolved department IDs here to use in Phase 2
     const resolvedDepartments = {};
     const emailsInFile = new Set();
+
+    // Fetch all designations and build a map
+    const desigListRes = await client.query("SELECT id, LOWER(TRIM(designation_name)) as name, designation_type FROM master_designations");
+    const designMap = {};
+    for (const row of desigListRes.rows) {
+      designMap[row.name] = { id: row.id, type: row.designation_type };
+    }
 
     // Fetch a default designation
     const desigRes = await client.query("SELECT id FROM master_designations WHERE status = 'Active' LIMIT 1");
@@ -2207,17 +2220,74 @@ const bulkUploadTeachers = async (req, res) => {
           userId = userResult.rows[0].id;
         }
 
+        // Resolve designation ID dynamically
+        let designationId = defaultDesignationId;
+        const rawDesig = cleanVal(t.designation);
+        if (rawDesig) {
+          const key = rawDesig.toLowerCase();
+          if (designMap[key]) {
+            designationId = designMap[key].id;
+          } else {
+            // Check if sheet specifies designation type (default to Teaching)
+            const rawType = cleanVal(t.designation_type || t.designationType) || 'Teaching';
+            let dType = 'Teaching';
+            if (rawType.toLowerCase().includes('non')) {
+              dType = 'Non-Teaching';
+            }
+            // Create designation dynamically
+            const newDesigRes = await dbClient.query(
+              `INSERT INTO public.master_designations (designation_name, status, designation_type)
+               VALUES ($1, 'Active', $2) RETURNING id`,
+              [rawDesig, dType]
+            );
+            designationId = newDesigRes.rows[0].id;
+            designMap[key] = { id: designationId, type: dType };
+          }
+        }
+
+        // Parse experience
+        let expYears = 0;
+        if (t.experience !== undefined && t.experience !== null && t.experience !== '') {
+          const parsed = parseInt(t.experience, 10);
+          if (!isNaN(parsed)) expYears = parsed;
+        }
+
+        const statusVal = cleanVal(t.status) || 'Active';
+        const qualificationVal = cleanVal(t.qualification);
+        const specializationVal = cleanVal(t.specialization);
+        const panVal = cleanVal(t.pan_no);
+        const aadhaarVal = cleanVal(t.aadhaar_no);
+        const dobVal = cleanVal(t.dob);
+        const genderVal = cleanVal(t.gender);
+        const joiningDateVal = cleanVal(t.joining_date);
+        const phoneVal = cleanVal(t.phone);
+        const addressVal = cleanVal(t.address);
+
         // Create master teacher record linked to the user
         await dbClient.query(
           `INSERT INTO public.master_teachers (
-            user_id, employee_code, college_id, department_id, designation_id, status
-          ) VALUES ($1, $2, $3, $4, $5, 'Active')`,
+            user_id, employee_code, college_id, department_id, designation_id, status,
+            qualification, experience_years, specialization, pan_no, aadhaar_no, dob, gender,
+            joining_date, phone, address, email
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
           [
             userId,
             finalEmployeeCode,
             college_id,
             department_id,
-            defaultDesignationId
+            designationId,
+            statusVal,
+            qualificationVal,
+            expYears,
+            specializationVal,
+            panVal,
+            aadhaarVal,
+            dobVal,
+            genderVal,
+            joiningDateVal,
+            phoneVal,
+            addressVal,
+            cleanVal(t.email)
           ]
         );
       }

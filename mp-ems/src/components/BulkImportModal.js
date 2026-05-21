@@ -32,7 +32,13 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, onSuccess, endpoint
     const lookup = {};
     Object.entries(expectedColumns).forEach(([dbKey, readableName]) => {
       lookup[dbKey.toLowerCase()] = dbKey;
-      lookup[readableName.toLowerCase()] = dbKey;
+      if (Array.isArray(readableName)) {
+        readableName.forEach(name => {
+          lookup[name.toLowerCase()] = dbKey;
+        });
+      } else {
+        lookup[readableName.toLowerCase()] = dbKey;
+      }
     });
     return lookup;
   };
@@ -47,9 +53,10 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, onSuccess, endpoint
     requiredDbKeys.forEach(dbKey => {
       if (optionalColumns.includes(dbKey)) return; // Skip if optional
       const readableName = expectedColumns[dbKey];
-      const found = lowerHeaders.some(h => h === dbKey.toLowerCase() || h === readableName.toLowerCase());
+      const found = lowerHeaders.some(h => lookup[h] === dbKey);
       if (!found) {
-        missing.push(readableName);
+        const displayLabel = Array.isArray(readableName) ? readableName[0] : readableName;
+        missing.push(displayLabel);
       }
     });
 
