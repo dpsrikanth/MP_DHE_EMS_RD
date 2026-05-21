@@ -2799,6 +2799,18 @@ const submitMarksDiscrepancy = async (req, res) => {
     const collegeId = colRes.rows.length > 0 ? colRes.rows[0].id : null;
     const semesterId = semRes.rows.length > 0 ? semRes.rows[0].id : null;
 
+    // Check if HOD has approved the marks for this subject — block correction requests if so
+    if (collegeId && semesterId) {
+      const approvalCheck = await client.query(
+        `SELECT status FROM marks_workflow_status 
+         WHERE subject_id = $1 AND college_id = $2 AND semester_id = $3 AND status = 'Approved'`,
+        [subject_id, collegeId, semesterId]
+      );
+      if (approvalCheck.rows.length > 0) {
+        return res.status(403).json({ message: "Cannot raise correction requests. The internal assessment marks have already been approved by the HOD." });
+      }
+    }
+
     // Check if there is already a pending discrepancy for this student, subject, and component
     const checkRes = await client.query(
       `SELECT id FROM student_mark_discrepancies 
