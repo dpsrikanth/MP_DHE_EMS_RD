@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User, Mail, Shield, Building2, School, GraduationCap, MapPin, Globe } from 'lucide-react';
+import { authApi } from '../api/authApi';
 
 /**
  * Profile Page Component
@@ -17,6 +18,8 @@ const Profile = () => {
 
   const isStudent = roleName.toLowerCase() === 'student';
   const isFaculty = roleName.toLowerCase() === 'faculty' || roleName.toLowerCase() === 'teacher' || roleName === 'HOD';
+
+
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
@@ -134,10 +137,8 @@ const Profile = () => {
             <p className="text-slate-400 text-sm font-medium mb-8 leading-relaxed">
               Your account is protected with enterprise-grade encryption. Ensure your password is kept confidential.
             </p>
-            <button className="w-full bg-white/10 hover:bg-white/20 text-white font-black text-[13px]  tracking-widest py-4 rounded-2xl transition-all border border-white/10">
-              Security Logs
-            </button>
           </div>
+        
 
           <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
              <div className="flex items-center gap-3 mb-6">

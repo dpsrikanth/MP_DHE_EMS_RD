@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { initiateRegistration, verifyOtp, setInitialPassword, changePassword, getDashboardStats, getUsers, createUser, updateUser, deleteUser, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, createRole, updateRole, deleteRole, Login, refreshToken, getUniversities, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, updateTeacher, getExams, createExam, updateExam, deleteExam, publishExam, toggleStudentApplication, getMarks, getMasterSemesters, createMasterSemester, updateMasterSemester, deleteMasterSemester, getMasterSemester, getMasterSubjects, createMasterSubject, updateMasterSubject, deleteMasterSubject, getMasterSubject, getMasterPrograms, createMasterProgram, getMasterProgram, updateMasterProgram, deleteMasterProgram, getMasterPolicies, getMasterPolicy, createMasterPolicy, updateMasterPolicy, deleteMasterPolicy, getCollegeMasterPolicy, createStudent, bulkUploadStudents, bulkUploadTeachers, updateStudent, deleteStudent, getMasterTeachers, getMasterTeacher, createMasterTeacher, updateMasterTeacher, deleteMasterTeacher, getMasterDesignations, createMasterDesignation, getMasterDepartments, createMasterDepartment, getCollegeSemesters, getCollegePrograms, getCollegePolicies, getCollegeAcademicYears, getMasterDepartment, updateMasterDepartment, deleteMasterDepartment, getStudentsForMarks, saveTeacherMarks, bulkUploadMarks, getMarksForApproval, approveRejectMarks, getMasterBatches, createMasterBatch, updateMasterBatch, deleteMasterBatch, getSubjectMappings, createSubjectMapping, updateSubjectMapping, deleteSubjectMapping, getStudentExams, registerForExam, publishResults, getStudentResults, getStudentAttendance, getStudentAttendanceDetail, getStudentAttendanceHistory, getHallTicketData, getResultSheetData, forgotPassword, resetPassword, mapMasterProgram, unmapMasterProgram, mapMasterSemester, unmapMasterSemester, mapMasterAcademicYear, unmapMasterAcademicYear, mapMasterPolicy, unmapMasterPolicy, getNextAdmissionSerial, submitMarksDiscrepancy, getStudentDiscrepancies, getStudentInternalExamAttendance, getAdminInternalExamAttendance, getFacultyInternalExamAttendance } = require('../controllers/controller');
+const { initiateRegistration, verifyOtp, setInitialPassword, changePassword, getDashboardStats, getUsers, createUser, updateUser, deleteUser, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, createRole, updateRole, deleteRole, Login, refreshToken, getUniversities, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, updateTeacher, getExams, createExam, updateExam, deleteExam, publishExam, toggleStudentApplication, getMarks, getMasterSemesters, createMasterSemester, updateMasterSemester, deleteMasterSemester, getMasterSemester, getMasterSubjects, createMasterSubject, updateMasterSubject, deleteMasterSubject, getMasterSubject, getMasterPrograms, createMasterProgram, getMasterProgram, updateMasterProgram, deleteMasterProgram, getMasterPolicies, getMasterPolicy, createMasterPolicy, updateMasterPolicy, deleteMasterPolicy, getCollegeMasterPolicy, createStudent, bulkUploadStudents, bulkUploadTeachers, updateStudent, deleteStudent, getMasterTeachers, getMasterTeachersAuditLogs, getMasterTeacher, createMasterTeacher, updateMasterTeacher, deleteMasterTeacher, getMasterDesignations, createMasterDesignation, getMasterDepartments, createMasterDepartment, getCollegeSemesters, getCollegePrograms, getCollegePolicies, getCollegeAcademicYears, getMasterDepartment, updateMasterDepartment, deleteMasterDepartment, getStudentsForMarks, saveTeacherMarks, bulkUploadMarks, getMarksForApproval, approveRejectMarks, getMasterBatches, createMasterBatch, updateMasterBatch, deleteMasterBatch, getSubjectMappings, createSubjectMapping, updateSubjectMapping, deleteSubjectMapping, getStudentExams, registerForExam, publishResults, getStudentResults, getStudentAttendance, getStudentAttendanceDetail, getStudentAttendanceHistory, getHallTicketData, getResultSheetData, forgotPassword, resetPassword, mapMasterProgram, unmapMasterProgram, mapMasterSemester, unmapMasterSemester, mapMasterAcademicYear, unmapMasterAcademicYear, mapMasterPolicy, unmapMasterPolicy, getNextAdmissionSerial, submitMarksDiscrepancy, getStudentDiscrepancies, getStudentInternalExamAttendance, getAdminInternalExamAttendance, getFacultyInternalExamAttendance } = require('../controllers/controller');
 const { getMasters, getUniversityConfig, updateUniversityConfig, getCollegeConfig, updateCollegeConfig } = require('../controllers/masterController');
 const { getSmtpConfig, updateSmtpConfig } = require('../controllers/configController');
 const { autoAllocateSeats, clearAssignments, getSeatingArrangements, lockSeating } = require('../controllers/seatController');
@@ -119,6 +119,7 @@ router.get('/demo/apply-grace', async (req, res) => {
  */
 router.post('/change-password', verifyToken, changePassword);
 
+
 /**
  * @swagger
  * tags:
@@ -224,6 +225,7 @@ router.post('/login', authLimiter, validateLogin, Login);
 router.post('/refresh-token', authLimiter, refreshToken);
 router.post('/forgot-password', authLimiter, forgotPassword);
 router.post('/reset-password', authLimiter, resetPassword);
+
 
 /**
  * @swagger
@@ -1202,6 +1204,7 @@ router.get('/collage-master-policies/:collegeId', verifyToken, getCollegeMasterP
  *         description: Master teacher deleted
  */
 router.get('/master-teachers', verifyToken, getMasterTeachers);
+router.get('/master-teachers/audit-logs', verifyToken, getMasterTeachersAuditLogs);
 router.get('/master-teachers/:id', verifyToken, getMasterTeacher);
 router.post('/master-teachers', verifyToken, createMasterTeacher);
 router.put('/master-teachers/:id', verifyToken, updateMasterTeacher);

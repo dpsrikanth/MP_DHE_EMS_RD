@@ -392,6 +392,8 @@ const getSubjects = async (req, res) => {
       whereClauses.push(`s.semester_id = $${params.length}`);
     }
 
+
+
     // Role-based filtering: university_admin/college_admin should only see subjects 
     // belonging to their university's programs.
     if ((role === 'university_admin' || role === 'college_admin') && university_id) {
@@ -417,6 +419,22 @@ const getSubjects = async (req, res) => {
   } catch (error) {
     console.error("Get subjects error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Standalone function to retrieve login history for the authenticated user
+const getLoginHistory = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const result = await client.query(
+      `SELECT id, login_time, ip_address, user_agent, status FROM public.login_history WHERE user_id = $1 ORDER BY login_time DESC LIMIT 100`,
+      [userId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Login history error', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -764,6 +782,11 @@ const changePassword = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+// -------------------------------------------------
+// Get login history for the authenticated user
+// -------------------------------------------------
+
 
 const getUniversities = async (req, res) => {
   try {
@@ -1681,9 +1704,9 @@ const createExam = async (req, res) => {
         return res.status(400).json({ message: `Exams cannot be scheduled on Sundays (${dStr}). Sundays are institutional holidays.` });
       }
     }
-    
+
     if (new Set(allDates).size !== allDates.length) {
-       return res.status(400).json({ message: "Duplicate exam dates detected. Each subject must be scheduled on a unique date." });
+      return res.status(400).json({ message: "Duplicate exam dates detected. Each subject must be scheduled on a unique date." });
     }
 
     // --- Capacity Validation Logic ---
@@ -1822,9 +1845,9 @@ const updateExam = async (req, res) => {
         return res.status(400).json({ message: `Exams cannot be scheduled on Sundays (${dStr}). Sundays are institutional holidays.` });
       }
     }
-    
+
     if (new Set(allDates).size !== allDates.length) {
-       return res.status(400).json({ message: "Duplicate exam dates detected. Each subject must be scheduled on a unique date." });
+      return res.status(400).json({ message: "Duplicate exam dates detected. Each subject must be scheduled on a unique date." });
     }
 
     // --- Capacity Validation Logic (Same as creation) ---
@@ -1980,7 +2003,7 @@ const bulkUploadStudents = async (req, res) => {
 
     // Phase 1: Validate ALL rows first
     let errors = [];
-      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     const emailsInBatch = new Set();
     const admissionNosInBatch = new Set();
     const rollNosInBatch = new Set();
@@ -1990,7 +2013,7 @@ const bulkUploadStudents = async (req, res) => {
       const rowNum = i + 1;
       if (!s.name) errors.push({ row: rowNum, message: "Missing required field: name" });
       if (!s.email) errors.push({ row: rowNum, message: "Missing required field: email" });
-          else if (!emailRegex.test(s.email.trim())) errors.push({ row: rowNum, message: "Invalid email format" });
+      else if (!emailRegex.test(s.email.trim())) errors.push({ row: rowNum, message: "Invalid email format" });
       if (!s.programName) errors.push({ row: rowNum, message: "Missing required field: programName" });
       if (!s.semister) errors.push({ row: rowNum, message: "Missing required field: semister" });
       if (!s.admission_year) errors.push({ row: rowNum, message: "Missing required field: admission_year" });
@@ -2315,6 +2338,14 @@ const bulkUploadTeachers = async (req, res) => {
           ]
         );
       }
+
+      // Audit Log
+      await dbClient.query(
+        `INSERT INTO audit_logs (user_id, action, entity_type, new_values)
+         VALUES ($1, 'BULK_UPLOAD_TEACHERS', 'master_teachers', $2)`,
+        [req.user.id, JSON.stringify({ imported_count: teachers.length })]
+      );
+
       await dbClient.query('COMMIT');
       res.status(200).json({ message: `Successfully imported ${teachers.length} teacher profiles.`, successes: teachers.length, errors: [] });
     } catch (txError) {
@@ -2456,8 +2487,8 @@ const publishResults = async (req, res) => {
       const unready = seriesRes.rows.filter(r => !r.is_external_submitted);
       if (unready.length > 0) {
         const externalPending = unready.map(r => r.subject_name);
-        return res.status(400).json({ 
-          message: `Cannot publish results: External marks pending for: ${externalPending.join(', ')}` 
+        return res.status(400).json({
+          message: `Cannot publish results: External marks pending for: ${externalPending.join(', ')}`
         });
       }
     }
@@ -2664,7 +2695,7 @@ const getStudentAttendance = async (req, res) => {
     // Find College, Program, and Semester IDs
     const colRes = await client.query('SELECT id FROM colleges WHERE name ILIKE $1', [colName]);
     const progRes = await client.query('SELECT id FROM master_programs WHERE name ILIKE $1', [progName]);
-    
+
     // Robust semester matching: handle "3" vs "Semester 3" vs "III Semester"
     let semRes = await client.query('SELECT id, semester_name FROM master_semesters WHERE semester_name ILIKE $1', [semName]);
     if (semRes.rows.length === 0) {
@@ -2819,7 +2850,7 @@ const submitMarksDiscrepancy = async (req, res) => {
     // Find college and semester to store robust metadata
     const colRes = await client.query('SELECT id FROM colleges WHERE name ILIKE $1', [student.collageName]);
     const semRes = await client.query('SELECT id FROM master_semesters WHERE semester_name ILIKE $1 OR semester_name ILIKE $2', [student.semister, `%${student.semister}%`]);
-    
+
     const collegeId = colRes.rows.length > 0 ? colRes.rows[0].id : null;
     const semesterId = semRes.rows.length > 0 ? semRes.rows[0].id : null;
 
@@ -2970,7 +3001,7 @@ const getStudentInternalExamAttendance = async (req, res) => {
           attendance_percentage: total > 0 ? Math.round((present / total) * 100) : 0
         };
       });
-      const semTotal   = subjects.reduce((a, s) => a + s.total_components, 0);
+      const semTotal = subjects.reduce((a, s) => a + s.total_components, 0);
       const semPresent = subjects.reduce((a, s) => a + s.present_count, 0);
       return {
         semester_name: sem.semester_name,
@@ -3071,7 +3102,7 @@ const getAdminInternalExamAttendance = async (req, res) => {
         const present = sub.components.filter(c => c.status === 'Present').length;
         return { ...sub, total_components: total, present_count: present, absent_count: total - present, attendance_percentage: total > 0 ? Math.round((present / total) * 100) : 0 };
       });
-      const semTotal   = subjects.reduce((a, s) => a + s.total_components, 0);
+      const semTotal = subjects.reduce((a, s) => a + s.total_components, 0);
       const semPresent = subjects.reduce((a, s) => a + s.present_count, 0);
       return {
         ...stu,
@@ -3151,26 +3182,26 @@ const getFacultyInternalExamAttendance = async (req, res) => {
       const components = compRes.rows.map(r => ({
         component_name: r.component_name,
         total_students: parseInt(r.total_students),
-        present_count:  parseInt(r.present_count),
-        absent_count:   parseInt(r.absent_count),
+        present_count: parseInt(r.present_count),
+        absent_count: parseInt(r.absent_count),
         attendance_percentage: parseInt(r.total_students) > 0
           ? Math.round((parseInt(r.present_count) / parseInt(r.total_students)) * 100)
           : 0
       }));
 
-      const grandTotal   = components.reduce((a, c) => a + c.total_students, 0);
+      const grandTotal = components.reduce((a, c) => a + c.total_students, 0);
       const grandPresent = components.reduce((a, c) => a + c.present_count, 0);
 
       results.push({
-        subject_id:   sub.subject_id,
+        subject_id: sub.subject_id,
         subject_name: sub.subject_name,
         subject_code: sub.subject_code,
-        semester_id:  sub.semester_id,
+        semester_id: sub.semester_id,
         semester_name: sub.semester_name,
         components,
-        total_entries:   grandTotal,
-        total_present:   grandPresent,
-        total_absent:    grandTotal - grandPresent,
+        total_entries: grandTotal,
+        total_present: grandPresent,
+        total_absent: grandTotal - grandPresent,
         overall_percentage: grandTotal > 0 ? Math.round((grandPresent / grandTotal) * 100) : 0
       });
     }
@@ -3318,7 +3349,7 @@ const bulkUploadMarks = async (req, res) => {
   const dbClient = await client.connect();
   try {
     const { subject_id, exam_id, academic_year_id, marks } = req.body;
-    
+
     if (!subject_id || !marks || !Array.isArray(marks)) {
       return res.status(400).json({ message: "Invalid payload. Subject and Marks data are required." });
     }
@@ -3327,12 +3358,12 @@ const bulkUploadMarks = async (req, res) => {
     const actual_teacher_id = teacherCheck.rows.length > 0 ? teacherCheck.rows[0].id : null;
 
     await dbClient.query("BEGIN");
-    
+
     let errors = [];
     for (let i = 0; i < marks.length; i++) {
       const record = marks[i];
       const rowNum = i + 1;
-      
+
       const enrollmentNo = record.enrollment_number || record.rollnumber;
       if (!enrollmentNo) {
         errors.push({ row: rowNum, message: "Missing Enrollment No / Roll Number" });
@@ -3667,10 +3698,10 @@ const createMasterSubject = async (req, res) => {
 };
 
 const getMasterSubject = async (req, res) => {
-    try {
-      const { id } = req.params;
-      const result = await client.query(
-        `SELECT id, subject_code, name, status, created_at,
+  try {
+    const { id } = req.params;
+    const result = await client.query(
+      `SELECT id, subject_code, name, status, created_at,
                 program_id, semester_id, mapping_type, is_mandatory, 
                 has_examination, periods_per_week, teacher_id, credit,
                 COALESCE(
@@ -3680,10 +3711,10 @@ const getMasterSubject = async (req, res) => {
                  '[]'::json) as department_ids
          FROM master_subjects 
          WHERE id = $1`,
-        [id]
-      );
-      if (result.rows.length === 0) return res.status(404).json({ message: "Master subject not found" });
-      res.json(result.rows[0]);
+      [id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: "Master subject not found" });
+    res.json(result.rows[0]);
   } catch (error) {
     console.error("Get master subject error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -4397,6 +4428,28 @@ const createMasterTeacher = async (req, res) => {
       [teacherId]
     );
 
+    // Audit Log
+    await dbClient.query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_values)
+       VALUES ($1, 'CREATE_TEACHER', 'master_teachers', $2, $3)`,
+      [
+        req.user.id,
+        teacherId,
+        JSON.stringify({
+          employee_code: finalEmployeeCode,
+          name,
+          email,
+          college_id,
+          department_id,
+          designation_id,
+          qualification,
+          experience_years: experience,
+          specialization,
+          status: status || 'Active'
+        })
+      ]
+    );
+
     await dbClient.query('COMMIT');
     res.status(201).json({
       success: true,
@@ -4432,7 +4485,11 @@ const updateMasterTeacher = async (req, res) => {
   const dbClient = await client.connect();
   try {
     // Get existing teacher and check permissions
-    let checkQuery = "SELECT user_id, college_id, department_id FROM master_teachers WHERE id = $1";
+    let checkQuery = `
+      SELECT mt.*, u.name AS user_name, u.email AS user_email
+      FROM master_teachers mt
+      LEFT JOIN users u ON mt.user_id = u.id
+      WHERE mt.id = $1`;
     const existing = await dbClient.query(checkQuery, [id]);
 
     if (existing.rows.length === 0) {
@@ -4547,6 +4604,43 @@ const updateMasterTeacher = async (req, res) => {
       [id]
     );
 
+    // Audit Log
+    const fieldsToTrack = [
+      'name', 'email', 'college_id', 'department_id', 'designation_id', 'qualification', 'experience', 'specialization',
+      'pan_no', 'aadhaar_no', 'dob', 'gender', 'joining_date', 'phone', 'address', 'status',
+      'employee_category_name', 'first_name', 'middle_name', 'last_name', 'job_title', 'employee_position_name',
+      'employee_department_name', 'employee_grade_name', 'experience_detail', 'experience_months', 'marital_status',
+      'father_name', 'mother_name', 'spouse_name', 'blood_group', 'country_name', 'home_address_line1', 'home_city',
+      'home_state', 'home_country_name', 'office_phone1', 'office_phone2', 'office_state', 'home_phone1', 'fax'
+    ];
+
+    const oldValues = {};
+    const newValues = {};
+
+    fieldsToTrack.forEach(field => {
+      if (req.body[field] !== undefined) {
+        const dbField = field === 'experience' ? 'experience_years' : (field === 'name' ? 'user_name' : field);
+        let oldVal = existing.rows[0][dbField];
+        let newVal = req.body[field];
+
+        if (oldVal === null) oldVal = undefined;
+        if (newVal === '') newVal = null;
+
+        if (oldVal != newVal) {
+          oldValues[field] = existing.rows[0][dbField];
+          newValues[field] = req.body[field];
+        }
+      }
+    });
+
+    if (Object.keys(newValues).length > 0) {
+      await dbClient.query(
+        `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_values, new_values)
+         VALUES ($1, 'UPDATE_TEACHER', 'master_teachers', $2, $3, $4)`,
+        [req.user.id, id, JSON.stringify(oldValues), JSON.stringify(newValues)]
+      );
+    }
+
     await dbClient.query('COMMIT');
     res.json({
       success: true,
@@ -4564,10 +4658,28 @@ const updateMasterTeacher = async (req, res) => {
 
 const deleteMasterTeacher = async (req, res) => {
   const { id } = req.params;
+  const dbClient = await client.connect();
 
   try {
+    // Fetch old values first for deletion audit (especially status, name, employee_code, etc.)
+    const oldRes = await dbClient.query(
+      `SELECT mt.id, mt.status, u.name, mt.employee_code 
+       FROM master_teachers mt
+       LEFT JOIN users u ON mt.user_id = u.id
+       WHERE mt.id = $1`,
+      [id]
+    );
+
+    if (oldRes.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Master teacher not found" });
+    }
+
+    const oldVal = oldRes.rows[0];
+
+    await dbClient.query('BEGIN');
+
     // Soft delete: Update status to 'Inactive' instead of deleting the record
-    const result = await client.query(
+    const result = await dbClient.query(
       `UPDATE master_teachers 
        SET status = 'Inactive', updated_at = CURRENT_TIMESTAMP 
        WHERE id = $1 
@@ -4575,9 +4687,19 @@ const deleteMasterTeacher = async (req, res) => {
       [id]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Master teacher not found" });
-    }
+    // Audit Log
+    await dbClient.query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_values, new_values)
+       VALUES ($1, 'DELETE_TEACHER', 'master_teachers', $2, $3, $4)`,
+      [
+        req.user.id,
+        id,
+        JSON.stringify({ status: oldVal.status, name: oldVal.name, employee_code: oldVal.employee_code }),
+        JSON.stringify({ status: 'Inactive' })
+      ]
+    );
+
+    await dbClient.query('COMMIT');
 
     res.json({
       success: true,
@@ -4585,8 +4707,37 @@ const deleteMasterTeacher = async (req, res) => {
       data: { id: result.rows[0].id }
     });
   } catch (error) {
+    await dbClient.query('ROLLBACK');
     console.error("Delete master teacher error:", error);
     res.status(500).json({ success: false, message: "Server error", error: error.message });
+  } finally {
+    dbClient.release();
+  }
+};
+
+const getMasterTeachersAuditLogs = async (req, res) => {
+  try {
+    const result = await client.query(
+      `SELECT 
+        al.id,
+        al.action,
+        al.entity_type,
+        al.entity_id,
+        u.name as user_name,
+        u.email as user_email,
+        al.old_values,
+        al.new_values,
+        al.created_at
+       FROM audit_logs al
+       LEFT JOIN users u ON al.user_id = u.id
+       WHERE al.entity_type = 'master_teachers'
+       ORDER BY al.created_at DESC
+       LIMIT 100`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get master teachers audit logs error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -5481,6 +5632,7 @@ module.exports = {
   deleteUser,
   getPrograms,
   getSubjects,
+  getLoginHistory,
   getAcademicYears,
   createAcademicYear,
   updateAcademicYear,
@@ -5542,6 +5694,7 @@ module.exports = {
   getCollegeMasterPolicy,
   // master teachers
   getMasterTeachers,
+  getMasterTeachersAuditLogs,
   getMasterTeacher,
   createMasterTeacher,
   updateMasterTeacher,
@@ -5601,4 +5754,5 @@ module.exports = {
   getStudentInternalExamAttendance,
   getAdminInternalExamAttendance,
   getFacultyInternalExamAttendance
+
 };

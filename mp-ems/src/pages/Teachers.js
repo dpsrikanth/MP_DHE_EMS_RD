@@ -33,6 +33,7 @@ import { formatDate } from '../utils/dateUtils';
 import Papa from 'papaparse';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import AuditLogModal from '../components/AuditLogModal';
 import BulkImportModal from '../components/BulkImportModal';
 import { masterDataApi } from '../api/masterDataApi';
 
@@ -123,8 +124,12 @@ const Teachers = () => {
   const [viewData, setViewData] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [showImportModal, setShowImportModal] = useState(false);
+  const [showAuditModal, setShowAuditModal] = useState(false);
+  const handleOpenAudit = () => setShowAuditModal(true);
+  const handleCloseAudit = () => setShowAuditModal(false);
+
   const [showBulkDropdown, setShowBulkDropdown] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const navigate = useNavigate();
 
   // Fetch designations and departments
@@ -465,6 +470,12 @@ const Teachers = () => {
                   >
                     <Plus size={20} />
                     <span>Add Staff</span>
+                  </button>
+                  <button
+                    onClick={handleOpenAudit}
+                    className="inline-flex items-center gap-2 px-4 py-3.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-2xl transition-all text-sm whitespace-nowrap"
+                  >
+                    View Audit Logs
                   </button>
                 </div>
               )}
@@ -817,6 +828,7 @@ const Teachers = () => {
       )}
 
       {/* ===== Bulk Import Modal ===== */}
+      <AuditLogModal isOpen={showAuditModal} onClose={handleCloseAudit} />
       <BulkImportModal 
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
