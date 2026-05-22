@@ -666,8 +666,31 @@ const Login = async (req, res) => {
     }
 
     if (!isMatch) {
+      // Record failed login
+      await client.query(
+        `INSERT INTO public.login_history (user_id, login_time, ip_address, user_agent, status)
+         VALUES ($1, now(), $2, $3, 'FAILED')`,
+        [
+          result.id,
+          req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+          req.headers['user-agent'] || 'Unknown Device'
+        ]
+      ).catch(err => logger.error("Error writing failed login history", err));
+
       return res.status(401).json({ message: "Invalid credentials" });
     }
+
+    // Record successful login
+    await client.query(
+      `INSERT INTO public.login_history (user_id, login_time, ip_address, user_agent, status)
+       VALUES ($1, now(), $2, $3, 'SUCCESS')`,
+      [
+        result.id,
+        req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+        req.headers['user-agent'] || 'Unknown Device'
+      ]
+    ).catch(err => logger.error("Error writing successful login history", err));
+
     const payload = {
       id: result.id,
       email: result.email,
