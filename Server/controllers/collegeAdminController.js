@@ -1594,6 +1594,11 @@ exports.getExternalAttendanceHalls = async (req, res) => {
                 h.hall_code AS hall_name,
                 h.total_capacity AS capacity,
                 (
+                    SELECT COUNT(*)
+                    FROM seating_arrangements sa
+                    WHERE sa.hall_id = h.id AND sa.exam_id = $2
+                ) AS allocated_students,
+                (
                     SELECT COUNT(DISTINCT hi2.faculty_user_id)
                     FROM hall_invigilators hi2
                     WHERE hi2.exam_id = $2 AND hi2.hall_id = h.id
@@ -1607,6 +1612,10 @@ exports.getExternalAttendanceHalls = async (req, res) => {
             FROM examination_halls h
             WHERE h.college_id = $1
               AND h.status = 'Approved'
+              AND EXISTS (
+                  SELECT 1 FROM seating_arrangements sa 
+                  WHERE sa.hall_id = h.id AND sa.exam_id = $2
+              )
             ORDER BY h.hall_code
         `;
 
@@ -1677,6 +1686,28 @@ exports.assignInvigilators = async (req, res) => {
     } catch (error) {
         console.error("assignInvigilators error:", error);
         res.status(500).json({ error: "Failed to assign invigilators" });
+    }
+};
+
+exports.getExternalExamSubjects = async (req, res) => {
+    try {
+        const { exam_id } = req.query;
+        if (!exam_id) return res.status(400).json({ error: "exam_id is required" });
+
+        const query = `
+            SELECT sub.id as subject_id, sub.name as subject_name, sub.subject_code, e.id as specific_exam_id
+            FROM exams e
+            JOIN master_subjects sub ON e.subject_id = sub.id
+            WHERE e.name = (SELECT name FROM exams WHERE id = $1)
+              AND e.semester_id = (SELECT semester_id FROM exams WHERE id = $1)
+              AND e.academic_year_id = (SELECT academic_year_id FROM exams WHERE id = $1)
+            ORDER BY sub.name
+        `;
+        const result = await db.query(query, [exam_id]);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("getExternalExamSubjects error:", error);
+        res.status(500).json({ error: "Failed to fetch subjects for exam" });
     }
 };
 

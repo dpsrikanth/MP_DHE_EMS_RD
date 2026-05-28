@@ -9,6 +9,7 @@ import { facultyApi } from '../../api/facultyApi';
 const InvigilationDuty = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   
   const [duties, setDuties] = useState([]);
   const [selectedDuty, setSelectedDuty] = useState(null); // { exam_id, hall_id, exam_name, hall_name }
@@ -22,6 +23,7 @@ const InvigilationDuty = () => {
   useEffect(() => {
     if (selectedDuty) {
       fetchStudents(selectedDuty.exam_id, selectedDuty.hall_id);
+      setIsSaved(false);
     }
   }, [selectedDuty]);
 
@@ -41,14 +43,23 @@ const InvigilationDuty = () => {
   const fetchStudents = async (examId, hallId) => {
     setLoading(true);
     try {
-      const data = await facultyApi.getInvigilationHallStudents(examId, hallId);
-      setStudents(data || []);
+      const response = await facultyApi.getInvigilationHallStudents(examId, hallId);
+      // Support both old array format and new { students, attendance_already_saved } format
+      const studentList = Array.isArray(response) ? response : (response.students || []);
+      const alreadySaved = Array.isArray(response) ? false : (response.attendance_already_saved || false);
+
+      setStudents(studentList);
       
       const initialAttendance = {};
-      (data || []).forEach(s => {
+      studentList.forEach(s => {
         initialAttendance[s.student_id] = s.status || 'Present';
       });
       setAttendance(initialAttendance);
+
+      // Auto-disable save button if attendance was already submitted
+      if (alreadySaved) {
+        setIsSaved(true);
+      }
     } catch (error) {
       console.error("Failed to load students", error);
       toast.error("Failed to load hall students");
@@ -62,6 +73,7 @@ const InvigilationDuty = () => {
       ...prev,
       [studentId]: status
     }));
+    setIsSaved(false);
   };
 
   const handleSaveAttendance = async () => {
@@ -80,12 +92,18 @@ const InvigilationDuty = () => {
         attendance_data: attendanceData
       });
       toast.success("Attendance saved successfully");
+      setIsSaved(true);
     } catch (error) {
       console.error("Failed to save attendance", error);
       toast.error(error.response?.data?.error || "Failed to save attendance");
     } finally {
       setSaving(false);
     }
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
   return (
@@ -111,7 +129,9 @@ const InvigilationDuty = () => {
               {selectedDuty ? selectedDuty.hall_name : 'Invigilation Duties'}
             </h1>
             <p className="text-[12px] text-slate-400 font-black tracking-[0.2em] mt-2 uppercase">
-              {selectedDuty ? selectedDuty.exam_name : 'External Exam Attendance'}
+              {selectedDuty 
+                ? `${selectedDuty.exam_name} ${selectedDuty.subject_code ? `— ${selectedDuty.subject_code}` : ''} ${selectedDuty.exam_date ? `— ${formatDate(selectedDuty.exam_date)}` : ''}`
+                : 'External Exam Attendance'}
             </p>
           </div>
         </div>
@@ -119,11 +139,15 @@ const InvigilationDuty = () => {
         {selectedDuty && (
           <button 
             onClick={handleSaveAttendance}
-            disabled={saving}
-            className="h-12 px-8 bg-indigo-600 hover:bg-indigo-700 text-white text-[12px] font-black tracking-widest rounded-2xl shadow-lg shadow-indigo-600/20 flex items-center gap-2 transition-all disabled:opacity-50"
+            disabled={saving || isSaved}
+            className={`h-12 px-8 text-[12px] font-black tracking-widest rounded-2xl flex items-center gap-2 transition-all ${
+              isSaved 
+                ? 'bg-emerald-100 text-emerald-600 border border-emerald-200 cursor-not-allowed opacity-100' 
+                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20 disabled:opacity-50'
+            }`}
           >
-            {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-            SAVE ATTENDANCE
+            {saving ? <Loader2 size={18} className="animate-spin" /> : isSaved ? <CheckCircle2 size={18} /> : <Save size={18} />}
+            {isSaved ? 'SAVED' : 'SAVE ATTENDANCE'}
           </button>
         )}
       </div>
@@ -149,7 +173,7 @@ const InvigilationDuty = () => {
               <div 
                 key={idx} 
                 onClick={() => setSelectedDuty(duty)}
-                className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/40 border border-slate-100 cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-1 hover:border-indigo-100 group"
+                className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/40 border border-slate-100 cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-1 hover:border-indigo-100 group flex flex-col h-full"
               >
                 <div className="flex items-start justify-between mb-6">
                   <div className="w-14 h-14 bg-indigo-50 rounded-[1.5rem] flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
@@ -167,9 +191,20 @@ const InvigilationDuty = () => {
                 <p className="text-sm font-semibold text-slate-500 line-clamp-2">
                   {duty.exam_name}
                 </p>
-                
-                <div className="mt-8 flex items-center text-[11px] font-black tracking-widest text-indigo-600 uppercase group-hover:gap-3 transition-all">
-                  Take Attendance <ChevronLeft size={14} className="rotate-180" />
+                {duty.subject_code && (
+                  <p className="text-xs font-bold text-slate-400 mt-2 flex-grow">
+                    {duty.subject_code} - {duty.subject_name}
+                  </p>
+                )}
+                <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between">
+                  {duty.exam_date && (
+                    <span className="text-[10px] font-black tracking-widest text-indigo-400 uppercase">
+                      {formatDate(duty.exam_date)}
+                    </span>
+                  )}
+                  <span className="text-[11px] font-black tracking-widest text-indigo-600 uppercase group-hover:gap-3 flex items-center gap-1 transition-all">
+                    Take Attendance <ChevronLeft size={14} className="rotate-180" />
+                  </span>
                 </div>
               </div>
             ))}

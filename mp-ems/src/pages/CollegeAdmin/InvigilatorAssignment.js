@@ -12,13 +12,17 @@ const InvigilatorAssignment = () => {
   const [saving, setSaving]                 = useState(false);
 
   const [exams, setExams]           = useState([]);
+  const [subjects, setSubjects]           = useState([]);
   const [halls, setHalls]           = useState([]);
   const [facultyList, setFacultyList] = useState([]);
   const [assignments, setAssignments] = useState([]); // { exam_id, hall_id, faculty_user_id, name }
 
   const [selectedExamId,     setSelectedExamId]     = useState('');
+  const [selectedSpecificExamId, setSelectedSpecificExamId] = useState('');
   const [selectedHallId,     setSelectedHallId]     = useState('');
   const [selectedFacultyId,  setSelectedFacultyId]  = useState('');
+
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
 
   // ── Load external exams on mount ─────────────────────────────────────────
   useEffect(() => {
@@ -36,9 +40,31 @@ const InvigilatorAssignment = () => {
     load();
   }, []);
 
-  // ── Load halls when exam changes ─────────────────────────────────────────
+  // ── Load subjects when exam changes ──────────────────────────────────────
   useEffect(() => {
     if (!selectedExamId) {
+      setSubjects([]);
+      setSelectedSpecificExamId('');
+      return;
+    }
+    const loadSubjects = async () => {
+      setLoadingSubjects(true);
+      setSelectedSpecificExamId('');
+      try {
+        const data = await collegeAdminApi.getExternalExamSubjects(selectedExamId);
+        setSubjects(data || []);
+      } catch {
+        toast.error('Failed to load subjects for this exam');
+      } finally {
+        setLoadingSubjects(false);
+      }
+    };
+    loadSubjects();
+  }, [selectedExamId]);
+
+  // ── Load halls when specific subject exam changes ────────────────────────
+  useEffect(() => {
+    if (!selectedSpecificExamId) {
       setHalls([]);
       setSelectedHallId('');
       setAssignments([]);
@@ -48,24 +74,24 @@ const InvigilatorAssignment = () => {
       setLoadingHalls(true);
       setSelectedHallId('');
       try {
-        const data = await collegeAdminApi.getExternalAttendanceHalls(selectedExamId);
+        const data = await collegeAdminApi.getExternalAttendanceHalls(selectedSpecificExamId);
         setHalls(data || []);
-        // Build existing assignment list for the chosen exam
+        // Build existing assignment list for the chosen specific exam
         const list = [];
         (data || []).forEach(hall => {
           (hall.invigilators || []).filter(Boolean).forEach(inv => {
-            list.push({ exam_id: selectedExamId, hall_id: hall.hall_id, hall_name: hall.hall_name, faculty_user_id: inv.user_id, name: inv.name });
+            list.push({ exam_id: selectedSpecificExamId, hall_id: hall.hall_id, hall_name: hall.hall_name, faculty_user_id: inv.user_id, name: inv.name });
           });
         });
         setAssignments(list);
       } catch {
-        toast.error('Failed to load halls for this exam');
+        toast.error('Failed to load halls');
       } finally {
         setLoadingHalls(false);
       }
     };
     load();
-  }, [selectedExamId]);
+  }, [selectedSpecificExamId]);
 
   // ── Load faculty list once ───────────────────────────────────────────────
   useEffect(() => {
@@ -85,37 +111,30 @@ const InvigilatorAssignment = () => {
 
   // ── Assign handler ───────────────────────────────────────────────────────
   const handleAssign = async () => {
-    if (!selectedExamId || !selectedHallId || !selectedFacultyId) {
-      toast.warning('Please select an exam, hall and teacher first.');
+    if (!selectedSpecificExamId || !selectedHallId || !selectedFacultyId) {
+      toast.warning('Please select an exam, subject, hall and teacher first.');
       return;
     }
 
-    const alreadyAssigned = assignments.some(
-      a => a.hall_id.toString() === selectedHallId && a.faculty_user_id.toString() === selectedFacultyId
-    );
-    if (alreadyAssigned) {
-      toast.info('This teacher is already assigned to this hall.');
+    const existingForHall = assignments.filter(a => a.hall_id.toString() === selectedHallId);
+    
+    if (existingForHall.length > 0) {
+      toast.warning('An invigilator is already assigned to this hall for this subject. Please remove them first if you wish to change.');
       return;
     }
 
     setSaving(true);
     try {
-      // Collect all current faculty ids for this hall + the new one
-      const existingForHall = assignments
-        .filter(a => a.hall_id.toString() === selectedHallId)
-        .map(a => a.faculty_user_id.toString());
-      const updatedIds = [...existingForHall, selectedFacultyId];
-
       await collegeAdminApi.assignInvigilators({
-        exam_id: parseInt(selectedExamId),
+        exam_id: parseInt(selectedSpecificExamId),
         hall_id: parseInt(selectedHallId),
-        faculty_user_ids: updatedIds
+        faculty_user_ids: [selectedFacultyId]
       });
 
       const faculty = facultyList.find(f => f.id.toString() === selectedFacultyId);
       const hall    = halls.find(h => h.hall_id.toString() === selectedHallId);
       setAssignments(prev => [...prev, {
-        exam_id: selectedExamId,
+        exam_id: selectedSpecificExamId,
         hall_id: parseInt(selectedHallId),
         hall_name: hall?.hall_name || selectedHallId,
         faculty_user_id: parseInt(selectedFacultyId),
@@ -139,7 +158,7 @@ const InvigilatorAssignment = () => {
         .map(a => a.faculty_user_id.toString());
 
       await collegeAdminApi.assignInvigilators({
-        exam_id: parseInt(selectedExamId),
+        exam_id: parseInt(selectedSpecificExamId),
         hall_id: hallId,
         faculty_user_ids: remaining
       });
@@ -161,9 +180,10 @@ const InvigilatorAssignment = () => {
   }, {});
 
   const selectedExam = exams.find(e => e.id.toString() === selectedExamId);
+  const selectedSubject = subjects.find(s => s.specific_exam_id.toString() === selectedSpecificExamId);
 
   return (
-    <div className="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
+    <div className="max-w-6xl mx-auto p-6 md:p-10 space-y-8">
 
       {/* ── Header ── */}
       <div className="flex items-center gap-5">
@@ -172,15 +192,15 @@ const InvigilatorAssignment = () => {
         </div>
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Invigilator Assignment</h1>
-          <p className="text-sm text-slate-500 font-semibold mt-0.5">Assign teachers to exam halls as invigilators</p>
+          <p className="text-sm text-slate-500 font-semibold mt-0.5">Assign teachers to exam halls as invigilators per subject</p>
         </div>
       </div>
 
       {/* ── Form Card ── */}
       <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 p-8 space-y-6">
-        <p className="text-xs font-black text-slate-400 tracking-widest uppercase">Step 1 — Select Exam, Hall &amp; Teacher</p>
+        <p className="text-xs font-black text-slate-400 tracking-widest uppercase">Step 1 — Select Exam, Subject, Hall &amp; Teacher</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
 
           {/* Exam */}
           <div className="space-y-2">
@@ -192,20 +212,39 @@ const InvigilatorAssignment = () => {
             ) : (
               <select
                 value={selectedExamId}
-                onChange={e => { setSelectedExamId(e.target.value); setSelectedHallId(''); }}
+                onChange={e => setSelectedExamId(e.target.value)}
                 className="w-full h-12 bg-slate-50 border-2 border-slate-100 rounded-xl px-4 text-sm font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
               >
                 <option value="">-- Select Exam --</option>
-                {exams.map(exam => {
-                  const dateStr = exam.exam_date
-                    ? new Date(exam.exam_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                    : '';
-                  return (
-                    <option key={exam.id} value={exam.id}>
-                      {exam.exam_name}{dateStr ? ` — ${dateStr}` : ''}
-                    </option>
-                  );
-                })}
+                {exams.map(exam => (
+                  <option key={exam.id} value={exam.id}>
+                    {exam.exam_name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Subject */}
+          <div className="space-y-2">
+            <label className="block text-xs font-black text-slate-500 tracking-widest uppercase">
+              <BookOpen size={12} className="inline mr-1" />Subject
+            </label>
+            {loadingSubjects ? (
+              <div className="h-12 bg-slate-50 rounded-xl animate-pulse" />
+            ) : (
+              <select
+                value={selectedSpecificExamId}
+                onChange={e => setSelectedSpecificExamId(e.target.value)}
+                disabled={!selectedExamId}
+                className="w-full h-12 bg-slate-50 border-2 border-slate-100 rounded-xl px-4 text-sm font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">-- Select Subject --</option>
+                {subjects.map(sub => (
+                  <option key={sub.specific_exam_id} value={sub.specific_exam_id}>
+                    {sub.subject_code} - {sub.subject_name}
+                  </option>
+                ))}
               </select>
             )}
           </div>
@@ -221,7 +260,7 @@ const InvigilatorAssignment = () => {
               <select
                 value={selectedHallId}
                 onChange={e => setSelectedHallId(e.target.value)}
-                disabled={!selectedExamId}
+                disabled={!selectedSpecificExamId}
                 className="w-full h-12 bg-slate-50 border-2 border-slate-100 rounded-xl px-4 text-sm font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">-- Select Hall --</option>
@@ -260,7 +299,7 @@ const InvigilatorAssignment = () => {
         <div className="flex justify-end pt-2">
           <button
             onClick={handleAssign}
-            disabled={saving || !selectedExamId || !selectedHallId || !selectedFacultyId}
+            disabled={saving || !selectedSpecificExamId || !selectedHallId || !selectedFacultyId}
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black px-8 py-3 rounded-2xl shadow-lg shadow-indigo-200 transition-all text-sm"
           >
             {saving ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
@@ -270,13 +309,12 @@ const InvigilatorAssignment = () => {
       </div>
 
       {/* ── Assignments Table ── */}
-      {selectedExamId && (
+      {selectedSpecificExamId && (
         <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 p-8 space-y-6">
           <div className="flex items-center gap-3">
             <CheckCircle2 size={18} className="text-indigo-500" />
             <p className="text-xs font-black text-slate-400 tracking-widest uppercase">
-              Current Assignments — {selectedExam?.exam_name}
-            </p>
+              Current Assignments — {selectedExam?.exam_name} ({selectedSubject?.subject_code})            </p>
           </div>
 
           {loadingHalls ? (

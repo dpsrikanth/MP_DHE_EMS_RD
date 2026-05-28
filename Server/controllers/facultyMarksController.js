@@ -1143,14 +1143,16 @@ exports.getInvigilationDuties = async (req, res) => {
         const query = `
             SELECT 
                 hi.exam_id, e.name as exam_name, e.exam_date,
+                sub.name as subject_name, sub.subject_code,
                 hi.hall_id, h.hall_code as hall_name, h.total_capacity as capacity,
                 COUNT(DISTINCT sa.student_id) as allocated_students
             FROM hall_invigilators hi
             JOIN exams e ON hi.exam_id = e.id
+            LEFT JOIN master_subjects sub ON e.subject_id = sub.id
             JOIN examination_halls h ON hi.hall_id = h.id
             LEFT JOIN seating_arrangements sa ON h.id = sa.hall_id AND e.id = sa.exam_id
             WHERE hi.faculty_user_id = $1
-            GROUP BY hi.exam_id, e.name, e.exam_date, hi.hall_id, h.hall_code, h.total_capacity
+            GROUP BY hi.exam_id, e.name, e.exam_date, sub.name, sub.subject_code, hi.hall_id, h.hall_code, h.total_capacity
             ORDER BY e.exam_date, h.hall_code
         `;
 
@@ -1185,7 +1187,8 @@ exports.getInvigilationHallStudents = async (req, res) => {
             SELECT 
                 s.id as student_id, s.name as student_name, s.rollnumber,
                 sa.row_no, sa.seat_no,
-                COALESCE(eea.status, 'Present') as status
+                COALESCE(eea.status, 'Present') as status,
+                CASE WHEN eea.student_id IS NOT NULL THEN true ELSE false END as is_saved
             FROM seating_arrangements sa
             JOIN students s ON sa.student_id = s.id
             LEFT JOIN external_exam_attendance eea 
@@ -1195,7 +1198,10 @@ exports.getInvigilationHallStudents = async (req, res) => {
         `;
 
         const result = await db.query(query, [exam_id, hall_id]);
-        res.status(200).json(result.rows);
+        const rows = result.rows;
+        // attendance_already_saved is true if ALL students have an attendance record
+        const attendanceAlreadySaved = rows.length > 0 && rows.every(r => r.is_saved === true);
+        res.status(200).json({ students: rows, attendance_already_saved: attendanceAlreadySaved });
     } catch (error) {
         console.error("getInvigilationHallStudents error:", error);
         res.status(500).json({ error: "Failed to fetch hall students" });

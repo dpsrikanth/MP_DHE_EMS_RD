@@ -516,10 +516,10 @@ router.get('/component-student-marks', collegeAdminController.getComponentStuden
 
 // External Exam Attendance & Invigilator Assignment
 router.get('/external-exams', collegeAdminController.getExternalExams);
+router.get('/invigilator-assignment/subjects', collegeAdminController.getExternalExamSubjects);
 router.get('/external-attendance/halls', collegeAdminController.getExternalAttendanceHalls);
 router.get('/external-attendance/report', collegeAdminController.getExternalExamAttendance);
 router.post('/invigilator-assignment/assign', collegeAdminController.assignInvigilators);
 router.get('/college-faculty', collegeAdminController.getCollegeFaculty);
 
 module.exports = router;
-

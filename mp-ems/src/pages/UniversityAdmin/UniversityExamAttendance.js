@@ -32,10 +32,14 @@ const UniversityExamAttendance = () => {
   // Filter lists
   const [colleges, setColleges] = useState([]);
   const [externalExams, setExternalExams] = useState([]);
+  const [subjects, setSubjects] = useState([]);
 
   // Selected filters
   const [selectedCollege, setSelectedCollege] = useState(null);
   const [selectedExam, setSelectedExam] = useState(null);
+  const [selectedSubject, setSelectedSubject] = useState(null);
+
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
 
   // Roster results
   const [externalHalls, setExternalHalls] = useState([]);
@@ -75,6 +79,33 @@ const UniversityExamAttendance = () => {
     loadInitialData();
   }, []);
 
+  // Load subjects when exam changes
+  useEffect(() => {
+    if (!selectedExam) {
+      setSubjects([]);
+      setSelectedSubject(null);
+      setExternalHalls([]);
+      return;
+    }
+    const loadSubjects = async () => {
+      setLoadingSubjects(true);
+      setSelectedSubject(null);
+      setExternalHalls([]);
+      try {
+        const data = await collegeAdminApi.getExternalExamSubjects(selectedExam.value);
+        setSubjects((data || []).map(s => ({
+          value: s.specific_exam_id,
+          label: `${s.subject_code} - ${s.subject_name}`
+        })));
+      } catch (err) {
+        toast.error('Failed to load subjects for this exam');
+      } finally {
+        setLoadingSubjects(false);
+      }
+    };
+    loadSubjects();
+  }, [selectedExam]);
+
   // Fetch Attendance Report
   const fetchReport = async () => {
     if (!selectedCollege) {
@@ -85,15 +116,19 @@ const UniversityExamAttendance = () => {
       toast.warning('Please select an external exam.');
       return;
     }
+    if (!selectedSubject) {
+      toast.warning('Please select a subject.');
+      return;
+    }
 
     setLoading(true);
     setExternalHalls([]);
 
     try {
-      const data = await collegeAdminApi.getExternalExamAttendance(selectedExam.value, selectedCollege.value);
+      const data = await collegeAdminApi.getExternalExamAttendance(selectedSubject.value, selectedCollege.value);
       setExternalHalls(data || []);
       if (!data || data.length === 0) {
-        toast.info('No attendance reports found for this college and exam.');
+        toast.info('No attendance reports found for this college and subject.');
       }
     } catch (err) {
       console.error('Failed to fetch attendance report:', err);
@@ -142,7 +177,7 @@ const UniversityExamAttendance = () => {
 
       {/* Filters */}
       <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row gap-6 items-end">
-        <div className="flex-1 min-w-[240px] space-y-2">
+        <div className="flex-1 min-w-[200px] space-y-2">
           <label className="text-[13px] font-black text-slate-500 tracking-widest ml-1">College / Center <span className="text-red-400">*</span></label>
           <Select
             options={colleges}
@@ -154,7 +189,7 @@ const UniversityExamAttendance = () => {
             isClearable
           />
         </div>
-        <div className="flex-1 min-w-[240px] space-y-2">
+        <div className="flex-1 min-w-[200px] space-y-2">
           <label className="text-[13px] font-black text-slate-500 tracking-widest ml-1">External Exam <span className="text-red-400">*</span></label>
           <Select
             options={externalExams}
@@ -166,9 +201,22 @@ const UniversityExamAttendance = () => {
             isClearable
           />
         </div>
+        <div className="flex-1 min-w-[200px] space-y-2">
+          <label className="text-[13px] font-black text-slate-500 tracking-widest ml-1">Subject <span className="text-red-400">*</span></label>
+          <Select
+            options={subjects}
+            value={selectedSubject}
+            onChange={opt => { setSelectedSubject(opt); setExternalHalls([]); }}
+            placeholder={loadingSubjects ? "Loading subjects..." : "Select Subject..."}
+            isLoading={loadingSubjects}
+            isDisabled={!selectedExam}
+            styles={selectStyles}
+            isClearable
+          />
+        </div>
         <button
           onClick={fetchReport}
-          disabled={loading || loadingFilters}
+          disabled={loading || loadingFilters || !selectedSubject}
           className="px-8 h-[45px] bg-indigo-600 text-white font-black rounded-xl hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg shadow-indigo-500/20 disabled:opacity-50 shrink-0"
         >
           {loading ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}

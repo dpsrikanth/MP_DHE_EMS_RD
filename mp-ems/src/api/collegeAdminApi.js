@@ -379,6 +379,14 @@ export const collegeAdminApi = {
     },
 
     /**
+     * Get subjects related to a specific external exam series
+     */
+    getExternalExamSubjects: async (examId) => {
+        const response = await apiClient.get(`/college-admin/invigilator-assignment/subjects?exam_id=${examId}`);
+        return response.data;
+    },
+
+    /**
      * Get examination halls with their assigned invigilators for a specific exam
      */
     getExternalAttendanceHalls: async (examId) => {
