@@ -837,6 +837,23 @@ const getUniversities = async (req, res) => {
   }
 };
 
+const getUniversityById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await client.query(
+      'SELECT id, name, address, status, university_type, created_at FROM universities WHERE id = $1',
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'University not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Get university by id error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 const createUniversity = async (req, res) => {
   const dbClient = await client.connect();
   try {
@@ -2497,8 +2514,8 @@ const bulkUploadColleges = async (req, res) => {
           }
           codesInBatch.add(cleanCode);
 
-          // Check DB for existing college code
-          const checkCode = await client.query('SELECT id FROM public.colleges WHERE UPPER(TRIM(college_code)) = $1', [cleanCode]);
+          // Check DB for existing college code (cast to text in case stored as integer)
+          const checkCode = await client.query('SELECT id FROM public.colleges WHERE UPPER(TRIM(college_code::TEXT)) = $1', [cleanCode]);
           if (checkCode.rows.length > 0) {
             errors.push({ row: rowNum, message: `College code '${c.college_code}' already exists.` });
           }
@@ -5851,6 +5868,7 @@ module.exports = {
   Login,
   refreshToken,
   getUniversities,
+  getUniversityById,
   createUniversity,
   updateUniversity,
   deleteUniversity,
