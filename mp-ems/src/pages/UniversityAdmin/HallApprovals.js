@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Building2, CheckCircle2, XCircle, Clock, MapPin, Search, AlertTriangle, ArrowRight, X, Users, Info, Zap, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
+import { Building2, CheckCircle2, XCircle, Clock, MapPin, Search, AlertTriangle, ArrowRight, ArrowLeft, X, Users, Info, Zap, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
 import { masterDataApi } from '../../api/masterDataApi';
 import { universityAdminApi } from '../../api/universityAdminApi';
 
@@ -16,6 +16,7 @@ const HallApprovals = () => {
     const [allocating, setAllocating] = useState(false);
     const [expandedHalls, setExpandedHalls] = useState({});
     const [selectedCollegeId, setSelectedCollegeId] = useState('all');
+    const [selectedHallId, setSelectedHallId] = useState(null);
 
     const toggleExpansion = (id) => {
         setExpandedHalls(prev => ({ ...prev, [id]: !prev[id] }));
@@ -139,7 +140,8 @@ const HallApprovals = () => {
         const matchesSearch = h.college_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             h.hall_code.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCollege = selectedCollegeId === 'all' || String(h.college_id) === String(selectedCollegeId);
-        return matchesSearch && matchesCollege;
+        const matchesHall = !selectedHallId || String(h.id) === String(selectedHallId);
+        return matchesSearch && matchesCollege && matchesHall;
     });
 
     // Grouping logic for the consolidated view
@@ -211,6 +213,18 @@ const HallApprovals = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
+                    {selectedCollegeId !== 'all' && (
+                        <button
+                            onClick={() => {
+                                setSelectedCollegeId('all');
+                                setSelectedHallId(null);
+                            }}
+                            className="p-3 bg-white border border-slate-200 hover:border-indigo-600 text-slate-600 hover:text-indigo-600 rounded-2xl transition-all shadow-sm active:scale-95 flex items-center justify-center shrink-0 mr-1 group"
+                            title="Back to All Colleges"
+                        >
+                            <ArrowLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
+                        </button>
+                    )}
                     <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
                         <ShieldCheck size={26} />
                     </div>
@@ -225,7 +239,10 @@ const HallApprovals = () => {
                         <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <select
                             value={selectedCollegeId}
-                            onChange={(e) => setSelectedCollegeId(e.target.value)}
+                            onChange={(e) => {
+                                setSelectedCollegeId(e.target.value);
+                                setSelectedHallId(null);
+                            }}
                             className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 text-sm font-bold text-slate-700 rounded-2xl focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 outline-none transition-all shadow-sm appearance-none cursor-pointer hover:border-slate-300"
                         >
                             <option value="all">All Colleges ({halls.length})</option>
@@ -244,7 +261,10 @@ const HallApprovals = () => {
                         <input
                             type="text"
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                setSelectedHallId(null);
+                            }}
                             placeholder="Search college or hall..."
                             className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 text-sm font-bold text-slate-700 rounded-2xl focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 outline-none transition-all shadow-sm"
                         />
@@ -309,8 +329,23 @@ const HallApprovals = () => {
                     <p className="text-slate-500 font-medium">No pending infrastructure requests awaiting validation.</p>
                 </div>
             ) : (
-                <div className={selectedCollegeId === 'all' ? "grid grid-cols-1 lg:grid-cols-2 gap-8" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"}>
-                    {selectedCollegeId === 'all' ? (
+                <div className="space-y-4">
+                    {selectedHallId && (
+                        <div className="flex items-center justify-between bg-indigo-50/80 border border-indigo-100 p-4 rounded-2xl animate-fade-in">
+                            <div className="flex items-center gap-2 text-indigo-700 text-sm font-bold">
+                                <Info size={16} className="shrink-0" />
+                                <span>Showing only hall <strong>{halls.find(h => String(h.id) === String(selectedHallId))?.hall_code}</strong></span>
+                            </div>
+                            <button
+                                onClick={() => setSelectedHallId(null)}
+                                className="px-4 py-2 bg-indigo-600 text-white text-[10px] font-black rounded-xl tracking-widest hover:bg-indigo-700 transition-all shadow-md shadow-indigo-600/10 active:scale-95"
+                            >
+                                Show All Halls
+                            </button>
+                        </div>
+                    )}
+                    <div className={selectedCollegeId === 'all' ? "grid grid-cols-1 lg:grid-cols-2 gap-8" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"}>
+                        {selectedCollegeId === 'all' ? (
                         // CONSOLIDATED VIEW: One card per college
                         groupedHalls.map((college) => {
                             const pct = getCapacityPct(college.college_approved_capacity, college.total_required);
@@ -362,7 +397,10 @@ const HallApprovals = () => {
                                                                 )}
                                                             </div>
                                                             <button 
-                                                                onClick={() => setSelectedCollegeId(String(college.college_id))}
+                                                                onClick={() => {
+                                                                    setSelectedCollegeId(String(college.college_id));
+                                                                    setSelectedHallId(String(hall.id));
+                                                                }}
                                                                 className="px-4 py-2 bg-white border border-slate-200 text-[9px] font-black text-indigo-600 rounded-lg  tracking-widest hover:bg-indigo-600 hover:border-indigo-600 transition-all hover:text-white"
                                                             >
                                                                 View
@@ -435,7 +473,10 @@ const HallApprovals = () => {
                                                     
                                                     <div className="mt-auto pt-6 border-t border-slate-200">
                                                         <button 
-                                                            onClick={() => setSelectedCollegeId(String(college.college_id))}
+                                                            onClick={() => {
+                                                                setSelectedCollegeId(String(college.college_id));
+                                                                setSelectedHallId(null);
+                                                            }}
                                                             className="w-full py-4 bg-indigo-600 hover:bg-slate-800 text-white text-[12px] font-black  tracking-widest rounded-2xl shadow-lg shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2"
                                                         >
                                                             Inspect Institution <ArrowRight size={14} />
@@ -545,7 +586,8 @@ const HallApprovals = () => {
                         })
                     )}
                 </div>
-            )}
+            </div>
+        )}
 
             {/* Allocation Modal */}
             {showAllocateModal && selectedRequest && (

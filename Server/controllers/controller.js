@@ -392,6 +392,8 @@ const getSubjects = async (req, res) => {
       whereClauses.push(`s.semester_id = $${params.length}`);
     }
 
+
+
     // Role-based filtering: university_admin/college_admin should only see subjects 
     // belonging to their university's programs.
     if ((role === 'university_admin' || role === 'college_admin') && university_id) {
@@ -417,6 +419,22 @@ const getSubjects = async (req, res) => {
   } catch (error) {
     console.error("Get subjects error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Standalone function to retrieve login history for the authenticated user
+const getLoginHistory = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const result = await client.query(
+      `SELECT id, login_time, ip_address, user_agent, status FROM public.login_history WHERE user_id = $1 ORDER BY login_time DESC LIMIT 100`,
+      [userId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Login history error', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -648,8 +666,31 @@ const Login = async (req, res) => {
     }
 
     if (!isMatch) {
+      // Record failed login
+      await client.query(
+        `INSERT INTO public.login_history (user_id, login_time, ip_address, user_agent, status)
+         VALUES ($1, now(), $2, $3, 'FAILED')`,
+        [
+          result.id,
+          req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+          req.headers['user-agent'] || 'Unknown Device'
+        ]
+      ).catch(err => logger.error("Error writing failed login history", err));
+
       return res.status(401).json({ message: "Invalid credentials" });
     }
+
+    // Record successful login
+    await client.query(
+      `INSERT INTO public.login_history (user_id, login_time, ip_address, user_agent, status)
+       VALUES ($1, now(), $2, $3, 'SUCCESS')`,
+      [
+        result.id,
+        req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+        req.headers['user-agent'] || 'Unknown Device'
+      ]
+    ).catch(err => logger.error("Error writing successful login history", err));
+
     const payload = {
       id: result.id,
       email: result.email,
@@ -764,6 +805,11 @@ const changePassword = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+// -------------------------------------------------
+// Get login history for the authenticated user
+// -------------------------------------------------
+
 
 const getUniversities = async (req, res) => {
   try {
@@ -1681,9 +1727,9 @@ const createExam = async (req, res) => {
         return res.status(400).json({ message: `Exams cannot be scheduled on Sundays (${dStr}). Sundays are institutional holidays.` });
       }
     }
-    
+
     if (new Set(allDates).size !== allDates.length) {
-       return res.status(400).json({ message: "Duplicate exam dates detected. Each subject must be scheduled on a unique date." });
+      return res.status(400).json({ message: "Duplicate exam dates detected. Each subject must be scheduled on a unique date." });
     }
 
     // --- Capacity Validation Logic ---
@@ -1822,9 +1868,9 @@ const updateExam = async (req, res) => {
         return res.status(400).json({ message: `Exams cannot be scheduled on Sundays (${dStr}). Sundays are institutional holidays.` });
       }
     }
-    
+
     if (new Set(allDates).size !== allDates.length) {
-       return res.status(400).json({ message: "Duplicate exam dates detected. Each subject must be scheduled on a unique date." });
+      return res.status(400).json({ message: "Duplicate exam dates detected. Each subject must be scheduled on a unique date." });
     }
 
     // --- Capacity Validation Logic (Same as creation) ---
@@ -1980,6 +2026,7 @@ const bulkUploadStudents = async (req, res) => {
 
     // Phase 1: Validate ALL rows first
     let errors = [];
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     const emailsInBatch = new Set();
     const admissionNosInBatch = new Set();
     const rollNosInBatch = new Set();
@@ -1989,6 +2036,7 @@ const bulkUploadStudents = async (req, res) => {
       const rowNum = i + 1;
       if (!s.name) errors.push({ row: rowNum, message: "Missing required field: name" });
       if (!s.email) errors.push({ row: rowNum, message: "Missing required field: email" });
+      else if (!emailRegex.test(s.email.trim())) errors.push({ row: rowNum, message: "Invalid email format" });
       if (!s.programName) errors.push({ row: rowNum, message: "Missing required field: programName" });
       if (!s.semister) errors.push({ row: rowNum, message: "Missing required field: semister" });
       if (!s.admission_year) errors.push({ row: rowNum, message: "Missing required field: admission_year" });
@@ -2001,16 +2049,38 @@ const bulkUploadStudents = async (req, res) => {
         emailsInBatch.add(s.email.toLowerCase());
       }
       if (s.admission_no) {
-        if (admissionNosInBatch.has(s.admission_no.toString().trim())) {
-          errors.push({ row: rowNum, message: `Duplicate Admission No ${s.admission_no} found in the upload file.` });
+        const admTrim = s.admission_no.toString().trim();
+        if (admTrim !== '') {
+          const admissionNoRegex = /^\d{4}[A-Za-z]{3}\d{3}$/;
+          if (!admissionNoRegex.test(admTrim)) {
+            errors.push({
+              row: rowNum,
+              message: `Admission No '${s.admission_no}' is invalid. It must strictly follow the format: 4 digits + 3 letters + 3 digits (e.g., 2024CSE011).`
+            });
+          }
+          if (admissionNosInBatch.has(admTrim.toUpperCase())) {
+            errors.push({ row: rowNum, message: `Duplicate Admission No '${s.admission_no}' found in the upload file.` });
+          } else {
+            admissionNosInBatch.add(admTrim.toUpperCase());
+          }
         }
-        admissionNosInBatch.add(s.admission_no.toString().trim());
       }
       if (s.rollnumber) {
-        if (rollNosInBatch.has(s.rollnumber.toString().trim())) {
-          errors.push({ row: rowNum, message: `Duplicate Roll No ${s.rollnumber} found in the upload file.` });
+        const rollTrim = s.rollnumber.toString().trim();
+        if (rollTrim !== '') {
+          const rollNoRegex = /^\d{2}[A-Za-z]{2}\d{4}$/;
+          if (!rollNoRegex.test(rollTrim)) {
+            errors.push({
+              row: rowNum,
+              message: `Roll Number '${s.rollnumber}' is invalid. It must strictly follow the format: 2 digits + 2 letters + 4 digits (e.g., 25BT1311).`
+            });
+          }
+          if (rollNosInBatch.has(rollTrim.toUpperCase())) {
+            errors.push({ row: rowNum, message: `Duplicate Roll No '${s.rollnumber}' found in the upload file.` });
+          } else {
+            rollNosInBatch.add(rollTrim.toUpperCase());
+          }
         }
-        rollNosInBatch.add(s.rollnumber.toString().trim());
       }
 
       // Check for duplicates in the database (only active students)
@@ -2021,17 +2091,17 @@ const bulkUploadStudents = async (req, res) => {
         }
       }
       if (s.admission_no) {
-        const cleanVal = s.admission_no.toString().trim();
-        const checkRes = await client.query('SELECT id FROM public.students WHERE TRIM(admission_no) = $1 AND "deleteStatus" = true', [cleanVal]);
+        const cleanVal = s.admission_no.toString().trim().toUpperCase();
+        const checkRes = await client.query('SELECT id FROM public.students WHERE UPPER(TRIM(admission_no)) = $1 AND "deleteStatus" = true', [cleanVal]);
         if (checkRes.rows.length > 0) {
-          errors.push({ row: rowNum, message: `Admission No ${cleanVal} already exists as an active record.` });
+          errors.push({ row: rowNum, message: `Admission No ${s.admission_no} already exists as an active record.` });
         }
       }
       if (s.rollnumber) {
-        const cleanVal = s.rollnumber.toString().trim();
-        const checkRes = await client.query('SELECT id FROM public.students WHERE TRIM(rollnumber) = $1 AND "deleteStatus" = true', [cleanVal]);
+        const cleanVal = s.rollnumber.toString().trim().toUpperCase();
+        const checkRes = await client.query('SELECT id FROM public.students WHERE UPPER(TRIM(rollnumber)) = $1 AND "deleteStatus" = true', [cleanVal]);
         if (checkRes.rows.length > 0) {
-          errors.push({ row: rowNum, message: `Roll No ${cleanVal} already exists as an active record.` });
+          errors.push({ row: rowNum, message: `Roll No ${s.rollnumber} already exists as an active record.` });
         }
       }
     }
@@ -2122,6 +2192,12 @@ const bulkUploadStudents = async (req, res) => {
 
 // Start: Bulk Teacher API
 const bulkUploadTeachers = async (req, res) => {
+  const cleanVal = (val) => {
+    if (val === undefined || val === null) return null;
+    const str = String(val).trim();
+    return str === '' ? null : str;
+  };
+
   try {
     const { teachers } = req.body;
     if (!teachers || !Array.isArray(teachers) || teachers.length === 0) {
@@ -2135,6 +2211,13 @@ const bulkUploadTeachers = async (req, res) => {
     // We will collect resolved department IDs here to use in Phase 2
     const resolvedDepartments = {};
     const emailsInFile = new Set();
+
+    // Fetch all designations and build a map
+    const desigListRes = await client.query("SELECT id, LOWER(TRIM(designation_name)) as name, designation_type FROM master_designations");
+    const designMap = {};
+    for (const row of desigListRes.rows) {
+      designMap[row.name] = { id: row.id, type: row.designation_type };
+    }
 
     // Fetch a default designation
     const desigRes = await client.query("SELECT id FROM master_designations WHERE status = 'Active' LIMIT 1");
@@ -2207,20 +2290,85 @@ const bulkUploadTeachers = async (req, res) => {
           userId = userResult.rows[0].id;
         }
 
+        // Resolve designation ID dynamically
+        let designationId = defaultDesignationId;
+        const rawDesig = cleanVal(t.designation);
+        if (rawDesig) {
+          const key = rawDesig.toLowerCase();
+          if (designMap[key]) {
+            designationId = designMap[key].id;
+          } else {
+            // Check if sheet specifies designation type (default to Teaching)
+            const rawType = cleanVal(t.designation_type || t.designationType) || 'Teaching';
+            let dType = 'Teaching';
+            if (rawType.toLowerCase().includes('non')) {
+              dType = 'Non-Teaching';
+            }
+            // Create designation dynamically
+            const newDesigRes = await dbClient.query(
+              `INSERT INTO public.master_designations (designation_name, status, designation_type)
+               VALUES ($1, 'Active', $2) RETURNING id`,
+              [rawDesig, dType]
+            );
+            designationId = newDesigRes.rows[0].id;
+            designMap[key] = { id: designationId, type: dType };
+          }
+        }
+
+        // Parse experience
+        let expYears = 0;
+        if (t.experience !== undefined && t.experience !== null && t.experience !== '') {
+          const parsed = parseInt(t.experience, 10);
+          if (!isNaN(parsed)) expYears = parsed;
+        }
+
+        const statusVal = cleanVal(t.status) || 'Active';
+        const qualificationVal = cleanVal(t.qualification);
+        const specializationVal = cleanVal(t.specialization);
+        const panVal = cleanVal(t.pan_no);
+        const aadhaarVal = cleanVal(t.aadhaar_no);
+        const dobVal = cleanVal(t.dob);
+        const genderVal = cleanVal(t.gender);
+        const joiningDateVal = cleanVal(t.joining_date);
+        const phoneVal = cleanVal(t.phone);
+        const addressVal = cleanVal(t.address);
+
         // Create master teacher record linked to the user
         await dbClient.query(
           `INSERT INTO public.master_teachers (
-            user_id, employee_code, college_id, department_id, designation_id, status
-          ) VALUES ($1, $2, $3, $4, $5, 'Active')`,
+            user_id, employee_code, college_id, department_id, designation_id, status,
+            qualification, experience_years, specialization, pan_no, aadhaar_no, dob, gender,
+            joining_date, phone, address, email
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
           [
             userId,
             finalEmployeeCode,
             college_id,
             department_id,
-            defaultDesignationId
+            designationId,
+            statusVal,
+            qualificationVal,
+            expYears,
+            specializationVal,
+            panVal,
+            aadhaarVal,
+            dobVal,
+            genderVal,
+            joiningDateVal,
+            phoneVal,
+            addressVal,
+            cleanVal(t.email)
           ]
         );
       }
+
+      // Audit Log
+      await dbClient.query(
+        `INSERT INTO audit_logs (user_id, action, entity_type, new_values)
+         VALUES ($1, 'BULK_UPLOAD_TEACHERS', 'master_teachers', $2)`,
+        [req.user.id, JSON.stringify({ imported_count: teachers.length })]
+      );
+
       await dbClient.query('COMMIT');
       res.status(200).json({ message: `Successfully imported ${teachers.length} teacher profiles.`, successes: teachers.length, errors: [] });
     } catch (txError) {
@@ -2362,8 +2510,8 @@ const publishResults = async (req, res) => {
       const unready = seriesRes.rows.filter(r => !r.is_external_submitted);
       if (unready.length > 0) {
         const externalPending = unready.map(r => r.subject_name);
-        return res.status(400).json({ 
-          message: `Cannot publish results: External marks pending for: ${externalPending.join(', ')}` 
+        return res.status(400).json({
+          message: `Cannot publish results: External marks pending for: ${externalPending.join(', ')}`
         });
       }
     }
@@ -2570,7 +2718,7 @@ const getStudentAttendance = async (req, res) => {
     // Find College, Program, and Semester IDs
     const colRes = await client.query('SELECT id FROM colleges WHERE name ILIKE $1', [colName]);
     const progRes = await client.query('SELECT id FROM master_programs WHERE name ILIKE $1', [progName]);
-    
+
     // Robust semester matching: handle "3" vs "Semester 3" vs "III Semester"
     let semRes = await client.query('SELECT id, semester_name FROM master_semesters WHERE semester_name ILIKE $1', [semName]);
     if (semRes.rows.length === 0) {
@@ -2725,9 +2873,21 @@ const submitMarksDiscrepancy = async (req, res) => {
     // Find college and semester to store robust metadata
     const colRes = await client.query('SELECT id FROM colleges WHERE name ILIKE $1', [student.collageName]);
     const semRes = await client.query('SELECT id FROM master_semesters WHERE semester_name ILIKE $1 OR semester_name ILIKE $2', [student.semister, `%${student.semister}%`]);
-    
+
     const collegeId = colRes.rows.length > 0 ? colRes.rows[0].id : null;
     const semesterId = semRes.rows.length > 0 ? semRes.rows[0].id : null;
+
+    // Check if HOD has approved the marks for this subject — block correction requests if so
+    if (collegeId && semesterId) {
+      const approvalCheck = await client.query(
+        `SELECT status FROM marks_workflow_status 
+         WHERE subject_id = $1 AND college_id = $2 AND semester_id = $3 AND status = 'Approved'`,
+        [subject_id, collegeId, semesterId]
+      );
+      if (approvalCheck.rows.length > 0) {
+        return res.status(403).json({ message: "Cannot raise correction requests. The internal assessment marks have already been approved by the HOD." });
+      }
+    }
 
     // Check if there is already a pending discrepancy for this student, subject, and component
     const checkRes = await client.query(
@@ -2864,7 +3024,7 @@ const getStudentInternalExamAttendance = async (req, res) => {
           attendance_percentage: total > 0 ? Math.round((present / total) * 100) : 0
         };
       });
-      const semTotal   = subjects.reduce((a, s) => a + s.total_components, 0);
+      const semTotal = subjects.reduce((a, s) => a + s.total_components, 0);
       const semPresent = subjects.reduce((a, s) => a + s.present_count, 0);
       return {
         semester_name: sem.semester_name,
@@ -2965,7 +3125,7 @@ const getAdminInternalExamAttendance = async (req, res) => {
         const present = sub.components.filter(c => c.status === 'Present').length;
         return { ...sub, total_components: total, present_count: present, absent_count: total - present, attendance_percentage: total > 0 ? Math.round((present / total) * 100) : 0 };
       });
-      const semTotal   = subjects.reduce((a, s) => a + s.total_components, 0);
+      const semTotal = subjects.reduce((a, s) => a + s.total_components, 0);
       const semPresent = subjects.reduce((a, s) => a + s.present_count, 0);
       return {
         ...stu,
@@ -3045,26 +3205,26 @@ const getFacultyInternalExamAttendance = async (req, res) => {
       const components = compRes.rows.map(r => ({
         component_name: r.component_name,
         total_students: parseInt(r.total_students),
-        present_count:  parseInt(r.present_count),
-        absent_count:   parseInt(r.absent_count),
+        present_count: parseInt(r.present_count),
+        absent_count: parseInt(r.absent_count),
         attendance_percentage: parseInt(r.total_students) > 0
           ? Math.round((parseInt(r.present_count) / parseInt(r.total_students)) * 100)
           : 0
       }));
 
-      const grandTotal   = components.reduce((a, c) => a + c.total_students, 0);
+      const grandTotal = components.reduce((a, c) => a + c.total_students, 0);
       const grandPresent = components.reduce((a, c) => a + c.present_count, 0);
 
       results.push({
-        subject_id:   sub.subject_id,
+        subject_id: sub.subject_id,
         subject_name: sub.subject_name,
         subject_code: sub.subject_code,
-        semester_id:  sub.semester_id,
+        semester_id: sub.semester_id,
         semester_name: sub.semester_name,
         components,
-        total_entries:   grandTotal,
-        total_present:   grandPresent,
-        total_absent:    grandTotal - grandPresent,
+        total_entries: grandTotal,
+        total_present: grandPresent,
+        total_absent: grandTotal - grandPresent,
         overall_percentage: grandTotal > 0 ? Math.round((grandPresent / grandTotal) * 100) : 0
       });
     }
@@ -3212,7 +3372,7 @@ const bulkUploadMarks = async (req, res) => {
   const dbClient = await client.connect();
   try {
     const { subject_id, exam_id, academic_year_id, marks } = req.body;
-    
+
     if (!subject_id || !marks || !Array.isArray(marks)) {
       return res.status(400).json({ message: "Invalid payload. Subject and Marks data are required." });
     }
@@ -3221,12 +3381,12 @@ const bulkUploadMarks = async (req, res) => {
     const actual_teacher_id = teacherCheck.rows.length > 0 ? teacherCheck.rows[0].id : null;
 
     await dbClient.query("BEGIN");
-    
+
     let errors = [];
     for (let i = 0; i < marks.length; i++) {
       const record = marks[i];
       const rowNum = i + 1;
-      
+
       const enrollmentNo = record.enrollment_number || record.rollnumber;
       if (!enrollmentNo) {
         errors.push({ row: rowNum, message: "Missing Enrollment No / Roll Number" });
@@ -3561,10 +3721,10 @@ const createMasterSubject = async (req, res) => {
 };
 
 const getMasterSubject = async (req, res) => {
-    try {
-      const { id } = req.params;
-      const result = await client.query(
-        `SELECT id, subject_code, name, status, created_at,
+  try {
+    const { id } = req.params;
+    const result = await client.query(
+      `SELECT id, subject_code, name, status, created_at,
                 program_id, semester_id, mapping_type, is_mandatory, 
                 has_examination, periods_per_week, teacher_id, credit,
                 COALESCE(
@@ -3574,10 +3734,10 @@ const getMasterSubject = async (req, res) => {
                  '[]'::json) as department_ids
          FROM master_subjects 
          WHERE id = $1`,
-        [id]
-      );
-      if (result.rows.length === 0) return res.status(404).json({ message: "Master subject not found" });
-      res.json(result.rows[0]);
+      [id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: "Master subject not found" });
+    res.json(result.rows[0]);
   } catch (error) {
     console.error("Get master subject error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -4291,6 +4451,28 @@ const createMasterTeacher = async (req, res) => {
       [teacherId]
     );
 
+    // Audit Log
+    await dbClient.query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_values)
+       VALUES ($1, 'CREATE_TEACHER', 'master_teachers', $2, $3)`,
+      [
+        req.user.id,
+        teacherId,
+        JSON.stringify({
+          employee_code: finalEmployeeCode,
+          name,
+          email,
+          college_id,
+          department_id,
+          designation_id,
+          qualification,
+          experience_years: experience,
+          specialization,
+          status: status || 'Active'
+        })
+      ]
+    );
+
     await dbClient.query('COMMIT');
     res.status(201).json({
       success: true,
@@ -4326,7 +4508,11 @@ const updateMasterTeacher = async (req, res) => {
   const dbClient = await client.connect();
   try {
     // Get existing teacher and check permissions
-    let checkQuery = "SELECT user_id, college_id, department_id FROM master_teachers WHERE id = $1";
+    let checkQuery = `
+      SELECT mt.*, u.name AS user_name, u.email AS user_email
+      FROM master_teachers mt
+      LEFT JOIN users u ON mt.user_id = u.id
+      WHERE mt.id = $1`;
     const existing = await dbClient.query(checkQuery, [id]);
 
     if (existing.rows.length === 0) {
@@ -4441,6 +4627,43 @@ const updateMasterTeacher = async (req, res) => {
       [id]
     );
 
+    // Audit Log
+    const fieldsToTrack = [
+      'name', 'email', 'college_id', 'department_id', 'designation_id', 'qualification', 'experience', 'specialization',
+      'pan_no', 'aadhaar_no', 'dob', 'gender', 'joining_date', 'phone', 'address', 'status',
+      'employee_category_name', 'first_name', 'middle_name', 'last_name', 'job_title', 'employee_position_name',
+      'employee_department_name', 'employee_grade_name', 'experience_detail', 'experience_months', 'marital_status',
+      'father_name', 'mother_name', 'spouse_name', 'blood_group', 'country_name', 'home_address_line1', 'home_city',
+      'home_state', 'home_country_name', 'office_phone1', 'office_phone2', 'office_state', 'home_phone1', 'fax'
+    ];
+
+    const oldValues = {};
+    const newValues = {};
+
+    fieldsToTrack.forEach(field => {
+      if (req.body[field] !== undefined) {
+        const dbField = field === 'experience' ? 'experience_years' : (field === 'name' ? 'user_name' : field);
+        let oldVal = existing.rows[0][dbField];
+        let newVal = req.body[field];
+
+        if (oldVal === null) oldVal = undefined;
+        if (newVal === '') newVal = null;
+
+        if (oldVal != newVal) {
+          oldValues[field] = existing.rows[0][dbField];
+          newValues[field] = req.body[field];
+        }
+      }
+    });
+
+    if (Object.keys(newValues).length > 0) {
+      await dbClient.query(
+        `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_values, new_values)
+         VALUES ($1, 'UPDATE_TEACHER', 'master_teachers', $2, $3, $4)`,
+        [req.user.id, id, JSON.stringify(oldValues), JSON.stringify(newValues)]
+      );
+    }
+
     await dbClient.query('COMMIT');
     res.json({
       success: true,
@@ -4458,10 +4681,28 @@ const updateMasterTeacher = async (req, res) => {
 
 const deleteMasterTeacher = async (req, res) => {
   const { id } = req.params;
+  const dbClient = await client.connect();
 
   try {
+    // Fetch old values first for deletion audit (especially status, name, employee_code, etc.)
+    const oldRes = await dbClient.query(
+      `SELECT mt.id, mt.status, u.name, mt.employee_code 
+       FROM master_teachers mt
+       LEFT JOIN users u ON mt.user_id = u.id
+       WHERE mt.id = $1`,
+      [id]
+    );
+
+    if (oldRes.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Master teacher not found" });
+    }
+
+    const oldVal = oldRes.rows[0];
+
+    await dbClient.query('BEGIN');
+
     // Soft delete: Update status to 'Inactive' instead of deleting the record
-    const result = await client.query(
+    const result = await dbClient.query(
       `UPDATE master_teachers 
        SET status = 'Inactive', updated_at = CURRENT_TIMESTAMP 
        WHERE id = $1 
@@ -4469,9 +4710,19 @@ const deleteMasterTeacher = async (req, res) => {
       [id]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Master teacher not found" });
-    }
+    // Audit Log
+    await dbClient.query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_values, new_values)
+       VALUES ($1, 'DELETE_TEACHER', 'master_teachers', $2, $3, $4)`,
+      [
+        req.user.id,
+        id,
+        JSON.stringify({ status: oldVal.status, name: oldVal.name, employee_code: oldVal.employee_code }),
+        JSON.stringify({ status: 'Inactive' })
+      ]
+    );
+
+    await dbClient.query('COMMIT');
 
     res.json({
       success: true,
@@ -4479,8 +4730,37 @@ const deleteMasterTeacher = async (req, res) => {
       data: { id: result.rows[0].id }
     });
   } catch (error) {
+    await dbClient.query('ROLLBACK');
     console.error("Delete master teacher error:", error);
     res.status(500).json({ success: false, message: "Server error", error: error.message });
+  } finally {
+    dbClient.release();
+  }
+};
+
+const getMasterTeachersAuditLogs = async (req, res) => {
+  try {
+    const result = await client.query(
+      `SELECT 
+        al.id,
+        al.action,
+        al.entity_type,
+        al.entity_id,
+        u.name as user_name,
+        u.email as user_email,
+        al.old_values,
+        al.new_values,
+        al.created_at
+       FROM audit_logs al
+       LEFT JOIN users u ON al.user_id = u.id
+       WHERE al.entity_type = 'master_teachers'
+       ORDER BY al.created_at DESC
+       LIMIT 100`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get master teachers audit logs error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -5375,6 +5655,7 @@ module.exports = {
   deleteUser,
   getPrograms,
   getSubjects,
+  getLoginHistory,
   getAcademicYears,
   createAcademicYear,
   updateAcademicYear,
@@ -5436,6 +5717,7 @@ module.exports = {
   getCollegeMasterPolicy,
   // master teachers
   getMasterTeachers,
+  getMasterTeachersAuditLogs,
   getMasterTeacher,
   createMasterTeacher,
   updateMasterTeacher,
@@ -5495,4 +5777,5 @@ module.exports = {
   getStudentInternalExamAttendance,
   getAdminInternalExamAttendance,
   getFacultyInternalExamAttendance
+
 };

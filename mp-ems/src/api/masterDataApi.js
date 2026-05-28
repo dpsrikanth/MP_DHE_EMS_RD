@@ -269,6 +269,10 @@ export const masterDataApi = {
         const response = await apiClient.delete(`/master-teachers/${id}`);
         return response.data;
     },
+    getTeacherAuditLogs: async () => {
+        const response = await apiClient.get('/master-teachers/audit-logs');
+        return response.data;
+    },
 
     // --- Subjects ---
     getSubjects: async (params) => {

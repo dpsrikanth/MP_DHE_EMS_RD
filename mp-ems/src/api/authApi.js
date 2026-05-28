@@ -42,6 +42,13 @@ export const authApi = {
     },
 
     /**
+     * Get login history
+     */
+    getLoginHistory: async () => {
+        const response = await apiClient.get('/login-history');
+        return response.data;
+    },
+    /**
      * Initiate registration (Email Check)
      */
     register: async (email) => {
@@ -63,6 +70,14 @@ export const authApi = {
     setPassword: async (email, password) => {
         const response = await apiClient.post('/set-password', { email, password });
         return response.data;
-    }
-};
+    },
 
+    /**
+     * Logout user
+     */
+    logout: async () => {
+        const response = await apiClient.post('/logout');
+        return response.data;
+    },
+
+};

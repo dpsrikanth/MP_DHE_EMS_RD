@@ -345,35 +345,41 @@ const StudentResults = () => {
                                   <p className="text-sm font-black text-slate-900">{sub.subject_name}</p>
                                   <p className="text-[12px] font-bold text-slate-400 tracking-wider">{sub.subject_code}</p>
                                 </div>
+                                {console.log('Debug batch_status', sub.subject_code, sub.batch_status)}
                                 <div className="flex items-center gap-2">
-                                  {pendingIssue ? (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200 rounded-full shadow-sm">
-                                      <AlertCircle size={10} />
-                                      Issue Pending
-                                    </span>
-                                  ) : resolvedIssue ? (
-                                    <div className="flex flex-col items-end gap-1">
-                                      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full shadow-sm">
-                                        <CheckCircle2 size={10} />
-                                        Issue Resolved
-                                      </span>
-                                      <button
-                                        onClick={() => handleOpenDiscrepancyModal(sub)}
-                                        className="text-[10px] font-extrabold text-violet-600 hover:text-violet-800 hover:underline"
-                                      >
-                                        Report New
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <button
-                                      onClick={() => handleOpenDiscrepancyModal(sub)}
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-extrabold text-violet-700 hover:text-white bg-violet-50 hover:bg-violet-600 border border-violet-100 hover:border-violet-600 rounded-lg transition-all duration-200 shadow-sm"
-                                    >
-                                      <MessageSquare size={12} />
-                                      Report Issue
-                                    </button>
-                                  )}
-                                </div>
+  { ( ((sub.batch_status || '').trim().toLowerCase().includes('approved')) || ((sub.batch_status || '').trim().toLowerCase() === 'locked') || (sub.batch_status == null) ) ? (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full shadow-sm">
+      <CheckCircle2 size={10} />
+      HOD Approved
+    </span>
+  ) : pendingIssue ? (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200 rounded-full shadow-sm">
+      <AlertCircle size={10} />
+      Issue Pending
+    </span>
+  ) : resolvedIssue ? (
+    <div className="flex flex-col items-end gap-1">
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full shadow-sm">
+        <CheckCircle2 size={10} />
+        Issue Resolved
+      </span>
+      <button
+        onClick={() => handleOpenDiscrepancyModal(sub)}
+        className="text-[10px] font-extrabold text-violet-600 hover:text-violet-800 hover:underline"
+      >
+        Report New
+      </button>
+    </div>
+  ) : (
+    <button
+      onClick={() => handleOpenDiscrepancyModal(sub)}
+      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-extrabold text-violet-700 hover:text-white bg-violet-50 hover:bg-violet-600 border border-violet-100 hover:border-violet-600 rounded-lg transition-all duration-200 shadow-sm"
+    >
+      <MessageSquare size={12} />
+      Report Issue
+    </button>
+  )}
+</div>
                               </div>
                             </td>
                             {internalComponents.length > 0 ? (

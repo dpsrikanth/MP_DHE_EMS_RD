@@ -134,3 +134,35 @@ code {
 .animate-pulse-soft {
   animation: pulse-soft 4s ease-in-out infinite;
 }
+
+/* ============================================================
+   Global z-index fix — react-select & custom dropdowns
+   Prevents form-field icons (z-index:1) from bleeding through
+   open dropdown menus on any page.
+   ============================================================ */
+
+/* react-select menu list */
+.react-select__menu {
+  z-index: 9999 !important;
+}
+
+/* react-select portal (when menuPortalTarget is used) */
+.react-select__menu-portal {
+  z-index: 9999 !important;
+}
+
+/* react-select value container — keep it behind the menu */
+.react-select__value-container {
+  z-index: 1 !important;
+}
+
+/* Ensure form-input-wrap icons never bleed above dropdown */
+.form-input-wrap__icon {
+  z-index: 2 !important;
+}
+
+/* Ensure form-input-wrap itself does not clip overflow */
+.form-input-wrap {
+  position: relative;
+}
+

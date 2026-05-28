@@ -5,7 +5,7 @@ import { UploadCloud, X, FileText, CheckCircle2, ShieldAlert, Loader2 } from 'lu
 import { toast } from 'react-toastify';
 import apiClient from '../api/client';
 
-const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, onSuccess, endpoint, entityName, expectedColumns, optionalColumns = [], extraPayload = {}, transformPayload = null }) => {
+const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, onSuccess, endpoint, entityName, expectedColumns, optionalColumns = [], extraPayload = {}, transformPayload = null, validate = null }) => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -32,7 +32,13 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, onSuccess, endpoint
     const lookup = {};
     Object.entries(expectedColumns).forEach(([dbKey, readableName]) => {
       lookup[dbKey.toLowerCase()] = dbKey;
-      lookup[readableName.toLowerCase()] = dbKey;
+      if (Array.isArray(readableName)) {
+        readableName.forEach(name => {
+          lookup[name.toLowerCase()] = dbKey;
+        });
+      } else {
+        lookup[readableName.toLowerCase()] = dbKey;
+      }
     });
     return lookup;
   };
@@ -47,9 +53,10 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, onSuccess, endpoint
     requiredDbKeys.forEach(dbKey => {
       if (optionalColumns.includes(dbKey)) return; // Skip if optional
       const readableName = expectedColumns[dbKey];
-      const found = lowerHeaders.some(h => h === dbKey.toLowerCase() || h === readableName.toLowerCase());
+      const found = lowerHeaders.some(h => lookup[h] === dbKey);
       if (!found) {
-        missing.push(readableName);
+        const displayLabel = Array.isArray(readableName) ? readableName[0] : readableName;
+        missing.push(displayLabel);
       }
     });
 
@@ -169,15 +176,9 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, onSuccess, endpoint
     setLoading(true);
     setValidationErrors([]);
 
-    const submitData = (rows) => {
-      let mappedData = rows.map(row => mapRowToDbKeys(row));
-      
-      if (transformPayload) {
-        mappedData = transformPayload(mappedData);
-      }
-
+    const submitData = (mappedRows) => {
       const payload = { ...extraPayload };
-      payload[entityName] = mappedData;
+      payload[entityName] = mappedRows;
 
       return apiClient.post(endpoint, payload);
     };
@@ -215,7 +216,23 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, onSuccess, endpoint
         });
       }
 
-      const response = await submitData(rows);
+      let mappedData = rows.map(row => mapRowToDbKeys(row));
+      
+      if (transformPayload) {
+        mappedData = transformPayload(mappedData);
+      }
+
+      if (validate) {
+        const clientErrors = validate(mappedData);
+        if (clientErrors && clientErrors.length > 0) {
+          setValidationErrors(clientErrors);
+          toast.error("Validation failed. Please correct the errors listed below.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const response = await submitData(mappedData);
       const data = response.data;
 
       if (data.errors && data.errors.length > 0) {

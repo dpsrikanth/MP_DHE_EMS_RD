@@ -33,6 +33,7 @@ import { formatDate } from '../utils/dateUtils';
 import Papa from 'papaparse';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import AuditLogModal from '../components/AuditLogModal';
 import BulkImportModal from '../components/BulkImportModal';
 import { masterDataApi } from '../api/masterDataApi';
 
@@ -50,8 +51,9 @@ const InfoItem = ({ label, value, isMono = false, className = "" }) => (
 const Teachers = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [existingEmails, setExistingEmails] = useState([]);
   const [error, setError] = useState(null);
-
   const availableColumns = [
     { key: 'id', label: 'ID' },
     { key: 'name', label: 'Name', mandatory: true },
@@ -122,8 +124,12 @@ const Teachers = () => {
   const [viewData, setViewData] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [showImportModal, setShowImportModal] = useState(false);
+  const [showAuditModal, setShowAuditModal] = useState(false);
+  const handleOpenAudit = () => setShowAuditModal(true);
+  const handleCloseAudit = () => setShowAuditModal(false);
+
   const [showBulkDropdown, setShowBulkDropdown] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const navigate = useNavigate();
 
   // Fetch designations and departments
@@ -207,10 +213,36 @@ const Teachers = () => {
     return errs;
   };
 
+  // Validation for bulk import rows (email format)
+  const bulkValidate = (rows) => {
+    const errors = [];
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    rows.forEach((row, idx) => {
+      const email = row.email?.toString()?.trim();
+      const rowNumber = idx + 2; // accounting for header row
+      if (!email) {
+        errors.push({ row: rowNumber, message: 'Email is required' });
+      } else {
+        if (!emailRegex.test(email)) {
+          errors.push({ row: rowNumber, message: `Invalid email format: ${email}` });
+        }
+        // Duplicate check against existing emails (case‑insensitive)
+        if (existingEmails.includes(email.toLowerCase())) {
+          errors.push({ row: rowNumber, message: `Email already exists: ${email}` });
+        }
+      }
+    });
+    return errors;
+  };
+
   const fetchData = useCallback(async () => {
     try {
       const result = await masterDataApi.getTeachers();
-      setData(result || []);
+      const teachers = result || [];
+      setData(teachers);
+      // Populate existing emails for duplicate check (lowercased)
+      const emails = teachers.map(t => (t.email || '').toLowerCase());
+      setExistingEmails(emails);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     } finally {
@@ -438,6 +470,12 @@ const Teachers = () => {
                   >
                     <Plus size={20} />
                     <span>Add Staff</span>
+                  </button>
+                  <button
+                    onClick={handleOpenAudit}
+                    className="inline-flex items-center gap-2 px-4 py-3.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-2xl transition-all text-sm whitespace-nowrap"
+                  >
+                    View Audit Logs
                   </button>
                 </div>
               )}
@@ -790,6 +828,7 @@ const Teachers = () => {
       )}
 
       {/* ===== Bulk Import Modal ===== */}
+      <AuditLogModal isOpen={showAuditModal} onClose={handleCloseAudit} />
       <BulkImportModal 
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
@@ -799,9 +838,37 @@ const Teachers = () => {
         expectedColumns={{
           name: 'Name',
           email: 'Email',
-          departmentCode: 'Department Code'
+          departmentCode: ['Department Code', 'Department'],
+          designation: 'Designation',
+          designation_type: ['Designation Type', 'Staff Type', 'Category'],
+          qualification: 'Qualification',
+          experience: 'Experience',
+          specialization: 'Specialization',
+          pan_no: ['PAN Number', 'PAN No', 'PAN'],
+          aadhaar_no: ['Aadhaar Number', 'Aadhaar No', 'Aadhaar'],
+          dob: ['Date of Birth', 'DOB'],
+          gender: 'Gender',
+          joining_date: ['Joining Date', 'Date of Joining'],
+          phone: ['Phone Number', 'Phone', 'Contact Number', 'Mobile'],
+          address: 'Address',
+          status: 'Status'
         }}
-      />
+        optionalColumns={[
+          'designation',
+          'designation_type',
+          'qualification',
+          'experience',
+          'specialization',
+          'pan_no',
+          'aadhaar_no',
+          'dob',
+          'gender',
+          'joining_date',
+          'phone',
+          'address',
+          'status'
+        ]}
+      validate={bulkValidate} />
     </div>
   );
 };
