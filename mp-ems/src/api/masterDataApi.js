@@ -377,4 +377,12 @@ export const masterDataApi = {
         const response = await apiClient.get('/exams');
         return response.data;
     },
+    bulkUploadUniversities: async (data) => {
+        const response = await apiClient.post('/universities/bulk-upload', data);
+        return response.data;
+    },
+    bulkUploadColleges: async (data) => {
+        const response = await apiClient.post('/colleges/bulk-upload', data);
+        return response.data;
+    },
 };

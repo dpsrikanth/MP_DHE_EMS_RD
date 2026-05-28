@@ -7,12 +7,18 @@ import {
   Plus, 
   Pencil, 
   X, 
-  Check 
+  Check,
+  UploadCloud,
+  ChevronDown,
+  FileText,
+  DownloadCloud
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 import { masterDataApi } from '../api/masterDataApi';
+import BulkImportModal from '../components/BulkImportModal';
+import Papa from 'papaparse';
 
 const CheckboxOption = (props) => {
   return (
@@ -42,6 +48,8 @@ const Universities = () => {
   const [detailsList, setDetailsList] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [showBulkDropdown, setShowBulkDropdown] = useState(false);
 
   const availableColumns = [
     { key: 'id', label: 'ID' },
@@ -153,6 +161,47 @@ const Universities = () => {
     }
   };
 
+  const handleExport = () => {
+    if (!data || data.length === 0) {
+      toast.warning('No data available to export');
+      return;
+    }
+
+    const fieldsToExclude = ['id', 'status', 'created_at', 'updated_at', 'colleges_count', 'programs_count', 'academic_years_count'];
+    const exportData = data.map(item => {
+      const row = {};
+      Object.keys(item).forEach(key => {
+        if (!fieldsToExclude.includes(key)) {
+          row[key === 'name' ? 'University Name' : key === 'university_type' ? 'University Type' : key.charAt(0).toUpperCase() + key.slice(1)] = item[key];
+        }
+      });
+      return row;
+    });
+
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'universities_export.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowBulkDropdown(false);
+  };
+
+  const handleDownloadTemplate = () => {
+    const templateFields = ['University Name', 'Address', 'University Type', 'Status'];
+    const csv = Papa.unparse({ fields: templateFields, data: [] });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'universities_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowBulkDropdown(false);
+  };
+
   if (loading) return <div className="loading">Loading...</div>;
   if (error) return <div className="error">Error: {error}</div>;
 
@@ -181,6 +230,42 @@ const Universities = () => {
               visibleColumns={visibleColumns} 
               onToggle={toggleColumn} 
             />
+            <div className="relative">
+              <button
+                onClick={() => setShowBulkDropdown(!showBulkDropdown)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all shadow-sm border border-slate-200"
+              >
+                <span>Bulk Actions</span>
+                <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {showBulkDropdown && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50">
+                  <button 
+                    onClick={handleDownloadTemplate}
+                    className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                  >
+                    <FileText size={16} className="text-slate-400" />
+                    Download Template
+                  </button>
+                  <button 
+                    onClick={() => { setIsImportOpen(true); setShowBulkDropdown(false); }}
+                    className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                  >
+                    <UploadCloud size={16} className="text-slate-400" />
+                    Import CSV
+                  </button>
+                  <button 
+                    onClick={handleExport}
+                    className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                  >
+                    <DownloadCloud size={16} className="text-slate-400" />
+                    Export All
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button 
               onClick={() => navigate('/universities/add')}
               className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
@@ -363,6 +448,20 @@ const Universities = () => {
           </div>
         </div>
       )}
+      <BulkImportModal 
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        onUploadSuccess={fetchData}
+        endpoint="/universities/bulk-upload"
+        entityName="universities"
+        expectedColumns={{
+          name: ['University Name', 'Name'],
+          address: ['Address', 'University Address'],
+          university_type: ['University Type', 'Type'],
+          status: ['Status']
+        }}
+        optionalColumns={['address', 'university_type', 'status']}
+      />
     </div>
   );
 };

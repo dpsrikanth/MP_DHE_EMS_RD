@@ -9,13 +9,18 @@ import {
   X, 
   Check,
   Search,
-  ChevronDown
+  ChevronDown,
+  UploadCloud,
+  FileText,
+  DownloadCloud
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 import { masterDataApi } from '../api/masterDataApi';
 import authUtils from '../utils/authUtils';
+import BulkImportModal from '../components/BulkImportModal';
+import Papa from 'papaparse';
 
 const CheckboxOption = (props) => {
   return (
@@ -43,6 +48,8 @@ const Colleges = () => {
   const [error, setError] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [showBulkDropdown, setShowBulkDropdown] = useState(false);
   const navigate = useNavigate();
 
   const availableColumns = [
@@ -164,7 +171,6 @@ const Colleges = () => {
     setDeleteTarget(item);
     setShowDeleteModal(true);
   };
-
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     try {
@@ -175,6 +181,46 @@ const Colleges = () => {
     } catch (err) {
       toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
+  };
+  const handleExport = () => {
+    if (!data || data.length === 0) {
+      toast.warning('No data available to export');
+      return;
+    }
+
+    const fieldsToExclude = ['id', 'status', 'created_at', 'updated_at', 'university_id'];
+    const exportData = data.map(item => {
+      const row = {};
+      Object.keys(item).forEach(key => {
+        if (!fieldsToExclude.includes(key)) {
+          row[key === 'name' || key === 'college_name' ? 'College Name' : key === 'college_code' ? 'College Code' : key === 'university_name' ? 'University Name' : key.charAt(0).toUpperCase() + key.slice(1)] = item[key];
+        }
+      });
+      return row;
+    });
+
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'colleges_export.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowBulkDropdown(false);
+  };
+
+  const handleDownloadTemplate = () => {
+    const templateFields = ['College Name', 'College Code', 'University Name', 'Address', 'Status', 'Latitude', 'Longitude'];
+    const csv = Papa.unparse({ fields: templateFields, data: [] });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'colleges_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowBulkDropdown(false);
   };
 
   // Removed openEditModal and handleSave in favor of route-based Form page
@@ -214,6 +260,42 @@ const Colleges = () => {
               visibleColumns={visibleColumns} 
               onToggle={toggleColumn} 
             />
+            <div className="relative">
+              <button
+                onClick={() => setShowBulkDropdown(!showBulkDropdown)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all shadow-sm border border-slate-200"
+              >
+                <span>Bulk Actions</span>
+                <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {showBulkDropdown && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50">
+                  <button 
+                    onClick={handleDownloadTemplate}
+                    className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                  >
+                    <FileText size={16} className="text-slate-400" />
+                    Download Template
+                  </button>
+                  <button 
+                    onClick={() => { setIsImportOpen(true); setShowBulkDropdown(false); }}
+                    className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                  >
+                    <UploadCloud size={16} className="text-slate-400" />
+                    Import CSV
+                  </button>
+                  <button 
+                    onClick={handleExport}
+                    className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                  >
+                    <DownloadCloud size={16} className="text-slate-400" />
+                    Export All
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button 
               onClick={() => navigate('/colleges/add')}
               className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
@@ -368,6 +450,33 @@ const Colleges = () => {
           </div>
         </div>
       )}
+      <BulkImportModal 
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        onUploadSuccess={fetchData}
+        endpoint="/colleges/bulk-upload"
+        entityName="colleges"
+        expectedColumns={{
+          name: ['College Name', 'Name'],
+          college_code: ['College Code', 'Code'],
+          university_id: ['University ID', 'UniversityID'],
+          university_name: ['University Name', 'UniversityName'],
+          address: ['Address', 'College Address'],
+          status: ['Status'],
+          latitude: ['Latitude'],
+          longitude: ['Longitude']
+        }}
+        optionalColumns={['college_code', 'university_id', 'university_name', 'address', 'status', 'latitude', 'longitude']}
+        validate={(rows) => {
+          const errors = [];
+          rows.forEach((r, idx) => {
+            if (!r.university_id && !r.university_name) {
+              errors.push({ row: idx + 1, message: "At least one of 'University Name' or 'University ID' must be provided." });
+            }
+          });
+          return errors;
+        }}
+      />
     </div>
   );
 };

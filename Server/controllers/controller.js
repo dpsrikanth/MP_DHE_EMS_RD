@@ -2384,6 +2384,188 @@ const bulkUploadTeachers = async (req, res) => {
 };
 // End: Bulk Teacher API
 
+// Start: Bulk University API
+const bulkUploadUniversities = async (req, res) => {
+  try {
+    const { universities } = req.body;
+    if (!universities || !Array.isArray(universities) || universities.length === 0) {
+      return res.status(400).json({ message: "Invalid university payload" });
+    }
+
+    // Phase 1: Validate
+    let errors = [];
+    const namesInBatch = new Set();
+
+    for (let i = 0; i < universities.length; i++) {
+      const u = universities[i];
+      const rowNum = i + 1;
+      if (!u.name || !u.name.trim()) {
+        errors.push({ row: rowNum, message: "Missing required field: name" });
+      } else {
+        const cleanName = u.name.trim().toLowerCase();
+        if (namesInBatch.has(cleanName)) {
+          errors.push({ row: rowNum, message: `Duplicate name '${u.name}' found in the upload file.` });
+        }
+        namesInBatch.add(cleanName);
+
+        // Check DB for existing university with this name
+        const checkRes = await client.query('SELECT id FROM public.universities WHERE LOWER(TRIM(name)) = $1', [cleanName]);
+        if (checkRes.rows.length > 0) {
+          errors.push({ row: rowNum, message: `University with name '${u.name}' already exists.` });
+        }
+      }
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).json({ message: `Import rejected. Found ${errors.length} error(s).`, successes: 0, errors });
+    }
+
+    // Phase 2: Insert
+    const dbClient = await client.connect();
+    try {
+      await dbClient.query('BEGIN');
+      for (const u of universities) {
+        const name = u.name.trim();
+        const address = u.address ? u.address.trim() : null;
+        const status = u.status === undefined ? true : (u.status === 'false' || u.status === false ? false : true);
+        const university_type = u.university_type ? u.university_type.trim() : null;
+
+        const uRes = await dbClient.query(
+          'INSERT INTO public.universities (name, address, status, university_type) VALUES ($1, $2, $3, $4) RETURNING id',
+          [name, address, status, university_type]
+        );
+        const uId = uRes.rows[0].id;
+
+        // Also create matching default college
+        await dbClient.query(
+          'INSERT INTO public.colleges (name, university_id, address, status) VALUES ($1, $2, $3, $4)',
+          [name, uId, address, status]
+        );
+      }
+      await dbClient.query('COMMIT');
+      res.status(200).json({ message: `Successfully imported ${universities.length} universities.`, successes: universities.length, errors: [] });
+    } catch (txError) {
+      await dbClient.query('ROLLBACK');
+      throw txError;
+    } finally {
+      dbClient.release();
+    }
+  } catch (error) {
+    console.error("Bulk upload universities error:", error);
+    res.status(500).json({ message: "Bulk upload failed", error: error.message });
+  }
+};
+
+// Start: Bulk College API
+const bulkUploadColleges = async (req, res) => {
+  try {
+    const { colleges } = req.body;
+    if (!colleges || !Array.isArray(colleges) || colleges.length === 0) {
+      return res.status(400).json({ message: "Invalid college payload" });
+    }
+
+    // Phase 1: Validate
+    let errors = [];
+    const namesInBatch = new Set();
+    const codesInBatch = new Set();
+
+    for (let i = 0; i < colleges.length; i++) {
+      const c = colleges[i];
+      const rowNum = i + 1;
+
+      if (!c.name || !c.name.trim()) {
+        errors.push({ row: rowNum, message: "Missing required field: name" });
+      } else {
+        const cleanName = c.name.trim().toLowerCase();
+        if (namesInBatch.has(cleanName)) {
+          errors.push({ row: rowNum, message: `Duplicate name '${c.name}' found in the upload file.` });
+        }
+        namesInBatch.add(cleanName);
+
+        // Check DB for existing college with this name
+        const checkRes = await client.query('SELECT id FROM public.colleges WHERE LOWER(TRIM(name)) = $1', [cleanName]);
+        if (checkRes.rows.length > 0) {
+          errors.push({ row: rowNum, message: `College with name '${c.name}' already exists.` });
+        }
+      }
+
+      if (c.college_code) {
+        const cleanCode = c.college_code.toString().trim().toUpperCase();
+        if (cleanCode !== '') {
+          if (codesInBatch.has(cleanCode)) {
+            errors.push({ row: rowNum, message: `Duplicate college code '${c.college_code}' found in the upload file.` });
+          }
+          codesInBatch.add(cleanCode);
+
+          // Check DB for existing college code
+          const checkCode = await client.query('SELECT id FROM public.colleges WHERE UPPER(TRIM(college_code)) = $1', [cleanCode]);
+          if (checkCode.rows.length > 0) {
+            errors.push({ row: rowNum, message: `College code '${c.college_code}' already exists.` });
+          }
+        }
+      }
+
+      // Check university
+      if (!c.university_id && !c.university_name) {
+        errors.push({ row: rowNum, message: "Missing required field: university_id or university_name" });
+      } else {
+        let uId = c.university_id;
+        if (!uId && c.university_name) {
+          const uName = c.university_name.trim();
+          const uRes = await client.query('SELECT id FROM public.universities WHERE LOWER(TRIM(name)) = LOWER(TRIM($1))', [uName]);
+          if (uRes.rows.length === 0) {
+            errors.push({ row: rowNum, message: `University '${c.university_name}' not found in the database.` });
+          }
+        } else if (uId) {
+          const uRes = await client.query('SELECT id FROM public.universities WHERE id = $1', [uId]);
+          if (uRes.rows.length === 0) {
+            errors.push({ row: rowNum, message: `University ID ${uId} not found in the database.` });
+          }
+        }
+      }
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).json({ message: `Import rejected. Found ${errors.length} error(s).`, successes: 0, errors });
+    }
+
+    // Phase 2: Insert
+    const dbClient = await client.connect();
+    try {
+      await dbClient.query('BEGIN');
+      for (const c of colleges) {
+        const name = c.name.trim();
+        const college_code = c.college_code ? c.college_code.toString().trim() : null;
+        const address = c.address ? c.address.trim() : null;
+        const status = c.status === undefined ? true : (c.status === 'false' || c.status === false ? false : true);
+        const latitude = c.latitude ? parseFloat(c.latitude) : null;
+        const longitude = c.longitude ? parseFloat(c.longitude) : null;
+
+        let university_id = c.university_id;
+        if (!university_id && c.university_name) {
+          const uRes = await dbClient.query('SELECT id FROM public.universities WHERE LOWER(TRIM(name)) = LOWER(TRIM($1))', [c.university_name.trim()]);
+          university_id = uRes.rows[0].id;
+        }
+
+        await dbClient.query(
+          'INSERT INTO public.colleges (name, college_code, university_id, address, status, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [name, college_code, university_id, address, status, latitude, longitude]
+        );
+      }
+      await dbClient.query('COMMIT');
+      res.status(200).json({ message: `Successfully imported ${colleges.length} colleges.`, successes: colleges.length, errors: [] });
+    } catch (txError) {
+      await dbClient.query('ROLLBACK');
+      throw txError;
+    } finally {
+      dbClient.release();
+    }
+  } catch (error) {
+    console.error("Bulk upload colleges error:", error);
+    res.status(500).json({ message: "Bulk upload failed", error: error.message });
+  }
+};
+
 const publishExam = async (req, res) => {
   try {
     const { id } = req.params;
@@ -5776,6 +5958,7 @@ module.exports = {
   getStudentDiscrepancies,
   getStudentInternalExamAttendance,
   getAdminInternalExamAttendance,
-  getFacultyInternalExamAttendance
-
+  getFacultyInternalExamAttendance,
+  bulkUploadUniversities,
+  bulkUploadColleges
 };
