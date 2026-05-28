@@ -953,7 +953,7 @@ exports.getMarksReport = async (req, res) => {
                 cim.*, 
                 s.name as student_name, 
                 s.rollnumber, 
-                s."enrollmentNo",
+                COALESCE(s.rollnumber, s.admission_no) as "enrollmentNo",
                 sub.name as subject_name, 
                 sub.subject_code,
                 sem.semester_name,
@@ -1562,14 +1562,14 @@ exports.getExternalExams = async (req, res) => {
         }
 
         const query = `
-            SELECT DISTINCT ON (e.name, e.exam_date)
+            SELECT DISTINCT ON (e.name)
                 e.id, e.name as exam_name, e.exam_date, e.subject_id,
                 ms.semester_name
             FROM exams e
             LEFT JOIN master_semesters ms ON e.semester_id = ms.id
             WHERE e.exam_type = 2
               AND (e.university_id = $1 OR e.university_id IS NULL)
-            ORDER BY e.name, e.exam_date, e.id
+            ORDER BY e.name, e.exam_date DESC, e.id
         `;
         const result = await db.query(query, [university_id]);
         res.status(200).json(result.rows);

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { FileDown, Printer, Filter, Search, BookOpen, GraduationCap } from "lucide-react";
+import { FileDown, Printer, Filter, Search, BookOpen, Download } from "lucide-react";
 import Select from 'react-select';
 import { collegeAdminApi } from '../../api/collegeAdminApi';
 import { masterDataApi } from '../../api/masterDataApi';
+import { exportMarksCSV } from '../../utils/exportUtils';
 
 const MarksReports = () => {
     const [reportData, setReportData] = useState([]);
@@ -88,11 +89,15 @@ const MarksReports = () => {
                         Print Report
                     </button>
                     <button 
+                        onClick={() => exportMarksCSV(
+                            reportData,
+                            `marks_report_${selectedSemester?.label?.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}`
+                        )}
                         disabled={reportData.length === 0}
                         className="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all disabled:opacity-50"
                     >
-                        <GraduationCap size={18} />
-                        Export PDF
+                        <Download size={18} />
+                        Export CSV
                     </button>
                 </div>
             </div>

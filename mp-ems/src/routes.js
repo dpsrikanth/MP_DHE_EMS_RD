@@ -94,6 +94,12 @@ import PoliciesForm from "./pages/PoliciesForm";
 import DepartmentsForm from "./pages/DepartmentsForm";
 import Profile from "./pages/Profile";
 
+// New Report Pages
+import AttendanceShortage from "./pages/CollegeAdmin/AttendanceShortage";
+import ResultSummary from "./pages/CollegeAdmin/ResultSummary";
+import StatisticalReports from "./pages/UniversityAdmin/StatisticalReports";
+
+
 const AppRoutes = () => {
   return (
     <Routes>
@@ -184,6 +190,8 @@ const AppRoutes = () => {
       <Route path="/college-admin/seating-arrangement" element={<Layout><ProtectedRoute element={<SeatingArrangement />} /></Layout>} />
       <Route path="/college-admin/invigilator-assignment" element={<Layout><ProtectedRoute element={<InvigilatorAssignment />} /></Layout>} />
       <Route path="/college-admin/internal-attendance" element={<Layout><ProtectedRoute element={<InternalExamAttendance />} /></Layout>} />
+      <Route path="/college-admin/attendance-shortage" element={<Layout><ProtectedRoute element={<AttendanceShortage />} /></Layout>} />
+      <Route path="/college-admin/result-summary" element={<Layout><ProtectedRoute element={<ResultSummary />} /></Layout>} />
       {/* Internal Exam Routes */}
       <Route path="/college-admin/internal-exams/rounds" element={<Layout><ProtectedRoute element={<RoundManagement />} /></Layout>} />
       <Route path="/college-admin/internal-exams/schedules" element={<Layout><ProtectedRoute element={<ExamScheduling />} /></Layout>} />
@@ -241,6 +249,7 @@ const AppRoutes = () => {
       <Route path="/university/student-allocations" element={<Layout><ProtectedRoute element={<StudentCenterAllocations />} /></Layout>} />
       <Route path="/university/student-search" element={<Layout><ProtectedRoute element={<StudentGlobalSearch />} /></Layout>} />
       <Route path="/university/exam-attendance" element={<Layout><ProtectedRoute element={<UniversityExamAttendance />} /></Layout>} />
+      <Route path="/university/statistical-reports" element={<Layout><ProtectedRoute element={<StatisticalReports />} /></Layout>} />
       <Route path="/profile" element={<Layout><ProtectedRoute element={<Profile />} /></Layout>} />
       <Route path="/smtp-settings" element={<Layout><ProtectedRoute element={<SmtpSettings />} /></Layout>} />
     </Routes>

@@ -188,6 +188,169 @@ exports.getFacultyGradingStatus = async (req, res) => {
     }
 };
 
+// 6. College Admin: Attendance Shortage Report (students below 75%)
+exports.getAttendanceShortage = async (req, res) => {
+    try {
+        const college_id = req.user?.college_id;
+        if (!college_id) return res.status(403).json({ error: "No college assigned" });
+
+        const { semester_id, program_id, threshold = 75 } = req.query;
+
+        let query = `
+            SELECT
+                s.id as student_id,
+                COALESCE(s.rollnumber, s.admission_no) as enrollment_no,
+                s.name as student_name,
+                s."programName" as program_name,
+                ms.semester_name,
+                msub.name as subject_name,
+                msub.subject_code,
+                COUNT(a.id) as total_sessions,
+                SUM(CASE WHEN a.status = 'Present' THEN 1 ELSE 0 END) as attended_sessions,
+                ROUND(
+                    (SUM(CASE WHEN a.status = 'Present' THEN 1 ELSE 0 END)::numeric /
+                    NULLIF(COUNT(a.id), 0)) * 100, 2
+                ) as attendance_percentage
+            FROM student_attendance a
+            JOIN students s ON a.student_id = s.id
+            JOIN colleges c ON s."collageName" ILIKE c.name
+            LEFT JOIN master_subjects msub ON a.subject_id = msub.id
+            LEFT JOIN master_semesters ms ON a.semester_id = ms.id
+            WHERE c.id = $1
+              AND s."deleteStatus" = true
+        `;
+
+        const params = [college_id];
+        let idx = 2;
+
+        if (semester_id) {
+            query += ` AND a.semester_id = $${idx++}`;
+            params.push(semester_id);
+        }
+        if (program_id) {
+            query += ` AND msub.program_id = $${idx++}`;
+            params.push(program_id);
+        }
+
+        query += `
+            GROUP BY s.id, s.rollnumber, s.admission_no, s.name, s."programName", ms.semester_name, msub.name, msub.subject_code
+            HAVING ROUND(
+                (SUM(CASE WHEN a.status = 'Present' THEN 1 ELSE 0 END)::numeric /
+                NULLIF(COUNT(a.id), 0)) * 100, 2
+            ) < $${idx}
+            ORDER BY attendance_percentage ASC, s.name ASC
+        `;
+        params.push(parseFloat(threshold));
+
+        const result = await db.query(query, params);
+        // Add status label
+        const rows = result.rows.map(r => ({
+            ...r,
+            status: parseFloat(r.attendance_percentage) < 60 ? 'Critical' : 'Shortage'
+        }));
+        res.json(rows);
+    } catch (err) {
+        console.error("Attendance Shortage Error:", err);
+        res.status(500).json({ error: "Failed to fetch attendance shortage report" });
+    }
+};
+
+// 7. College Admin: Semester-wise Result Summary per Exam
+exports.getResultSummary = async (req, res) => {
+    try {
+        const college_id = req.user?.college_id;
+        if (!college_id) return res.status(403).json({ error: "No college assigned" });
+
+        const { exam_id, semester_id, program_id } = req.query;
+        if (!exam_id) return res.status(400).json({ error: "exam_id is required" });
+
+        const threshold = await getPassThreshold();
+
+        let query = `
+            SELECT
+                COALESCE(s.rollnumber, s.admission_no) as enrollment_no,
+                s.rollnumber,
+                s.name as student_name,
+                mp.name as program_name,
+                ms.semester_name,
+                msub.name as subject_name,
+                msub.subject_code,
+                (COALESCE(m.external_marks, 0) + COALESCE(cim.total_internal, 0)) as total_marks,
+                COALESCE(cim.total_internal, 0) as internal_marks,
+                COALESCE(m.external_marks, 0) as external_marks,
+                m.grace_marks,
+                m.status,
+                $2::numeric as pass_threshold,
+                CASE
+                    WHEN (COALESCE(m.external_marks, 0) + COALESCE(cim.total_internal, 0)) >= $2 THEN 'Pass'
+                    ELSE 'Fail'
+                END as result_status,
+                CASE
+                    WHEN (COALESCE(m.external_marks, 0) + COALESCE(cim.total_internal, 0)) >= 90 THEN 'O'
+                    WHEN (COALESCE(m.external_marks, 0) + COALESCE(cim.total_internal, 0)) >= 80 THEN 'A+'
+                    WHEN (COALESCE(m.external_marks, 0) + COALESCE(cim.total_internal, 0)) >= 70 THEN 'A'
+                    WHEN (COALESCE(m.external_marks, 0) + COALESCE(cim.total_internal, 0)) >= 60 THEN 'B+'
+                    WHEN (COALESCE(m.external_marks, 0) + COALESCE(cim.total_internal, 0)) >= 50 THEN 'B'
+                    WHEN (COALESCE(m.external_marks, 0) + COALESCE(cim.total_internal, 0)) >= $2 THEN 'C'
+                    ELSE 'F'
+                END as grade
+            FROM marks m
+            JOIN students s ON m.student_id = s.id
+            JOIN colleges c ON s."collageName" ILIKE c.name
+            JOIN master_subjects msub ON m.subject_id = msub.id
+            JOIN master_programs mp ON msub.program_id = mp.id
+            JOIN master_semesters ms ON msub.semester_id = ms.id
+            LEFT JOIN calculated_internal_marks cim ON cim.student_id = m.student_id AND cim.subject_id = m.subject_id
+            WHERE c.id = $1
+              AND m.exam_id IN (SELECT id FROM exams WHERE name = (SELECT name FROM exams WHERE id = $3))
+              AND s."deleteStatus" = true
+        `;
+
+        const params = [college_id, threshold, exam_id];
+        let idx = 4;
+
+        if (semester_id) {
+            query += ` AND msub.semester_id = $${idx++}`;
+            params.push(semester_id);
+        }
+        if (program_id) {
+            query += ` AND mp.id = $${idx++}`;
+            params.push(program_id);
+        }
+
+        query += ` ORDER BY mp.name, ms.semester_name, s.name, msub.name`;
+
+        const result = await db.query(query, params);
+
+        // Also compute summary stats across ALL subjects for this exam series
+        const statsQuery = `
+            SELECT
+                COUNT(DISTINCT m.student_id) as total_students,
+                SUM(CASE WHEN (COALESCE(m.external_marks, 0) + COALESCE(cim.total_internal, 0)) >= $2 THEN 1 ELSE 0 END) as total_passed,
+                SUM(CASE WHEN (COALESCE(m.external_marks, 0) + COALESCE(cim.total_internal, 0)) < $2 THEN 1 ELSE 0 END) as total_failed,
+                ROUND(AVG(COALESCE(m.external_marks, 0) + COALESCE(cim.total_internal, 0)), 2) as avg_marks,
+                MAX(COALESCE(m.external_marks, 0) + COALESCE(cim.total_internal, 0)) as highest_marks,
+                MIN(COALESCE(m.external_marks, 0) + COALESCE(cim.total_internal, 0)) as lowest_marks
+            FROM marks m
+            JOIN students s ON m.student_id = s.id
+            JOIN colleges c ON s."collageName" ILIKE c.name
+            LEFT JOIN calculated_internal_marks cim ON cim.student_id = m.student_id AND cim.subject_id = m.subject_id
+            WHERE c.id = $1 
+              AND m.exam_id IN (SELECT id FROM exams WHERE name = (SELECT name FROM exams WHERE id = $3)) 
+              AND s."deleteStatus" = true
+        `;
+        const statsResult = await db.query(statsQuery, [college_id, threshold, exam_id]);
+
+        res.json({
+            rows: result.rows,
+            summary: statsResult.rows[0]
+        });
+    } catch (err) {
+        console.error("Result Summary Error:", err);
+        res.status(500).json({ error: "Failed to fetch result summary" });
+    }
+};
+
 // 5. College Admin: College-wise Subject Performance
 exports.getCollegePerformance = async (req, res) => {
     try {

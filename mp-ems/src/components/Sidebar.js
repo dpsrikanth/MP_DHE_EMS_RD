@@ -133,6 +133,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             { id: 15, name: 'Faculty Status', path: '/college-admin/faculty-status', icon: <CheckCircle2 size={18} /> },
             { id: 16, name: 'College Performance', path: '/college-admin/performance', icon: <TrendingUp size={18} /> },
             { id: 51, name: 'Exam Attendance', path: '/college-admin/internal-attendance', icon: <ClipboardCheck size={18} /> },
+            { id: 60, name: 'Attendance Shortage', path: '/college-admin/attendance-shortage', icon: <Users size={18} /> },
+            { id: 61, name: 'Result Summary', path: '/college-admin/result-summary', icon: <TrendingUp size={18} /> },
+            { id: 62, name: 'Marks Reports', path: '/admin/marks-reports', icon: <FileText size={18} /> },
           ]
         }
       ];
@@ -180,6 +183,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             { id: 30, name: 'Institutional Ranking', path: '/university/institutional-ranking', icon: <Trophy size={18} /> },
             { id: 28, name: 'Infrastructure', path: '/university/infrastructure-analytics', icon: <Map size={18} /> },
             { id: 51, name: 'Exam Attendance', path: '/university/exam-attendance', icon: <ClipboardCheck size={18} /> },
+            { id: 70, name: 'Statistical Reports', path: '/university/statistical-reports', icon: <BarChart3 size={18} /> },
           ]
         },
         {

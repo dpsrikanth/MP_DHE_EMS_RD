@@ -14,5 +14,7 @@ router.get('/institutional-ranking', reportController.getInstitutionalRanking);
 // --- College Admin Routes ---
 router.get('/faculty-grading-status', reportController.getFacultyGradingStatus);
 router.get('/college-performance', reportController.getCollegePerformance);
+router.get('/attendance-shortage', reportController.getAttendanceShortage);
+router.get('/result-summary', reportController.getResultSummary);
 
 module.exports = router;

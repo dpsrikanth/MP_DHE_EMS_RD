@@ -412,5 +412,21 @@ export const collegeAdminApi = {
         }
         const response = await apiClient.get(url);
         return response.data;
-    }
+    },
+
+    /**
+     * Get attendance shortage report (students below threshold %)
+     */
+    getAttendanceShortage: async (params) => {
+        const response = await apiClient.get('/reports/attendance-shortage', { params });
+        return response.data;
+    },
+
+    /**
+     * Get semester-wise result summary for a given exam
+     */
+    getResultSummary: async (params) => {
+        const response = await apiClient.get('/reports/result-summary', { params });
+        return response.data;
+    },
 };
