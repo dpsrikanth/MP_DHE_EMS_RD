@@ -4021,7 +4021,122 @@ const deleteMasterSubject = async (req, res) => {
   }
 };
 
+// Start: Bulk Master Subject API
+const bulkUploadMasterSubjects = async (req, res) => {
+  try {
+    const { subjects } = req.body;
+    if (!subjects || !Array.isArray(subjects) || subjects.length === 0) {
+      return res.status(400).json({ message: "Invalid subjects payload" });
+    }
+
+    const { university_id } = req.user || {};
+    const errors = [];
+    const codesInBatch = new Set();
+    const resolvedPrograms = {};
+    const resolvedSemesters = {};
+
+    for (let i = 0; i < subjects.length; i++) {
+      const s = subjects[i];
+      const rowNum = i + 1;
+
+      if (!s.name || !String(s.name).trim()) {
+        errors.push({ row: rowNum, message: "Missing required field: name" });
+      }
+      if (!s.subject_code || !String(s.subject_code).trim()) {
+        errors.push({ row: rowNum, message: "Missing required field: subject_code" });
+      } else {
+        const cleanCode = String(s.subject_code).trim().toUpperCase();
+        if (codesInBatch.has(cleanCode)) {
+          errors.push({ row: rowNum, message: `Duplicate subject code '${s.subject_code}' in upload file.` });
+        }
+        codesInBatch.add(cleanCode);
+        const codeCheck = await client.query('SELECT id FROM master_subjects WHERE UPPER(TRIM(subject_code)) = $1', [cleanCode]);
+        if (codeCheck.rows.length > 0) {
+          errors.push({ row: rowNum, message: `Subject code '${s.subject_code}' already exists.` });
+        }
+      }
+
+      // Resolve program_name → program_id
+      if (s.program_name && !s.program_id) {
+        const key = String(s.program_name).trim().toLowerCase();
+        if (!resolvedPrograms[key]) {
+          const pRes = await client.query("SELECT id FROM master_programs WHERE LOWER(TRIM(name)) = $1", [key]);
+          if (pRes.rows.length === 0) {
+            errors.push({ row: rowNum, message: `Program '${s.program_name}' not found.` });
+          } else {
+            resolvedPrograms[key] = pRes.rows[0].id;
+          }
+        }
+      }
+
+      // Resolve semester_name → semester_id
+      if (s.semester_name && !s.semester_id) {
+        const key = String(s.semester_name).trim().toLowerCase();
+        if (!resolvedSemesters[key]) {
+          const semRes = await client.query("SELECT id FROM master_semesters WHERE LOWER(TRIM(semester_name)) = $1", [key]);
+          if (semRes.rows.length === 0) {
+            errors.push({ row: rowNum, message: `Semester '${s.semester_name}' not found.` });
+          } else {
+            resolvedSemesters[key] = semRes.rows[0].id;
+          }
+        }
+      }
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).json({ message: `Import rejected. Found ${errors.length} error(s).`, successes: 0, errors });
+    }
+
+    const validMappingTypes = ['Major 1', 'Major 2', 'Major', 'Minor', 'Elective', 'Vocational', 'FC-1', 'FC-2', 'FP/Int/Appr', 'AEC', 'SEC', 'VBC', 'English Literature', 'Hindi Literature'];
+
+    const dbClient = await client.connect();
+    try {
+      await dbClient.query('BEGIN');
+      for (const s of subjects) {
+        const name = String(s.name).trim();
+        const subject_code = String(s.subject_code).trim();
+        const mapping_type = s.mapping_type && validMappingTypes.includes(s.mapping_type) ? s.mapping_type : 'Major';
+        const is_mandatory = s.is_mandatory === 'E' ? 'E' : 'M';
+        const has_examination = s.has_examination === false || s.has_examination === 'false' ? false : true;
+        const periods_per_week = s.periods_per_week ? parseInt(s.periods_per_week, 10) || 6 : 6;
+        let credit = ['Major 1', 'Major 2', 'Major', 'Minor', 'Elective'].includes(mapping_type) ? 6 : 4;
+        if (s.credit) credit = parseInt(s.credit, 10) || credit;
+
+        let program_id = s.program_id || null;
+        if (!program_id && s.program_name) {
+          const key = String(s.program_name).trim().toLowerCase();
+          program_id = resolvedPrograms[key] || null;
+        }
+
+        let semester_id = s.semester_id || null;
+        if (!semester_id && s.semester_name) {
+          const key = String(s.semester_name).trim().toLowerCase();
+          semester_id = resolvedSemesters[key] || null;
+        }
+
+        await dbClient.query(
+          `INSERT INTO master_subjects (subject_code, name, program_id, semester_id, mapping_type, is_mandatory, has_examination, periods_per_week, credit, status, university_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Active', $10)`,
+          [subject_code, name, program_id, semester_id, mapping_type, is_mandatory, has_examination, periods_per_week, credit, university_id || null]
+        );
+      }
+      await dbClient.query('COMMIT');
+      res.status(200).json({ message: `Successfully imported ${subjects.length} subjects.`, successes: subjects.length, errors: [] });
+    } catch (txError) {
+      await dbClient.query('ROLLBACK');
+      throw txError;
+    } finally {
+      dbClient.release();
+    }
+  } catch (error) {
+    console.error("Bulk upload master subjects error:", error);
+    res.status(500).json({ message: "Bulk upload failed", error: error.message });
+  }
+};
+// End: Bulk Master Subject API
+
 const getMasterPrograms = async (req, res) => {
+
   try {
     const { role } = req.user || {};
     const university_id = req.user?.university_id || req.user?.universityId;
@@ -5978,5 +6093,6 @@ module.exports = {
   getAdminInternalExamAttendance,
   getFacultyInternalExamAttendance,
   bulkUploadUniversities,
-  bulkUploadColleges
+  bulkUploadColleges,
+  bulkUploadMasterSubjects
 };
