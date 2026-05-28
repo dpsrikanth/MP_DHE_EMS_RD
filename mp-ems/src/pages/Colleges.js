@@ -263,7 +263,7 @@ const Colleges = () => {
             <div className="relative">
               <button
                 onClick={() => setShowBulkDropdown(!showBulkDropdown)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all shadow-sm border border-slate-200"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all shadow-sm border border-slate-200 whitespace-nowrap"
               >
                 <span>Bulk Actions</span>
                 <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />

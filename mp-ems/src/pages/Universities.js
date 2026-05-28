@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import Select, { components } from 'react-select';
-import { 
-  School, 
-  Plus, 
-  Pencil, 
-  X, 
+import {
+  School,
+  Plus,
+  Pencil,
+  X,
   Check,
   UploadCloud,
   ChevronDown,
@@ -71,7 +71,7 @@ const Universities = () => {
     totalItems,
     visibleColumns,
     toggleColumn
-  } = useDataTable(data, { 
+  } = useDataTable(data, {
     searchFields: ['id', 'name'],
     initialSort: { field: 'id', direction: 'desc' },
     initialPageSize: 10,
@@ -99,12 +99,12 @@ const Universities = () => {
     try {
       // Fetch Masters
       const masterData = await masterDataApi.getMasters();
-      
+
       const pOptions = masterData.policies.map(p => ({ value: p.id, label: p.name }));
       const prgOptions = masterData.programs.map(p => ({ value: p.id, label: p.name }));
       const ayOptions = masterData.academicYears.map(ay => ({ value: ay.id, label: ay.year_name }));
       const semOptions = masterData.semesters.map(s => ({ value: s.id, label: s.semester_name }));
-      
+
       setPolicyOptions(pOptions);
       setProgramOptions(prgOptions);
       setAcademicYearOptions(ayOptions);
@@ -149,9 +149,9 @@ const Universities = () => {
       if (type === 'colleges') allData = await masterDataApi.getColleges();
       else if (type === 'programs') allData = await masterDataApi.getPrograms();
       else if (type === 'academic_years') allData = await masterDataApi.getAcademicYears();
-      
+
       const filtered = allData.filter(item => item.university_id === university.id);
-      
+
       setDetailsList(filtered);
       setDetailsType(type);
       setDetailsModal(true);
@@ -219,16 +219,16 @@ const Universities = () => {
               <p className="text-sm text-slate-500 mt-1 font-medium">Manage and configure institution profiles</p>
             </div>
           </div>
-          <div className="flex flex-col md:flex-row md:items-center gap-4">
-            <TableSearch 
-              value={searchQuery} 
-              onChange={setSearchQuery} 
+          <div className="flex flex-col md:flex-row md:items-center gap-4 whitespace-nowrap">
+            <TableSearch
+              value={searchQuery}
+              onChange={setSearchQuery}
               placeholder="Search universities by name or ID..."
             />
-            <ColumnVisibilitySelector 
-              columns={availableColumns} 
-              visibleColumns={visibleColumns} 
-              onToggle={toggleColumn} 
+            <ColumnVisibilitySelector
+              columns={availableColumns}
+              visibleColumns={visibleColumns}
+              onToggle={toggleColumn}
             />
             <div className="relative">
               <button
@@ -238,24 +238,24 @@ const Universities = () => {
                 <span>Bulk Actions</span>
                 <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />
               </button>
-              
+
               {showBulkDropdown && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50">
-                  <button 
+                  <button
                     onClick={handleDownloadTemplate}
                     className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
                   >
                     <FileText size={16} className="text-slate-400" />
                     Download Template
                   </button>
-                  <button 
+                  <button
                     onClick={() => { setIsImportOpen(true); setShowBulkDropdown(false); }}
                     className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
                   >
                     <UploadCloud size={16} className="text-slate-400" />
                     Import CSV
                   </button>
-                  <button 
+                  <button
                     onClick={handleExport}
                     className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
                   >
@@ -266,7 +266,7 @@ const Universities = () => {
               )}
             </div>
 
-            <button 
+            <button
               onClick={() => navigate('/universities/add')}
               className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
             >
@@ -281,19 +281,19 @@ const Universities = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-y border-slate-100 bg-slate-50/50">
-                <SortHeader 
-                  label="ID" 
-                  field="id" 
-                  currentSort={sortConfig} 
-                  onSort={handleSort} 
-                  className="px-6" 
+                <SortHeader
+                  label="ID"
+                  field="id"
+                  currentSort={sortConfig}
+                  onSort={handleSort}
+                  className="px-6"
                   visible={visibleColumns.id}
                 />
-                <SortHeader 
-                  label="University Name" 
-                  field="name" 
-                  currentSort={sortConfig} 
-                  onSort={handleSort} 
+                <SortHeader
+                  label="University Name"
+                  field="name"
+                  currentSort={sortConfig}
+                  onSort={handleSort}
                   visible={visibleColumns.name}
                 />
                 <th className={`${visibleColumns.colleges ? '' : 'hidden'} px-4 py-3.5 text-[12px] font-black  tracking-widest text-slate-400`}>Linked Colleges</th>
@@ -313,7 +313,7 @@ const Universities = () => {
                     {visibleColumns.colleges && (
                       <td className="px-4 py-4 font-medium">
                         {item.colleges_count > 0 ? (
-                          <button 
+                          <button
                             onClick={() => showDetails(item, 'colleges')}
                             className="inline-flex items-center px-4 py-1.5 bg-indigo- text-indigo- rounded-full text-[13px] font-bold hover:bg-indigo- transition-colors"
                           >
@@ -326,14 +326,14 @@ const Universities = () => {
                     )}
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button 
+                        <button
                           onClick={() => navigate(`/universities/edit/${item.id}`)}
                           className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-xl transition-all"
                           title="Edit University"
                         >
                           <Pencil size={18} />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDelete(item)}
                           className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                           title="Delete University"
@@ -341,7 +341,7 @@ const Universities = () => {
                           <MdDelete size={20} />
                         </button>
                         <div className="w-px h-4 bg-slate-200 mx-1"></div>
-                        <button 
+                        <button
                           onClick={() => navigate('/colleges', { state: { universityId: item.id, addMode: true } })}
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-indigo-600 hover:text-white rounded-xl text-[13px] font-bold transition-all"
                           title="Manage Colleges"
@@ -358,7 +358,7 @@ const Universities = () => {
                   <td colSpan="4" className="px-6 py-8 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <p className="text-sm font-bold text-slate-400  tracking-widest">No universities match your search</p>
-                      <button 
+                      <button
                         onClick={() => setSearchQuery('')}
                         className="text-[13px] font-black text-indigo-500 hover:text-indigo-600 underline  tracking-tighter"
                       >
@@ -372,7 +372,7 @@ const Universities = () => {
           </table>
         </div>
 
-        <TablePagination 
+        <TablePagination
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
@@ -431,13 +431,13 @@ const Universities = () => {
                 Are you sure you want to delete <span className="font-bold text-slate-900">"{deleteTarget?.name}"</span>? This action cannot be reversed.
               </p>
               <div className="flex gap-3 w-full">
-                <button 
+                <button
                   className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all"
                   onClick={() => setShowDeleteModal(false)}
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-500/20 transition-all"
                   onClick={handleDeleteConfirm}
                 >
@@ -448,7 +448,7 @@ const Universities = () => {
           </div>
         </div>
       )}
-      <BulkImportModal 
+      <BulkImportModal
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
         onUploadSuccess={fetchData}
