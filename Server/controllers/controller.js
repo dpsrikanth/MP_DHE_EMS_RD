@@ -2057,6 +2057,8 @@ const bulkUploadStudents = async (req, res) => {
       if (!s.programName) errors.push({ row: rowNum, message: "Missing required field: programName" });
       if (!s.semister) errors.push({ row: rowNum, message: "Missing required field: semister" });
       if (!s.admission_year) errors.push({ row: rowNum, message: "Missing required field: admission_year" });
+      if (!s.admission_no || !s.admission_no.toString().trim()) errors.push({ row: rowNum, message: "Missing required field: admission_no" });
+      if (!s.rollnumber || !s.rollnumber.toString().trim()) errors.push({ row: rowNum, message: "Missing required field: rollnumber" });
 
       // Check for duplicates in the current batch
       if (s.email) {

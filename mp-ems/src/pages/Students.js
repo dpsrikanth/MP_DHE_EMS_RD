@@ -510,7 +510,7 @@ const Students = () => {
           collageName: 'College Name',
           department: 'Department Code'
         }}
-        optionalColumns={['admission_no', 'rollnumber', 'collageName', 'department']}
+        optionalColumns={['collageName', 'department']}
         validate={(students) => {
           const errors = [];
           const emailsInBatch = new Set();
