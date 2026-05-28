@@ -27,13 +27,13 @@ exports.getInfrastructureAnalytics = async (req, res) => {
                         SELECT COALESCE(SUM(total_capacity), 0) 
                         FROM examination_halls 
                         WHERE college_id = c.id AND status = 'Approved'
-                          AND (exam_id = $1 OR exam_id IS NULL)
+                          AND (exam_id IN (SELECT id FROM exams WHERE name = (SELECT name FROM exams WHERE id = $1)) OR exam_id IS NULL)
                     ) as approved_capacity,
                     (
                         SELECT COALESCE(json_agg(json_build_object('code', hall_code, 'capacity', total_capacity)), '[]'::json)
                         FROM examination_halls
                         WHERE college_id = c.id AND status = 'Approved'
-                          AND (exam_id = $1 OR exam_id IS NULL)
+                          AND (exam_id IN (SELECT id FROM exams WHERE name = (SELECT name FROM exams WHERE id = $1)) OR exam_id IS NULL)
                     ) as approved_halls_details,
                     (
                         SELECT COUNT(DISTINCT er.student_id) 
@@ -42,7 +42,7 @@ exports.getInfrastructureAnalytics = async (req, res) => {
                         JOIN colleges sc ON s."collageName" ILIKE sc.name 
                         WHERE sc.id = c.id AND s."deleteStatus" = true 
                           AND er.payment_status = 'Paid'
-                          AND er.exam_id = $1
+                          AND er.exam_id IN (SELECT id FROM exams WHERE name = (SELECT name FROM exams WHERE id = $1))
                     ) as total_students
                 FROM colleges c
                 ORDER BY c.name ASC
@@ -93,9 +93,9 @@ exports.getGlobalExamStats = async (req, res) => {
             query = `
                 SELECT 
                     1 as total_exams,
-                    (SELECT COUNT(*) FROM exam_registrations WHERE exam_id = $2 AND payment_status = 'Paid') as total_students,
-                    (SELECT COUNT(*) FROM marks WHERE exam_id = $2 AND total_marks >= $1) as total_passed,
-                    (SELECT COUNT(*) FROM marks WHERE exam_id = $2 AND total_marks < $1) as total_failed
+                    (SELECT COUNT(*) FROM exam_registrations WHERE exam_id IN (SELECT id FROM exams WHERE name = (SELECT name FROM exams WHERE id = $2)) AND payment_status = 'Paid') as total_students,
+                    (SELECT COUNT(*) FROM marks WHERE exam_id IN (SELECT id FROM exams WHERE name = (SELECT name FROM exams WHERE id = $2)) AND total_marks >= $1) as total_passed,
+                    (SELECT COUNT(*) FROM marks WHERE exam_id IN (SELECT id FROM exams WHERE name = (SELECT name FROM exams WHERE id = $2)) AND total_marks < $1) as total_failed
             `;
             params.push(exam_id);
         } else {

@@ -367,4 +367,10 @@ export const masterDataApi = {
         const response = await apiClient.delete(`/roles/${id}`);
         return response.data;
     },
+
+    // --- Exams ---
+    getExams: async () => {
+        const response = await apiClient.get('/exams');
+        return response.data;
+    },
 };

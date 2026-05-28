@@ -65,11 +65,20 @@ const ExamAnalytics = () => {
             className="w-full md:w-80 px-4 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/20 cursor-pointer appearance-none transition-all"
           >
             <option value="">All Exams (Aggregate)</option>
-            {exams.map(exam => (
-              <option key={exam.id} value={exam.id}>
-                {exam.name} ({formatDate(exam.exam_date)})
-              </option>
-            ))}
+            {exams
+              .filter(exam => exam.exam_type_name === 'External')
+              .reduce((acc, current) => {
+                if (!acc.some(item => item.exam_name === current.exam_name)) {
+                  acc.push(current);
+                }
+                return acc;
+              }, [])
+              .map(exam => (
+                <option key={exam.id} value={exam.id}>
+                  {exam.exam_name}
+                </option>
+              ))
+            }
           </select>
         </div>
       </div>
