@@ -36,6 +36,15 @@ const Profile = () => {
       : 'U';
   };
 
+  // Normalize raw IPv6 addresses stored in DB to human-readable form
+  const normalizeIP = (ip) => {
+    if (!ip) return 'Unknown';
+    const t = ip.trim();
+    if (t.startsWith('::ffff:')) return t.slice(7);   // ::ffff:192.168.x.x → 192.168.x.x
+    if (t === '::1') return '127.0.0.1';              // IPv6 loopback
+    return t;
+  };
+
   const isStudent = roleName.toLowerCase() === 'student';
   const isFaculty = roleName.toLowerCase() === 'faculty' || roleName.toLowerCase() === 'teacher' || roleName === 'HOD';
 
@@ -213,7 +222,7 @@ const Profile = () => {
                             </div>
                           </td>
                           <td className="py-4 text-sm font-semibold text-slate-600 font-mono">
-                            {log.ip_address || '127.0.0.1'}
+                            {normalizeIP(log.ip_address)}
                           </td>
                           <td className="py-4 text-sm">
                             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${

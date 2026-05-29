@@ -8,6 +8,31 @@ const crypto = require("crypto");
 const sendEmail = require("../utils/sendEmail");// -- Phase 1: Student Account Activation (Self-Onboarding) --
 const { applyGraceMarks } = require("../utils/graceUtils");
 
+/**
+ * Extracts the real client IP from a request.
+ * Priority: X-Forwarded-For → X-Real-IP → socket.remoteAddress
+ * Normalizes IPv6-mapped IPv4 (::ffff:x.x.x.x → x.x.x.x) and
+ * IPv6 loopback (::1 → 127.0.0.1).
+ */
+const getClientIP = (req) => {
+  // X-Forwarded-For can be a comma-separated list; the first entry is the client
+  const forwarded = req.headers['x-forwarded-for'];
+  const realIp    = req.headers['x-real-ip'];
+  const raw = (forwarded ? forwarded.split(',')[0] : null)
+    || realIp
+    || req.socket?.remoteAddress
+    || req.connection?.remoteAddress
+    || 'Unknown';
+
+  const ip = raw.trim();
+
+  // Normalize ::ffff:x.x.x.x  →  x.x.x.x
+  if (ip.startsWith('::ffff:')) return ip.slice(7);
+  // Normalize IPv6 loopback  →  127.0.0.1
+  if (ip === '::1') return '127.0.0.1';
+  return ip;
+};
+
 const initiateRegistration = async (req, res) => {
   try {
     const email = req.body.email?.trim();
@@ -672,7 +697,7 @@ const Login = async (req, res) => {
          VALUES ($1, now(), $2, $3, 'FAILED')`,
         [
           result.id,
-          req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+          getClientIP(req),
           req.headers['user-agent'] || 'Unknown Device'
         ]
       ).catch(err => logger.error("Error writing failed login history", err));
@@ -686,7 +711,7 @@ const Login = async (req, res) => {
        VALUES ($1, now(), $2, $3, 'SUCCESS')`,
       [
         result.id,
-        req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+        getClientIP(req),
         req.headers['user-agent'] || 'Unknown Device'
       ]
     ).catch(err => logger.error("Error writing successful login history", err));

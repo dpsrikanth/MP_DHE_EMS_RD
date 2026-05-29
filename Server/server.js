@@ -6,6 +6,10 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const app = express();
 const port = process.env.PORT || 8080;
+
+// Trust reverse-proxy headers (X-Forwarded-For, X-Real-IP) so req.ip
+// returns the actual client IP instead of the loopback address.
+app.set('trust proxy', true);
 const logger = require('./utils/logger');
 
 const routes = require('./routes/routes');
