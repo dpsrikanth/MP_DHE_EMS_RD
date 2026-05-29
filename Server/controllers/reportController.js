@@ -196,6 +196,8 @@ exports.getAttendanceShortage = async (req, res) => {
 
         const { semester_id, program_id, threshold = 75 } = req.query;
 
+        const thresh = parseFloat(threshold);
+
         let query = `
             SELECT
                 s.id as student_id,
@@ -228,7 +230,7 @@ exports.getAttendanceShortage = async (req, res) => {
             params.push(semester_id);
         }
         if (program_id) {
-            query += ` AND msub.program_id = $${idx++}`;
+            query += ` AND s."programName" ILIKE (SELECT name FROM master_programs WHERE id = $${idx++})`;
             params.push(program_id);
         }
 
@@ -240,18 +242,167 @@ exports.getAttendanceShortage = async (req, res) => {
             ) < $${idx}
             ORDER BY attendance_percentage ASC, s.name ASC
         `;
-        params.push(parseFloat(threshold));
+        params.push(thresh);
 
         const result = await db.query(query, params);
-        // Add status label
         const rows = result.rows.map(r => ({
             ...r,
+            classes_needed: Math.max(0, Math.ceil((thresh * Number(r.total_sessions) - 100 * Number(r.attended_sessions)) / (100 - thresh))),
             status: parseFloat(r.attendance_percentage) < 60 ? 'Critical' : 'Shortage'
         }));
         res.json(rows);
     } catch (err) {
         console.error("Attendance Shortage Error:", err);
         res.status(500).json({ error: "Failed to fetch attendance shortage report" });
+    }
+};
+
+// 8. HOD: Attendance Shortage scoped to HOD's department
+exports.getHODAttendanceShortage = async (req, res) => {
+    try {
+        const college_id = req.user?.college_id;
+        const department_id = req.user?.department_id;
+        if (!college_id) return res.status(403).json({ error: "No college assigned" });
+        if (!department_id) return res.status(403).json({ error: "No department assigned" });
+
+        const { semester_id, program_id, threshold = 75 } = req.query;
+        const thresh = parseFloat(threshold);
+
+        let query = `
+            SELECT
+                s.id as student_id,
+                COALESCE(s.rollnumber, s.admission_no) as enrollment_no,
+                s.name as student_name,
+                s."programName" as program_name,
+                ms.semester_name,
+                msub.name as subject_name,
+                msub.subject_code,
+                COUNT(a.id) as total_sessions,
+                SUM(CASE WHEN a.status = 'Present' THEN 1 ELSE 0 END) as attended_sessions,
+                ROUND(
+                    (SUM(CASE WHEN a.status = 'Present' THEN 1 ELSE 0 END)::numeric /
+                    NULLIF(COUNT(a.id), 0)) * 100, 2
+                ) as attendance_percentage
+            FROM student_attendance a
+            JOIN students s ON a.student_id = s.id
+            JOIN colleges c ON s."collageName" ILIKE c.name
+            LEFT JOIN master_subjects msub ON a.subject_id = msub.id
+            LEFT JOIN master_semesters ms ON a.semester_id = ms.id
+            JOIN policy_program_subjects pps ON pps.subject_id = a.subject_id AND pps.college_id = c.id
+            WHERE c.id = $1
+              AND pps.department_id = $2
+              AND s."deleteStatus" = true
+        `;
+
+        const params = [college_id, department_id];
+        let idx = 3;
+
+        if (semester_id) {
+            query += ` AND a.semester_id = $${idx++}`;
+            params.push(semester_id);
+        }
+        if (program_id) {
+            query += ` AND s."programName" ILIKE (SELECT name FROM master_programs WHERE id = $${idx++})`;
+            params.push(program_id);
+        }
+
+        query += `
+            GROUP BY s.id, s.rollnumber, s.admission_no, s.name, s."programName", ms.semester_name, msub.name, msub.subject_code
+            HAVING ROUND(
+                (SUM(CASE WHEN a.status = 'Present' THEN 1 ELSE 0 END)::numeric /
+                NULLIF(COUNT(a.id), 0)) * 100, 2
+            ) < $${idx}
+            ORDER BY attendance_percentage ASC, s.name ASC
+        `;
+        params.push(thresh);
+
+        const result = await db.query(query, params);
+        const rows = result.rows.map(r => ({
+            ...r,
+            classes_needed: Math.max(0, Math.ceil((thresh * Number(r.total_sessions) - 100 * Number(r.attended_sessions)) / (100 - thresh))),
+            status: parseFloat(r.attendance_percentage) < 60 ? 'Critical' : 'Shortage'
+        }));
+        res.json(rows);
+    } catch (err) {
+        console.error("HOD Attendance Shortage Error:", err);
+        res.status(500).json({ error: "Failed to fetch HOD attendance shortage report" });
+    }
+};
+
+// 9. Faculty: Attendance Shortage for their assigned subjects
+exports.getFacultyAttendanceShortage = async (req, res) => {
+    try {
+        const user_id = req.user?.id;
+        if (!user_id) return res.status(403).json({ error: "Not authenticated" });
+
+        // Resolve teacher_id from master_teachers table (master_teachers.user_id = users.id)
+        const teacherRes = await db.query('SELECT id FROM master_teachers WHERE user_id = $1', [user_id]);
+        if (teacherRes.rowCount === 0) {
+            return res.status(403).json({ error: "Logged in user is not associated with a master teacher record" });
+        }
+        const teacher_id = teacherRes.rows[0].id;
+
+        const { semester_id, program_id, threshold = 75 } = req.query;
+        const thresh = parseFloat(threshold);
+
+        let query = `
+            SELECT
+                s.id as student_id,
+                COALESCE(s.rollnumber, s.admission_no) as enrollment_no,
+                s.name as student_name,
+                s."programName" as program_name,
+                ms.semester_name,
+                msub.name as subject_name,
+                msub.subject_code,
+                fs.section,
+                COUNT(a.id) as total_sessions,
+                SUM(CASE WHEN a.status = 'Present' THEN 1 ELSE 0 END) as attended_sessions,
+                ROUND(
+                    (SUM(CASE WHEN a.status = 'Present' THEN 1 ELSE 0 END)::numeric /
+                    NULLIF(COUNT(a.id), 0)) * 100, 2
+                ) as attendance_percentage
+            FROM student_attendance a
+            JOIN students s ON a.student_id = s.id
+            LEFT JOIN master_subjects msub ON a.subject_id = msub.id
+            LEFT JOIN master_semesters ms ON a.semester_id = ms.id
+            JOIN faculty_subjects fs ON fs.subject_id = a.subject_id
+                AND fs.teacher_id = $1
+                AND (fs.section IS NULL OR fs.section = a.section)
+            WHERE s."deleteStatus" = true
+        `;
+
+        const params = [teacher_id];
+        let idx = 2;
+
+        if (semester_id) {
+            query += ` AND a.semester_id = $${idx++}`;
+            params.push(semester_id);
+        }
+        if (program_id) {
+            query += ` AND s."programName" ILIKE (SELECT name FROM master_programs WHERE id = $${idx++})`;
+            params.push(program_id);
+        }
+
+        query += `
+            GROUP BY s.id, s.rollnumber, s.admission_no, s.name, s."programName", ms.semester_name, msub.name, msub.subject_code, fs.section
+            HAVING ROUND(
+                (SUM(CASE WHEN a.status = 'Present' THEN 1 ELSE 0 END)::numeric /
+                NULLIF(COUNT(a.id), 0)) * 100, 2
+            ) < $${idx}
+            ORDER BY msub.name ASC, attendance_percentage ASC, s.name ASC
+        `;
+        params.push(thresh);
+
+        const result = await db.query(query, params);
+        const rows = result.rows.map(r => ({
+            ...r,
+            classes_needed: Math.max(0, Math.ceil((thresh * Number(r.total_sessions) - 100 * Number(r.attended_sessions)) / (100 - thresh))),
+            status: parseFloat(r.attendance_percentage) < 60 ? 'Critical' : 'Shortage'
+        }));
+        res.json(rows);
+    } catch (err) {
+        console.error("Faculty Attendance Shortage Error:", err);
+        res.status(500).json({ error: "Failed to fetch faculty attendance shortage report" });
     }
 };
 

@@ -132,6 +132,14 @@ export const facultyApi = {
     saveExternalAttendance: async (data) => {
         const response = await apiClient.post('/faculty-marks/invigilation/attendance/save', data);
         return response.data;
+    },
+
+    /**
+     * Get attendance shortage report for faculty's assigned subjects
+     */
+    getAttendanceShortage: async (params) => {
+        const response = await apiClient.get('/reports/faculty-attendance-shortage', { params });
+        return response.data;
     }
 };
 

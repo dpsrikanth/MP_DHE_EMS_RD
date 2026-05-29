@@ -3,7 +3,7 @@ import {
   Calendar, BookOpen, Clock, AlertCircle, 
   CheckCircle2, XCircle, ChevronRight, LayoutDashboard,
   Filter, BarChart3, Info, ChevronDown, CalendarDays,
-  History, Search, ClipboardCheck
+  History, Search, ClipboardCheck, Target
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { formatDate } from '../../utils/dateUtils';
@@ -400,6 +400,12 @@ const StudentAttendance = () => {
                                                             <BarChart3 size={12} className="text-slate-400" /> {sub.total_sessions} Total Sessions
                                                         </div>
                                                     </div>
+                                                    {parseFloat(sub.attendance_percentage) < 75 && (
+                                                        <div className="flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-xl text-[11px] font-black text-amber-700 max-w-fit shadow-sm">
+                                                            <Target size={11} className="text-amber-500 animate-pulse" />
+                                                            Need to attend the next <span className="text-amber-900 underline font-black">{Math.max(0, Math.ceil((75 * Number(sub.total_sessions) - 100 * Number(sub.attended_sessions)) / 25))}</span> classes consecutively to recover target 75%
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
 

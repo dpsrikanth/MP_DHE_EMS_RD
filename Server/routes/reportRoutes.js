@@ -17,4 +17,10 @@ router.get('/college-performance', reportController.getCollegePerformance);
 router.get('/attendance-shortage', reportController.getAttendanceShortage);
 router.get('/result-summary', reportController.getResultSummary);
 
+// --- HOD Routes ---
+router.get('/hod-attendance-shortage', reportController.getHODAttendanceShortage);
+
+// --- Faculty Routes ---
+router.get('/faculty-attendance-shortage', reportController.getFacultyAttendanceShortage);
+
 module.exports = router;

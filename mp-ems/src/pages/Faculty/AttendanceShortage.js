@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import {
-    AlertTriangle, Download, Printer, Search,
-    Filter, Users, BookOpen, XCircle, TrendingDown,
-    RefreshCw, Info
+    AlertTriangle, Download, Search,
+    Users, BookOpen, XCircle, TrendingDown,
+    RefreshCw, Info, Target, Mail
 } from 'lucide-react';
 import Select from 'react-select';
-import { collegeAdminApi } from '../../api/collegeAdminApi';
+import { facultyApi } from '../../api/facultyApi';
 import { masterDataApi } from '../../api/masterDataApi';
 import { exportAttendanceCSV } from '../../utils/exportUtils';
 
@@ -21,7 +21,7 @@ const selectStyles = {
     })
 };
 
-const AttendanceShortage = () => {
+const FacultyAttendanceShortage = () => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [semesters, setSemesters] = useState([]);
@@ -58,8 +58,7 @@ const AttendanceShortage = () => {
             const params = { threshold };
             if (selectedSemester) params.semester_id = selectedSemester.value;
             if (selectedProgram) params.program_id = selectedProgram.value;
-
-            const result = await collegeAdminApi.getAttendanceShortage(params);
+            const result = await facultyApi.getAttendanceShortage(params);
             setData(result);
             setSearched(true);
             if (result.length === 0) toast.info('No students found below the selected threshold.');
@@ -74,50 +73,40 @@ const AttendanceShortage = () => {
         if (!data.length) return;
         exportAttendanceCSV(
             data,
-            `attendance_shortage_${threshold}pct_${new Date().toISOString().slice(0, 10)}`
+            `faculty_attendance_shortage_${threshold}pct_${new Date().toISOString().slice(0, 10)}`
         );
     };
 
-    // Summary stats
     const critical = data.filter(r => r.status === 'Critical').length;
     const shortage = data.filter(r => r.status === 'Shortage').length;
     const uniqueStudents = new Set(data.map(r => r.enrollment_no)).size;
 
     return (
-        <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 print:p-0">
+        <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 print:hidden">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-600">
-                        <AlertTriangle size={26} />
+                    <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600">
+                        <Mail size={26} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 leading-none">Attendance Shortage Report</h1>
+                        <h1 className="text-2xl font-bold text-slate-900 leading-none">My Students Shortage Alert</h1>
                         <p className="text-sm text-slate-500 mt-1 font-medium">
-                            Students with attendance below the minimum threshold
+                            Students enrolled in your assigned subjects who are below the target attendance
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => window.print()}
-                        disabled={!data.length}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl shadow-sm hover:bg-slate-50 transition-all disabled:opacity-40"
-                    >
-                        <Printer size={16} /> Print
-                    </button>
-                    <button
-                        onClick={handleExport}
-                        disabled={!data.length}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all disabled:opacity-40"
-                    >
-                        <Download size={16} /> Export CSV
-                    </button>
-                </div>
+                <button
+                    onClick={handleExport}
+                    disabled={!data.length}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all disabled:opacity-40"
+                >
+                    <Download size={16} /> Export CSV
+                </button>
             </div>
 
             {/* Filters */}
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 print:hidden">
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
                 <div className="flex flex-wrap gap-5 items-end">
                     <div className="flex-1 min-w-[180px] space-y-2">
                         <label className="text-[12px] font-black text-slate-400 tracking-widest ml-1">Semester</label>
@@ -143,16 +132,14 @@ const AttendanceShortage = () => {
                     </div>
                     <div className="min-w-[160px] space-y-2">
                         <label className="text-[12px] font-black text-slate-400 tracking-widest ml-1">
-                            Threshold: <span className="text-red-600">{threshold}%</span>
+                            Threshold: <span className="text-indigo-600">{threshold}%</span>
                         </label>
                         <input
                             type="range"
-                            min={50}
-                            max={90}
-                            step={5}
+                            min={50} max={90} step={5}
                             value={threshold}
                             onChange={e => setThreshold(Number(e.target.value))}
-                            className="w-full accent-red-500 h-2 cursor-pointer"
+                            className="w-full accent-indigo-500 h-2 cursor-pointer"
                         />
                         <div className="flex justify-between text-[10px] text-slate-400 font-bold">
                             <span>50%</span><span>90%</span>
@@ -161,7 +148,7 @@ const AttendanceShortage = () => {
                     <button
                         onClick={fetchReport}
                         disabled={loading}
-                        className="h-[45px] px-8 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all flex items-center gap-2 disabled:opacity-50"
+                        className="h-[45px] px-8 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all flex items-center gap-2 disabled:opacity-50"
                     >
                         {loading ? <RefreshCw size={16} className="animate-spin" /> : <Search size={16} />}
                         Generate Report
@@ -171,7 +158,7 @@ const AttendanceShortage = () => {
 
             {/* Summary Cards */}
             {searched && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 print:hidden">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                     <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex items-center gap-4">
                         <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
                             <Users size={22} className="text-slate-600" />
@@ -188,7 +175,6 @@ const AttendanceShortage = () => {
                         <div>
                             <p className="text-[12px] font-black text-amber-500 tracking-widest">Shortage</p>
                             <p className="text-3xl font-black text-amber-700">{shortage}</p>
-                            <p className="text-[11px] text-amber-400 font-bold">{threshold - 15}%–{threshold}% range</p>
                         </div>
                     </div>
                     <div className="bg-red-50 rounded-2xl border border-red-100 p-6 shadow-sm flex items-center gap-4">
@@ -196,7 +182,7 @@ const AttendanceShortage = () => {
                             <XCircle size={22} className="text-red-600" />
                         </div>
                         <div>
-                            <p className="text-[12px] font-black text-red-400 tracking-widest">Critical (below 60%)</p>
+                            <p className="text-[12px] font-black text-red-400 tracking-widest">Critical (&lt;60%)</p>
                             <p className="text-3xl font-black text-red-700">{critical}</p>
                         </div>
                     </div>
@@ -206,15 +192,10 @@ const AttendanceShortage = () => {
             {/* Results Table */}
             {loading ? (
                 <div className="flex justify-center py-24">
-                    <div className="w-10 h-10 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
                 </div>
             ) : data.length > 0 ? (
                 <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                    {/* Print Header */}
-                    <div className="hidden print:block p-8 border-b-2 border-slate-900 text-center">
-                        <h1 className="text-xl font-black">Attendance Shortage Report</h1>
-                        <p className="text-sm text-slate-600">Threshold: {threshold}% | Generated: {new Date().toLocaleDateString('en-IN')}</p>
-                    </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
@@ -225,6 +206,7 @@ const AttendanceShortage = () => {
                                     <th className="px-5 py-4 text-[12px] font-black text-slate-400 tracking-widest">Program</th>
                                     <th className="px-5 py-4 text-[12px] font-black text-slate-400 tracking-widest">Semester</th>
                                     <th className="px-5 py-4 text-[12px] font-black text-slate-400 tracking-widest">Subject</th>
+                                    <th className="px-5 py-4 text-[12px] font-black text-slate-400 tracking-widest text-center">Section</th>
                                     <th className="px-5 py-4 text-[12px] font-black text-slate-400 tracking-widest text-center">Present/Total</th>
                                     <th className="px-5 py-4 text-[12px] font-black text-slate-400 tracking-widest text-center">Attendance %</th>
                                     <th className="px-5 py-4 text-[12px] font-black text-slate-400 tracking-widest text-center">Classes Needed</th>
@@ -242,6 +224,9 @@ const AttendanceShortage = () => {
                                         <td className="px-5 py-3">
                                             <p className="text-[12px] font-black text-slate-900">{row.subject_code}</p>
                                             <p className="text-[11px] text-slate-400 font-medium truncate max-w-[140px]">{row.subject_name}</p>
+                                        </td>
+                                        <td className="px-5 py-3 text-center text-[12px] font-bold text-slate-500">
+                                            {row.section || '—'}
                                         </td>
                                         <td className="px-5 py-3 text-center text-[13px] font-bold text-slate-600">
                                             {row.attended_sessions}/{row.total_sessions}
@@ -262,7 +247,7 @@ const AttendanceShortage = () => {
                                         <td className="px-5 py-3 text-center">
                                             {row.classes_needed > 0 ? (
                                                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-[11px] font-black">
-                                                    +{row.classes_needed} classes
+                                                    <Target size={10} />+{row.classes_needed} classes
                                                 </span>
                                             ) : (
                                                 <span className="text-[11px] text-slate-400 font-bold">—</span>
@@ -284,7 +269,7 @@ const AttendanceShortage = () => {
                     </div>
                     <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center gap-2 text-[12px] text-slate-400 font-bold">
                         <Info size={13} />
-                        Total {data.length} records | {uniqueStudents} unique students below {threshold}% threshold
+                        {data.length} records | {uniqueStudents} unique students below {threshold}% threshold
                     </div>
                 </div>
             ) : searched && !loading ? (
@@ -292,15 +277,15 @@ const AttendanceShortage = () => {
                     <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
                         <BookOpen size={32} className="text-emerald-400" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900">No Shortage Found</h3>
-                    <p className="text-slate-500 mt-2">All students meet the {threshold}% attendance threshold.</p>
+                    <h3 className="text-xl font-bold text-slate-900">All Clear!</h3>
+                    <p className="text-slate-500 mt-2">All students in your subjects meet the {threshold}% attendance threshold.</p>
                 </div>
             ) : (
                 <div className="bg-white rounded-3xl p-20 text-center border border-slate-200">
                     <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Filter size={32} className="text-slate-300" />
+                        <AlertTriangle size={32} className="text-slate-300" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900">Set Filters & Generate</h3>
+                    <h3 className="text-xl font-bold text-slate-900">Set Threshold & Generate</h3>
                     <p className="text-slate-400 mt-2">Select a threshold and click "Generate Report" to view shortage data.</p>
                 </div>
             )}
@@ -308,4 +293,4 @@ const AttendanceShortage = () => {
     );
 };
 
-export default AttendanceShortage;
+export default FacultyAttendanceShortage;

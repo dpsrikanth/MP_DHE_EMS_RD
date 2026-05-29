@@ -41,5 +41,13 @@ export const hodApi = {
         const queryParams = new URLSearchParams(params).toString();
         const response = await apiClient.get(`/college-admin/component-student-marks?${queryParams}`);
         return response.data;
+    },
+
+    /**
+     * Get attendance shortage report scoped to HOD's department
+     */
+    getAttendanceShortage: async (params) => {
+        const response = await apiClient.get('/reports/hod-attendance-shortage', { params });
+        return response.data;
     }
 };

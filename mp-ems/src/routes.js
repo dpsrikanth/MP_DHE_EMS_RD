@@ -98,6 +98,8 @@ import Profile from "./pages/Profile";
 import AttendanceShortage from "./pages/CollegeAdmin/AttendanceShortage";
 import ResultSummary from "./pages/CollegeAdmin/ResultSummary";
 import StatisticalReports from "./pages/UniversityAdmin/StatisticalReports";
+import HODAttendanceShortage from "./pages/HOD/AttendanceShortage";
+import FacultyAttendanceShortage from "./pages/Faculty/AttendanceShortage";
 
 
 const AppRoutes = () => {
@@ -203,11 +205,13 @@ const AppRoutes = () => {
       <Route path="/faculty/attendance" element={<Layout><ProtectedRoute element={<Attendance />} /></Layout>} />
       <Route path="/faculty/internal-attendance" element={<Layout><ProtectedRoute element={<FacultyInternalAttendance />} /></Layout>} />
       <Route path="/faculty/invigilation-duty" element={<Layout><ProtectedRoute element={<InvigilationDuty />} /></Layout>} />
+      <Route path="/faculty/attendance-shortage" element={<Layout><ProtectedRoute element={<FacultyAttendanceShortage />} /></Layout>} />
 
       {/* HOD Routes */}
       <Route path="/hod/dashboard" element={<Layout><ProtectedRoute element={<HODDashboard />} /></Layout>} />
       <Route path="/hod/marks-approval" element={<Layout><ProtectedRoute element={<MarksApproval />} /></Layout>} />
       <Route path="/hod/assessment-acceptance" element={<Layout><ProtectedRoute element={<AssessmentAcceptance />} /></Layout>} />
+      <Route path="/hod/attendance-shortage" element={<Layout><ProtectedRoute element={<HODAttendanceShortage />} /></Layout>} />
       <Route path="/admin/marks-approval" element={<Layout><ProtectedRoute element={<MarksApproval />} /></Layout>} />
 
       {/* New Marks Verification Routes */}

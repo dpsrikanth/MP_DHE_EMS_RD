@@ -217,6 +217,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         },
         { id: 4, name: 'Attendance', path: '/faculty/attendance', icon: <Calendar size={20} /> },
         { id: 52, name: 'Exam Attendance', path: '/faculty/internal-attendance', icon: <ClipboardCheck size={20} /> },
+        { id: 60, name: 'Shortage Alert', path: '/faculty/attendance-shortage', icon: <Users size={20} /> },
         { id: 54, name: 'Invigilation Duty', path: '/faculty/invigilation-duty', icon: <Building2 size={20} /> },
         { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> }
       ];
@@ -263,6 +264,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             { id: 2, name: 'Marks Approval', path: '/hod/marks-approval', icon: <FileText size={18} /> },
             { id: 3, name: 'Faculty Assign', path: '/college-admin/faculty-assign', icon: <Users size={18} /> },
             { id: 4, name: 'Staff List', path: '/teachers', icon: <Users size={18} /> },
+            { id: 60, name: 'Attendance Shortage', path: '/hod/attendance-shortage', icon: <Users size={18} /> },
           ]
         },
         { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> }
