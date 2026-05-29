@@ -673,6 +673,185 @@ exports.saveAttendance = async (req, res) => {
     }
 };
 
+exports.bulkAddAttendance = async (req, res) => {
+    const client = await db.connect();
+    try {
+        const {
+            student_id,
+            subject_id,
+            college_id,
+            semester_id,
+            academic_year_id,
+            section,
+            teacher_id,
+            total_sessions,
+            attended_sessions,
+            clear_existing
+        } = req.body;
+
+        // Basic validations
+        if (!student_id || !subject_id || !college_id || !semester_id || !academic_year_id || !section || !teacher_id) {
+            return res.status(400).json({ error: "Missing required context fields (student, subject, college, semester, academic_year, section, teacher)" });
+        }
+
+        const total = parseInt(total_sessions);
+        const attended = parseInt(attended_sessions);
+
+        if (isNaN(total) || isNaN(attended) || total < 0 || attended < 0) {
+            return res.status(400).json({ error: "Total sessions and Attended sessions must be non-negative integers." });
+        }
+
+        if (attended > total) {
+            return res.status(400).json({ error: "Attended sessions cannot exceed total sessions." });
+        }
+
+        await client.query('BEGIN');
+
+        if (clear_existing === true || clear_existing === 'true') {
+            await client.query(`
+                DELETE FROM student_attendance
+                WHERE student_id = $1 
+                  AND subject_id = $2 
+                  AND college_id = $3 
+                  AND semester_id = $4 
+                  AND section = $5
+            `, [parseInt(student_id), parseInt(subject_id), parseInt(college_id), parseInt(semester_id), section]);
+        }
+
+        // Fetch currently occupied slots for this student
+        const existingRes = await client.query(`
+            SELECT attendance_date::text, period_number 
+            FROM student_attendance 
+            WHERE student_id = $1 
+              AND subject_id = $2 
+              AND college_id = $3 
+              AND semester_id = $4 
+              AND section = $5
+        `, [parseInt(student_id), parseInt(subject_id), parseInt(college_id), parseInt(semester_id), section]);
+
+        const occupied = new Set();
+        let existingPresentCount = 0;
+
+        if (clear_existing !== true && clear_existing !== 'true') {
+            for (const row of existingRes.rows) {
+                occupied.add(`${row.attendance_date}:${row.period_number}`);
+            }
+            const presentRes = await client.query(`
+                SELECT COUNT(*) as count 
+                FROM student_attendance 
+                WHERE student_id = $1 
+                  AND subject_id = $2 
+                  AND college_id = $3 
+                  AND semester_id = $4 
+                  AND section = $5
+                  AND status = 'Present'
+            `, [parseInt(student_id), parseInt(subject_id), parseInt(college_id), parseInt(semester_id), section]);
+            existingPresentCount = parseInt(presentRes.rows[0].count) || 0;
+        }
+
+        // Fetch actual distinct class sessions that already exist in this section
+        const classSessionsRes = await client.query(`
+            SELECT DISTINCT attendance_date::text, period_number 
+            FROM student_attendance 
+            WHERE subject_id = $1 
+              AND college_id = $2 
+              AND semester_id = $3 
+              AND section = $4
+            ORDER BY attendance_date DESC, period_number DESC
+        `, [parseInt(subject_id), parseInt(college_id), parseInt(semester_id), section]);
+
+        // Helper to format Date to YYYY-MM-DD
+        const formatDate = (date) => {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        };
+
+        const slots = [];
+        const totalNeeded = total - occupied.size;
+        const newPresentNeeded = Math.max(0, attended - existingPresentCount);
+
+        if (totalNeeded > 0) {
+            // 1. Prioritize filling slots from existing class sessions
+            for (const row of classSessionsRes.rows) {
+                const key = `${row.attendance_date}:${row.period_number}`;
+                if (!occupied.has(key) && slots.length < totalNeeded) {
+                    slots.push({ date: row.attendance_date, period: row.period_number });
+                    occupied.add(key);
+                }
+            }
+
+            // 2. If we still need more slots, generate backward from today
+            let dateCursor = new Date();
+            let daysSearched = 0;
+            while (slots.length < totalNeeded && daysSearched < 1000) {
+                const dateStr = formatDate(dateCursor);
+                let period = 1;
+                
+                while (period <= 10) {
+                    const key = `${dateStr}:${period}`;
+                    if (!occupied.has(key)) {
+                        slots.push({ date: dateStr, period });
+                        occupied.add(key);
+                        break;
+                    }
+                    period++;
+                }
+                
+                dateCursor.setDate(dateCursor.getDate() - 1);
+                daysSearched++;
+            }
+
+            if (slots.length < totalNeeded) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: "Failed to find enough unoccupied dates/periods to allocate the bulk sessions." });
+            }
+
+            // Insert new records
+            for (let i = 0; i < slots.length; i++) {
+                const slot = slots[i];
+                // Mark the first newPresentNeeded sessions as Present, remaining as Absent
+                const status = i < newPresentNeeded ? 'Present' : 'Absent';
+
+                const insertQuery = `
+                    INSERT INTO student_attendance 
+                    (student_id, subject_id, college_id, semester_id, academic_year_id, teacher_id, attendance_date, period_number, status, section)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                    ON CONFLICT (student_id, subject_id, college_id, semester_id, attendance_date, period_number, section)
+                    DO UPDATE SET 
+                        status = EXCLUDED.status,
+                        teacher_id = EXCLUDED.teacher_id,
+                        updated_at = CURRENT_TIMESTAMP
+                `;
+                await client.query(insertQuery, [
+                    parseInt(student_id), parseInt(subject_id), parseInt(college_id), parseInt(semester_id), 
+                    parseInt(academic_year_id), parseInt(teacher_id), slot.date, slot.period, status, section
+                ]);
+            }
+        }
+
+        await client.query('COMMIT');
+
+        // Audit log
+        if (req.user && req.user.id) {
+            await db.query(`
+                INSERT INTO audit_logs (user_id, action, entity_type) 
+                VALUES ($1, 'BULK_ATTENDANCE_OVERRIDE', 'ATTENDANCE')
+            `, [req.user.id]);
+        }
+
+        res.status(200).json({ message: `Successfully registered summary attendance: ${attended} present out of ${total} total sessions.` });
+
+    } catch (error) {
+        if (client) await client.query('ROLLBACK');
+        console.error("Bulk add attendance error:", error);
+        res.status(500).json({ error: "Failed to perform bulk/summary attendance override." });
+    } finally {
+        client.release();
+    }
+};
+
 exports.getAttendanceSummary = async (req, res) => {
     try {
         const { subject_id, section, college_id, semester_id, academic_year_id, startDate, endDate } = req.query;

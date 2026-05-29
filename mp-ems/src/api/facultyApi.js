@@ -108,6 +108,11 @@ export const facultyApi = {
         const response = await apiClient.post('/faculty-marks/attendance', data);
         return response.data;
     },
+
+    bulkGenerateAttendance: async (data) => {
+        const response = await apiClient.post('/faculty-marks/attendance/bulk-generate', data);
+        return response.data;
+    },
     getPendingDiscrepancies: async (params) => {
         const queryParams = new URLSearchParams(params).toString();
         const response = await apiClient.get(`/faculty-marks/pending-discrepancies?${queryParams}`);

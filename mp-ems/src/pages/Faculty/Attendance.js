@@ -31,6 +31,20 @@ const Attendance = () => {
     const [summaryStats, setSummaryStats] = useState({ totalSessions: 0, studentMap: {} });
     const [roadmapDates, setRoadmapDates] = useState({ start: '', end: '' });
 
+    // Bulk Entry specific states
+    const [selectedStudent, setSelectedStudent] = useState(null);
+    const [totalSessions, setTotalSessions] = useState(20);
+    const [attendedSessions, setAttendedSessions] = useState(15);
+    const [clearExisting, setClearExisting] = useState(false);
+    const [isBulkSaving, setIsBulkSaving] = useState(false);
+
+    const studentOptions = useMemo(() => {
+        return students.map(st => ({
+            value: st.id,
+            label: `${st.name} (${st.rollnumber || 'ID: ' + st.id})`
+        }));
+    }, [students]);
+
     useEffect(() => {
         fetchAssignedSubjects();
     }, []);
@@ -262,6 +276,41 @@ const Attendance = () => {
         }
     };
 
+    const handleCommitBulkAttendance = async () => {
+        const assignment = assignedSubjects.find(a => a.id === selectedAssignment?.value);
+        if (!assignment || !selectedStudent) return;
+        
+        setIsBulkSaving(true);
+        try {
+            await facultyApi.bulkGenerateAttendance({
+                student_id: selectedStudent.value,
+                subject_id: assignment.subject_id,
+                college_id: assignment.college_id,
+                semester_id: assignment.semester_id,
+                academic_year_id: assignment.academic_year_id,
+                section: assignment.section,
+                teacher_id: assignment.teacher_id,
+                total_sessions: totalSessions,
+                attended_sessions: attendedSessions,
+                clear_existing: clearExisting
+            });
+            toast.success("Summary attendance committed successfully!");
+            
+            // Clear inputs / reset
+            setSelectedStudent(null);
+            setClearExisting(false);
+            
+            // Refresh details in other tabs and summary stats!
+            fetchSubjectDetails(assignment, attendanceDate, periodNumber);
+            
+        } catch (err) {
+            const errMsg = err.response?.data?.error || "Error committing summary attendance.";
+            toast.error(errMsg);
+        } finally {
+            setIsBulkSaving(false);
+        }
+    };
+
     const filteredStudents = useMemo(() => {
         if (!searchQuery.trim()) return students;
         const q = searchQuery.toLowerCase();
@@ -293,15 +342,21 @@ const Attendance = () => {
                 <div className="flex bg-slate-100 p-1.5 rounded-2xl shadow-inner border border-slate-200">
                     <button 
                         onClick={() => setActiveTab('mark')}
-                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black  tracking-widest transition-all ${activeTab === 'mark' ? 'bg-white text-emerald-600 shadow-lg' : 'text-slate-500'}`}
+                        className={`px-4 py-2.5 rounded-xl text-[13px] font-black tracking-widest transition-all ${activeTab === 'mark' ? 'bg-white text-emerald-600 shadow-lg' : 'text-slate-500'}`}
                     >
                         Mark Attendance
                     </button>
                     <button 
                         onClick={() => setActiveTab('analytics')}
-                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black  tracking-widest transition-all ${activeTab === 'analytics' ? 'bg-white text-emerald-600 shadow-lg' : 'text-slate-500'}`}
+                        className={`px-4 py-2.5 rounded-xl text-[13px] font-black tracking-widest transition-all ${activeTab === 'analytics' ? 'bg-white text-emerald-600 shadow-lg' : 'text-slate-500'}`}
                     >
                         Attendance Analytics
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('bulk')}
+                        className={`px-4 py-2.5 rounded-xl text-[13px] font-black tracking-widest transition-all ${activeTab === 'bulk' ? 'bg-white text-emerald-600 shadow-lg' : 'text-slate-500'}`}
+                    >
+                        Bulk/Summary Entry
                     </button>
                 </div>
             </div>
@@ -360,7 +415,7 @@ const Attendance = () => {
                             />
                         </div>
                     </>
-                ) : (
+                ) : activeTab === 'analytics' ? (
                     <div className="md:col-span-12 lg:col-span-7 space-y-2">
                          <label className="text-[12px] font-black text-slate-400  tracking-widest ml-1 italic">Time Range Analytics</label>
                          <div className="flex gap-2">
@@ -380,6 +435,13 @@ const Attendance = () => {
                             ))}
                          </div>
                     </div>
+                ) : (
+                    <div className="md:col-span-12 lg:col-span-7 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-3 text-emerald-800">
+                        <Info size={18} className="text-emerald-600 shrink-0" />
+                        <span className="text-xs font-semibold leading-relaxed">
+                            <strong>Summary Override:</strong> This allocates attendance backward from today, bypassing the need to enter date-by-date records.
+                        </span>
+                    </div>
                 )}
             </div>
 
@@ -388,8 +450,172 @@ const Attendance = () => {
                     <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
             ) : selectedAssignment ? (
-                <div className="space-y-6">
-                    {/* Top Analytics Bar (Unified) */}
+                activeTab === 'bulk' ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        {/* LEFT: Premium styled Bulk Entry Form */}
+                        <div className="lg:col-span-7 bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50 space-y-6">
+                            <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                                <Users size={24} className="text-emerald-500" />
+                                <div>
+                                    <h2 className="text-xl font-black text-slate-900 tracking-tight italic">Bulk Summary Attendance Generator</h2>
+                                    <p className="text-xs text-slate-400 font-bold">Generate cumulative session logs directly</p>
+                                </div>
+                            </div>
+
+                            {/* Select Student */}
+                            <div className="space-y-2">
+                                <label className="text-[12px] font-black text-slate-400 tracking-widest uppercase block">Select Student</label>
+                                <Select
+                                    options={studentOptions}
+                                    value={selectedStudent}
+                                    onChange={setSelectedStudent}
+                                    placeholder="Search student by name or roll number..."
+                                    isSearchable
+                                    styles={{ 
+                                        control: (base) => ({ 
+                                            ...base, 
+                                            borderRadius: '1.25rem', 
+                                            padding: '0.3rem',
+                                            border: '1px solid #e2e8f0',
+                                            boxShadow: 'none'
+                                        }) 
+                                    }}
+                                />
+                            </div>
+
+                            {/* Sessions Inputs */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[12px] font-black text-slate-400 tracking-widest uppercase block">Total Sessions</label>
+                                    <input 
+                                        type="number"
+                                        min="1"
+                                        value={totalSessions}
+                                        onChange={(e) => setTotalSessions(Math.max(1, parseInt(e.target.value) || 0))}
+                                        className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all font-bold text-sm"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[12px] font-black text-slate-400 tracking-widest uppercase block">Attended Sessions</label>
+                                    <input 
+                                        type="number"
+                                        min="0"
+                                        max={totalSessions}
+                                        value={attendedSessions}
+                                        onChange={(e) => setAttendedSessions(Math.min(totalSessions, Math.max(0, parseInt(e.target.value) || 0)))}
+                                        className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all font-bold text-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Stylish Toggle for Clear Existing */}
+                            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                <div className="space-y-1">
+                                    <h4 className="text-sm font-bold text-slate-800">Clear existing daily logs</h4>
+                                    <p className="text-[11px] text-slate-400 font-semibold leading-relaxed">
+                                        Delete previous session records for this student and subject before overriding.
+                                    </p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={clearExisting} 
+                                        onChange={(e) => setClearExisting(e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
+
+                            {/* Commit Button */}
+                            <button
+                                onClick={handleCommitBulkAttendance}
+                                disabled={isBulkSaving || !selectedStudent}
+                                className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-2xl font-black text-sm tracking-widest shadow-xl shadow-emerald-500/20 transition-all active:scale-[0.98] disabled:from-slate-300 disabled:to-slate-400 disabled:shadow-none flex items-center justify-center gap-3"
+                            >
+                                {isBulkSaving ? (
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                ) : (
+                                    <Save size={18} />
+                                )}
+                                {isBulkSaving ? 'COMMITTING OVERRIDE...' : 'COMMIT SUMMARY ATTENDANCE'}
+                            </button>
+                        </div>
+
+                        {/* RIGHT: Live Preview & Status Warning Panel */}
+                        <div className="lg:col-span-5 space-y-6">
+                            {/* Card 1: Calculated Live Preview */}
+                            <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-[2rem] p-8 shadow-xl relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -mr-10 -mt-10 blur-2xl" />
+                                <h3 className="text-xs font-black tracking-[0.2em] text-emerald-400 uppercase">Live Output Preview</h3>
+                                
+                                <div className="mt-8 flex items-baseline gap-2">
+                                    <span className="text-6xl font-black tracking-tighter italic">
+                                        {totalSessions > 0 ? Math.round((attendedSessions / totalSessions) * 100) : 100}%
+                                    </span>
+                                    <span className="text-slate-400 text-sm font-bold">attendance rate</span>
+                                </div>
+
+                                <div className="mt-6 space-y-4">
+                                    <div className="flex justify-between text-xs font-bold text-slate-300 border-b border-white/5 pb-2">
+                                        <span>Student Identity:</span>
+                                        <span className="text-white font-extrabold">{selectedStudent ? selectedStudent.label : 'None Selected'}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs font-bold text-slate-300 border-b border-white/5 pb-2">
+                                        <span>Sessions Present:</span>
+                                        <span className="text-white font-extrabold">{attendedSessions} sessions</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs font-bold text-slate-300 border-b border-white/5 pb-2">
+                                        <span>Total Sessions:</span>
+                                        <span className="text-white font-extrabold">{totalSessions} sessions</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs font-bold text-slate-300">
+                                        <span>Sessions Absent:</span>
+                                        <span className="text-white font-extrabold">{totalSessions - attendedSessions} sessions</span>
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                                    <div 
+                                        className={`h-full rounded-full transition-all duration-500 ${
+                                            (attendedSessions / totalSessions) >= 0.75 ? 'bg-emerald-500' : 'bg-red-500'
+                                        }`} 
+                                        style={{ width: `${totalSessions > 0 ? (attendedSessions / totalSessions) * 100 : 100}%` }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Card 2: Warning Banner if attendance rate is below 75% */}
+                            {(attendedSessions / totalSessions) < 0.75 ? (
+                                <div className="bg-red-50 border border-red-100 rounded-3xl p-6 flex items-start gap-4">
+                                    <div className="w-10 h-10 bg-red-100 rounded-2xl flex items-center justify-center text-red-600 shrink-0">
+                                        <XCircle size={20} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h4 className="text-sm font-black text-red-900 tracking-tight">Eligibility Shortage Detected</h4>
+                                        <p className="text-xs text-red-700 leading-relaxed font-semibold">
+                                            The proposed attendance rate of <strong>{Math.round((attendedSessions / totalSessions) * 100)}%</strong> is below the mandatory <strong>75% threshold</strong>. This student will be flagged as restricted from exam eligibility.
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="bg-emerald-50 border border-emerald-100 rounded-3xl p-6 flex items-start gap-4">
+                                    <div className="w-10 h-10 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 shrink-0">
+                                        <CheckCircle size={20} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h4 className="text-sm font-black text-emerald-900 tracking-tight">Standard Eligibility Met</h4>
+                                        <p className="text-xs text-emerald-700 leading-relaxed font-semibold">
+                                            This student's attendance rate is <strong>{Math.round((attendedSessions / totalSessions) * 100)}%</strong>, which meets the standard <strong>75% compliance level</strong> for course credits.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="space-y-6">
+                        {/* Top Analytics Bar (Unified) */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                             <h4 className="text-[12px] font-black text-slate-400  tracking-[0.2em] mb-2">Total Students</h4>
@@ -521,7 +747,7 @@ const Attendance = () => {
                         )}
                     </div>
                 </div>
-            ) : (
+            ) ) : (
                 <div className="py-20 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-100">
                     <BarChart3 className="mx-auto text-slate-200 mb-4" size={48} />
                     <h3 className="text-lg font-black text-slate-900  italic tracking-tighter">Class Identification Required</h3>

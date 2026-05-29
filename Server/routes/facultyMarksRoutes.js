@@ -132,6 +132,7 @@ router.post('/submit-marks', facultyMarksController.submitMarks);
  */
 router.get('/attendance', facultyMarksController.getAttendance);
 router.post('/attendance', facultyMarksController.saveAttendance);
+router.post('/attendance/bulk-generate', facultyMarksController.bulkAddAttendance);
 
 /**
  * @swagger
