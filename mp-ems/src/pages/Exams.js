@@ -18,17 +18,16 @@ const Exams = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // For college admin: tab switcher between Internal and External exams
+  // For college admin and university admin: tab switcher between Internal and External exams
   const isCollegeAdminRole = authUtils.isCollegeAdmin();
   const isUniversityAdminRole = authUtils.isUniversityAdmin() || authUtils.isAdmin();
-  const [examTypeFilter, setExamTypeFilter] = useState(isCollegeAdminRole ? 'internal' : 'all');
+  const [examTypeFilter, setExamTypeFilter] = useState('internal');
 
   // University Admin cascading filters
   const [filterUniversity, setFilterUniversity] = useState('');
   const [filterCollege, setFilterCollege] = useState('');
   const [filterProgram, setFilterProgram] = useState('');
   const [filterSemester, setFilterSemester] = useState('');
-  const [filterExamType, setFilterExamType] = useState('');
 
   // Dropdown data
   const [colleges, setColleges] = useState([]);
@@ -90,8 +89,9 @@ const Exams = () => {
     let allGroups = Object.values(groups).sort((a, b) => b.id - a.id);
 
     // For college admin: filter by selected tab (internal=type 1, external=type 2)
+    const typeVal = examTypeFilter === 'internal' ? 1 : 2;
+
     if (isCollegeAdminRole) {
-      const typeVal = examTypeFilter === 'internal' ? 1 : 2;
       let filtered = allGroups.filter(g => g.exam_type === typeVal);
       if (filterProgram) {
         filtered = filtered.filter(g => String(g.program_id) === String(filterProgram));
@@ -106,6 +106,8 @@ const Exams = () => {
     // Note: External exams (exam_type=2) are university-wide with college_id=NULL,
     // so we include them alongside the selected college's exams.
     if (isUniversityAdminRole) {
+      allGroups = allGroups.filter(g => g.exam_type === typeVal);
+      
       if (filterUniversity) {
         allGroups = allGroups.filter(g => String(g.university_id) === String(filterUniversity));
       }
@@ -120,13 +122,10 @@ const Exams = () => {
       if (filterSemester) {
         allGroups = allGroups.filter(g => String(g.semester_id) === String(filterSemester));
       }
-      if (filterExamType) {
-        allGroups = allGroups.filter(g => String(g.exam_type) === String(filterExamType));
-      }
     }
 
     return allGroups;
-  }, [data, examTypeFilter, isCollegeAdminRole, isUniversityAdminRole, filterUniversity, filterCollege, filterProgram, filterSemester, filterExamType]);
+  }, [data, examTypeFilter, isCollegeAdminRole, isUniversityAdminRole, filterUniversity, filterCollege, filterProgram, filterSemester]);
 
   // Cascading filter options: derive available options from the actual data
   const filterOptions = useMemo(() => {
@@ -195,7 +194,7 @@ const Exams = () => {
     });
     const availableExamTypes = Array.from(typeSet, ([id, name]) => ({ id, name }));
 
-    return { availableUniversities, availableColleges, availablePrograms, availableSemesters, availableExamTypes };
+    return { availableUniversities, availableColleges, availablePrograms, availableSemesters };
   }, [data, filterUniversity, filterCollege, filterProgram, filterSemester]);
 
   // College Admin filter options: derive from exams matching current tab (internal/external)
@@ -234,31 +233,26 @@ const Exams = () => {
     setFilterCollege('');
     setFilterProgram('');
     setFilterSemester('');
-    setFilterExamType('');
   };
   const handleCollegeFilterChange = (val) => {
     setFilterCollege(val);
     setFilterProgram('');
     setFilterSemester('');
-    setFilterExamType('');
   };
   const handleProgramFilterChange = (val) => {
     setFilterProgram(val);
     setFilterSemester('');
-    setFilterExamType('');
   };
   const handleSemesterFilterChange = (val) => {
     setFilterSemester(val);
-    setFilterExamType('');
   };
   const handleClearAllFilters = () => {
     setFilterUniversity('');
     setFilterCollege('');
     setFilterProgram('');
     setFilterSemester('');
-    setFilterExamType('');
   };
-  const hasActiveFilters = filterUniversity || filterCollege || filterProgram || filterSemester || filterExamType;
+  const hasActiveFilters = filterUniversity || filterCollege || filterProgram || filterSemester;
 
 
   // Apply search/pagination to groupedData if needed, but useDataTable already handles 'data'.
@@ -507,6 +501,32 @@ const Exams = () => {
           </div>
         </div>
 
+        {/* Tab Switcher */}
+        {(isCollegeAdminRole || isUniversityAdminRole) && (
+          <div className="px-6 mt-2 pb-0 flex items-center gap-2 border-b border-slate-100">
+            <button
+              onClick={() => { setExamTypeFilter('internal'); setFilterProgram(''); setFilterSemester(''); }}
+              className={`px-6 py-3 text-[13px] font-black  tracking-widest rounded-t-xl transition-all border-b-2 ${
+                examTypeFilter === 'internal'
+                  ? 'border-indigo-500 text-indigo-600 bg-indigo-50'
+                  : 'border-transparent text-slate-400 hover:text-slate-700'
+              }`}
+            >
+              📝 Internal Exams
+            </button>
+            <button
+              onClick={() => { setExamTypeFilter('external'); setFilterProgram(''); setFilterSemester(''); }}
+              className={`px-6 py-3 text-[13px] font-black  tracking-widest rounded-t-xl transition-all border-b-2 ${
+                examTypeFilter === 'external'
+                  ? 'border-indigo-500 text-indigo-600 bg-indigo-50'
+                  : 'border-transparent text-slate-400 hover:text-slate-700'
+              }`}
+            >
+              🌐 External Exams
+            </button>
+          </div>
+        )}
+
         {/* University Admin: Cascading Filter Bar */}
         {isUniversityAdminRole && (
           <div className="px-5 py-3 bg-gradient-to-r from-slate-50/80 to-purple-50/40 border-t border-slate-100">
@@ -525,7 +545,7 @@ const Exams = () => {
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {/* University Filter */}
               <div className="relative">
                 <select
@@ -600,53 +620,7 @@ const Exams = () => {
                 </select>
                 <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               </div>
-
-              {/* Exam Type Filter */}
-              <div className="relative">
-                <select
-                  value={filterExamType}
-                  onChange={(e) => setFilterExamType(e.target.value)}
-                  disabled={!filterSemester}
-                  className={`w-full appearance-none border-2 rounded-xl px-4 py-3 pr-10 text-[13px] font-bold outline-none transition-all cursor-pointer shadow-sm ${
-                    filterSemester 
-                      ? 'bg-white border-slate-200 hover:border-purple-300 focus:border-indigo-500 text-slate-700' 
-                      : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
-                  }`}
-                >
-                  <option value="">{filterSemester ? 'All Types' : 'Select Semester First'}</option>
-                  {filterOptions.availableExamTypes.map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              </div>
             </div>
-          </div>
-        )}
-
-        {/* Tab Switcher — only visible for college admin */}
-        {isCollegeAdminRole && (
-          <div className="px-6 pb-0 flex items-center gap-2 border-b border-slate-100">
-            <button
-              onClick={() => { setExamTypeFilter('internal'); setFilterProgram(''); setFilterSemester(''); }}
-              className={`px-6 py-3 text-[13px] font-black  tracking-widest rounded-t-xl transition-all border-b-2 ${
-                examTypeFilter === 'internal'
-                  ? 'border-indigo- text-indigo- bg-indigo-/50'
-                  : 'border-transparent text-slate-400 hover:text-slate-700'
-              }`}
-            >
-              📝 Internal Exams
-            </button>
-            <button
-              onClick={() => { setExamTypeFilter('external'); setFilterProgram(''); setFilterSemester(''); }}
-              className={`px-6 py-3 text-[13px] font-black  tracking-widest rounded-t-xl transition-all border-b-2 ${
-                examTypeFilter === 'external'
-                  ? 'border-indigo- text-indigo- bg-indigo-/50'
-                  : 'border-transparent text-slate-400 hover:text-slate-700'
-              }`}
-            >
-              🌐 External Exams
-            </button>
           </div>
         )}
 
@@ -709,7 +683,7 @@ const Exams = () => {
 
         {/* Read-only banner for college admin viewing external exams */}
         {isCollegeAdminRole && examTypeFilter === 'external' && (
-          <div className="mx-6 mt-4 px-4 py-2.5 bg-indigo- border border-indigo- rounded-2xl flex items-center gap-3 text-sm text-blue-700 font-semibold">
+          <div className="mx-6 mt-4 px-4 py-2.5 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center gap-3 text-sm text-blue-700 font-semibold">
             <Globe size={16} className="shrink-0" />
             External exams are managed by the University Admin. You can view them here but cannot create, edit or delete them.
           </div>
