@@ -54,9 +54,9 @@ const ExamsForm = () => {
       setColleges(colData);
       setUniversities(uniData);
       setSemesters(semData.sort((a, b) => {
-          const numA = parseInt(a.semester_name?.match(/\d+/)?.[0]) || 0;
-          const numB = parseInt(b.semester_name?.match(/\d+/)?.[0]) || 0;
-          return numA - numB;
+        const numA = parseInt(a.semester_name?.match(/\d+/)?.[0]) || 0;
+        const numB = parseInt(b.semester_name?.match(/\d+/)?.[0]) || 0;
+        return numA - numB;
       }));
       setExamTypes(typeData);
       setDepartments(depData);
@@ -80,12 +80,12 @@ const ExamsForm = () => {
         subjects: series.map(s => {
           const d = s.exam_date ? new Date(s.exam_date) : null;
           const dateStr = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
-          return { 
-            id: s.id, 
-            subject_id: s.subject_id, 
-            exam_date: dateStr, 
-            start_time: s.start_time || '', 
-            end_time: s.end_time || '' 
+          return {
+            id: s.id,
+            subject_id: s.subject_id,
+            exam_date: dateStr,
+            start_time: s.start_time || '',
+            end_time: s.end_time || ''
           };
         }).sort((a, b) => {
           if (!a.exam_date) return 1;
@@ -101,7 +101,7 @@ const ExamsForm = () => {
     if (!college_id || !department_id || !program_id || !semester_id || !subject_id) { setAvailableComponents([]); if (!editingId) setFormData(prev => ({ ...prev, name: '' })); return; }
     try {
       const components = await examApi.getComponents({ college_id, department_id, program_id, semester_id, subject_id });
-      setAvailableComponents(components); 
+      setAvailableComponents(components);
       if (components.length === 1 && !formData.name) setFormData(prev => ({ ...prev, name: components[0] }));
     } catch (err) { setAvailableComponents([]); }
   };
@@ -137,35 +137,35 @@ const ExamsForm = () => {
     try {
       // Validations
       const dates = (formData.subjects || []).map(s => s.exam_date).filter(Boolean);
-      
+
       // 1. Sunday Validation
       for (const dateStr of dates) {
-          const [year, month, day] = dateStr.split('-').map(Number);
-          const date = new Date(year, month - 1, day);
-          if (date.getDay() === 0) {
-              const formatted = `${day}-${month}-${year}`;
-              toast.error(`Exams cannot be scheduled on Sundays (${formatted}). Sundays are institutional holidays.`);
-              setSubmitLoading(false);
-              return;
-          }
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        if (date.getDay() === 0) {
+          const formatted = `${day}-${month}-${year}`;
+          toast.error(`Exams cannot be scheduled on Sundays (${formatted}). Sundays are institutional holidays.`);
+          setSubmitLoading(false);
+          return;
+        }
       }
 
       // 2. Duplicate Date Validation
       if (new Set(dates).size !== dates.length) {
-          toast.error("Duplicate exam dates detected. Each subject must be scheduled on a unique date.");
-          setSubmitLoading(false);
-          return;
+        toast.error("Duplicate exam dates detected. Each subject must be scheduled on a unique date.");
+        setSubmitLoading(false);
+        return;
       }
 
       const normalizedFormData = { ...formData, college_id: formData.college_id === 'university_wide' ? '' : formData.college_id };
       const payload = editingId ? { ...normalizedFormData } : { ...normalizedFormData, subjects: normalizedFormData.subjects };
-      
+
       if (editingId) {
         await examApi.updateExam(editingId, payload);
       } else {
         await examApi.createExam(payload);
       }
-      
+
       toast.success(editingId ? "Assessment updated" : "Exam successfully scheduled");
       navigate('/exams');
     } catch (err) { setError(err.response?.data?.message || err.message); } finally { setSubmitLoading(false); }
@@ -191,11 +191,11 @@ const ExamsForm = () => {
             </div>
           </div>
           <div className="form-header__right">
-             <div className="flex items-center gap-3">
-               <span className="text-[12px] font-black text-slate-400  tracking-[0.2em] bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
-                 Assess-X Pro v2
-               </span>
-             </div>
+            <div className="flex items-center gap-3">
+              <span className="text-[12px] font-black text-slate-400  tracking-[0.2em] bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                Assess-X Pro v2
+              </span>
+            </div>
           </div>
         </div>
 
@@ -210,7 +210,7 @@ const ExamsForm = () => {
 
           <form id="examForm" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-              
+
               {/* Left Column: Configuration (4 cols) */}
               <div className="xl:col-span-4 space-y-10">
                 <div className="form-section">
@@ -243,7 +243,7 @@ const ExamsForm = () => {
 
                 <div className={`form-section ${disabledClass} space-y-6`}>
                   <div className="form-section__title"><span>Academic Context</span></div>
-                  
+
                   {(!authUtils.isCollegeAdmin() && !authUtils.isHOD() && formData.exam_type == 2) ? (
                     <div className="form-field">
                       <label className="form-label form-label--required">Governing University</label>
@@ -300,7 +300,7 @@ const ExamsForm = () => {
                       {departments.map(d => <option key={d.id} value={d.id}>{d.department_name || d.name}</option>)}
                     </select>
                   </div>
-                  
+
                   <div className="form-field">
                     <label className="form-label form-label--required">Academic Program</label>
                     <select required value={formData.program_id} disabled={!formData.department_id}
@@ -336,11 +336,11 @@ const ExamsForm = () => {
                 <div className={`form-section ${disabledClass}`}>
                   <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100">
                     <div className="flex items-center gap-3">
-                       <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600"><Calendar size={20} /></div>
-                       <div>
-                          <h3 className="text-sm font-black text-slate-900  tracking-tight">Timeline & Subject Mappings</h3>
-                          <p className="text-[12px] text-slate-400 font-bold  tracking-widest">Construct the assessment series</p>
-                       </div>
+                      <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600"><Calendar size={20} /></div>
+                      <div>
+                        <h3 className="text-sm font-black text-slate-900  tracking-tight">Timeline & Subject Mappings</h3>
+                        <p className="text-[12px] text-slate-400 font-bold  tracking-widest">Construct the assessment series</p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <button type="button"
@@ -373,7 +373,7 @@ const ExamsForm = () => {
                             <X size={18} />
                           </button>
                         )}
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 items-end">
                           <div className="form-field lg:col-span-4">
                             <label className="form-label form-label--required">Subject Designation</label>
@@ -387,7 +387,7 @@ const ExamsForm = () => {
                                 const mIds = subjectMappings.filter(m => m.program_id === pId && m.semester_id === sId).map(m => m.subject_id);
                                 const direct = subjects.filter(s => s.program_id === pId && s.semester_id === sId && (!dId || (s.department_ids && Array.isArray(s.department_ids) && s.department_ids.includes(dId))));
                                 const all = new Set([...mIds, ...direct.map(s => s.id)]);
-                                
+
                                 // Filter out subjects already selected in other rows
                                 const selectedInOtherRows = formData.subjects
                                   .filter((_, i) => i !== index)
@@ -398,82 +398,91 @@ const ExamsForm = () => {
                               })().map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
                           </div>
-                          
-                          <div className="form-field lg:col-span-3">
-                              <label className="form-label form-label--required">Exam Date</label>
-                              <div className="form-input-wrap relative">
-                                <Calendar size={16} className="form-input-wrap__icon" />
-                                <input required 
-                                  type="date"
-                                  value={sub.exam_date}
-                                  onChange={(e) => { 
-                                    const value = e.target.value;
-                                    if (value) {
-                                        const [year, month, day] = value.split('-').map(Number);
-                                        const date = new Date(year, month - 1, day);
-                                        if (date.getDay() === 0) {
-                                            const formatted = `${day}-${month}-${year}`;
-                                            toast.error(`Exams cannot be scheduled on Sundays (${formatted}). Sundays are institutional holidays.`);
-                                            return;
-                                        }
-                                    }
-                                    const ns = [...formData.subjects]; 
-                                    ns[index].exam_date = value; 
-                                    setFormData({ ...formData, subjects: ns }); 
-                                  }}
-                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                                <div className="form-input form-input--with-icon flex items-center min-h-[44px]">
-                                  <span className={sub.exam_date ? 'text-slate-900' : 'text-slate-400'}>
-                                    {sub.exam_date ? (() => {
-                                      const [y, m, d] = sub.exam_date.split('-');
-                                      return `${d}-${m}-${y}`;
-                                    })() : "DD-MM-YYYY"}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
 
-                            <div className="lg:col-span-5">
-                              <div className="flex gap-3">
-                                <div className="flex-1">
-                                  <label className="form-label">Start</label>
-                                  <input type="time" value={sub.start_time}
-                                    onChange={(e) => { const ns = [...formData.subjects]; ns[index].start_time = e.target.value; setFormData({ ...formData, subjects: ns }); }}
-                                    className="form-input w-full px-2 py-2" style={{ fontSize: '0.85rem' }} />
-                                </div>
-                                <div className="flex-1">
-                                  <label className="form-label">End</label>
-                                  <input type="time" value={sub.end_time}
-                                    onChange={(e) => { const ns = [...formData.subjects]; ns[index].end_time = e.target.value; setFormData({ ...formData, subjects: ns }); }}
-                                    className="form-input w-full px-2 py-2" style={{ fontSize: '0.85rem' }} />
-                                </div>
+                           <div className="form-field lg:col-span-3">
+                            <label className="form-label form-label--required">Exam Date</label>
+                            <div 
+                              className="form-input-wrap relative cursor-pointer"
+                              onClick={(e) => {
+                                const input = e.currentTarget.querySelector('input[type="date"]');
+                                if (input && typeof input.showPicker === 'function') {
+                                  try { input.showPicker(); } catch (err) {}
+                                }
+                              }}
+                            >
+                              <Calendar size={16} className="form-input-wrap__icon text-indigo-500 z-30" />
+                              <input required
+                                type="date"
+                                value={sub.exam_date}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (value) {
+                                    const [year, month, day] = value.split('-').map(Number);
+                                    const date = new Date(year, month - 1, day);
+                                    if (date.getDay() === 0) {
+                                      const formatted = `${day}-${month}-${year}`;
+                                      toast.error(`Exams cannot be scheduled on Sundays (${formatted}). Sundays are institutional holidays.`);
+                                      return;
+                                    }
+                                  }
+                                  const ns = [...formData.subjects];
+                                  ns[index].exam_date = value;
+                                  setFormData({ ...formData, subjects: ns });
+                                }}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                              />
+                              <div className="form-input form-input--with-icon flex items-center min-h-[44px] bg-white border border-slate-200 hover:border-indigo-300 rounded-xl transition-all shadow-sm pl-10">
+                                <span className={sub.exam_date ? 'text-slate-800 font-bold text-sm' : 'text-slate-400 font-bold text-sm'}>
+                                  {sub.exam_date ? (() => {
+                                    const [y, m, d] = sub.exam_date.split('-');
+                                    return `${d}-${m}-${y}`;
+                                  })() : "DD-MM-YYYY"}
+                                </span>
                               </div>
                             </div>
+                          </div>
+
+                          <div className="lg:col-span-5">
+                            <div className="flex gap-3">
+                              <div className="flex-1">
+                                <label className="form-label">Start</label>
+                                <input type="time" value={sub.start_time}
+                                  onChange={(e) => { const ns = [...formData.subjects]; ns[index].start_time = e.target.value; setFormData({ ...formData, subjects: ns }); }}
+                                  className="form-input w-full px-2 py-2" style={{ fontSize: '0.85rem' }} />
+                              </div>
+                              <div className="flex-1">
+                                <label className="form-label">End</label>
+                                <input type="time" value={sub.end_time}
+                                  onChange={(e) => { const ns = [...formData.subjects]; ns[index].end_time = e.target.value; setFormData({ ...formData, subjects: ns }); }}
+                                  className="form-input w-full px-2 py-2" style={{ fontSize: '0.85rem' }} />
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
 
                   {formData.subjects.length === 0 && (
-                     <div className="py-20 text-center border-4 border-dashed border-slate-50 rounded-[3rem]">
-                        <p className="text-sm font-black text-slate-300  tracking-widest">No subjects defined in schedule</p>
-                     </div>
+                    <div className="py-20 text-center border-4 border-dashed border-slate-50 rounded-[3rem]">
+                      <p className="text-sm font-black text-slate-300  tracking-widest">No subjects defined in schedule</p>
+                    </div>
                   )}
                 </div>
 
                 <div className="p-8 bg-gradient-to-br from-indigo-900 to-slate-900 rounded-[2.5rem] text-white relative overflow-hidden group shadow-xl transition-all duration-500">
-                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl" />
-                   <div className="relative z-10 flex items-start gap-5">
-                      <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-white border border-white/20 flex-shrink-0">
-                         <AlertCircle size={24} className="group-hover:scale-110 transition-transform duration-500" />
-                      </div>
-                      <div className="space-y-2">
-                         <h4 className="text-lg font-black tracking-tight leading-none">Operational Readiness</h4>
-                         <p className="text-xs text-indigo-100/70 font-medium leading-relaxed">
-                            Finalizing this schedule will push these assessments into academic registries. Ensure all dates and subject-mappings are validated against institutional calendars.
-                         </p>
-                      </div>
-                   </div>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+                  <div className="relative z-10 flex items-start gap-5">
+                    <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-white border border-white/20 flex-shrink-0">
+                      <AlertCircle size={24} className="group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="text-lg font-black tracking-tight leading-none">Operational Readiness</h4>
+                      <p className="text-xs text-indigo-100/70 font-medium leading-relaxed">
+                        Finalizing this schedule will push these assessments into academic registries. Ensure all dates and subject-mappings are validated against institutional calendars.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 

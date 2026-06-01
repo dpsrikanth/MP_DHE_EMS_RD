@@ -5485,10 +5485,80 @@ const registerForExam = async (req, res) => {
       return res.status(400).json({ message: "Exam IDs are required." });
     }
 
-    // Find student ID
-    const studentRes = await client.query('SELECT id FROM students WHERE user_id = $1', [userId]);
+    // Find student ID and department
+    const studentRes = await client.query('SELECT id, department FROM students WHERE user_id = $1', [userId]);
     if (studentRes.rows.length === 0) return res.status(404).json({ message: "Student record not found." });
     const studentId = studentRes.rows[0].id;
+    const deptName = studentRes.rows[0].department?.trim();
+
+    // Retrieve college_id, semester_id, and program_id from the first exam
+    const examRes = await client.query('SELECT semester_id, college_id, program_id, exam_type FROM exams WHERE id = $1', [exam_ids[0]]);
+    if (examRes.rows.length === 0) return res.status(404).json({ message: "Exam not found." });
+    const { semester_id: semesterId, college_id: collegeId, program_id: programId, exam_type: examType } = examRes.rows[0];
+
+    // Only check attendance for external/regular exams (examType === 2)
+    if (examType === 2) {
+      let departmentId = null;
+      if (deptName && collegeId) {
+        const deptRes = await client.query('SELECT id FROM master_departments WHERE department_code = $1 AND college_id = $2', [deptName, collegeId]);
+        if (deptRes.rows.length > 0) {
+          departmentId = deptRes.rows[0].id;
+        }
+      }
+
+      const attendanceQuery = `
+        WITH total_sessions AS (
+          SELECT 
+            subject_id, 
+            COUNT(DISTINCT (attendance_date, period_number, section)) as total_sessions
+          FROM student_attendance
+          WHERE college_id = $1 AND semester_id = $2
+          GROUP BY subject_id
+        ),
+        student_present AS (
+          SELECT 
+            subject_id, 
+            COUNT(*) as present_count
+          FROM student_attendance
+          WHERE student_id = $3 AND status = 'Present' AND semester_id = $2
+          GROUP BY subject_id
+        )
+        SELECT 
+          COALESCE(ts.total_sessions, 0) as total_sessions,
+          COALESCE(sp.present_count, 0) as attended_sessions,
+          CASE 
+            WHEN COALESCE(ts.total_sessions, 0) > 0 
+            THEN ROUND((COALESCE(sp.present_count, 0)::numeric / ts.total_sessions::numeric) * 100, 2)
+            WHEN $2 IN (SELECT id FROM master_semesters WHERE semester_name ILIKE '%1%' OR semester_name ILIKE '%2%' OR semester_name ILIKE '%3%')
+            THEN 100
+            ELSE 0 
+          END as attendance_percentage
+        FROM master_subjects sub
+        LEFT JOIN policy_program_subjects pps ON sub.id = pps.subject_id 
+          AND pps.college_id = $1 
+          AND pps.semester_id = $2 
+          AND pps.program_id = $4
+          AND ($5::integer IS NULL OR pps.department_id = $5 OR pps.department_id IS NULL)
+        LEFT JOIN total_sessions ts ON sub.id = ts.subject_id
+        LEFT JOIN student_present sp ON sub.id = sp.subject_id
+        WHERE pps.subject_id IS NOT NULL OR sp.subject_id IS NOT NULL
+      `;
+
+      const attendanceRes = await client.query(attendanceQuery, [collegeId, semesterId, studentId, programId, departmentId]);
+      const subjectsList = attendanceRes.rows;
+
+      let overallPercentage = 0;
+      if (subjectsList.length > 0) {
+        const sum = subjectsList.reduce((acc, curr) => acc + parseFloat(curr.attendance_percentage), 0);
+        overallPercentage = sum / subjectsList.length;
+      }
+
+      if (overallPercentage < 75) {
+        return res.status(400).json({ 
+          message: `Registration rejected: Your overall attendance is ${overallPercentage.toFixed(1)}%, which is below the required 75% threshold for exam eligibility.` 
+        });
+      }
+    }
 
     // Bulk insert registration
     await client.query(

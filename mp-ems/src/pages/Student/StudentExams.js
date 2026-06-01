@@ -13,6 +13,7 @@ const StudentExams = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSemester, setSelectedSemester] = useState('');
   const [availableSemesters, setAvailableSemesters] = useState([]);
+  const [overallAttendance, setOverallAttendance] = useState(100);
 
   useEffect(() => {
     const init = async () => {
@@ -50,6 +51,24 @@ const StudentExams = () => {
       setLoading(true);
       const data = await studentApi.getExams({ semester: selectedSemester });
       setExams(data);
+
+      if (selectedSemester) {
+        try {
+          const sems = await masterDataApi.getSemesters();
+          const semObj = sems.find(s => s.semester_name.toLowerCase() === selectedSemester.toLowerCase() || s.semester_name.toLowerCase().includes(selectedSemester.toLowerCase()));
+          if (semObj) {
+            const attData = await studentApi.getAttendanceSummary({ semester_id: semObj.id });
+            if (attData && attData.length > 0) {
+              const avg = attData.reduce((acc, curr) => acc + parseFloat(curr.attendance_percentage), 0) / attData.length;
+              setOverallAttendance(avg);
+            } else {
+              setOverallAttendance(100);
+            }
+          }
+        } catch (attErr) {
+          console.error("Error fetching attendance details for registration check:", attErr);
+        }
+      }
     } catch (error) {
       console.error('Error fetching exams:', error);
       toast.error(error.response?.data?.message || error.response?.data?.error || 'Failed to fetch exam schedule');
@@ -195,14 +214,27 @@ const StudentExams = () => {
                     <span>Timetable View Only — No registration required</span>
                   </div>
                 ) : !group.allRegistered ? (
-                  <button
-                    onClick={() => handleRegister(group.ids)}
-                    className="mt-4 md:mt-0 group relative inline-flex items-center gap-3 bg-indigo-600 text-white px-8 py-3.5 rounded-2xl font-black text-[13px]  tracking-widest shadow-2xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    <CreditCard size={16} className="relative z-10" />
-                    <span className="relative z-10">Register for Full Series</span>
-                  </button>
+                  overallAttendance < 75 ? (
+                    <div className="flex flex-col items-end gap-1.5 mt-4 md:mt-0">
+                      <button
+                        disabled
+                        className="opacity-50 cursor-not-allowed inline-flex items-center gap-2 px-8 py-3.5 bg-rose-50 border border-rose-200 text-rose-600 font-black rounded-2xl text-[13px] tracking-widest shadow-sm"
+                      >
+                        <AlertCircle size={16} />
+                        <span>Registration Blocked</span>
+                      </button>
+                      <span className="text-[10px] font-black text-rose-500 tracking-wider">Attendance ({overallAttendance.toFixed(1)}%) is below 75%</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleRegister(group.ids)}
+                      className="mt-4 md:mt-0 group relative inline-flex items-center gap-3 bg-indigo-600 text-white px-8 py-3.5 rounded-2xl font-black text-[13px]  tracking-widest shadow-2xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      <CreditCard size={16} className="relative z-10" />
+                      <span className="relative z-10">Register for Full Series</span>
+                    </button>
+                  )
                 ) : group.seatingLocked ? (
                   <button
                     onClick={() => window.open(`/student/hall-ticket/${group.exam_name}/${group.subjects[0].semester_id}`, '_blank')}
