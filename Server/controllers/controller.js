@@ -2932,7 +2932,7 @@ const getStudentAttendance = async (req, res) => {
     const userId = req.user.id;
 
     // Find student record for this user
-    const studentRes = await client.query('SELECT id, "collageName", "programName", semister FROM students WHERE user_id = $1', [userId]);
+    const studentRes = await client.query('SELECT id, "collageName", "programName", semister, department FROM students WHERE user_id = $1', [userId]);
     if (studentRes.rows.length === 0) return res.status(404).json({ message: "Student record not found" });
     const student = studentRes.rows[0];
 
@@ -2940,30 +2940,47 @@ const getStudentAttendance = async (req, res) => {
     const colName = student.collageName?.trim();
     const progName = student.programName?.trim();
     const semName = student.semister?.trim();
+    const deptName = student.department?.trim();
 
     // Find College, Program, and Semester IDs
     const colRes = await client.query('SELECT id FROM colleges WHERE name ILIKE $1', [colName]);
     const progRes = await client.query('SELECT id FROM master_programs WHERE name ILIKE $1', [progName]);
 
-    // Robust semester matching: handle "3" vs "Semester 3" vs "III Semester"
-    let semRes = await client.query('SELECT id, semester_name FROM master_semesters WHERE semester_name ILIKE $1', [semName]);
-    if (semRes.rows.length === 0) {
-      // Try adding "Semester " prefix if it was just a number
-      semRes = await client.query('SELECT id, semester_name FROM master_semesters WHERE semester_name ILIKE $1 OR semester_name ILIKE $2', [`Semester ${semName}`, `%${semName}%`]);
+    let semesterId;
+    if (req.query.semester_id) {
+      semesterId = parseInt(req.query.semester_id);
+    } else {
+      // Robust semester matching: handle "3" vs "Semester 3" vs "III Semester"
+      let semRes = await client.query('SELECT id, semester_name FROM master_semesters WHERE semester_name ILIKE $1', [semName]);
+      if (semRes.rows.length === 0) {
+        // Try adding "Semester " prefix if it was just a number
+        semRes = await client.query('SELECT id, semester_name FROM master_semesters WHERE semester_name ILIKE $1 OR semester_name ILIKE $2', [`Semester ${semName}`, `%${semName}%`]);
+      }
+      if (semRes.rows.length > 0) {
+        semesterId = semRes.rows[0].id;
+      }
     }
 
-    if (colRes.rows.length === 0 || progRes.rows.length === 0 || semRes.rows.length === 0) {
+    if (colRes.rows.length === 0 || progRes.rows.length === 0 || !semesterId) {
       console.warn(`[Attendance] Academic profile mismatch for user ${userId}:`, {
         college: colName, foundCol: colRes.rowCount > 0,
         program: progName, foundProg: progRes.rowCount > 0,
-        semester: semName, foundSem: semRes.rowCount > 0
+        semesterId: semesterId
       });
       return res.status(200).json([]); // Return empty list instead of 400 to avoid UI crashes
     }
 
     const collegeId = colRes.rows[0].id;
     const programId = progRes.rows[0].id;
-    const semesterId = semRes.rows[0].id;
+
+    // Resolve department ID from student's department code
+    let departmentId = null;
+    if (deptName) {
+      const deptRes = await client.query('SELECT id FROM master_departments WHERE department_code = $1 AND college_id = $2', [deptName, collegeId]);
+      if (deptRes.rows.length > 0) {
+        departmentId = deptRes.rows[0].id;
+      }
+    }
 
     const query = `
       WITH total_sessions AS (
@@ -2971,7 +2988,7 @@ const getStudentAttendance = async (req, res) => {
           subject_id, 
           COUNT(DISTINCT (attendance_date, period_number, section)) as total_sessions
         FROM student_attendance
-        WHERE college_id = $1
+        WHERE college_id = $1 AND semester_id = $2
         GROUP BY subject_id
       ),
       student_present AS (
@@ -2979,7 +2996,7 @@ const getStudentAttendance = async (req, res) => {
           subject_id, 
           COUNT(*) as present_count
         FROM student_attendance
-        WHERE student_id = $3 AND status = 'Present'
+        WHERE student_id = $3 AND status = 'Present' AND semester_id = $2
         GROUP BY subject_id
       )
       SELECT 
@@ -2997,14 +3014,18 @@ const getStudentAttendance = async (req, res) => {
           ELSE 0 
         END as attendance_percentage
       FROM master_subjects sub
-      LEFT JOIN policy_program_subjects pps ON sub.id = pps.subject_id AND pps.college_id = $1 AND pps.semester_id = $2
+      LEFT JOIN policy_program_subjects pps ON sub.id = pps.subject_id 
+        AND pps.college_id = $1 
+        AND pps.semester_id = $2 
+        AND pps.program_id = $4
+        AND ($5::integer IS NULL OR pps.department_id = $5 OR pps.department_id IS NULL)
       LEFT JOIN total_sessions ts ON sub.id = ts.subject_id
       LEFT JOIN student_present sp ON sub.id = sp.subject_id
       WHERE pps.subject_id IS NOT NULL OR sp.subject_id IS NOT NULL
       ORDER BY sub.name
     `;
 
-    const result = await client.query(query, [collegeId, semesterId, student.id]);
+    const result = await client.query(query, [collegeId, semesterId, student.id, programId, departmentId]);
     res.json(result.rows);
   } catch (error) {
     console.error("Get student attendance error:", error);
