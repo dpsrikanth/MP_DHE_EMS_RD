@@ -30,7 +30,7 @@ const Sel = ({ label, name: n, options, icon: Icon, req, disabled, placeholder, 
       <select name={n} value={form[n] || ''} onChange={onChange} disabled={disabled}
         className={`form-select ${Icon ? 'form-select--with-icon' : ''} ${errors[n] ? 'form-input--error' : ''}`}>
         <option value="">{placeholder || `-- Select --`}</option>
-        {options.map((opt, i) => <option key={i} value={opt.value}>{opt.label}</option>)}
+        {options.map((opt, i) => <option key={opt.value || i} value={opt.value}>{opt.label}</option>)}
       </select>
     </div>
     {errors[n] && <p className="form-field-error">{errors[n]}</p>}
@@ -76,7 +76,7 @@ const StudentsForm = () => {
   const [collegeAcademicYears, setCollegeAcademicYears] = useState([]);
   const [cascadingLoading, setCascadingLoading] = useState(false);
 
-  useEffect(() => { fetchDropdownData().then((colls) => { if (isEditing) fetchStudentData(colls); }); }, [id]);
+  useEffect(() => { fetchDropdownData().then((data) => { if (isEditing) fetchStudentData(data.colleges, data.departments); }); }, [id]);
 
   const fetchDropdownData = async () => {
     try {
@@ -90,15 +90,16 @@ const StudentsForm = () => {
         masterDataApi.getDepartments()
       ]);
       let loadedColleges = [];
+      let loadedDepts = [];
       if (yearRes) setAcademicYears((yearRes || []).sort((a, b) => b.year_name.localeCompare(a.year_name, undefined, { numeric: true })));
       if (policyRes) setPolicies(policyRes || []);
       if (programRes) setPrograms(programRes || []);
       if (semesterRes) setSemesters((semesterRes || []).sort((a, b) => a.semester_name.localeCompare(b.semester_name, undefined, { numeric: true })));
       if (batchRes) setBatches(batchRes || []);
-      if (deptRes) setDepartments(deptRes || []);
+      if (deptRes) { loadedDepts = deptRes || []; setDepartments(loadedDepts); }
       if (collegeRes) { loadedColleges = collegeRes || []; setColleges(loadedColleges); }
-      return loadedColleges;
-    } catch (err) { console.error('Error fetching dropdown data:', err); return []; }
+      return { colleges: loadedColleges, departments: loadedDepts };
+    } catch (err) { console.error('Error fetching dropdown data:', err); return { colleges: [], departments: [] }; }
     finally { setDropdownLoading(false); }
   };
 
@@ -126,7 +127,7 @@ const StudentsForm = () => {
     finally { setCascadingLoading(false); }
   };
 
-  const fetchStudentData = async (colls) => {
+  const fetchStudentData = async (colls, depts) => {
     try {
       const dataList = await masterDataApi.getStudents();
       if (dataList) {
@@ -134,7 +135,14 @@ const StudentsForm = () => {
         if (student) {
           if(student.admission_date) student.admission_date = new Date(student.admission_date).toISOString().split('T')[0];
           if(student.date_of_birth) student.date_of_birth = new Date(student.date_of_birth).toISOString().split('T')[0];
-          setForm({ ...initialFormState, ...student });
+          
+          let mappedDepartment = student.department;
+          if (depts && depts.length > 0 && student.department) {
+            const deptObj = depts.find(d => d.department_code === student.department);
+            if (deptObj) mappedDepartment = deptObj.department_name;
+          }
+          
+          setForm({ ...initialFormState, ...student, department: mappedDepartment });
           if (student.collageName) {
             const collegeObj = colls.find(col => (col.college_name || col.name) === student.collageName);
             if (collegeObj) await fetchCollegeData(collegeObj.id);
@@ -306,7 +314,7 @@ const StudentsForm = () => {
                     <Sel form={form} onChange={handleChange} errors={errors} label="Governing Policy" name="policies" icon={FileText} req disabled={!form.collageName}
                       options={collegePolicies.map(p => ({ value: p.name, label: p.name }))} placeholder={form.collageName ? 'Select Policy' : 'Select College First'} />
                     <Sel form={form} onChange={handleChange} errors={errors} label="Academic Program" name="programName" icon={BookOpen} req disabled={!form.collageName}
-                      options={programs.map(p => ({ value: p.name, label: p.name }))} placeholder={form.collageName ? 'Select Program' : 'Select College First'} />
+                      options={collegePrograms.map(p => ({ value: p.name, label: p.name }))} placeholder={form.collageName ? 'Select Program' : 'Select College First'} />
                     <Sel form={form} onChange={handleChange} errors={errors} label="Department" name="department" icon={Building2} req disabled={!form.programName}
                       options={(() => {
                         if (!form.programName) return [];

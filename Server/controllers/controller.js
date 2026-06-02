@@ -1040,7 +1040,7 @@ const getStudents = async (req, res) => {
     if (role === 'university_admin' || (req.user.role === 'university_admin' && !role)) {
       if (!university_id) return res.json([]);
       query = `
-        SELECT s.*, md.department_code as department
+        SELECT s.*, COALESCE(md.department_code, s.department) as department
         FROM public.students s
         JOIN public.colleges c ON s."collageName" ILIKE c.name
         LEFT JOIN public.master_departments md ON s.department = md.department_name AND c.id = md.college_id AND md.status = 'Active'
@@ -1050,7 +1050,7 @@ const getStudents = async (req, res) => {
     } else if (role === 'college_admin' || (req.user.role === 'college_admin' && !role)) {
       const cId = college_id || req.user.college_id;
       query = `
-        SELECT s.*, md.department_code as department
+        SELECT s.*, COALESCE(md.department_code, s.department) as department
         FROM public.students s
         JOIN public.colleges c ON s."collageName" ILIKE c.name
         LEFT JOIN public.master_departments md ON s.department = md.department_name AND c.id = md.college_id AND md.status = 'Active'
@@ -1059,7 +1059,7 @@ const getStudents = async (req, res) => {
       whereClauses.push(`c.id = $${params.length}`);
     } else {
       query = `
-        SELECT s.*, md.department_code as department
+        SELECT s.*, COALESCE(md.department_code, s.department) as department
         FROM public.students s
         LEFT JOIN public.colleges c ON s."collageName" ILIKE c.name
         LEFT JOIN public.master_departments md ON s.department = md.department_name AND c.id = md.college_id AND md.status = 'Active'
