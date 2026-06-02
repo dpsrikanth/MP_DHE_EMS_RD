@@ -38,6 +38,10 @@ export const masterDataApi = {
         const response = await apiClient.delete(`/master-academic-years/unmap/${id}`);
         return response.data;
     },
+    bulkUploadAcademicYears: async (data) => {
+        const response = await apiClient.post('/master-academic-years/bulk-upload', data);
+        return response.data;
+    },
 
     // --- Colleges ---
     getColleges: async () => {
@@ -192,6 +196,10 @@ export const masterDataApi = {
         const response = await apiClient.delete(`/master-batches/${id}`);
         return response.data;
     },
+    bulkUploadBatches: async (data) => {
+        const response = await apiClient.post('/master-batches/bulk-upload', data);
+        return response.data;
+    },
 
     // --- Policies ---
     getPolicies: async () => {
@@ -212,6 +220,14 @@ export const masterDataApi = {
     },
     deletePolicy: async (id) => {
         const response = await apiClient.delete(`/master-policies/${id}`);
+        return response.data;
+    },
+    mapPolicy: async (data) => {
+        const response = await apiClient.post('/master-policies/map', data);
+        return response.data;
+    },
+    unmapPolicy: async (id) => {
+        const response = await apiClient.delete(`/master-policies/unmap/${id}`);
         return response.data;
     },
 
@@ -242,6 +258,10 @@ export const masterDataApi = {
     },
     unmapSemester: async (id) => {
         const response = await apiClient.delete(`/master-semesters/unmap/${id}`);
+        return response.data;
+    },
+    bulkUploadSemesters: async (data) => {
+        const response = await apiClient.post('/master-semesters/bulk-upload', data);
         return response.data;
     },
 

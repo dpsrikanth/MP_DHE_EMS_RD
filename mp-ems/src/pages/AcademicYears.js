@@ -8,8 +8,14 @@ import {
   X, 
   Check,
   Hash,
-  History
+  History,
+  ChevronDown,
+  FileText,
+  UploadCloud,
+  DownloadCloud
 } from "lucide-react";
+import Papa from 'papaparse';
+import BulkImportModal from '../components/BulkImportModal';
 import { MdDelete } from "react-icons/md";
 import { formatDate } from '../utils/dateUtils';
 import { useDataTable } from '../hooks/useDataTable';
@@ -28,6 +34,8 @@ const AcademicYears = () => {
   const [availableMasters, setAvailableMasters] = useState([]);
   const [mappingSelection, setMappingSelection] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showBulkDropdown, setShowBulkDropdown] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const availableColumns = [
     { key: 'id', label: 'ID' },
@@ -134,6 +142,85 @@ const AcademicYears = () => {
     }
   };
 
+  const handleExport = () => {
+    if (!data || data.length === 0) {
+      toast.warning('No data available to export');
+      return;
+    }
+
+    const fieldsToExclude = ['id', 'created_at', 'updated_at', 'deleteflag', 'university_id'];
+    const exportData = data.map(item => {
+      const row = {};
+      Object.keys(item).forEach(key => {
+        if (!fieldsToExclude.includes(key)) {
+          if (key === 'year_name') {
+            row['Session Name'] = item[key];
+          } else {
+            row[key] = item[key];
+          }
+        }
+      });
+      return row;
+    });
+
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'academic_years_export.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowBulkDropdown(false);
+  };
+
+  const handleDownloadTemplate = () => {
+    const templateFields = ['Session Name'];
+    const sampleData = [
+      {
+        'Session Name': '2024-2025'
+      }
+    ];
+    const csv = Papa.unparse({ fields: templateFields, data: sampleData });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'academic_years_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowBulkDropdown(false);
+  };
+
+  const bulkValidate = (rows) => {
+    const errors = [];
+    const localNames = data.map(ay => (ay.year_name || '').toLowerCase());
+
+    rows.forEach((row, idx) => {
+      const rowNumber = idx + 2;
+      const yearName = (row['Session Name'] || row['year_name'])?.toString()?.trim();
+
+      if (!yearName) {
+        errors.push({ row: rowNumber, message: 'Session Name is required' });
+      } else {
+        const formatRegex = /^\d{4}-\d{4}$/;
+        if (!formatRegex.test(yearName)) {
+          errors.push({ row: rowNumber, message: `Invalid session name format '${yearName}'. Expected format like '2024-2025'.` });
+        } else {
+          const [start, end] = yearName.split('-').map(Number);
+          if (start >= end) {
+            errors.push({ row: rowNumber, message: `Invalid session name '${yearName}'. Start year must be less than end year.` });
+          }
+        }
+
+        if (localNames.includes(yearName.toLowerCase())) {
+          errors.push({ row: rowNumber, message: `Academic year '${yearName}' already exists` });
+        }
+      }
+    });
+    return errors;
+  };
+
   // Removed handleInputChange
 
   // Removed handleSubmit in favor of route-based Form page
@@ -176,23 +263,60 @@ const AcademicYears = () => {
               visibleColumns={visibleColumns} 
               onToggle={toggleColumn} 
             />
-            {authUtils.isSuperAdmin() ? (
-              <button 
-                onClick={() => navigate('/academic-years/add')}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
-              >
-                <Plus size={20} />
-                <span>Add Session</span>
-              </button>
-            ) : (
-              <button 
-                onClick={() => setShowAssignModal(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
-              >
-                <Plus size={20} />
-                <span>Assign from Master</span>
-              </button>
-            )}
+            <div className="flex gap-2 relative">
+              <div className="relative">
+                <button
+                  onClick={() => setShowBulkDropdown(!showBulkDropdown)}
+                  className="inline-flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all text-sm whitespace-nowrap"
+                >
+                  <span>Bulk Actions</span>
+                  <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showBulkDropdown && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50">
+                    <button 
+                      onClick={handleDownloadTemplate}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    >
+                      <FileText size={16} className="text-slate-400" />
+                      Download Template
+                    </button>
+                    <button 
+                      onClick={() => { setShowImportModal(true); setShowBulkDropdown(false); }}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    >
+                      <UploadCloud size={16} className="text-slate-400" />
+                      Import CSV
+                    </button>
+                    <button 
+                      onClick={handleExport}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    >
+                      <DownloadCloud size={16} className="text-slate-400" />
+                      Export All
+                    </button>
+                  </div>
+                )}
+              </div>
+              {authUtils.isSuperAdmin() ? (
+                <button 
+                  onClick={() => navigate('/academic-years/add')}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+                >
+                  <Plus size={20} />
+                  <span>Add Session</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setShowAssignModal(true)}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+                >
+                  <Plus size={20} />
+                  <span>Assign from Master</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -388,6 +512,20 @@ const AcademicYears = () => {
             </div>
           </div>
         </div>
+      )}
+      {/* Bulk Import Modal */}
+      {showImportModal && (
+        <BulkImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onSuccess={fetchData}
+          entityName="AcademicYear"
+          endpoint="/master-academic-years/bulk-upload"
+          expectedColumns={{ 
+            year_name: "Session Name"
+          }}
+          validate={bulkValidate}
+        />
       )}
     </div>
   );

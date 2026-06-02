@@ -10,8 +10,14 @@ import {
   Hash,
   Activity,
   ShieldCheck,
-  ShieldAlert
+  ShieldAlert,
+  ChevronDown,
+  FileText,
+  UploadCloud,
+  DownloadCloud
 } from "lucide-react";
+import Papa from 'papaparse';
+import BulkImportModal from '../components/BulkImportModal';
 import { MdDelete } from "react-icons/md";
 import { formatDate } from '../utils/dateUtils';
 import { useDataTable } from '../hooks/useDataTable';
@@ -29,6 +35,8 @@ const Semesters = () => {
   const [availableMasters, setAvailableMasters] = useState([]);
   const [mappingSelection, setMappingSelection] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showBulkDropdown, setShowBulkDropdown] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const navigate = useNavigate();
 
   const availableColumns = [
@@ -134,6 +142,73 @@ const Semesters = () => {
     }
   };
 
+  const handleExport = () => {
+    if (!data || data.length === 0) {
+      toast.warning('No data available to export');
+      return;
+    }
+
+    const fieldsToExclude = ['id', 'created_at', 'updated_at', 'deleteflag', 'university_id'];
+    const exportData = data.map(item => {
+      const row = {};
+      Object.keys(item).forEach(key => {
+        if (!fieldsToExclude.includes(key)) {
+          if (key === 'semester_name') {
+            row['Semester Title'] = item[key];
+          } else {
+            row[key] = item[key];
+          }
+        }
+      });
+      return row;
+    });
+
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'semesters_export.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowBulkDropdown(false);
+  };
+
+  const handleDownloadTemplate = () => {
+    const templateFields = ['Semester Title'];
+    const sampleData = [
+      {
+        'Semester Title': 'Semester 1'
+      }
+    ];
+    const csv = Papa.unparse({ fields: templateFields, data: sampleData });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'semesters_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowBulkDropdown(false);
+  };
+
+  const bulkValidate = (rows) => {
+    const errors = [];
+    const localNames = data.map(s => (s.semester_name || '').toLowerCase());
+
+    rows.forEach((row, idx) => {
+      const rowNumber = idx + 2;
+      const semName = (row['Semester Title'] || row['semester_name'])?.toString()?.trim();
+
+      if (!semName) {
+        errors.push({ row: rowNumber, message: 'Semester Title is required' });
+      } else if (localNames.includes(semName.toLowerCase())) {
+        errors.push({ row: rowNumber, message: `Semester '${semName}' already exists` });
+      }
+    });
+    return errors;
+  };
+
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
@@ -171,23 +246,60 @@ const Semesters = () => {
               visibleColumns={visibleColumns} 
               onToggle={toggleColumn} 
             />
-            {authUtils.isSuperAdmin() ? (
-              <button 
-                onClick={() => navigate('/semesters/add')}
-                className="inline-flex items-center gap-2 px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
-              >
-                <Plus size={20} />
-                <span>Create Semester</span>
-              </button>
-            ) : (
-              <button 
-                onClick={() => setShowAssignModal(true)}
-                className="inline-flex items-center gap-2 px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
-              >
-                <Plus size={20} />
-                <span>Assign from Master</span>
-              </button>
-            )}
+            <div className="flex gap-2 relative">
+              <div className="relative">
+                <button
+                  onClick={() => setShowBulkDropdown(!showBulkDropdown)}
+                  className="inline-flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all text-sm whitespace-nowrap"
+                >
+                  <span>Bulk Actions</span>
+                  <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showBulkDropdown && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50">
+                    <button 
+                      onClick={handleDownloadTemplate}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    >
+                      <FileText size={16} className="text-slate-400" />
+                      Download Template
+                    </button>
+                    <button 
+                      onClick={() => { setShowImportModal(true); setShowBulkDropdown(false); }}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    >
+                      <UploadCloud size={16} className="text-slate-400" />
+                      Import CSV
+                    </button>
+                    <button 
+                      onClick={handleExport}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    >
+                      <DownloadCloud size={16} className="text-slate-400" />
+                      Export All
+                    </button>
+                  </div>
+                )}
+              </div>
+              {authUtils.isSuperAdmin() ? (
+                <button 
+                  onClick={() => navigate('/semesters/add')}
+                  className="inline-flex items-center gap-2 px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
+                >
+                  <Plus size={20} />
+                  <span>Create Semester</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setShowAssignModal(true)}
+                  className="inline-flex items-center gap-2 px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
+                >
+                  <Plus size={20} />
+                  <span>Assign from Master</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -405,6 +517,20 @@ const Semesters = () => {
             </div>
           </div>
         </div>
+      )}
+      {/* Bulk Import Modal */}
+      {showImportModal && (
+        <BulkImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onSuccess={fetchData}
+          entityName="Semester"
+          endpoint="/master-semesters/bulk-upload"
+          expectedColumns={{ 
+            semester_name: "Semester Title"
+          }}
+          validate={bulkValidate}
+        />
       )}
     </div>
   );

@@ -14,8 +14,14 @@ import {
   Layers,
   Settings,
   ListRestart,
-  BookOpen
+  BookOpen,
+  ChevronDown,
+  FileText,
+  UploadCloud,
+  DownloadCloud
 } from "lucide-react";
+import Papa from 'papaparse';
+import BulkImportModal from '../components/BulkImportModal';
 import { MdDelete } from "react-icons/md";
 import { formatDate } from '../utils/dateUtils';
 import Select, { components } from "react-select";
@@ -40,6 +46,8 @@ const Batches = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewData, setViewData] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showBulkDropdown, setShowBulkDropdown] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const navigate = useNavigate();
   
   const batchNameOptions = [
@@ -123,6 +131,122 @@ const Batches = () => {
     }
   };
 
+  const handleExport = () => {
+    if (!data || data.length === 0) {
+      toast.warning('No data available to export');
+      return;
+    }
+
+    const fieldsToExclude = ['id', 'created_at', 'updated_at', 'deleteflag', 'program_id', 'policy_id'];
+    const exportData = data.map(item => {
+      const row = {};
+      Object.keys(item).forEach(key => {
+        if (!fieldsToExclude.includes(key)) {
+          if (key === 'batch_name') {
+            row['Batch Name'] = item[key];
+          } else if (key === 'program_name') {
+            row['Program'] = item[key];
+          } else if (key === 'policy_name') {
+            row['Policy'] = item[key];
+          } else if (key === 'start_date') {
+            row['Start Date'] = item[key] ? item[key].split('T')[0] : '';
+          } else if (key === 'end_date') {
+            row['End Date'] = item[key] ? item[key].split('T')[0] : '';
+          } else if (key === 'academic_year') {
+            row['Academic Year'] = item[key];
+          } else if (key === 'import_fees_flag') {
+            row['Fees Import Flag'] = item[key];
+          } else if (key === 'start_year') {
+            row['Start Year'] = item[key];
+          } else if (key === 'end_year') {
+            row['End Year'] = item[key];
+          } else {
+            row[key] = item[key];
+          }
+        }
+      });
+      return row;
+    });
+
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'batches_export.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowBulkDropdown(false);
+  };
+
+  const handleDownloadTemplate = () => {
+    const templateFields = [
+      'Batch Name',
+      'Start Date',
+      'End Date',
+      'Program',
+      'Policy',
+      'Academic Year',
+      'Fees Import Flag',
+      'Start Year',
+      'End Year'
+    ];
+    const sampleData = [
+      {
+        'Batch Name': '2026-2028',
+        'Start Date': '2026-05-20',
+        'End Date': '2028-04-20',
+        'Program': 'MCA',
+        'Policy': 'Policy 2',
+        'Academic Year': '2026-2028',
+        'Fees Import Flag': 'N',
+        'Start Year': '2026',
+        'End Year': '2028'
+      }
+    ];
+    const csv = Papa.unparse({ fields: templateFields, data: sampleData });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'batches_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowBulkDropdown(false);
+  };
+
+  const bulkValidate = (rows) => {
+    const errors = [];
+    const localNames = data.map(b => (b.batch_name || '').toLowerCase());
+
+    rows.forEach((row, idx) => {
+      const rowNumber = idx + 2;
+      const batchName = (row['Batch Name'] || row['batch_name'])?.toString()?.trim();
+      const programName = (row['Program'] || row['program_name'])?.toString()?.trim();
+      const startDate = row['Start Date'] || row['start_date'];
+      const endDate = row['End Date'] || row['end_date'];
+
+      if (!batchName) {
+        errors.push({ row: rowNumber, message: 'Batch Name is required' });
+      } else if (localNames.includes(batchName.toLowerCase())) {
+        errors.push({ row: rowNumber, message: `Batch '${batchName}' already exists` });
+      }
+
+      if (!programName) {
+        errors.push({ row: rowNumber, message: 'Program is required' });
+      }
+
+      if (!startDate) {
+        errors.push({ row: rowNumber, message: 'Start Date is required' });
+      }
+
+      if (!endDate) {
+        errors.push({ row: rowNumber, message: 'End Date is required' });
+      }
+    });
+    return errors;
+  };
+
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
@@ -159,13 +283,50 @@ const Batches = () => {
               visibleColumns={visibleColumns} 
               onToggle={toggleColumn} 
             />
-            <button 
-              onClick={() => navigate('/batches/add')}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
-            >
-              <Plus size={20} />
-              <span>Add Batch</span>
-            </button>
+            <div className="flex gap-2 relative">
+              <div className="relative">
+                <button
+                  onClick={() => setShowBulkDropdown(!showBulkDropdown)}
+                  className="inline-flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all text-sm whitespace-nowrap"
+                >
+                  <span>Bulk Actions</span>
+                  <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showBulkDropdown && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50">
+                    <button 
+                      onClick={handleDownloadTemplate}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                    >
+                      <FileText size={16} className="text-slate-400" />
+                      Download Template
+                    </button>
+                    <button 
+                      onClick={() => { setShowImportModal(true); setShowBulkDropdown(false); }}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                    >
+                      <UploadCloud size={16} className="text-slate-400" />
+                      Import CSV
+                    </button>
+                    <button 
+                      onClick={handleExport}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                    >
+                      <DownloadCloud size={16} className="text-slate-400" />
+                      Export All
+                    </button>
+                  </div>
+                )}
+              </div>
+              <button 
+                onClick={() => navigate('/batches/add')}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+              >
+                <Plus size={20} />
+                <span>Add Batch</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -272,6 +433,30 @@ const Batches = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Bulk Import Modal */}
+      {showImportModal && (
+        <BulkImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onSuccess={fetchData}
+          entityName="Batch"
+          endpoint="/master-batches/bulk-upload"
+          expectedColumns={{
+            batch_name: "Batch Name",
+            start_date: "Start Date",
+            end_date: "End Date",
+            program_name: "Program",
+            policy_name: "Policy",
+            academic_year: "Academic Year",
+            import_fees_flag: "Fees Import Flag",
+            start_year: "Start Year",
+            end_year: "End Year"
+          }}
+          optionalColumns={["policy_name", "academic_year", "import_fees_flag", "start_year", "end_year"]}
+          validate={bulkValidate}
+        />
       )}
     </div>
   );

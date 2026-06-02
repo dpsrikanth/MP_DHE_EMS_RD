@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { initiateRegistration, verifyOtp, setInitialPassword, changePassword, getDashboardStats, getUsers, createUser, updateUser, deleteUser, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, createRole, updateRole, deleteRole, Login, getLoginHistory, refreshToken, getUniversities, getUniversityById, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, updateTeacher, getExams, createExam, updateExam, deleteExam, publishExam, toggleStudentApplication, getMarks, getMasterSemesters, createMasterSemester, updateMasterSemester, deleteMasterSemester, getMasterSemester, getMasterSubjects, createMasterSubject, updateMasterSubject, deleteMasterSubject, getMasterSubject, getMasterPrograms, createMasterProgram, getMasterProgram, updateMasterProgram, deleteMasterProgram, getMasterPolicies, getMasterPolicy, createMasterPolicy, updateMasterPolicy, deleteMasterPolicy, getCollegeMasterPolicy, createStudent, bulkUploadStudents, bulkUploadTeachers, updateStudent, deleteStudent, getMasterTeachers, getMasterTeachersAuditLogs, getMasterTeacher, createMasterTeacher, updateMasterTeacher, deleteMasterTeacher, getMasterDesignations, createMasterDesignation, getMasterDepartments, createMasterDepartment, getCollegeSemesters, getCollegePrograms, getCollegePolicies, getCollegeAcademicYears, getMasterDepartment, updateMasterDepartment, deleteMasterDepartment, getStudentsForMarks, saveTeacherMarks, bulkUploadMarks, getMarksForApproval, approveRejectMarks, getMasterBatches, createMasterBatch, updateMasterBatch, deleteMasterBatch, getSubjectMappings, createSubjectMapping, updateSubjectMapping, deleteSubjectMapping, getStudentExams, registerForExam, publishResults, getStudentResults, getStudentAttendance, getStudentAttendanceDetail, getStudentAttendanceHistory, getHallTicketData, getResultSheetData, forgotPassword, resetPassword, mapMasterProgram, unmapMasterProgram, mapMasterSemester, unmapMasterSemester, mapMasterAcademicYear, unmapMasterAcademicYear, mapMasterPolicy, unmapMasterPolicy, getNextAdmissionSerial, submitMarksDiscrepancy, getStudentDiscrepancies, getStudentInternalExamAttendance, getAdminInternalExamAttendance, getFacultyInternalExamAttendance, bulkUploadUniversities, bulkUploadColleges, bulkUploadMasterSubjects, bulkUploadDepartments, bulkUploadPrograms } = require('../controllers/controller');
+const { initiateRegistration, verifyOtp, setInitialPassword, changePassword, getDashboardStats, getUsers, createUser, updateUser, deleteUser, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, createRole, updateRole, deleteRole, Login, getLoginHistory, refreshToken, getUniversities, getUniversityById, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, updateTeacher, getExams, createExam, updateExam, deleteExam, publishExam, toggleStudentApplication, getMarks, getMasterSemesters, createMasterSemester, updateMasterSemester, deleteMasterSemester, getMasterSemester, getMasterSubjects, createMasterSubject, updateMasterSubject, deleteMasterSubject, getMasterSubject, getMasterPrograms, createMasterProgram, getMasterProgram, updateMasterProgram, deleteMasterProgram, getMasterPolicies, getMasterPolicy, createMasterPolicy, updateMasterPolicy, deleteMasterPolicy, getCollegeMasterPolicy, createStudent, bulkUploadStudents, bulkUploadTeachers, updateStudent, deleteStudent, getMasterTeachers, getMasterTeachersAuditLogs, getMasterTeacher, createMasterTeacher, updateMasterTeacher, deleteMasterTeacher, getMasterDesignations, createMasterDesignation, getMasterDepartments, createMasterDepartment, getCollegeSemesters, getCollegePrograms, getCollegePolicies, getCollegeAcademicYears, getMasterDepartment, updateMasterDepartment, deleteMasterDepartment, getStudentsForMarks, saveTeacherMarks, bulkUploadMarks, getMarksForApproval, approveRejectMarks, getMasterBatches, createMasterBatch, updateMasterBatch, deleteMasterBatch, getSubjectMappings, createSubjectMapping, updateSubjectMapping, deleteSubjectMapping, getStudentExams, registerForExam, publishResults, getStudentResults, getStudentAttendance, getStudentAttendanceDetail, getStudentAttendanceHistory, getHallTicketData, getResultSheetData, forgotPassword, resetPassword, mapMasterProgram, unmapMasterProgram, mapMasterSemester, unmapMasterSemester, mapMasterAcademicYear, unmapMasterAcademicYear, mapMasterPolicy, unmapMasterPolicy, getNextAdmissionSerial, submitMarksDiscrepancy, getStudentDiscrepancies, getStudentInternalExamAttendance, getAdminInternalExamAttendance, getFacultyInternalExamAttendance, bulkUploadUniversities, bulkUploadColleges, bulkUploadMasterSubjects, bulkUploadDepartments, bulkUploadPrograms, bulkUploadAcademicYears, bulkUploadSemesters, bulkUploadBatches } = require('../controllers/controller');
 const { getMasters, getUniversityConfig, updateUniversityConfig, getCollegeConfig, updateCollegeConfig } = require('../controllers/masterController');
 const { getSmtpConfig, updateSmtpConfig } = require('../controllers/configController');
 const { autoAllocateSeats, clearAssignments, getSeatingArrangements, lockSeating } = require('../controllers/seatController');
@@ -719,6 +719,9 @@ router.delete('/programs/:id', verifyToken, deleteProgram);
 router.post('/academic-years', verifyToken, createAcademicYear);
 router.put('/academic-years/:id', verifyToken, updateAcademicYear);
 router.delete('/academic-years/:id', verifyToken, deleteAcademicYear);
+router.post('/master-academic-years/map', verifyToken, mapMasterAcademicYear);
+router.delete('/master-academic-years/unmap/:id', verifyToken, unmapMasterAcademicYear);
+router.post('/master-academic-years/bulk-upload', verifyToken, bulkUploadAcademicYears);
 /**
  * @swagger
  * /api/students:
@@ -929,6 +932,9 @@ router.get('/master-semesters/:id', verifyToken, getMasterSemester);
 router.post('/master-semesters', verifyToken, createMasterSemester);
 router.put('/master-semesters/:id', verifyToken, updateMasterSemester);
 router.delete('/master-semesters/:id', verifyToken, deleteMasterSemester);
+router.post('/master-semesters/map', verifyToken, mapMasterSemester);
+router.delete('/master-semesters/unmap/:id', verifyToken, unmapMasterSemester);
+router.post('/master-semesters/bulk-upload', verifyToken, bulkUploadSemesters);
 
 /**
  * @swagger
@@ -1067,6 +1073,8 @@ router.get('/master-programs/:id', verifyToken, getMasterProgram);
 router.post('/master-programs', verifyToken, createMasterProgram);
 router.put('/master-programs/:id', verifyToken, updateMasterProgram);
 router.delete('/master-programs/:id', verifyToken, deleteMasterProgram);
+router.post('/master-programs/map', verifyToken, mapMasterProgram);
+router.delete('/master-programs/unmap/:id', verifyToken, unmapMasterProgram);
 
 router.post('/students', verifyToken, createStudent);
 
@@ -1143,6 +1151,8 @@ router.get('/master-policies/:id', verifyToken, getMasterPolicy);
 router.post('/master-policies', verifyToken, createMasterPolicy);
 router.put('/master-policies/:id', verifyToken, updateMasterPolicy);
 router.delete('/master-policies/:id', verifyToken, deleteMasterPolicy);
+router.post('/master-policies/map', verifyToken, mapMasterPolicy);
+router.delete('/master-policies/unmap/:id', verifyToken, unmapMasterPolicy);
 
 // college master policies - get policy for a college
 router.get('/collage-master-policies/:collegeId', verifyToken, getCollegeMasterPolicy);
@@ -1379,6 +1389,7 @@ router.get('/master-batches', verifyToken, getMasterBatches);
 router.post('/master-batches', verifyToken, createMasterBatch);
 router.put('/master-batches/:id', verifyToken, updateMasterBatch);
 router.delete('/master-batches/:id', verifyToken, deleteMasterBatch);
+router.post('/master-batches/bulk-upload', verifyToken, bulkUploadBatches);
 
 /**
  * @swagger

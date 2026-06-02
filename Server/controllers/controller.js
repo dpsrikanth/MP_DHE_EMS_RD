@@ -2722,6 +2722,394 @@ const bulkUploadPrograms = async (req, res) => {
 };
 // End: Bulk Program API
 
+// Start: Bulk Academic Year API
+const bulkUploadAcademicYears = async (req, res) => {
+  try {
+    const academicYears = req.body.AcademicYear;
+    if (!academicYears || !Array.isArray(academicYears) || academicYears.length === 0) {
+      return res.status(400).json({ message: "Invalid academic year payload" });
+    }
+
+    const { role, university_id: userUniId } = req.user || {};
+    const college_id = req.user?.college_id || req.user?.collegeId || null;
+
+    let targetUniId = userUniId;
+    if (!targetUniId && role === 'college_admin' && college_id) {
+      const collegeRes = await client.query('SELECT university_id FROM colleges WHERE id = $1', [college_id]);
+      if (collegeRes.rows.length > 0) {
+        targetUniId = collegeRes.rows[0].university_id;
+      }
+    }
+
+    // Pre-fetch existing academic years for fast duplicate detection
+    const existingRes = await client.query('SELECT year_name FROM public.master_academic_years');
+    const existingNamesSet = new Set();
+    existingRes.rows.forEach(row => {
+      if (row.year_name) existingNamesSet.add(row.year_name.toString().trim().toLowerCase());
+    });
+
+    // Phase 1: Validate
+    let errors = [];
+    const namesInBatch = new Set();
+    const validatedRows = [];
+
+    for (let i = 0; i < academicYears.length; i++) {
+      const ay = academicYears[i];
+      const rowNum = i + 2; // Rows start from 2 (excluding header)
+      
+      const yearName = (ay['Session Name'] || ay['year_name'] || '').toString().trim();
+
+      // Validate Academic Year Name
+      if (!yearName) {
+        errors.push({ row: rowNum, message: "Missing required field: Session Name" });
+      } else {
+        const formatRegex = /^\d{4}-\d{4}$/;
+        if (!formatRegex.test(yearName)) {
+          errors.push({ row: rowNum, message: `Invalid session name format '${yearName}'. Expected format like '2024-2025'.` });
+        } else {
+          const [start, end] = yearName.split('-').map(Number);
+          if (start >= end) {
+            errors.push({ row: rowNum, message: `Invalid session name '${yearName}'. Start year must be less than end year.` });
+          }
+        }
+
+        const cleanNameVal = yearName.toLowerCase();
+        if (namesInBatch.has(cleanNameVal)) {
+          errors.push({ row: rowNum, message: `Duplicate session name '${yearName}' found in the upload file.` });
+        } else {
+          namesInBatch.add(cleanNameVal);
+        }
+        if (existingNamesSet.has(cleanNameVal)) {
+          errors.push({ row: rowNum, message: `Academic year '${yearName}' already exists.` });
+        }
+      }
+
+      validatedRows.push({
+        year_name: yearName
+      });
+    }
+
+    if (errors.length > 0) {
+      console.log('Bulk upload academic year validation errors:', errors);
+      return res.status(400).json({ message: `Import rejected. Found ${errors.length} error(s).`, successes: 0, errors });
+    }
+
+    // Phase 2: Insert inside transaction
+    const dbClient = await client.connect();
+    try {
+      await dbClient.query('BEGIN');
+      for (const row of validatedRows) {
+        const insertRes = await dbClient.query(
+          `INSERT INTO master_academic_years (year_name, created_at, deleteflag) 
+           VALUES ($1, CURRENT_TIMESTAMP, true) RETURNING id`,
+          [row.year_name]
+        );
+
+        const academicYearId = insertRes.rows[0].id;
+
+        // Map academic year to university
+        if (targetUniId) {
+          await dbClient.query(
+            "INSERT INTO university_master_academic_years (university_id, academic_year_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+            [targetUniId, academicYearId]
+          );
+        }
+      }
+
+      await dbClient.query('COMMIT');
+      res.status(200).json({ message: `Successfully imported ${academicYears.length} academic years.`, successes: academicYears.length, errors: [] });
+    } catch (txError) {
+      await dbClient.query('ROLLBACK');
+      throw txError;
+    } finally {
+      dbClient.release();
+    }
+  } catch (error) {
+    console.error("Bulk upload academic years error:", error);
+    res.status(500).json({ message: "Bulk upload failed", error: error.message });
+  }
+};
+// End: Bulk Academic Year API
+
+// Start: Bulk Semester API
+const bulkUploadSemesters = async (req, res) => {
+  try {
+    const semesters = req.body.Semester;
+    if (!semesters || !Array.isArray(semesters) || semesters.length === 0) {
+      return res.status(400).json({ message: "Invalid semester payload" });
+    }
+
+    const { role, university_id: userUniId } = req.user || {};
+    const college_id = req.user?.college_id || req.user?.collegeId || null;
+
+    let targetUniId = userUniId;
+    if (!targetUniId && role === 'college_admin' && college_id) {
+      const collegeRes = await client.query('SELECT university_id FROM colleges WHERE id = $1', [college_id]);
+      if (collegeRes.rows.length > 0) {
+        targetUniId = collegeRes.rows[0].university_id;
+      }
+    }
+
+    // Pre-fetch existing semesters for fast duplicate detection
+    const existingRes = await client.query('SELECT semester_name FROM public.master_semesters');
+    const existingNamesSet = new Set();
+    existingRes.rows.forEach(row => {
+      if (row.semester_name) existingNamesSet.add(row.semester_name.toString().trim().toLowerCase());
+    });
+
+    // Phase 1: Validate
+    let errors = [];
+    const namesInBatch = new Set();
+    const validatedRows = [];
+
+    for (let i = 0; i < semesters.length; i++) {
+      const s = semesters[i];
+      const rowNum = i + 2; // Rows start from 2 (excluding header)
+      
+      const semName = (s['Semester Title'] || s['semester_name'] || '').toString().trim();
+
+      // Validate Semester Name
+      if (!semName) {
+        errors.push({ row: rowNum, message: "Missing required field: Semester Title" });
+      } else {
+        const cleanNameVal = semName.toLowerCase();
+        if (namesInBatch.has(cleanNameVal)) {
+          errors.push({ row: rowNum, message: `Duplicate semester name '${semName}' found in the upload file.` });
+        } else {
+          namesInBatch.add(cleanNameVal);
+        }
+        if (existingNamesSet.has(cleanNameVal)) {
+          errors.push({ row: rowNum, message: `Semester '${semName}' already exists.` });
+        }
+      }
+
+      validatedRows.push({
+        semester_name: semName
+      });
+    }
+
+    if (errors.length > 0) {
+      console.log('Bulk upload semester validation errors:', errors);
+      return res.status(400).json({ message: `Import rejected. Found ${errors.length} error(s).`, successes: 0, errors });
+    }
+
+    // Phase 2: Insert inside transaction
+    const dbClient = await client.connect();
+    try {
+      await dbClient.query('BEGIN');
+      for (const row of validatedRows) {
+        const insertRes = await dbClient.query(
+          `INSERT INTO master_semesters (semester_name, status) 
+           VALUES ($1, 'Active') RETURNING id`,
+          [row.semester_name]
+        );
+
+        const semesterId = insertRes.rows[0].id;
+
+        // Map semester to university
+        if (targetUniId) {
+          await dbClient.query(
+            "INSERT INTO university_master_semesters (university_id, semester_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+            [targetUniId, semesterId]
+          );
+        }
+      }
+
+      await dbClient.query('COMMIT');
+      res.status(200).json({ message: `Successfully imported ${semesters.length} semesters.`, successes: semesters.length, errors: [] });
+    } catch (txError) {
+      await dbClient.query('ROLLBACK');
+      throw txError;
+    } finally {
+      dbClient.release();
+    }
+  } catch (error) {
+    console.error("Bulk upload semesters error:", error);
+    res.status(500).json({ message: "Bulk upload failed", error: error.message });
+  }
+};
+// End: Bulk Semester API
+
+// Start: Bulk Batch API
+const bulkUploadBatches = async (req, res) => {
+  try {
+    const batches = req.body.Batch;
+    if (!batches || !Array.isArray(batches) || batches.length === 0) {
+      return res.status(400).json({ message: "Invalid batch payload" });
+    }
+
+    const parseAndFormatDate = (dateStr) => {
+      if (!dateStr) return null;
+      const cleanStr = dateStr.toString().trim();
+      const ymdRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (ymdRegex.test(cleanStr)) {
+        return cleanStr;
+      }
+      
+      const d = new Date(cleanStr);
+      if (!isNaN(d.getTime())) {
+        return d.toISOString().split('T')[0];
+      }
+      
+      const parts = cleanStr.split(/[-/]/);
+      if (parts.length === 3) {
+        if (parts[0].length === 4) {
+          return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+        } else if (parts[2].length === 4) {
+          let day = parseInt(parts[0]);
+          let month = parseInt(parts[1]);
+          let year = parseInt(parts[2]);
+          if (month > 12 && day <= 12) {
+            const tmp = day;
+            day = month;
+            month = tmp;
+          }
+          return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        }
+      }
+      return cleanStr;
+    };
+
+    // Pre-fetch programs for name mapping
+    const programRes = await client.query('SELECT id, name FROM public.master_programs');
+    const programMap = {};
+    programRes.rows.forEach(row => {
+      if (row.name) programMap[row.name.toString().trim().toLowerCase()] = row.id;
+    });
+
+    // Pre-fetch policies for name mapping
+    const policyRes = await client.query('SELECT id, name FROM public.master_policies');
+    const policyMap = {};
+    policyRes.rows.forEach(row => {
+      if (row.name) policyMap[row.name.toString().trim().toLowerCase()] = row.id;
+    });
+
+    // Pre-fetch existing batches for duplicate check
+    const existingRes = await client.query('SELECT batch_name FROM public.master_batches');
+    const existingNamesSet = new Set();
+    existingRes.rows.forEach(row => {
+      if (row.batch_name) existingNamesSet.add(row.batch_name.toString().trim().toLowerCase());
+    });
+
+    // Phase 1: Validate
+    let errors = [];
+    const namesInBatch = new Set();
+    const validatedRows = [];
+
+    for (let i = 0; i < batches.length; i++) {
+      const b = batches[i];
+      const rowNum = i + 2; // Rows start from 2 (excluding header)
+      
+      const batchName = (b['Batch Name'] || b['batch_name'] || '').toString().trim();
+      const rawStartDate = b['Start Date'] || b['start_date'] || '';
+      const rawEndDate = b['End Date'] || b['end_date'] || '';
+      const startDate = parseAndFormatDate(rawStartDate);
+      const endDate = parseAndFormatDate(rawEndDate);
+      const academicYear = (b['Academic Year'] || b['academic_year'] || '').toString().trim();
+      const importFeesFlag = (b['Fees Import Flag'] || b['import_fees_flag'] || 'N').toString().trim().toUpperCase();
+      const progName = (b['Program'] || b['program_name'] || '').toString().trim();
+      const polName = (b['Policy'] || b['policy_name'] || '').toString().trim();
+      const startYearVal = b['Start Year'] || b['start_year'];
+      const endYearVal = b['End Year'] || b['end_year'];
+
+      // Validate Batch Name
+      if (!batchName) {
+        errors.push({ row: rowNum, message: "Missing required field: Batch Name" });
+      } else {
+        const cleanNameVal = batchName.toLowerCase();
+        if (namesInBatch.has(cleanNameVal)) {
+          errors.push({ row: rowNum, message: `Duplicate batch name '${batchName}' found in the upload file.` });
+        } else {
+          namesInBatch.add(cleanNameVal);
+        }
+        if (existingNamesSet.has(cleanNameVal)) {
+          errors.push({ row: rowNum, message: `Batch '${batchName}' already exists.` });
+        }
+      }
+
+      // Resolve Program
+      let programId = null;
+      if (progName) {
+        const cleanProg = progName.toLowerCase();
+        if (programMap[cleanProg]) {
+          programId = programMap[cleanProg];
+        } else {
+          errors.push({ row: rowNum, message: `Program '${progName}' not found in master catalog.` });
+        }
+      } else {
+        errors.push({ row: rowNum, message: "Missing required field: Program" });
+      }
+
+      // Resolve Policy
+      let policyId = null;
+      if (polName) {
+        const cleanPol = polName.toLowerCase();
+        if (policyMap[cleanPol]) {
+          policyId = policyMap[cleanPol];
+        } else {
+          errors.push({ row: rowNum, message: `Policy '${polName}' not found in master catalog.` });
+        }
+      }
+
+      // Validate Dates
+      if (!startDate) {
+        errors.push({ row: rowNum, message: "Missing required field: Start Date" });
+      }
+      if (!endDate) {
+        errors.push({ row: rowNum, message: "Missing required field: End Date" });
+      }
+
+      // Validate Fees Flag
+      const feesFlag = importFeesFlag === 'Y' || importFeesFlag === 'YES' || importFeesFlag === 'TRUE' ? 'Y' : 'N';
+
+      const parsedStartYear = (startYearVal && !isNaN(parseInt(startYearVal))) ? parseInt(startYearVal) : null;
+      const parsedEndYear = (endYearVal && !isNaN(parseInt(endYearVal))) ? parseInt(endYearVal) : null;
+
+      validatedRows.push({
+        batch_name: batchName,
+        start_date: startDate || null,
+        end_date: endDate || null,
+        academic_year: academicYear || batchName,
+        import_fees_flag: feesFlag,
+        program_id: programId,
+        policy_id: policyId,
+        start_year: parsedStartYear,
+        end_year: parsedEndYear
+      });
+    }
+
+    if (errors.length > 0) {
+      console.log('Bulk upload batch validation errors:', errors);
+      return res.status(400).json({ message: `Import rejected. Found ${errors.length} error(s).`, successes: 0, errors });
+    }
+
+    // Phase 2: Insert inside transaction
+    const dbClient = await client.connect();
+    try {
+      await dbClient.query('BEGIN');
+      for (const row of validatedRows) {
+        await dbClient.query(
+          `INSERT INTO master_batches (batch_name, start_date, end_date, academic_year, import_fees_flag, program_id, policy_id, start_year, end_year, status) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Active')`,
+          [row.batch_name, row.start_date, row.end_date, row.academic_year, row.import_fees_flag, row.program_id, row.policy_id, row.start_year, row.end_year]
+        );
+      }
+
+      await dbClient.query('COMMIT');
+      res.status(200).json({ message: `Successfully imported ${batches.length} batches.`, successes: batches.length, errors: [] });
+    } catch (txError) {
+      await dbClient.query('ROLLBACK');
+      throw txError;
+    } finally {
+      dbClient.release();
+    }
+  } catch (error) {
+    console.error("Bulk upload batches error:", error);
+    res.status(500).json({ message: "Bulk upload failed", error: error.message });
+  }
+};
+// End: Bulk Batch API
+
 // Start: Bulk University API
 const bulkUploadUniversities = async (req, res) => {
   try {
@@ -6509,5 +6897,8 @@ module.exports = {
   bulkUploadColleges,
   bulkUploadMasterSubjects,
   bulkUploadDepartments,
-  bulkUploadPrograms
+  bulkUploadPrograms,
+  bulkUploadAcademicYears,
+  bulkUploadSemesters,
+  bulkUploadBatches
 };
