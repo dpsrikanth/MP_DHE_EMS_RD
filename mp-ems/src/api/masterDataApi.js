@@ -144,6 +144,10 @@ export const masterDataApi = {
         const response = await apiClient.delete(`/master-programs/unmap/${id}`);
         return response.data;
     },
+    bulkUploadPrograms: async (data) => {
+        const response = await apiClient.post('/master-programs/bulk-upload', data);
+        return response.data;
+    },
 
     // --- Departments ---
     getDepartments: async () => {

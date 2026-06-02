@@ -2538,6 +2538,190 @@ const bulkUploadDepartments = async (req, res) => {
 };
 // End: Bulk Department API
 
+// Start: Bulk Program API
+const bulkUploadPrograms = async (req, res) => {
+  try {
+    const programs = req.body.Program;
+    if (!programs || !Array.isArray(programs) || programs.length === 0) {
+      return res.status(400).json({ message: "Invalid program payload" });
+    }
+
+    const { role, university_id: userUniId } = req.user || {};
+    const college_id = req.user?.college_id || req.user?.collegeId || null;
+
+    let targetUniId = userUniId;
+    if (!targetUniId && role === 'college_admin' && college_id) {
+      const collegeRes = await client.query('SELECT university_id FROM colleges WHERE id = $1', [college_id]);
+      if (collegeRes.rows.length > 0) {
+        targetUniId = collegeRes.rows[0].university_id;
+      }
+    }
+
+    // Pre-fetch existing departments for fast lookup mapping (scoped by college if available)
+    const deptRes = college_id
+      ? await client.query('SELECT id, department_code, department_name FROM public.master_departments WHERE college_id = $1', [college_id])
+      : await client.query('SELECT id, department_code, department_name FROM public.master_departments');
+
+    const deptMap = {};
+    deptRes.rows.forEach(row => {
+      if (row.department_code) deptMap[row.department_code.toString().trim().toLowerCase()] = row.id;
+      if (row.department_name) deptMap[row.department_name.toString().trim().toLowerCase()] = row.id;
+    });
+
+    // Pre-fetch existing programs for fast duplicate detection
+    const existingRes = targetUniId 
+      ? await client.query('SELECT code, name FROM public.master_programs WHERE university_id = $1', [targetUniId])
+      : await client.query('SELECT code, name FROM public.master_programs');
+
+    const existingCodesSet = new Set();
+    const existingNamesSet = new Set();
+    existingRes.rows.forEach(row => {
+      if (row.code) existingCodesSet.add(row.code.toString().trim().toLowerCase());
+      if (row.name) existingNamesSet.add(row.name.toString().trim().toLowerCase());
+    });
+
+    // Phase 1: Validate
+    let errors = [];
+    const codesInBatch = new Set();
+    const namesInBatch = new Set();
+    const validatedRows = [];
+
+    for (let i = 0; i < programs.length; i++) {
+      const p = programs[i];
+      const rowNum = i + 2; // Rows start from 2 (excluding header)
+      
+      const progName = (p['Program Name'] || p['name'] || '').toString().trim();
+      const progCode = (p['Program Code'] || p['code'] || '').toString().trim();
+      const durationVal = p['Duration (Years)'] || p['duration_years'];
+      const section = (p['Section'] || p['section_name'] || '').toString().trim();
+      const grading = (p['Grading System'] || p['grading_system_type'] || 'Normal').toString().trim();
+      const electivesVal = (p['Electives Enabled'] || p['enable_elective_subjects_selection'] || 'N').toString().trim().toUpperCase();
+      const deptsVal = p['Associated Departments'] || p['department_ids'] || p['departments'] || '';
+
+      const duration = parseInt(durationVal);
+
+      // Validate Program Name
+      if (!progName) {
+        errors.push({ row: rowNum, message: "Missing required field: Program Name" });
+      } else {
+        const cleanName = progName.toLowerCase();
+        if (namesInBatch.has(cleanName)) {
+          errors.push({ row: rowNum, message: `Duplicate program name '${progName}' found in the upload file.` });
+        } else {
+          namesInBatch.add(cleanName);
+        }
+        if (existingNamesSet.has(cleanName)) {
+          errors.push({ row: rowNum, message: `Program with name '${progName}' already exists.` });
+        }
+      }
+
+      // Validate Program Code
+      if (progCode) {
+        const cleanCode = progCode.toLowerCase();
+        if (codesInBatch.has(cleanCode)) {
+          errors.push({ row: rowNum, message: `Duplicate program code '${progCode}' found in the upload file.` });
+        } else {
+          codesInBatch.add(cleanCode);
+        }
+        if (existingCodesSet.has(cleanCode)) {
+          errors.push({ row: rowNum, message: `Program with code '${progCode}' already exists.` });
+        }
+      }
+
+      // Validate Duration
+      if (!durationVal) {
+        errors.push({ row: rowNum, message: "Missing required field: Duration (Years)" });
+      } else if (isNaN(duration) || duration <= 0) {
+        errors.push({ row: rowNum, message: `Invalid duration '${durationVal}'. Must be a positive number.` });
+      }
+
+      // Validate Grading System
+      const validGradingTypes = ['Normal', 'CBCE', 'Non-CBCE'];
+      if (!validGradingTypes.includes(grading)) {
+        errors.push({ row: rowNum, message: `Invalid grading system '${grading}'. Allowed types: Normal, CBCE, Non-CBCE` });
+      }
+
+      // Validate Electives Enabled
+      const electives = electivesVal.startsWith('Y') || electivesVal.startsWith('T') || electivesVal === 'ACTIVE' || electivesVal === 'ENABLED' ? 'Y' : 'N';
+
+      // Parse Associated Departments
+      const unresolvedDepts = [];
+      const resolvedDeptIds = [];
+      if (deptsVal) {
+        const parts = deptsVal.toString().split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+        for (const part of parts) {
+          if (deptMap[part]) {
+            resolvedDeptIds.push(deptMap[part]);
+          } else {
+            unresolvedDepts.push(part);
+          }
+        }
+      }
+      if (unresolvedDepts.length > 0) {
+        errors.push({ row: rowNum, message: `Associated Department(s) not found: ${unresolvedDepts.join(', ')}` });
+      }
+
+      validatedRows.push({
+        name: progName,
+        code: progCode || `PRG-${Date.now().toString().slice(-6)}-${i}`,
+        duration_years: duration,
+        section_name: section || null,
+        grading_system_type: grading,
+        enable_elective_subjects_selection: electives,
+        resolvedDeptIds
+      });
+    }
+
+    if (errors.length > 0) {
+      console.log('Bulk upload program validation errors:', errors);
+      return res.status(400).json({ message: `Import rejected. Found ${errors.length} error(s).`, successes: 0, errors });
+    }
+
+    // Phase 2: Insert inside transaction
+    const dbClient = await client.connect();
+    try {
+      await dbClient.query('BEGIN');
+      for (const row of validatedRows) {
+        const insertRes = await dbClient.query(
+          `INSERT INTO master_programs (name, duration_years, section_name, code, grading_system_type, enable_elective_subjects_selection, status, university_id) 
+           VALUES ($1, $2, $3, $4, $5, $6, 'Active', $7) RETURNING id`,
+          [row.name, row.duration_years, row.section_name, row.code, row.grading_system_type, row.enable_elective_subjects_selection, targetUniId]
+        );
+
+        const programId = insertRes.rows[0].id;
+
+        // Insert Department links
+        for (const deptId of row.resolvedDeptIds) {
+          await dbClient.query(
+            "INSERT INTO master_program_departments (program_id, department_id) VALUES ($1, $2)",
+            [programId, deptId]
+          );
+        }
+
+        // Map program to university
+        if (targetUniId) {
+          await dbClient.query(
+            "INSERT INTO university_master_programs (university_id, program_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+            [targetUniId, programId]
+          );
+        }
+      }
+
+      await dbClient.query('COMMIT');
+      res.status(200).json({ message: `Successfully imported ${programs.length} programs.`, successes: programs.length, errors: [] });
+    } catch (txError) {
+      await dbClient.query('ROLLBACK');
+      throw txError;
+    } finally {
+      dbClient.release();
+    }
+  } catch (error) {
+    console.error("Bulk upload programs error:", error);
+    res.status(500).json({ message: "Bulk upload failed", error: error.message });
+  }
+};
+// End: Bulk Program API
+
 // Start: Bulk University API
 const bulkUploadUniversities = async (req, res) => {
   try {
@@ -6324,5 +6508,6 @@ module.exports = {
   bulkUploadUniversities,
   bulkUploadColleges,
   bulkUploadMasterSubjects,
-  bulkUploadDepartments
+  bulkUploadDepartments,
+  bulkUploadPrograms
 };

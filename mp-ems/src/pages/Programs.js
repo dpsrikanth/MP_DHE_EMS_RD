@@ -14,15 +14,21 @@ import {
   Eye,
   Layers,
   Settings,
-  ListRestart
+  ListRestart,
+  ChevronDown,
+  FileText,
+  UploadCloud,
+  DownloadCloud
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
 import { formatDate } from '../utils/dateUtils';
 import Select, { components } from "react-select";
+import Papa from 'papaparse';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
 import authUtils from "../utils/authUtils";
 import { masterDataApi } from '../api/masterDataApi';
+import BulkImportModal from '../components/BulkImportModal';
 
 const Option = (props) => {
   return (
@@ -60,6 +66,8 @@ const Programs = () => {
   const [mappingSelection, setMappingSelection] = useState(null);
   const [viewData, setViewData] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showBulkDropdown, setShowBulkDropdown] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const navigate = useNavigate();
   const [departments, setDepartments] = useState([]);
   const [form, setForm] = useState({ 
@@ -142,6 +150,115 @@ const Programs = () => {
     }
   };
 
+  const handleExport = () => {
+    if (!data || data.length === 0) {
+      toast.warning('No data available to export');
+      return;
+    }
+
+    const fieldsToExclude = ['id', 'created_at', 'updated_at', 'deleteflag', 'university_id'];
+    const exportData = data.map(item => {
+      const row = {};
+      Object.keys(item).forEach(key => {
+        if (!fieldsToExclude.includes(key)) {
+          if (key === 'department_ids') {
+            // Convert list of department IDs to comma-separated names
+            const names = (item.department_ids || []).map(id => {
+              const dept = departments.find(d => d.value === id);
+              return dept ? dept.label : '';
+            }).filter(Boolean);
+            row['Associated Departments'] = names.join(', ');
+          } else {
+            row[key] = item[key];
+          }
+        }
+      });
+      return row;
+    });
+
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'programs_export.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowBulkDropdown(false);
+  };
+
+  const handleDownloadTemplate = () => {
+    const templateFields = [
+      'Program Name', 
+      'Program Code', 
+      'Duration (Years)', 
+      'Section', 
+      'Grading System', 
+      'Electives Enabled', 
+      'Associated Departments'
+    ];
+    // Include a sample row
+    const sampleData = [
+      {
+        'Program Name': 'Bachelor of Technology',
+        'Program Code': 'BTECH',
+        'Duration (Years)': '4',
+        'Section': 'Regular',
+        'Grading System': 'Normal',
+        'Electives Enabled': 'Y',
+        'Associated Departments': 'CSE, ECE'
+      }
+    ];
+    const csv = Papa.unparse({ fields: templateFields, data: sampleData });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'programs_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowBulkDropdown(false);
+  };
+
+  const bulkValidate = (rows) => {
+    const errors = [];
+    const localCodes = data.map(p => (p.code || '').toLowerCase());
+    const localNames = data.map(p => (p.name || '').toLowerCase());
+
+    rows.forEach((row, idx) => {
+      const rowNumber = idx + 2;
+      const progName = (row['Program Name'] || row['name'])?.toString()?.trim();
+      const progCode = (row['Program Code'] || row['code'])?.toString()?.trim();
+      const durationVal = row['Duration (Years)'] || row['duration_years'];
+
+      if (!progName) {
+        errors.push({ row: rowNumber, message: 'Program Name is required' });
+      } else if (localNames.includes(progName.toLowerCase())) {
+        errors.push({ row: rowNumber, message: `Program Name '${progName}' already exists` });
+      }
+
+      if (progCode && localCodes.includes(progCode.toLowerCase())) {
+        errors.push({ row: rowNumber, message: `Program Code '${progCode}' already exists` });
+      }
+
+      if (!durationVal) {
+        errors.push({ row: rowNumber, message: 'Duration (Years) is required' });
+      } else {
+        const dur = parseInt(durationVal);
+        if (isNaN(dur) || dur <= 0) {
+          errors.push({ row: rowNumber, message: `Duration '${durationVal}' must be a positive number` });
+        }
+      }
+      
+      const grading = row['Grading System'] || row['grading_system_type'] || 'Normal';
+      const validGradingTypes = ['Normal', 'CBCE', 'Non-CBCE'];
+      if (!validGradingTypes.includes(grading)) {
+        errors.push({ row: rowNumber, message: `Invalid grading system '${grading}'. Allowed types: Normal, CBCE, Non-CBCE` });
+      }
+    });
+    return errors;
+  };
+
   // Removed handleAdd and handleUpdate in favor of route-based Form page
 
   const handleMap = async () => {
@@ -222,23 +339,60 @@ const Programs = () => {
               visibleColumns={visibleColumns} 
               onToggle={toggleColumn} 
             />
-            {authUtils.isSuperAdmin() ? (
-              <button 
-                onClick={() => navigate('/programs/add')}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
-              >
-                <Plus size={20} />
-                <span>Add Program</span>
-              </button>
-            ) : (
-              <button 
-                onClick={() => setShowAssignModal(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
-              >
-                <Plus size={20} />
-                <span>Assign from Master</span>
-              </button>
-            )}
+            <div className="flex gap-2 relative">
+              <div className="relative">
+                <button
+                  onClick={() => setShowBulkDropdown(!showBulkDropdown)}
+                  className="inline-flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all text-sm whitespace-nowrap"
+                >
+                  <span>Bulk Actions</span>
+                  <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showBulkDropdown && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50">
+                    <button 
+                      onClick={handleDownloadTemplate}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    >
+                      <FileText size={16} className="text-slate-400" />
+                      Download Template
+                    </button>
+                    <button 
+                      onClick={() => { setShowImportModal(true); setShowBulkDropdown(false); }}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    >
+                      <UploadCloud size={16} className="text-slate-400" />
+                      Import CSV
+                    </button>
+                    <button 
+                      onClick={handleExport}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    >
+                      <DownloadCloud size={16} className="text-slate-400" />
+                      Export All
+                    </button>
+                  </div>
+                )}
+              </div>
+              {authUtils.isSuperAdmin() ? (
+                <button 
+                  onClick={() => navigate('/programs/add')}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+                >
+                  <Plus size={20} />
+                  <span>Add Program</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setShowAssignModal(true)}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+                >
+                  <Plus size={20} />
+                  <span>Assign from Master</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -531,6 +685,23 @@ const Programs = () => {
             </div>
           </div>
         </div>
+      )}
+      {/* Bulk Import Modal */}
+      {showImportModal && (
+        <BulkImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onSuccess={fetchData}
+          entityName="Program"
+          endpoint="/master-programs/bulk-upload"
+          expectedColumns={{ 
+            name: "Program Name", 
+            code: "Program Code", 
+            duration_years: "Duration (Years)"
+          }}
+          optionalColumns={["Section", "Grading System", "Electives Enabled", "Associated Departments"]}
+          validate={bulkValidate}
+        />
       )}
     </div>
   );
