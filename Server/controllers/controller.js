@@ -2436,8 +2436,13 @@ const bulkUploadDepartments = async (req, res) => {
       return res.status(400).json({ message: "Invalid department payload" });
     }
 
-    // Pre-fetch existing department codes and names for fast duplicate detection
-    const existingRes = await client.query('SELECT department_code, department_name FROM public.master_departments');
+    const college_id = req.user?.college_id || req.user?.collegeId || null;
+
+    // Pre-fetch existing department codes and names for fast duplicate detection (scoped by college_id if available)
+    const existingRes = college_id 
+      ? await client.query('SELECT department_code, department_name FROM public.master_departments WHERE college_id = $1', [college_id])
+      : await client.query('SELECT department_code, department_name FROM public.master_departments');
+      
     const existingCodesSet = new Set();
     const existingNamesSet = new Set();
     existingRes.rows.forEach(row => {
@@ -2511,8 +2516,8 @@ const bulkUploadDepartments = async (req, res) => {
         }
 
         await dbClient.query(
-          'INSERT INTO public.master_departments (department_code, department_name, status) VALUES ($1, $2, $3)',
-          [deptCode, deptName, status ? 'Active' : 'Inactive']
+          'INSERT INTO public.master_departments (department_code, department_name, status, college_id) VALUES ($1, $2, $3, $4)',
+          [deptCode, deptName, status ? 'Active' : 'Inactive', college_id]
         );
       }
       
@@ -5328,6 +5333,7 @@ const getMasterDepartments = async (req, res) => {
 
 const createMasterDepartment = async (req, res) => {
   const { department_name, department_code, status } = req.body;
+  const college_id = req.user?.college_id || req.user?.collegeId || req.body.college_id || req.body.collegeId || null;
 
   try {
     if (!department_name) {
@@ -5338,10 +5344,10 @@ const createMasterDepartment = async (req, res) => {
     const finalDeptCode = department_code || `DEPT-${Date.now().toString().slice(-8)}`;
 
     const result = await client.query(
-      `INSERT INTO master_departments (department_name, department_code, status)
-       VALUES ($1, $2, $3)
-       RETURNING id, department_name, department_code, status`,
-      [department_name, finalDeptCode, status || 'Active']
+      `INSERT INTO master_departments (department_name, department_code, status, college_id)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, department_name, department_code, status, college_id`,
+      [department_name, finalDeptCode, status || 'Active', college_id]
     );
 
     res.status(201).json(result.rows[0]);
