@@ -10,11 +10,17 @@ import {
   Hash,
   Activity,
   ShieldCheck,
-  ShieldAlert
+  ShieldAlert,
+  ChevronDown,
+  FileText,
+  UploadCloud,
+  DownloadCloud
 } from "lucide-react";
 import { MdDelete } from "react-icons/md";
+import Papa from 'papaparse';
 import { useDataTable } from '../hooks/useDataTable';
 import { TableSearch, TablePagination, SortHeader, ColumnVisibilitySelector } from '../components/TableControls';
+import BulkImportModal from '../components/BulkImportModal';
 import { masterDataApi } from '../api/masterDataApi';
 
 const Departments = () => {
@@ -25,12 +31,15 @@ const Departments = () => {
   const [error, setError] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showBulkDropdown, setShowBulkDropdown] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [existingDepartments, setExistingDepartments] = useState([]);
+  const [existingDeptNames, setExistingDeptNames] = useState([]);
 
   const availableColumns = [
     { key: 'id', label: 'ID Reference' },
-    { key: 'department_code', label: 'Department Code', mandatory: true },
-    { key: 'department_name', label: 'Department Name', mandatory: true },
-    { key: 'college_id', label: 'College ID' },
+    { key: 'department_code', label: 'Department Code', sortable: true },
+    { key: 'department_name', label: 'Department Name', sortable: true },
     { key: 'status', label: 'Status' }
   ];
 
@@ -64,9 +73,11 @@ const Departments = () => {
       const result = await masterDataApi.getDepartments();
       setData(result || []);
 
-      const collegeResult = await masterDataApi.getColleges();
-      setColleges(collegeResult || []);
-      
+      const codes = (result || []).map(d => (d.department_code || '').toLowerCase());
+      const names = (result || []).map(d => (d.department_name || '').toLowerCase());
+      setExistingDepartments(codes);
+      setExistingDeptNames(names);
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -92,9 +103,68 @@ const Departments = () => {
     }
   };
 
-  const getCollegeName = (collegeId) => {
-    const college = colleges.find(c => c.id === collegeId);
-    return college ? college.college_name || college.name : 'Unknown College';
+  const handleExport = () => {
+    if (!data || data.length === 0) {
+      toast.warning('No data available to export');
+      return;
+    }
+
+    const fieldsToExclude = ['id', 'created_at', 'updated_at', 'deleteflag', 'college_id'];
+    const exportData = data.map(item => {
+      const row = {};
+      Object.keys(item).forEach(key => {
+        if (!fieldsToExclude.includes(key)) {
+          row[key] = item[key];
+        }
+      });
+      return row;
+    });
+
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'departments_export.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowBulkDropdown(false);
+  };
+
+  const handleDownloadTemplate = () => {
+    const templateFields = ['Department Code', 'Department Name'];
+    const csv = Papa.unparse({ fields: templateFields, data: [] });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'departments_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowBulkDropdown(false);
+  };
+
+  const bulkValidate = (rows) => {
+    const errors = [];
+    rows.forEach((row, idx) => {
+      const rowNumber = idx + 2;
+      // Support both human-readable headers ("Department Code") and DB-style keys ("department_code")
+      const deptCode = (row['Department Code'] || row['department_code'])?.toString()?.trim();
+      const deptName = (row['Department Name'] || row['department_name'])?.toString()?.trim();
+
+      if (!deptCode) {
+        errors.push({ row: rowNumber, message: 'Department Code is required' });
+      } else if (existingDepartments.includes(deptCode.toLowerCase())) {
+        errors.push({ row: rowNumber, message: `Department Code '${deptCode}' already exists` });
+      }
+
+      if (!deptName) {
+        errors.push({ row: rowNumber, message: 'Department Name is required' });
+      } else if (existingDeptNames.includes(deptName.toLowerCase())) {
+        errors.push({ row: rowNumber, message: `Department Name '${deptName}' already exists` });
+      }
+    });
+    return errors;
   };
 
   if (loading) return (
@@ -134,13 +204,50 @@ const Departments = () => {
               visibleColumns={visibleColumns} 
               onToggle={toggleColumn} 
             />
-            <button 
-              onClick={() => navigate('/departments/add')}
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
-            >
-              <Plus size={20} />
-              <span>Create Department</span>
-            </button>
+            <div className="flex gap-2 relative">
+              <div className="relative">
+                <button
+                  onClick={() => setShowBulkDropdown(!showBulkDropdown)}
+                  className="inline-flex items-center gap-2 px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all text-sm whitespace-nowrap"
+                >
+                  <span>Bulk Actions</span>
+                  <ChevronDown size={16} className={`transition-transform ${showBulkDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showBulkDropdown && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50">
+                    <button 
+                      onClick={handleDownloadTemplate}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    >
+                      <FileText size={16} className="text-slate-400" />
+                      Download Template
+                    </button>
+                    <button 
+                      onClick={() => { setShowImportModal(true); setShowBulkDropdown(false); }}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    >
+                      <UploadCloud size={16} className="text-slate-400" />
+                      Import CSV
+                    </button>
+                    <button 
+                      onClick={handleExport}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    >
+                      <DownloadCloud size={16} className="text-slate-400" />
+                      Export All
+                    </button>
+                  </div>
+                )}
+              </div>
+              <button 
+                onClick={() => navigate('/departments/add')}
+                className="inline-flex items-center gap-2 px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm whitespace-nowrap"
+              >
+                <Plus size={20} />
+                <span>Create Department</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -171,13 +278,6 @@ const Departments = () => {
                   onSort={handleSort} 
                   visible={visibleColumns.department_name}
                 />
-                <SortHeader 
-                  label="College" 
-                  field="college_id" 
-                  currentSort={sortConfig} 
-                  onSort={handleSort} 
-                  visible={visibleColumns.college_id}
-                />
                 <th className={`${visibleColumns.status ? '' : 'hidden'} px-4 py-3.5 text-[12px] font-black  tracking-widest text-slate-400 text-center`}>Status</th>
                 <th className="px-6 py-3.5 text-[12px] font-black  tracking-widest text-slate-400 text-right">Settings</th>
               </tr>
@@ -206,11 +306,6 @@ const Departments = () => {
                           </div>
                           {item.department_name}
                         </div>
-                      </td>
-                    )}
-                    {visibleColumns.college_id && (
-                      <td className="px-4 py-4 font-bold text-slate-600 tracking-tight">
-                        {getCollegeName(item.college_id)}
                       </td>
                     )}
                     {visibleColumns.status && (
@@ -307,6 +402,20 @@ const Departments = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Bulk Import Modal */}
+      {showImportModal && (
+        <BulkImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onSuccess={fetchData}
+          entityName="Department"
+          endpoint="/master-departments/bulk-upload"
+          expectedColumns={{ department_code: "Department Code", department_name: "Department Name", status: "Status" }}
+          optionalColumns={[]}
+          validate={bulkValidate}
+        />
       )}
     </div>
   );

@@ -10,8 +10,9 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, onSuccess, endpoint
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [preview, setPreview] = useState([]);
-  const [columns, setColumns] = useState([]);
+  const [parsedRows, setParsedRows] = useState([]);
   const [validationErrors, setValidationErrors] = useState([]);
+  const [columns, setColumns] = useState([]);
 
   // Reset all state whenever the modal is opened
   useEffect(() => {
@@ -94,6 +95,7 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, onSuccess, endpoint
 
     setColumns(headers);
     setPreview(rows.slice(0, 5));
+    setParsedRows(rows);
     setValidationErrors([]);
     setProcessing(false);
   };
@@ -179,31 +181,15 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, onSuccess, endpoint
     const submitData = (mappedRows) => {
       const payload = { ...extraPayload };
       payload[entityName] = mappedRows;
-
       return apiClient.post(endpoint, payload);
     };
 
     try {
-      let rows;
+      // Use already parsed rows for submission
+      let rows = parsedRows;
 
       if (isExcelFile(file.name)) {
-        // Re-read the Excel file for submission
-        rows = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            try {
-              const data = new Uint8Array(e.target.result);
-              const workbook = XLSX.read(data, { type: 'array' });
-              const firstSheetName = workbook.SheetNames[0];
-              const worksheet = workbook.Sheets[firstSheetName];
-              resolve(XLSX.utils.sheet_to_json(worksheet, { defval: '' }));
-            } catch (err) {
-              reject(err);
-            }
-          };
-          reader.onerror = reject;
-          reader.readAsArrayBuffer(file);
-        });
+        // Excel files are already parsed in parseExcel; nothing to do here
       } else {
         // Re-parse CSV
         rows = await new Promise((resolve, reject) => {
@@ -216,20 +202,21 @@ const BulkImportModal = ({ isOpen, onClose, onUploadSuccess, onSuccess, endpoint
         });
       }
 
-      let mappedData = rows.map(row => mapRowToDbKeys(row));
-      
-      if (transformPayload) {
-        mappedData = transformPayload(mappedData);
-      }
-
+      // Run custom front-end validation on raw rows (before mapping)
       if (validate) {
-        const clientErrors = validate(mappedData);
+        const clientErrors = validate(rows);
         if (clientErrors && clientErrors.length > 0) {
           setValidationErrors(clientErrors);
-          toast.error("Validation failed. Please correct the errors listed below.");
+          toast.error('Validation failed. Please correct the errors listed below.');
           setLoading(false);
           return;
         }
+      }
+
+      let mappedData = rows.map(row => mapRowToDbKeys(row));
+
+      if (transformPayload) {
+        mappedData = transformPayload(mappedData);
       }
 
       const response = await submitData(mappedData);

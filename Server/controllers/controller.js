@@ -2428,6 +2428,111 @@ const bulkUploadTeachers = async (req, res) => {
 };
 // End: Bulk Teacher API
 
+// Start: Bulk Department API
+const bulkUploadDepartments = async (req, res) => {
+  try {
+    const departments = req.body.Department;
+    if (!departments || !Array.isArray(departments) || departments.length === 0) {
+      return res.status(400).json({ message: "Invalid department payload" });
+    }
+
+    // Pre-fetch existing department codes and names for fast duplicate detection
+    const existingRes = await client.query('SELECT department_code, department_name FROM public.master_departments');
+    const existingCodesSet = new Set();
+    const existingNamesSet = new Set();
+    existingRes.rows.forEach(row => {
+      if (row.department_code) existingCodesSet.add(row.department_code.toString().trim().toLowerCase());
+      if (row.department_name) existingNamesSet.add(row.department_name.toString().trim().toLowerCase());
+    });
+
+    // Phase 1: Validate
+    let errors = [];
+    const codesInBatch = new Set();
+    const namesInBatch = new Set();
+
+    for (let i = 0; i < departments.length; i++) {
+      const d = departments[i];
+      const rowNum = i + 1;
+      // Support both human-readable headers and DB-style keys
+      const deptCode = (d['Department Code'] || d['department_code']) ? (d['Department Code'] || d['department_code']).toString().trim() : null;
+      const deptName = (d['Department Name'] || d['department_name']) ? (d['Department Name'] || d['department_name']).toString().trim() : null;
+
+      // Validate Department Code
+      if (!deptCode) {
+        errors.push({ row: rowNum, message: "Missing required field: Department Code" });
+      } else {
+        const cleanCode = deptCode.toLowerCase();
+        // Duplicate within upload batch
+        if (codesInBatch.has(cleanCode)) {
+          errors.push({ row: rowNum, message: `Duplicate department code '${deptCode}' found in the upload file.` });
+        } else {
+          codesInBatch.add(cleanCode);
+        }
+        // Check existing code in DB
+        if (existingCodesSet.has(cleanCode)) {
+          errors.push({ row: rowNum, message: `Department with code '${deptCode}' already exists.` });
+        }
+      }
+
+      // Validate Department Name
+      if (!deptName) {
+        errors.push({ row: rowNum, message: "Missing required field: Department Name" });
+      } else {
+        const cleanName = deptName.toLowerCase();
+        // Duplicate within upload batch
+        if (namesInBatch.has(cleanName)) {
+          errors.push({ row: rowNum, message: `Duplicate department name '${deptName}' found in the upload file.` });
+        } else {
+          namesInBatch.add(cleanName);
+        }
+        // Check existing name in DB
+        if (existingNamesSet.has(cleanName)) {
+          errors.push({ row: rowNum, message: `Department with name '${deptName}' already exists.` });
+        }
+      }
+    }
+
+    if (errors.length > 0) {
+      console.log('Bulk upload validation errors:', errors);
+      return res.status(400).json({ message: `Import rejected. Found ${errors.length} error(s).`, successes: 0, errors });
+    }
+
+    // Phase 2: Insert
+    const dbClient = await client.connect();
+    try {
+      await dbClient.query('BEGIN');
+      for (const d of departments) {
+        const deptCode = (d['Department Code'] || d['department_code']).toString().trim();
+        const deptName = (d['Department Name'] || d['department_name']).toString().trim();
+        const statusVal = d['Status'] || d['status'];
+        let status = true;
+        if (statusVal && statusVal.toString().toLowerCase() === 'inactive') {
+          status = false;
+        }
+
+        await dbClient.query(
+          'INSERT INTO public.master_departments (department_code, department_name, status) VALUES ($1, $2, $3)',
+          [deptCode, deptName, status ? 'Active' : 'Inactive']
+        );
+      }
+      
+      // Optional Audit Log can be placed here
+
+      await dbClient.query('COMMIT');
+      res.status(200).json({ message: `Successfully imported ${departments.length} departments.`, successes: departments.length, errors: [] });
+    } catch (txError) {
+      await dbClient.query('ROLLBACK');
+      throw txError;
+    } finally {
+      dbClient.release();
+    }
+  } catch (error) {
+    console.error("Bulk upload departments error:", error);
+    res.status(500).json({ message: "Bulk upload failed", error: error.message });
+  }
+};
+// End: Bulk Department API
+
 // Start: Bulk University API
 const bulkUploadUniversities = async (req, res) => {
   try {
@@ -5203,12 +5308,12 @@ const getMasterDepartments = async (req, res) => {
 
     let query = `SELECT md.id, md.department_name, md.department_code, md.college_id, md.status
                  FROM master_departments md
-                 JOIN colleges c ON md.college_id = c.id
+                 LEFT JOIN colleges c ON md.college_id = c.id
                  WHERE (md.status = 'Active' OR md.status IS NULL)`;
     const params = [];
 
     if (uId) {
-      query += " AND c.university_id = $1";
+      query += " AND (c.university_id = $1 OR md.college_id IS NULL)";
       params.push(uId);
     }
 
@@ -5222,21 +5327,21 @@ const getMasterDepartments = async (req, res) => {
 };
 
 const createMasterDepartment = async (req, res) => {
-  const { department_name, department_code, college_id, status } = req.body;
+  const { department_name, department_code, status } = req.body;
 
   try {
-    if (!department_name || !college_id) {
-      return res.status(400).json({ message: "Department name and college are required" });
+    if (!department_name) {
+      return res.status(400).json({ message: "Department name is required" });
     }
 
     // Generate department code if not provided
     const finalDeptCode = department_code || `DEPT-${Date.now().toString().slice(-8)}`;
 
     const result = await client.query(
-      `INSERT INTO master_departments (department_name, department_code, college_id, status)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, department_name, department_code, college_id, status`,
-      [department_name, finalDeptCode, college_id, status || 'Active']
+      `INSERT INTO master_departments (department_name, department_code, status)
+       VALUES ($1, $2, $3)
+       RETURNING id, department_name, department_code, status`,
+      [department_name, finalDeptCode, status || 'Active']
     );
 
     res.status(201).json(result.rows[0]);
@@ -5364,18 +5469,18 @@ const getMasterDepartment = async (req, res) => {
 const updateMasterDepartment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { department_name, department_code, college_id, status } = req.body;
+    const { department_name, department_code, status } = req.body;
 
-    if (!department_name || !college_id) {
-      return res.status(400).json({ message: "Department name and college are required" });
+    if (!department_name) {
+      return res.status(400).json({ message: "Department name is required" });
     }
 
     const result = await client.query(
       `UPDATE master_departments 
-       SET department_name = $1, department_code = $2, college_id = $3, status = $4, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $5 
-       RETURNING id, department_name, department_code, college_id, status`,
-      [department_name, department_code, college_id, status, id]
+       SET department_name = $1, department_code = $2, status = $3, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $4 
+       RETURNING id, department_name, department_code, status`,
+      [department_name, department_code, status, id]
     );
 
     if (result.rows.length === 0) return res.status(404).json({ message: "Master department not found" });
@@ -6212,5 +6317,6 @@ module.exports = {
   getFacultyInternalExamAttendance,
   bulkUploadUniversities,
   bulkUploadColleges,
-  bulkUploadMasterSubjects
+  bulkUploadMasterSubjects,
+  bulkUploadDepartments
 };

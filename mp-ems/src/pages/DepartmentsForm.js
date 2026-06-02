@@ -17,7 +17,6 @@ const DepartmentsForm = () => {
   const [form, setForm] = useState({ 
     department_name: '', 
     department_code: '', 
-    college_id: '', 
     status: 'Active' 
   });
 
@@ -44,7 +43,6 @@ const DepartmentsForm = () => {
         setForm({
           department_name: dept.department_name || '',
           department_code: dept.department_code || '',
-          college_id: dept.college_id || '',
           status: dept.status || 'Active'
         });
       } else {
@@ -61,7 +59,6 @@ const DepartmentsForm = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!form.department_name) return toast.warning('Department name is required');
-    if (!form.college_id) return toast.warning('College is required');
 
     try {
       setSaving(true);
@@ -163,19 +160,6 @@ const DepartmentsForm = () => {
 
               {/* Right Column: Hierarchy & Lifecycle (7 cols) */}
               <div className="xl:col-span-7 space-y-10">
-                <div className="form-section">
-                  <div className="form-section__title"><span>Placement Hierarchy</span></div>
-                  <div className="bg-white border-2 border-slate-50 shadow-xl shadow-slate-200/20 rounded-[3rem] p-10">
-                    <div className="form-field">
-                      <label className="form-label form-label--required">Governing Institution (College)</label>
-                      <select value={form.college_id} onChange={(e) => setForm({ ...form, college_id: e.target.value })}
-                        className="form-select border-2 border-slate-100 bg-slate-50 focus:bg-white" required >
-                        <option value="">Select Parent College</option>
-                        {colleges.map(c => <option key={c.id} value={c.id}>{c.college_name || c.name}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                </div>
 
                 <div className="form-section">
                   <div className="form-section__title"><span>Operational Lifecycle</span></div>

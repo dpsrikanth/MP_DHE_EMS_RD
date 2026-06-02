@@ -389,4 +389,8 @@ export const masterDataApi = {
         const response = await apiClient.post('/master-subjects/bulk-upload', data);
         return response.data;
     },
+    bulkUploadDepartments: async (data) => {
+        const response = await apiClient.post('/master-departments/bulk-upload', data);
+        return response.data;
+    },
 };
