@@ -1043,7 +1043,7 @@ const getStudents = async (req, res) => {
         SELECT s.*, md.department_code as department
         FROM public.students s
         JOIN public.colleges c ON s."collageName" ILIKE c.name
-        LEFT JOIN public.master_departments md ON s.department = md.department_name
+        LEFT JOIN public.master_departments md ON s.department = md.department_name AND c.id = md.college_id AND md.status = 'Active'
       `;
       params.push(university_id);
       whereClauses.push(`c.university_id = $${params.length}`);
@@ -1053,7 +1053,7 @@ const getStudents = async (req, res) => {
         SELECT s.*, md.department_code as department
         FROM public.students s
         JOIN public.colleges c ON s."collageName" ILIKE c.name
-        LEFT JOIN public.master_departments md ON s.department = md.department_name
+        LEFT JOIN public.master_departments md ON s.department = md.department_name AND c.id = md.college_id AND md.status = 'Active'
       `;
       params.push(cId);
       whereClauses.push(`c.id = $${params.length}`);
@@ -1061,7 +1061,8 @@ const getStudents = async (req, res) => {
       query = `
         SELECT s.*, md.department_code as department
         FROM public.students s
-        LEFT JOIN public.master_departments md ON s.department = md.department_name
+        LEFT JOIN public.colleges c ON s."collageName" ILIKE c.name
+        LEFT JOIN public.master_departments md ON s.department = md.department_name AND c.id = md.college_id AND md.status = 'Active'
       `;
     }
 

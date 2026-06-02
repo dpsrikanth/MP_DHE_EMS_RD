@@ -255,7 +255,13 @@ const MilestoneManagement = () => {
           <label className="block text-[12px] font-bold text-slate-400  tracking-widest mb-2 ml-1">Semester</label>
           <select name="semester_id" value={filters.semester_id} onChange={handleFilterChange} className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-700">
             <option value="">All Semesters</option>
-            {metadata.semesters.map(s => <option key={s.id} value={s.id}>{s.semester_name}</option>)}
+            {metadata.semesters.filter(s => {
+              const selectedProgram = metadata.programs.find(p => p.id == filters.program_id);
+              if (!selectedProgram || !selectedProgram.duration_years) return true;
+              const maxSemesters = selectedProgram.duration_years * 2;
+              const num = parseInt(s.semester_name.replace(/\D/g, '')) || 0;
+              return num <= maxSemesters;
+            }).map(s => <option key={s.id} value={s.id}>{s.semester_name}</option>)}
           </select>
         </div>
       </div>
