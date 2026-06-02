@@ -13,8 +13,10 @@ const FacultyAssignmentEdit = () => {
 
     const [faculties, setFaculties] = useState([]);
     const [subjects, setSubjects] = useState([]);
+    const [departments, setDepartments] = useState([]);
     const [semesters, setSemesters] = useState([]);
     const [academicYears, setAcademicYears] = useState([]);
+    const [selectedDepartment, setSelectedDepartment] = useState(null);
     
     // Fallback to empty if state is not passed
     const [editingAssignment, setEditingAssignment] = useState(location.state?.assignment || {
@@ -38,6 +40,7 @@ const FacultyAssignmentEdit = () => {
     const fetchMasterData = async () => {
         try {
             const data = await masterDataApi.getMasters();
+            setDepartments(data.departments || []);
             setSubjects(data.subjects || []);
             setSemesters(data.semesters || []);
             setAcademicYears(data.academicYears || []);
@@ -92,6 +95,14 @@ const FacultyAssignmentEdit = () => {
         </div>
     );
 
+    const filteredFaculties = selectedDepartment 
+        ? faculties.filter(f => f.department === selectedDepartment.label) 
+        : faculties;
+
+    const filteredSubjects = selectedDepartment
+        ? subjects.filter(s => s.department_ids && s.department_ids.includes(selectedDepartment.value))
+        : subjects;
+
     return (
         <div className="p-6 md:p-8 space-y-6 animate-in slide-in-from-bottom-4 duration-500">
             <button 
@@ -113,11 +124,22 @@ const FacultyAssignmentEdit = () => {
 
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 space-y-8 max-w-4xl">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Department Filter (Optional)</label>
+                        <Select
+                            options={departments.map(d => ({ value: d.id, label: d.name }))}
+                            value={selectedDepartment}
+                            onChange={(opt) => setSelectedDepartment(opt)}
+                            placeholder="Select Department..."
+                            styles={{ control: (base) => ({ ...base, borderRadius: '1rem', borderColor: '#e2e8f0', minHeight: '3.5rem' }) }}
+                            isClearable
+                        />
+                    </div>
                     <div className="space-y-2 lg:col-span-2">
                         <label className="text-sm font-bold text-slate-700 ml-1">Faculty Member</label>
                         <Select
-                            options={faculties.map(f => ({ value: f.id, label: f.name || f.email || `Teacher ID: ${f.id}` }))}
-                            value={faculties.map(f => ({ value: f.id, label: f.name || f.email || `Teacher ID: ${f.id}` })).find(o => o.value === editingAssignment.teacher_id)}
+                            options={filteredFaculties.map(f => ({ value: f.id, label: f.name || f.email || `Teacher ID: ${f.id}` }))}
+                            value={filteredFaculties.map(f => ({ value: f.id, label: f.name || f.email || `Teacher ID: ${f.id}` })).find(o => o.value === editingAssignment.teacher_id)}
                             onChange={(opt) => setEditingAssignment({...editingAssignment, teacher_id: opt ? opt.value : null})}
                             placeholder="Search Faculty..."
                             styles={{ control: (base) => ({ ...base, borderRadius: '1rem', borderColor: '#e2e8f0', minHeight: '3.5rem' }) }}
@@ -149,8 +171,8 @@ const FacultyAssignmentEdit = () => {
                     <div className="space-y-2">
                         <label className="text-sm font-bold text-slate-700 ml-1">Subject</label>
                         <Select
-                            options={subjects.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}` }))}
-                            value={subjects.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}` })).find(o => o.value === editingAssignment.subject_id)}
+                            options={filteredSubjects.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}` }))}
+                            value={filteredSubjects.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}` })).find(o => o.value === editingAssignment.subject_id)}
                             onChange={(opt) => setEditingAssignment({...editingAssignment, subject_id: opt ? opt.value : null})}
                             placeholder="Select Subject"
                             styles={{ control: (base) => ({ ...base, borderRadius: '1rem', borderColor: '#e2e8f0', minHeight: '3.5rem' }) }}

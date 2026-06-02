@@ -10,9 +10,12 @@ const FacultyAssignment = () => {
     const navigate = useNavigate();
     const [faculties, setFaculties] = useState([]);
     const [subjects, setSubjects] = useState([]);
+    const [departments, setDepartments] = useState([]);
     const [semesters, setSemesters] = useState([]);
     const [academicYears, setAcademicYears] = useState([]);
     const [assignments, setAssignments] = useState([]);
+
+    const [selectedDepartment, setSelectedDepartment] = useState(null);
 
     const [selectedFaculty, setSelectedFaculty] = useState(null);
     const [selectedSubject, setSelectedSubject] = useState(null);
@@ -37,6 +40,7 @@ const FacultyAssignment = () => {
         try {
             setLoading(true);
             const data = await masterDataApi.getMasters();
+            setDepartments(data.departments || []);
             setSubjects(data.subjects || []);
             setSemesters((data.semesters || []).sort((a, b) => {
                 const numA = parseInt(a.semester_name.replace(/\D/g, '')) || 0;
@@ -149,6 +153,14 @@ const FacultyAssignment = () => {
         </div>
     );
 
+    const filteredFaculties = selectedDepartment 
+        ? faculties.filter(f => f.department === selectedDepartment.label) 
+        : faculties;
+
+    const filteredSubjects = selectedDepartment
+        ? subjects.filter(s => s.department_ids && s.department_ids.includes(selectedDepartment.value))
+        : subjects;
+
     return (
         <div className="p-6 md:p-8 space-y-6">
             <div className="flex items-center gap-4">
@@ -163,10 +175,26 @@ const FacultyAssignment = () => {
 
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Department</label>
+                        <Select
+                            options={departments.map(d => ({ value: d.id, label: d.name }))}
+                            value={selectedDepartment}
+                            onChange={(opt) => {
+                                setSelectedDepartment(opt);
+                                setSelectedFaculty(null);
+                                setSelectedSubject(null);
+                            }}
+                            placeholder="Select Department..."
+                            styles={{ control: (base) => ({ ...base, borderRadius: '1rem', borderColor: '#e2e8f0' }) }}
+                            isClearable
+                        />
+                    </div>
+
                     <div className="space-y-2 lg:col-span-2">
                         <label className="text-sm font-bold text-slate-700 ml-1">Faculty Member</label>
                         <Select
-                            options={faculties.map(f => ({ value: f.id, label: f.name || f.email || `Teacher ID: ${f.id}` }))}
+                            options={filteredFaculties.map(f => ({ value: f.id, label: f.name || f.email || `Teacher ID: ${f.id}` }))}
                             value={selectedFaculty}
                             onChange={setSelectedFaculty}
                             placeholder="Search Faculty..."
@@ -199,7 +227,7 @@ const FacultyAssignment = () => {
                     <div className="space-y-2">
                         <label className="text-sm font-bold text-slate-700 ml-1">Subject</label>
                         <Select
-                            options={subjects.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}` }))}
+                            options={filteredSubjects.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}` }))}
                             value={selectedSubject}
                             onChange={setSelectedSubject}
                             placeholder="Select Subject"
@@ -322,11 +350,23 @@ const FacultyAssignment = () => {
                         </div>
                         <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[13px] font-bold text-slate-500 ml-1">Department Filter (Optional)</label>
+                                    <Select
+                                        options={departments.map(d => ({ value: d.id, label: d.name }))}
+                                        value={selectedDepartment}
+                                        onChange={(opt) => setSelectedDepartment(opt)}
+                                        placeholder="Filter by Department..."
+                                        styles={{ control: (base) => ({ ...base, borderRadius: '0.75rem', borderColor: '#e2e8f0' }) }}
+                                        menuPortalTarget={document.body}
+                                        isClearable
+                                    />
+                                </div>
                                 <div className="space-y-2 lg:col-span-2">
                                     <label className="text-[13px] font-bold text-slate-500 ml-1">Faculty Member</label>
                                     <Select
-                                        options={faculties.map(f => ({ value: f.id, label: f.name || f.email || `Teacher ID: ${f.id}` }))}
-                                        value={faculties.map(f => ({ value: f.id, label: f.name || f.email || `Teacher ID: ${f.id}` })).find(o => o.value === editingAssignment.teacher_id)}
+                                        options={filteredFaculties.map(f => ({ value: f.id, label: f.name || f.email || `Teacher ID: ${f.id}` }))}
+                                        value={filteredFaculties.map(f => ({ value: f.id, label: f.name || f.email || `Teacher ID: ${f.id}` })).find(o => o.value === editingAssignment.teacher_id)}
                                         onChange={(opt) => setEditingAssignment({...editingAssignment, teacher_id: opt ? opt.value : null})}
                                         placeholder="Search Faculty..."
                                         styles={{ control: (base) => ({ ...base, borderRadius: '0.75rem', borderColor: '#e2e8f0' }) }}
@@ -361,8 +401,8 @@ const FacultyAssignment = () => {
                                 <div className="space-y-2">
                                     <label className="text-[13px] font-bold text-slate-500 ml-1">Subject</label>
                                     <Select
-                                        options={subjects.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}` }))}
-                                        value={subjects.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}` })).find(o => o.value === editingAssignment.subject_id)}
+                                        options={filteredSubjects.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}` }))}
+                                        value={filteredSubjects.map(s => ({ value: s.id, label: `${s.subject_code} - ${s.name}` })).find(o => o.value === editingAssignment.subject_id)}
                                         onChange={(opt) => setEditingAssignment({...editingAssignment, subject_id: opt ? opt.value : null})}
                                         placeholder="Select Subject"
                                         styles={{ control: (base) => ({ ...base, borderRadius: '0.75rem', borderColor: '#e2e8f0' }) }}
