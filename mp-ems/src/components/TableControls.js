@@ -84,7 +84,7 @@ export const ColumnVisibilitySelector = ({ columns, visibleColumns, onToggle }) 
  */
 export const TableSearch = ({ value, onChange, placeholder = "Search records..." }) => {
   return (
-    <div className="relative group w-full max-w-sm">
+    <div className="relative group w-full min-w-[280px] max-w-md flex-1">
       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
         <Search size={18} />
       </div>

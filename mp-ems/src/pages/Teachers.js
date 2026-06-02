@@ -394,7 +394,7 @@ const Teachers = () => {
               </div>
             </div>
 
-            <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <div className="flex flex-col md:flex-row md:items-center gap-4 flex-wrap flex-1 justify-end">
               <TableSearch
                 value={searchQuery}
                 onChange={setSearchQuery}
@@ -427,7 +427,7 @@ const Teachers = () => {
                 onToggle={toggleColumn}
               />
               {!authUtils.isUniversityAdmin() && (
-                <div className="flex gap-2 relative">
+                <div className="flex gap-2 relative flex-wrap">
                   <div className="relative">
                     <button
                       onClick={() => setShowBulkDropdown(!showBulkDropdown)}
