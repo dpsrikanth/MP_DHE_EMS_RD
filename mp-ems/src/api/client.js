@@ -23,7 +23,15 @@ apiClient.interceptors.request.use(
         config.baseURL = getBaseUrl();
         const token = localStorage.getItem('token');
         if (token) {
-            config.headers['Authorization'] = `Bearer ${token}`;
+            config.headers = config.headers || {};
+            config.headers.Authorization = `Bearer ${token}`;
+        } else {
+            // If there's no token, we shouldn't even try to send authenticated requests
+            // Dispatch unauthorized to force a redirect to login
+            if (!config.url.includes('/login') && !config.url.includes('/refresh-token')) {
+                window.dispatchEvent(new CustomEvent('unauthorized'));
+                return Promise.reject(new Error("Your session has expired. Please log in again."));
+            }
         }
         return config;
     },

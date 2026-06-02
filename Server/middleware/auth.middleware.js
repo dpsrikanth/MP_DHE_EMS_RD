@@ -2,6 +2,7 @@ const jwt_token=require("jsonwebtoken");
 const verifyToken=(req,res,next)=>
 {
     const authheader=req.headers["authorization"];
+    console.log(`[AUTH] ${req.method} ${req.path} - Headers:`, req.headers);
     if(!authheader)
     {
 return res.status(401).json({message:"header missing"})
