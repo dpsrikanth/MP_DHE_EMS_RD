@@ -217,7 +217,10 @@ const Batches = () => {
 
   const bulkValidate = (rows) => {
     const errors = [];
-    const localNames = data.map(b => (b.batch_name || '').toLowerCase());
+    const localBatches = data.map(b => ({
+      batchName: (b.batch_name || '').toLowerCase(),
+      programName: (b.program_name || '').toLowerCase()
+    }));
 
     rows.forEach((row, idx) => {
       const rowNumber = idx + 2;
@@ -228,8 +231,11 @@ const Batches = () => {
 
       if (!batchName) {
         errors.push({ row: rowNumber, message: 'Batch Name is required' });
-      } else if (localNames.includes(batchName.toLowerCase())) {
-        errors.push({ row: rowNumber, message: `Batch '${batchName}' already exists` });
+      } else if (batchName && programName) {
+        const exists = localBatches.some(b => b.batchName === batchName.toLowerCase() && b.programName === programName.toLowerCase());
+        if (exists) {
+          errors.push({ row: rowNumber, message: `Batch '${batchName}' already exists for program '${programName}'` });
+        }
       }
 
       if (!programName) {

@@ -2984,11 +2984,13 @@ const bulkUploadBatches = async (req, res) => {
       if (row.name) policyMap[row.name.toString().trim().toLowerCase()] = row.id;
     });
 
-    // Pre-fetch existing batches for duplicate check
-    const existingRes = await client.query('SELECT batch_name FROM public.master_batches');
-    const existingNamesSet = new Set();
+    // Pre-fetch existing batches for duplicate check (composite key: batch_name + program_id)
+    const existingRes = await client.query('SELECT batch_name, program_id FROM public.master_batches');
+    const existingBatchesSet = new Set();
     existingRes.rows.forEach(row => {
-      if (row.batch_name) existingNamesSet.add(row.batch_name.toString().trim().toLowerCase());
+      if (row.batch_name && row.program_id) {
+        existingBatchesSet.add(`${row.batch_name.toString().trim().toLowerCase()}_${row.program_id}`);
+      }
     });
 
     // Phase 1: Validate
@@ -3012,21 +3014,6 @@ const bulkUploadBatches = async (req, res) => {
       const startYearVal = b['Start Year'] || b['start_year'];
       const endYearVal = b['End Year'] || b['end_year'];
 
-      // Validate Batch Name
-      if (!batchName) {
-        errors.push({ row: rowNum, message: "Missing required field: Batch Name" });
-      } else {
-        const cleanNameVal = batchName.toLowerCase();
-        if (namesInBatch.has(cleanNameVal)) {
-          errors.push({ row: rowNum, message: `Duplicate batch name '${batchName}' found in the upload file.` });
-        } else {
-          namesInBatch.add(cleanNameVal);
-        }
-        if (existingNamesSet.has(cleanNameVal)) {
-          errors.push({ row: rowNum, message: `Batch '${batchName}' already exists.` });
-        }
-      }
-
       // Resolve Program
       let programId = null;
       if (progName) {
@@ -3038,6 +3025,22 @@ const bulkUploadBatches = async (req, res) => {
         }
       } else {
         errors.push({ row: rowNum, message: "Missing required field: Program" });
+      }
+
+      // Validate Batch Name (Uniqueness is checked across Batch + Program)
+      if (!batchName) {
+        errors.push({ row: rowNum, message: "Missing required field: Batch Name" });
+      } else if (programId) {
+        const cleanNameVal = batchName.toLowerCase();
+        const uniqueKey = `${cleanNameVal}_${programId}`;
+        if (namesInBatch.has(uniqueKey)) {
+          errors.push({ row: rowNum, message: `Duplicate batch name '${batchName}' for program '${progName}' found in the upload file.` });
+        } else {
+          namesInBatch.add(uniqueKey);
+        }
+        if (existingBatchesSet.has(uniqueKey)) {
+          errors.push({ row: rowNum, message: `Batch '${batchName}' already exists for program '${progName}'.` });
+        }
       }
 
       // Resolve Policy
