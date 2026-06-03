@@ -80,6 +80,19 @@ exports.saveSchedules = async (req, res) => {
         if (new Set(dates).size !== dates.length) {
             return res.status(400).json({ error: "Duplicate exam dates detected. Each subject must be scheduled on a unique date." });
         }
+        // Fetch the academic year to determine its time range for filtering milestones
+        let academicYearStart = null, academicYearEnd = null;
+        if (academic_year_id) {
+            const ayResult = await db.query("SELECT year_name FROM master_academic_years WHERE id = $1", [academic_year_id]);
+            if (ayResult.rows.length > 0) {
+                const parts = (ayResult.rows[0].year_name || '').split('-');
+                if (parts.length >= 2) {
+                    academicYearStart = parseInt(parts[0]);
+                    academicYearEnd = parseInt(parts[1]);
+                }
+            }
+        }
+
         const milestonesResult = await db.query(
             "SELECT * FROM academic_milestones WHERE (college_id = $1 OR college_id IS NULL) AND delete_status = true",
             [college_id]
@@ -93,17 +106,31 @@ exports.saveSchedules = async (req, res) => {
         );
         if (roundInfo.rows.length > 0) roundName = roundInfo.rows[0].name;
 
-        const schedulingMilestone = milestones.find(m => {
-            const mName = m.name.toUpperCase();
-            const rName = String(roundName).toUpperCase();
-            const rNum = rName.replace(/\D/g, "");
-
-            const isTopicMatch = mName.includes(rName) || 
-                            (rName.includes("IA") && rNum && (mName.includes("INTERNAL EXAM " + rNum) || mName.includes("MID-" + rNum))) ||
-                            (rName.includes("MID") && rNum && mName.includes("INTERNAL EXAM " + rNum));
-                            
-            return isTopicMatch && mName.includes("SCHEDULE");
-        });
+        // Find scheduling milestone that matches the round name AND falls within the selected academic year
+        const schedulingMilestone = milestones
+            .filter(m => {
+                // Filter by academic year if we have the year range
+                if (academicYearStart && m.start_date) {
+                    const mYear = new Date(m.start_date).getFullYear();
+                    if (mYear !== academicYearStart && mYear !== academicYearEnd) return false;
+                }
+                const mName = m.name.toUpperCase();
+                const rName = String(roundName).toUpperCase();
+                const rNum = rName.replace(/\D/g, "");
+                const isTopicMatch = mName.includes(rName) ||
+                    (rName.includes("IA") && rNum && (mName.includes("INTERNAL EXAM " + rNum) || mName.includes("MID-" + rNum))) ||
+                    (rName.includes("MID") && rNum && mName.includes("INTERNAL EXAM " + rNum));
+                return isTopicMatch && mName.includes("SCHEDULE");
+            })
+            // Prefer the milestone whose start_date year matches the academic year's start year
+            .sort((a, b) => {
+                if (!academicYearStart) return 0;
+                const aYear = new Date(a.start_date).getFullYear();
+                const bYear = new Date(b.start_date).getFullYear();
+                const aDiff = Math.abs(aYear - academicYearStart);
+                const bDiff = Math.abs(bYear - academicYearStart);
+                return aDiff - bDiff;
+            })[0] || null;
 
         const settingsResult = await db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'roadmap_validation'");
         const isValidationEnabled = settingsResult.rows.length > 0 ? settingsResult.rows[0].setting_value.enabled : true;
@@ -112,21 +139,21 @@ exports.saveSchedules = async (req, res) => {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
-            // Check Deadline
+            // Check Start Date first — "not yet open" takes priority over deadline
+            if (schedulingMilestone.start_date) {
+                const startDate = new Date(schedulingMilestone.start_date);
+                startDate.setHours(0, 0, 0, 0);
+                if (today < startDate) {
+                    return res.status(403).json({ error: "Scheduling for this exam has not started yet. Please wait until the scheduling window opens." });
+                }
+            }
+
+            // Then check Deadline
             if (schedulingMilestone.end_date) {
                 const deadline = new Date(schedulingMilestone.end_date);
                 deadline.setHours(23, 59, 59, 999);
                 if (today > deadline) {
                     return res.status(403).json({ error: "Scheduling is closed for this exam. Deadline passed." });
-                }
-            }
-
-            // Check Start Date
-            if (schedulingMilestone.start_date) {
-                const startDate = new Date(schedulingMilestone.start_date);
-                startDate.setHours(0, 0, 0, 0);
-                if (today < startDate) {
-                    return res.status(403).json({ error: "Scheduling for this exam has not opened yet." });
                 }
             }
         }

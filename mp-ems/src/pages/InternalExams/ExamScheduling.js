@@ -369,7 +369,7 @@ const ExamScheduling = () => {
             toast.success("Schedules saved successfully!");
         } catch (error) {
             console.error("Save error:", error);
-            toast.error(error.response?.data?.message || "Failed to save schedules");
+            toast.error(error.response?.data?.error || error.response?.data?.message || "Failed to save schedules");
         } finally {
             setLoading(prev => ({ ...prev, saving: false }));
         }

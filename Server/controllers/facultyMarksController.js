@@ -1,7 +1,85 @@
 const db = require('../config/db');
 
-// --- Faculty Marks Entry APIs ---
+// --- Helper for Roadmap Validation ---
+const validateMilestone = async (db, college_id, academic_year_id, actionType, roundName = null) => {
+    const settingsResult = await db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'roadmap_validation'");
+    const isValidationEnabled = settingsResult.rows.length > 0 ? settingsResult.rows[0].setting_value.enabled : true;
 
+    if (!isValidationEnabled) return null;
+
+    let academicYearStart = null, academicYearEnd = null;
+    if (academic_year_id) {
+        const ayResult = await db.query("SELECT year_name FROM master_academic_years WHERE id = $1", [academic_year_id]);
+        if (ayResult.rows.length > 0) {
+            const parts = (ayResult.rows[0].year_name || '').split('-');
+            if (parts.length >= 2) {
+                academicYearStart = parseInt(parts[0]);
+                academicYearEnd = parseInt(parts[1]);
+            }
+        }
+    }
+
+    const milestonesResult = await db.query(
+        "SELECT * FROM academic_milestones WHERE (college_id = $1 OR college_id IS NULL) AND delete_status = true",
+        [college_id]
+    );
+    const milestones = milestonesResult.rows;
+
+    const matchedMilestone = milestones
+        .filter(m => {
+            if (academicYearStart && m.start_date) {
+                const mYear = new Date(m.start_date).getFullYear();
+                if (mYear !== academicYearStart && mYear !== academicYearEnd) return false;
+            }
+            const mName = m.name.toUpperCase();
+            
+            if (actionType === 'MARKS ENTRY') {
+                if (!roundName) return false;
+                const rName = String(roundName).toUpperCase();
+                const rNum = rName.replace(/\D/g, "");
+                const isTopicMatch = mName.includes(rName) ||
+                    (rName.includes("IA") && rNum && (mName.includes("INTERNAL EXAM " + rNum) || mName.includes("MID-" + rNum))) ||
+                    (rName.includes("MID") && rNum && mName.includes("INTERNAL EXAM " + rNum));
+                return isTopicMatch && mName.includes("MARKS ENTRY");
+            } else if (actionType === 'MARKS SUBMISSION') {
+                return mName.includes("MARKS LOCK & SUBMISSION");
+            }
+            return false;
+        })
+        .sort((a, b) => {
+            if (!academicYearStart) return 0;
+            const aYear = new Date(a.start_date).getFullYear();
+            const bYear = new Date(b.start_date).getFullYear();
+            const aDiff = Math.abs(aYear - academicYearStart);
+            const bDiff = Math.abs(bYear - academicYearStart);
+            return aDiff - bDiff;
+        })[0] || null;
+
+    if (matchedMilestone) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (matchedMilestone.start_date) {
+            const startDate = new Date(matchedMilestone.start_date);
+            startDate.setHours(0, 0, 0, 0);
+            if (today < startDate) {
+                return `Action not allowed yet. The window for this milestone opens on ${startDate.toDateString()}.`;
+            }
+        }
+
+        if (matchedMilestone.end_date) {
+            const deadline = new Date(matchedMilestone.end_date);
+            deadline.setHours(23, 59, 59, 999);
+            if (today > deadline) {
+                return "Action is closed. The deadline for this milestone has passed.";
+            }
+        }
+    }
+
+    return null; // No error
+};
+
+// --- Faculty Marks Entry APIs ---
 exports.getAssignedSubjects = async (req, res) => {
     try {
         const { teacher_id } = req.params;
@@ -179,6 +257,22 @@ exports.enterStudentMarks = async (req, res) => {
         if (marksData.length > 0) {
             const { subject_id } = marksData[0];
 
+            // 1. Roadmap Milestone Validation
+            if (marksData[0].component_id) {
+                const compNameRes = await db.query(
+                    `SELECT component_name FROM internal_marks_structure WHERE id = $1`,
+                    [marksData[0].component_id]
+                );
+                const componentName = compNameRes.rowCount > 0 ? compNameRes.rows[0].component_name : null;
+                
+                if (componentName) {
+                    const validationError = await validateMilestone(db, college_id, academic_year_id, 'MARKS ENTRY', componentName);
+                    if (validationError) {
+                        return res.status(403).json({ error: validationError });
+                    }
+                }
+            }
+
             // Look up the workflow status for this specific section/college/semester
             const checkQuery = `
                 SELECT status FROM marks_workflow_status 
@@ -314,6 +408,13 @@ exports.submitMarks = async (req, res) => {
         const colRes = await client.query('SELECT name FROM colleges WHERE id = $1', [college_id]);
         const semRes = await client.query('SELECT semester_name FROM master_semesters WHERE id = $1', [semester_id]);
         const subRes = await client.query('SELECT program_id FROM master_subjects WHERE id = $1', [subject_id]);
+        
+        // 2. Roadmap Milestone Validation
+        const validationError = await validateMilestone(client, college_id, academic_year_id, 'MARKS SUBMISSION');
+        if (validationError) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ error: validationError });
+        }
         
         if (colRes.rowCount === 0 || semRes.rowCount === 0) {
             await client.query('ROLLBACK');
@@ -458,6 +559,20 @@ exports.publishRoundMarks = async (req, res) => {
         const semRes = await client.query('SELECT semester_name FROM master_semesters WHERE id = $1', [semester_id]);
         const subRes = await client.query('SELECT program_id FROM master_subjects WHERE id = $1', [subject_id]);
         
+        // 2. Roadmap Milestone Validation
+        const compNameRes = await client.query(
+            `SELECT component_name FROM internal_marks_structure WHERE id = $1`,
+            [component_id]
+        );
+        const componentName = compNameRes.rowCount > 0 ? compNameRes.rows[0].component_name : null;
+        if (componentName) {
+            const validationError = await validateMilestone(client, college_id, academic_year_id, 'MARKS ENTRY', componentName);
+            if (validationError) {
+                await client.query('ROLLBACK');
+                return res.status(403).json({ error: validationError });
+            }
+        }
+
         if (colRes.rowCount === 0 || semRes.rowCount === 0) {
             await client.query('ROLLBACK');
             return res.status(400).json({ error: "Invalid college or semester ID" });

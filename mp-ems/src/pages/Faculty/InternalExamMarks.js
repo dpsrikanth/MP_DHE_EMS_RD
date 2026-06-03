@@ -17,13 +17,15 @@ import {
     ChevronDown,
     Download,
     FileSpreadsheet,
-    FileUp
+    FileUp,
+    Flag
 } from "lucide-react";
 import Papa from 'papaparse';
 import BulkImportModal from '../../components/BulkImportModal';
 import { TableSearch } from '../../components/TableControls';
 import { facultyApi } from '../../api/facultyApi';
 import { masterDataApi } from '../../api/masterDataApi';
+import { milestoneApi } from '../../api/milestoneApi';
 
 const InternalExamMarks = () => {
     // Context States
@@ -51,6 +53,8 @@ const InternalExamMarks = () => {
     const [showImportModal, setShowImportModal] = useState(false);
     const [pendingDiscrepancies, setPendingDiscrepancies] = useState([]);
     const [unlockedStudentIds, setUnlockedStudentIds] = useState([]);
+    const [milestones, setMilestones] = useState([]);
+    const [isValidationEnabled, setIsValidationEnabled] = useState(true);
 
     const teacherId = JSON.parse(localStorage.getItem('user'))?.teacher_id || 1;
 
@@ -89,12 +93,17 @@ const InternalExamMarks = () => {
     const fetchInitialData = async () => {
         try {
             // Fetch Years, Semesters, Subjects and Schedules in parallel
-            const [years, sems, subjects, schedulesData] = await Promise.all([
+            const [years, sems, subjects, schedulesData, valData, milestonesData] = await Promise.all([
                 masterDataApi.getAcademicYears(),
                 masterDataApi.getSemesters(),
                 facultyApi.getAssignedSubjects(teacherId),
-                facultyApi.getInternalSchedules()
+                facultyApi.getInternalSchedules(),
+                milestoneApi.getValidationSetting(),
+                milestoneApi.getMilestones({})
             ]);
+
+            setIsValidationEnabled(valData?.enabled ?? true);
+            setMilestones(Array.isArray(milestonesData) ? milestonesData : []);
 
             if (years) {
                 setAcademicYears(years.sort((a, b) => {
@@ -239,7 +248,7 @@ const InternalExamMarks = () => {
             if (!silent) toast.success('Marks updated successfully!');
             return true;
         } catch (err) {
-            toast.error('Saving failed');
+            toast.error(err.response?.data?.error || 'Saving failed');
             return false;
         } finally {
             if (!silent) setIsSaving(false);
@@ -282,7 +291,7 @@ const InternalExamMarks = () => {
             toast.success('Marks published successfully!');
             setWorkflowStatus('Published');
         } catch (err) {
-            toast.error('Publishing failed');
+            toast.error(err.response?.data?.error || 'Publishing failed');
         } finally {
             setIsSaving(false);
         }
@@ -364,6 +373,85 @@ const InternalExamMarks = () => {
         );
     };
 
+    const getActiveMilestone = () => {
+        if (!selectedRound || !Array.isArray(milestones) || milestones.length === 0) return null;
+        const roundName = selectedRound.label.toUpperCase();
+        const roundNum = roundName.replace(/\D/g, "");
+
+        const matches = milestones.filter(m => {
+            const mName = m.name.toUpperCase();
+            
+            const ayYearStr = academicYears.find(y => y.id === selectedYear?.value)?.year_name;
+            const ayYear = ayYearStr ? parseInt(ayYearStr.split('-')[0]) : null;
+            if (ayYear && m.start_date) {
+                const mYear = new Date(m.start_date).getFullYear();
+                if (mYear !== ayYear && mYear !== (ayYear + 1)) return false;
+            }
+
+            const isTopicMatch = mName.includes(roundName) ||
+                (roundName.includes("IA") && roundNum && (mName.includes("INTERNAL EXAM " + roundNum) || mName.includes("MID-" + roundNum))) ||
+                (roundName.includes("MID") && roundNum && mName.includes("INTERNAL EXAM " + roundNum));
+
+            return isTopicMatch && !mName.includes("MARKS ENTRY") && !mName.includes("SCHEDULE");
+        });
+
+        const bestMatch = matches.find(m => m.name.toUpperCase().includes("EXAM")) || matches[0];
+        
+        if (bestMatch) {
+            return {
+                startFull: bestMatch.start_date,
+                endFull: bestMatch.end_date,
+                name: bestMatch.name
+            };
+        }
+        return null;
+    };
+
+    const getMarksEntryMilestone = () => {
+        if (!selectedRound || !Array.isArray(milestones) || milestones.length === 0) return null;
+        const roundName = selectedRound.label.toUpperCase();
+        const roundNum = roundName.replace(/\D/g, "");
+
+        const matches = milestones.filter(m => {
+            const mName = m.name.toUpperCase();
+            
+            const ayYearStr = academicYears.find(y => y.id === selectedYear?.value)?.year_name;
+            const ayYear = ayYearStr ? parseInt(ayYearStr.split('-')[0]) : null;
+            if (ayYear && m.start_date) {
+                const mYear = new Date(m.start_date).getFullYear();
+                if (mYear !== ayYear && mYear !== (ayYear + 1)) return false;
+            }
+
+            const isTopicMatch = mName.includes(roundName) ||
+                (roundName.includes("IA") && roundNum && (mName.includes("INTERNAL EXAM " + roundNum) || mName.includes("MID-" + roundNum))) ||
+                (roundName.includes("MID") && roundNum && mName.includes("INTERNAL EXAM " + roundNum));
+
+            return isTopicMatch && mName.includes("MARKS ENTRY");
+        });
+
+        if (matches.length > 0) {
+            return {
+                startFull: matches[0].start_date,
+                endFull: matches[0].end_date,
+                name: matches[0].name
+            };
+        }
+        return null;
+    };
+
+    const formatDate = (isoStr, withTime = false) => {
+        if (!isoStr) return '';
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return isoStr.split('T')[0];
+        const dateStr = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+        if (!withTime) return dateStr;
+        const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        return `${dateStr} ${timeStr}`;
+    };
+
+    const active = getActiveMilestone();
+    const entryWindow = getMarksEntryMilestone();
+
     return (
         <div className="p-6 md:p-10 space-y-8 bg-slate-50 min-h-screen">
             {/* Header */}
@@ -419,6 +507,48 @@ const InternalExamMarks = () => {
                     Filter Subjects
                 </button>
             </div>
+
+            {isValidationEnabled && active && (
+                <div className="flex flex-wrap items-center gap-6 px-1 bg-white/50 p-4 rounded-2xl border border-slate-100 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600">
+                            <Flag size={20} />
+                        </div>
+                        <div>
+                            <p className="text-[12px] font-black text-slate-400 tracking-widest leading-none mb-1">Active Milestone</p>
+                            <p className="text-sm font-black text-slate-900 leading-none">{active.name}</p>
+                        </div>
+                    </div>
+
+                    <div className="h-10 w-px bg-slate-200 hidden md:block" />
+
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-600">
+                            <Calendar size={20} />
+                        </div>
+                        <div>
+                            <p className="text-[12px] font-black text-slate-400 tracking-widest leading-none mb-1">Exam Round Dates</p>
+                            <p className="text-sm font-black text-indigo-600 leading-none italic">
+                                {formatDate(active.startFull)} - {formatDate(active.endFull)}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="h-10 w-px bg-slate-200 hidden md:block" />
+
+                    <div className="flex items-center gap-4 animate-in slide-in-from-right duration-500">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-600">
+                            <Clock size={20} />
+                        </div>
+                        <div>
+                            <p className="text-[12px] font-black text-indigo-600 tracking-widest leading-none mb-1 text-left">Marks Entry Window</p>
+                            <p className="text-sm font-black text-indigo-600 leading-none italic text-left">
+                                {entryWindow ? `${formatDate(entryWindow.startFull, true)} to ${formatDate(entryWindow.endFull, true)}` : 'Open / No Deadline'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Subject Selection Grid */}
             {!selectedSubject && selectedYear && selectedSem && selectedRound && (
