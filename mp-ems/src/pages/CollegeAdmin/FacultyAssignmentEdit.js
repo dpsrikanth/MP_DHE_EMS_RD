@@ -100,8 +100,12 @@ const FacultyAssignmentEdit = () => {
         : faculties;
 
     const filteredSubjects = selectedDepartment
-        ? subjects.filter(s => s.department_ids && s.department_ids.includes(selectedDepartment.value))
+        ? subjects.filter(s => s.department_ids && s.department_ids.some(id => id == selectedDepartment.value))
         : subjects;
+
+    const uniqueFilteredFaculties = Array.from(
+        new Map(filteredFaculties.map(f => [`${f.name}-${f.email}`, f])).values()
+    );
 
     return (
         <div className="p-6 md:p-8 space-y-6 animate-in slide-in-from-bottom-4 duration-500">
@@ -138,8 +142,8 @@ const FacultyAssignmentEdit = () => {
                     <div className="space-y-2 lg:col-span-2">
                         <label className="text-sm font-bold text-slate-700 ml-1">Faculty Member</label>
                         <Select
-                            options={filteredFaculties.map(f => ({ value: f.id, label: f.name || f.email || `Teacher ID: ${f.id}` }))}
-                            value={filteredFaculties.map(f => ({ value: f.id, label: f.name || f.email || `Teacher ID: ${f.id}` })).find(o => o.value === editingAssignment.teacher_id)}
+                            options={uniqueFilteredFaculties.map(f => ({ value: f.id, label: f.name ? `${f.name} (${f.email || `ID: ${f.id}`})` : f.email || `Teacher ID: ${f.id}` }))}
+                            value={uniqueFilteredFaculties.map(f => ({ value: f.id, label: f.name ? `${f.name} (${f.email || `ID: ${f.id}`})` : f.email || `Teacher ID: ${f.id}` })).find(o => o.value === editingAssignment.teacher_id)}
                             onChange={(opt) => setEditingAssignment({...editingAssignment, teacher_id: opt ? opt.value : null})}
                             placeholder="Search Faculty..."
                             styles={{ control: (base) => ({ ...base, borderRadius: '1rem', borderColor: '#e2e8f0', minHeight: '3.5rem' }) }}
