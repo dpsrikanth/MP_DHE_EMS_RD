@@ -13,6 +13,7 @@ const FacultyAssignment = () => {
     const [departments, setDepartments] = useState([]);
     const [semesters, setSemesters] = useState([]);
     const [academicYears, setAcademicYears] = useState([]);
+    const [programs, setPrograms] = useState([]);
     const [assignments, setAssignments] = useState([]);
 
     const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -21,6 +22,7 @@ const FacultyAssignment = () => {
     const [selectedSubject, setSelectedSubject] = useState(null);
     const [selectedSemester, setSelectedSemester] = useState(null);
     const [selectedAcademicYear, setSelectedAcademicYear] = useState(null);
+    const [selectedProgram, setSelectedProgram] = useState(null);
     const [section, setSection] = useState('');
 
     const [editingAssignment, setEditingAssignment] = useState(null);
@@ -40,7 +42,35 @@ const FacultyAssignment = () => {
         try {
             setLoading(true);
             const data = await masterDataApi.getMasters();
-            setDepartments(data.departments || []);
+            
+            const depts = data.departments || [];
+            setDepartments(depts);
+            
+            const userRole = localStorage.getItem('roleName');
+            const userDeptId = localStorage.getItem('departmentId');
+            console.log("FacultyAssignment HOD Check:", { userRole, userDeptId, depts });
+            
+            if (userRole === 'HOD' && userDeptId) {
+                let dept = depts.find(d => d.id == userDeptId);
+                
+                // Fallback for database inconsistency where HOD's department ID is not in active departments list
+                if (!dept) {
+                    try {
+                        const userObj = JSON.parse(localStorage.getItem('user') || '{}');
+                        dept = { id: userDeptId, name: userObj.department_name || 'HOD Department' };
+                        depts.push(dept);
+                        setDepartments([...depts]);
+                    } catch (e) {
+                        console.error("Error parsing user object from localStorage", e);
+                    }
+                }
+
+                console.log("Found dept:", dept);
+                if (dept) {
+                    setSelectedDepartment({ value: dept.id, label: dept.name });
+                }
+            }
+
             setSubjects(data.subjects || []);
             setSemesters((data.semesters || []).sort((a, b) => {
                 const numA = parseInt(a.semester_name.replace(/\D/g, '')) || 0;
@@ -52,6 +82,7 @@ const FacultyAssignment = () => {
                 const yearB = b.start_year || parseInt(b.year_name?.split('-')[0]) || 0;
                 return yearB - yearA; // Latest first
             }));
+            setPrograms(data.programs || []);
 
             // Fetch Teachers
             const teacherData = await masterDataApi.getTeachers();
@@ -153,13 +184,50 @@ const FacultyAssignment = () => {
         </div>
     );
 
-    const filteredFaculties = selectedDepartment 
-        ? faculties.filter(f => f.department === selectedDepartment.label) 
-        : faculties;
+    const userRole = localStorage.getItem('roleName');
+    
+    let filteredDepartments = departments;
+    if (userRole === 'HOD') {
+        const userDeptId = localStorage.getItem('departmentId');
+        if (userDeptId) {
+            filteredDepartments = departments.filter(d => d.id == userDeptId);
+        }
+    }
 
-    const filteredSubjects = selectedDepartment
-        ? subjects.filter(s => s.department_ids && s.department_ids.includes(selectedDepartment.value))
-        : subjects;
+    // De-duplicate faculties by ID first, then filter by department
+    const uniqueFaculties = faculties.filter((f, index, self) => 
+        index === self.findIndex(t => t.id === f.id)
+    );
+    const filteredFaculties = selectedDepartment 
+        ? uniqueFaculties.filter(f => 
+            f.department === selectedDepartment.label || 
+            f.department_id == selectedDepartment.value
+          ) 
+        : uniqueFaculties;
+
+    const filteredPrograms = selectedDepartment 
+        ? programs.filter(p => p.department_ids && p.department_ids.some(id => id == selectedDepartment.value))
+        : programs;
+
+    let filteredSemesters = semesters;
+    if (selectedProgram) {
+        const program = programs.find(p => p.id === selectedProgram.value);
+        if (program && program.duration_years) {
+            const maxSemesters = program.duration_years * 2;
+            filteredSemesters = semesters.filter(s => {
+                const num = parseInt(s.semester_name.replace(/\D/g, '')) || 0;
+                return num > 0 && num <= maxSemesters;
+            });
+        }
+    }
+
+    let filteredSubjects = subjects;
+    if (selectedDepartment) {
+        filteredSubjects = filteredSubjects.filter(s => s.department_ids && s.department_ids.includes(selectedDepartment.value));
+    }
+    if (selectedProgram) {
+        filteredSubjects = filteredSubjects.filter(s => s.program_id === selectedProgram.value);
+    }
 
     return (
         <div className="p-6 md:p-8 space-y-6">
@@ -178,16 +246,18 @@ const FacultyAssignment = () => {
                     <div className="space-y-2">
                         <label className="text-sm font-bold text-slate-700 ml-1">Department</label>
                         <Select
-                            options={departments.map(d => ({ value: d.id, label: d.name }))}
+                            options={filteredDepartments.map(d => ({ value: d.id, label: d.name }))}
                             value={selectedDepartment}
                             onChange={(opt) => {
                                 setSelectedDepartment(opt);
                                 setSelectedFaculty(null);
                                 setSelectedSubject(null);
+                                setSelectedProgram(null);
                             }}
                             placeholder="Select Department..."
                             styles={{ control: (base) => ({ ...base, borderRadius: '1rem', borderColor: '#e2e8f0' }) }}
-                            isClearable
+                            isClearable={userRole !== 'HOD'}
+                            isDisabled={userRole === 'HOD'}
                         />
                     </div>
 
@@ -214,9 +284,25 @@ const FacultyAssignment = () => {
                     </div>
 
                     <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Program</label>
+                        <Select
+                            options={filteredPrograms.map(p => ({ value: p.id, label: p.name }))}
+                            value={selectedProgram}
+                            onChange={(opt) => {
+                                setSelectedProgram(opt);
+                                setSelectedSubject(null);
+                                setSelectedSemester(null);
+                            }}
+                            placeholder="Select Program"
+                            styles={{ control: (base) => ({ ...base, borderRadius: '1rem', borderColor: '#e2e8f0' }) }}
+                            isClearable
+                        />
+                    </div>
+
+                    <div className="space-y-2">
                         <label className="text-sm font-bold text-slate-700 ml-1">Semester</label>
                         <Select
-                            options={semesters.map(s => ({ value: s.id, label: s.semester_name }))}
+                            options={filteredSemesters.map(s => ({ value: s.id, label: s.semester_name }))}
                             value={selectedSemester}
                             onChange={setSelectedSemester}
                             placeholder="Select Semester"

@@ -5301,8 +5301,9 @@ const getCollegeMasterPolicy = async (req, res) => {
 const getMasterTeachers = async (req, res) => {
   try {
     const { role: roleName, college_id: collegeId, department_id: departmentId } = req.user;
-    let query = `SELECT 
+    let query = `SELECT DISTINCT ON (mt.id)
         mt.id,
+        mt.department_id,
         u.name,
         u.email,
         c.name AS college_name,

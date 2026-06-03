@@ -292,8 +292,12 @@ exports.assignFacultyToSubject = async (req, res) => {
 exports.getFacultyAssignments = async (req, res) => {
     try {
         const { college_id } = req.params;
-        const query = `
-            SELECT fs.*, u.name as faculty_name, s.name as subject_name, ay.year_name as academic_year, sem.semester_name as semester
+        const { role, department_id } = req.user || {};
+
+        let query = `
+            SELECT DISTINCT ON (fs.id) fs.*, u.name as faculty_name, s.name as subject_name, 
+                   ay.year_name as academic_year, sem.semester_name as semester,
+                   t.department_id as teacher_department_id
             FROM faculty_subjects fs 
             LEFT JOIN master_teachers t ON fs.teacher_id = t.id 
             LEFT JOIN users u ON t.user_id = u.id
@@ -302,9 +306,22 @@ exports.getFacultyAssignments = async (req, res) => {
             LEFT JOIN master_semesters sem ON fs.semester_id = sem.id
             WHERE fs.college_id = $1
        `;
-        const result = await db.query(query, [college_id]);
+       
+        let params = [college_id];
+        let paramCount = 1;
+
+        if (role === 'HOD' && department_id) {
+            paramCount++;
+            query += ` AND t.department_id = $${paramCount}`;
+            params.push(department_id);
+        }
+
+        query += ` ORDER BY fs.id DESC`;
+
+        const result = await db.query(query, params);
         res.status(200).json(result.rows);
     } catch (error) {
+        console.error("Error fetching faculty assignments:", error);
         res.status(500).json({ error: "Failed to fetch faculty assignments" });
     }
 };
