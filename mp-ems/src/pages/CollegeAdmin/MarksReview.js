@@ -1,8 +1,9 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { CheckCircle, ArrowLeft, ShieldCheck, AlertCircle, MessageSquare, X, Send, Lock } from 'lucide-react';
 import { collegeAdminApi } from '../../api/collegeAdminApi';
+import { milestoneApi } from '../../api/milestoneApi';
 
 const MarksReview = () => {
     const { subjectId, section } = useParams();
@@ -18,6 +19,8 @@ const MarksReview = () => {
     const [loading, setLoading] = useState(true);
     const [isLocking, setIsLocking] = useState(false);
     const [isRejecting, setIsRejecting] = useState(false);
+    const [milestones, setMilestones] = useState([]);
+    const [isValidationEnabled, setIsValidationEnabled] = useState(true);
 
     // Review Modal States
     const [isReviewOpen, setIsReviewOpen] = useState(false);
@@ -39,7 +42,21 @@ const MarksReview = () => {
 
     useEffect(() => {
         fetchReviewData();
+        fetchMilestones();
     }, [subjectId, section]);
+
+    const fetchMilestones = async () => {
+        try {
+            const [valData, milestonesData] = await Promise.all([
+                milestoneApi.getValidationSetting(),
+                milestoneApi.getMilestones({})
+            ]);
+            setIsValidationEnabled(valData?.enabled ?? true);
+            setMilestones(Array.isArray(milestonesData) ? milestonesData : []);
+        } catch (err) {
+            console.error('Failed to load milestones');
+        }
+    };
 
     const fetchReviewData = async () => {
         try {
@@ -81,6 +98,28 @@ const MarksReview = () => {
     };
 
     const handleApproveSection = async () => {
+        if (isValidationEnabled) {
+            let matches = milestones;
+            if (semesterId) {
+                matches = milestones.filter(m => !m.semester_id || parseInt(m.semester_id) === parseInt(semesterId));
+            }
+            
+            const today = new Date();
+            const activeMatches = matches.filter(m => new Date(m.start_date) <= today && new Date(m.end_date) >= today);
+            const sourceMatches = activeMatches.length > 0 ? activeMatches : matches;
+            
+            const lockWindow = sourceMatches.find(m => m.name.toUpperCase().includes("LOCK") || m.name.toUpperCase().includes("SUBMISSION"));
+            
+            if (lockWindow) {
+                const startDate = new Date(lockWindow.start_date);
+                const endDate = new Date(lockWindow.end_date);
+                if (today < startDate || today > endDate) {
+                    toast.error(`Validation Error: Approval window is not active. Scheduled from ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}`);
+                    return;
+                }
+            }
+        }
+
         toast.info("Approving section...");
         setIsLocking(true);
         try {

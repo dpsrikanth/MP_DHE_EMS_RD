@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
-import { FileText, CheckCircle2, XCircle, Search, Lock, Eye, X } from "lucide-react";
+import { FileText, CheckCircle2, XCircle, Search, Lock, Eye, X, Flag, Calendar, Clock } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { TableSearch } from '../../components/TableControls';
 import { collegeAdminApi } from '../../api/collegeAdminApi';
 import { masterDataApi } from '../../api/masterDataApi';
+import { milestoneApi } from '../../api/milestoneApi';
 
 const MarksApproval = () => {
     const [workflows, setWorkflows] = useState([]);
@@ -16,6 +17,9 @@ const MarksApproval = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const navigate = useNavigate();
 
+    const [milestones, setMilestones] = useState([]);
+    const [isValidationEnabled, setIsValidationEnabled] = useState(true);
+
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const isHOD = user.role === 'HOD';
     const isCollegeAdmin = user.role === 'college_admin';
@@ -23,7 +27,21 @@ const MarksApproval = () => {
     useEffect(() => {
         fetchSemesters();
         fetchWorkflows();
+        fetchMilestones();
     }, []);
+
+    const fetchMilestones = async () => {
+        try {
+            const [valData, milestonesData] = await Promise.all([
+                milestoneApi.getValidationSetting(),
+                milestoneApi.getMilestones({})
+            ]);
+            setIsValidationEnabled(valData?.enabled ?? true);
+            setMilestones(Array.isArray(milestonesData) ? milestonesData : []);
+        } catch (err) {
+            console.error('Failed to load milestones');
+        }
+    };
 
     const fetchSemesters = async () => {
         try {
@@ -128,6 +146,67 @@ const MarksApproval = () => {
         return actualStatus;
     };
 
+    const getActiveMilestone = () => {
+        if (!Array.isArray(milestones) || milestones.length === 0) return null;
+        
+        let matches = milestones;
+        if (selectedSemester) {
+            matches = milestones.filter(m => !m.semester_id || m.semester_id === selectedSemester.value);
+        }
+        
+        const today = new Date();
+        const activeMatches = matches.filter(m => new Date(m.start_date) <= today && new Date(m.end_date) >= today);
+        const sourceMatches = activeMatches.length > 0 ? activeMatches : matches;
+        
+        const bestMatch = sourceMatches.find(m => m.name.toUpperCase().includes("EXAM") && !m.name.toUpperCase().includes("ENTRY") && !m.name.toUpperCase().includes("LOCK")) || sourceMatches[0];
+        
+        if (bestMatch) {
+            return {
+                startFull: bestMatch.start_date,
+                endFull: bestMatch.end_date,
+                name: bestMatch.name
+            };
+        }
+        return null;
+    };
+
+    const getLockMilestone = () => {
+        if (!Array.isArray(milestones) || milestones.length === 0) return null;
+        
+        let matches = milestones;
+        if (selectedSemester) {
+            matches = milestones.filter(m => !m.semester_id || m.semester_id === selectedSemester.value);
+        }
+        
+        const today = new Date();
+        const activeMatches = matches.filter(m => new Date(m.start_date) <= today && new Date(m.end_date) >= today);
+        const sourceMatches = activeMatches.length > 0 ? activeMatches : matches;
+        
+        const bestMatch = sourceMatches.find(m => m.name.toUpperCase().includes("LOCK") || m.name.toUpperCase().includes("SUBMISSION"));
+
+        if (bestMatch) {
+            return {
+                startFull: bestMatch.start_date,
+                endFull: bestMatch.end_date,
+                name: bestMatch.name
+            };
+        }
+        return null;
+    };
+
+    const formatDate = (isoStr, withTime = false) => {
+        if (!isoStr) return '';
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return isoStr.split('T')[0];
+        const dateStr = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+        if (!withTime) return dateStr;
+        const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        return `${dateStr} ${timeStr}`;
+    };
+
+    const active = getActiveMilestone();
+    const lockWindow = getLockMilestone();
+
     if (loading && workflows.length === 0) return (
         <div className="flex justify-center items-center h-64">
             <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
@@ -147,6 +226,48 @@ const MarksApproval = () => {
                     </div>
                 </div>
             </div>
+
+            {isValidationEnabled && active && (
+                <div className="flex flex-wrap items-center gap-6 px-1 bg-white/50 p-4 rounded-2xl border border-slate-100 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600">
+                            <Flag size={20} />
+                        </div>
+                        <div>
+                            <p className="text-[12px] font-black text-slate-400 tracking-widest leading-none mb-1">Active Milestone</p>
+                            <p className="text-sm font-black text-slate-900 leading-none">{active.name}</p>
+                        </div>
+                    </div>
+
+                    <div className="h-10 w-px bg-slate-200 hidden md:block" />
+
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-600">
+                            <Calendar size={20} />
+                        </div>
+                        <div>
+                            <p className="text-[12px] font-black text-slate-400 tracking-widest leading-none mb-1">Exam Round Dates</p>
+                            <p className="text-sm font-black text-indigo-600 leading-none italic">
+                                {formatDate(active.startFull)} - {formatDate(active.endFull)}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="h-10 w-px bg-slate-200 hidden md:block" />
+
+                    <div className="flex items-center gap-4 animate-in slide-in-from-right duration-500">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-600">
+                            <Clock size={20} />
+                        </div>
+                        <div>
+                            <p className="text-[12px] font-black text-indigo-600 tracking-widest leading-none mb-1 text-left">Approval Window</p>
+                            <p className="text-sm font-black text-indigo-600 leading-none italic text-left">
+                                {lockWindow ? `${formatDate(lockWindow.startFull, true)} to ${formatDate(lockWindow.endFull, true)}` : 'Open / No Deadline'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
