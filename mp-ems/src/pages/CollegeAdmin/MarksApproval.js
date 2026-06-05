@@ -122,7 +122,7 @@ const MarksApproval = () => {
 
             toast.success(`Marks status updated to ${newStatus}`);
         } catch (err) {
-            toast.error("Failed to update status");
+            toast.error(err.response?.data?.error || "Failed to update status");
             fetchWorkflows(selectedSemester ? selectedSemester.value : null); // revert
         }
     };
@@ -178,11 +178,22 @@ const MarksApproval = () => {
             matches = milestones.filter(m => !m.semester_id || m.semester_id === selectedSemester.value);
         }
         
+        const lockMatches = matches.filter(m => m.name.toUpperCase().includes("LOCK") || m.name.toUpperCase().includes("SUBMISSION"));
+        if (lockMatches.length === 0) return null;
+
         const today = new Date();
-        const activeMatches = matches.filter(m => new Date(m.start_date) <= today && new Date(m.end_date) >= today);
-        const sourceMatches = activeMatches.length > 0 ? activeMatches : matches;
+        const activeMatches = lockMatches.filter(m => new Date(m.start_date) <= today && new Date(m.end_date) >= today);
         
-        const bestMatch = sourceMatches.find(m => m.name.toUpperCase().includes("LOCK") || m.name.toUpperCase().includes("SUBMISSION"));
+        const upcomingMatches = lockMatches.filter(m => new Date(m.end_date) >= today).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+        
+        let bestMatch = null;
+        if (activeMatches.length > 0) {
+            bestMatch = activeMatches[0];
+        } else if (upcomingMatches.length > 0) {
+            bestMatch = upcomingMatches[0];
+        } else {
+            bestMatch = lockMatches.sort((a, b) => new Date(b.start_date) - new Date(a.start_date))[0];
+        }
 
         if (bestMatch) {
             return {
@@ -227,34 +238,8 @@ const MarksApproval = () => {
                 </div>
             </div>
 
-            {isValidationEnabled && active && (
+            {isValidationEnabled && (
                 <div className="flex flex-wrap items-center gap-6 px-1 bg-white/50 p-4 rounded-2xl border border-slate-100 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600">
-                            <Flag size={20} />
-                        </div>
-                        <div>
-                            <p className="text-[12px] font-black text-slate-400 tracking-widest leading-none mb-1">Active Milestone</p>
-                            <p className="text-sm font-black text-slate-900 leading-none">{active.name}</p>
-                        </div>
-                    </div>
-
-                    <div className="h-10 w-px bg-slate-200 hidden md:block" />
-
-                    <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-600">
-                            <Calendar size={20} />
-                        </div>
-                        <div>
-                            <p className="text-[12px] font-black text-slate-400 tracking-widest leading-none mb-1">Exam Round Dates</p>
-                            <p className="text-sm font-black text-indigo-600 leading-none italic">
-                                {formatDate(active.startFull)} - {formatDate(active.endFull)}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="h-10 w-px bg-slate-200 hidden md:block" />
-
                     <div className="flex items-center gap-4 animate-in slide-in-from-right duration-500">
                         <div className="w-10 h-10 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-600">
                             <Clock size={20} />
@@ -295,7 +280,7 @@ const MarksApproval = () => {
                         <thead>
                             <tr className="bg-slate-50/50 border-y border-slate-100">
                                 <th className="px-6 py-4 text-[13px] font-bold text-slate-500 ">Subject ID</th>
-                                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 ">Semester / Sec</th>
+                                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 ">Program / Semester / Sec</th>
                                 <th className="px-6 py-4 text-[13px] font-bold text-slate-500 ">Status</th>
                                 <th className="px-6 py-4 text-[13px] font-bold text-slate-500 ">Last Updated</th>
                                 <th className="px-6 py-4 text-right text-[13px] font-bold text-slate-500 ">Actions</th>
@@ -308,7 +293,7 @@ const MarksApproval = () => {
                                         {wf.subject_name || `Sub #${wf.subject_id}`}
                                     </td>
                                     <td className="px-6 py-4 text-sm text-slate-600">
-                                        {wf.semester || `Sem ${wf.semester_id}`} <span className="text-slate-400">|</span> Sec {wf.section}
+                                        {wf.program_name || 'N/A'} <span className="text-slate-400">|</span> {wf.semester || `Sem ${wf.semester_id}`} <span className="text-slate-400">|</span> Sec {wf.section}
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`text-[13px] font-bold px-3 py-1 rounded-full  ${getStatusStyle(getDisplayStatus(wf.status))}`}>

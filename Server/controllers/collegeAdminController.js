@@ -382,8 +382,9 @@ exports.getMarksWorkflowStatus = async (req, res) => {
                    ws.id,
                    ws.updated_at,
                    s.name as subject_name, sem.semester_name as semester, 
-                   mp.name as program_name, md.department_name
+                   COALESCE(mp.name, mp2.name) as program_name, md.department_name
             FROM faculty_subjects fs
+            LEFT JOIN master_teachers t ON fs.teacher_id = t.id
             LEFT JOIN marks_workflow_status ws 
                  ON ws.subject_id = fs.subject_id AND ws.section = fs.section 
                  AND ws.college_id = fs.college_id AND ws.semester_id = fs.semester_id 
@@ -393,6 +394,7 @@ exports.getMarksWorkflowStatus = async (req, res) => {
             LEFT JOIN policy_program_subjects pps 
                  ON fs.subject_id = pps.subject_id AND fs.college_id = pps.college_id AND fs.semester_id = pps.semester_id
             LEFT JOIN master_programs mp ON pps.program_id = mp.id
+            LEFT JOIN master_programs mp2 ON s.program_id = mp2.id
             LEFT JOIN master_departments md ON pps.department_id = md.id
             WHERE 1=1
         `;
@@ -414,10 +416,12 @@ exports.getMarksWorkflowStatus = async (req, res) => {
             params.push(semester_id);
         }
 
-        // HOD filtering
         if (role === 'HOD' && department_id) {
             paramCount++;
-            query += ` AND (pps.department_id = $${paramCount} OR pps.department_id IS NULL)`;
+            query += ` AND (
+                pps.department_id = $${paramCount} 
+                OR COALESCE(pps.program_id, s.program_id) IN (SELECT program_id FROM master_program_departments WHERE department_id = $${paramCount})
+            )`;
             params.push(department_id);
         }
 
@@ -446,6 +450,14 @@ exports.updateWorkflowStatus = async (req, res) => {
         }
         if ((status === 'Approved' || status === 'Rejected') && (role !== 'HOD' && role !== 'college_admin' && role !== 'admin' && role !== 'superadmin')) {
             return res.status(403).json({ error: "Unauthorized status change" });
+        }
+
+        // Roadmap Validation for Locking Marks
+        if (status === 'Locked') {
+            const validationError = await validateMilestone(db, cId, ayId, 'MARKS SUBMISSION');
+            if (validationError) {
+                return res.status(403).json({ error: validationError });
+            }
         }
 
         let finalStatus = status;
@@ -583,13 +595,14 @@ exports.getMarksTracking = async (req, res) => {
         const { college_id, semester_id } = req.query;
         let query = `
             SELECT DISTINCT mws.*, s.name as subject_name, ay.year_name as academic_year, sem.semester_name as semester, 
-                   mp.name as program_name, c.name as college_name
+                   COALESCE(mp.name, mp2.name) as program_name, c.name as college_name
             FROM marks_workflow_status mws
             LEFT JOIN master_subjects s ON mws.subject_id = s.id
             LEFT JOIN master_academic_years ay ON mws.academic_year_id = ay.id
             LEFT JOIN master_semesters sem ON mws.semester_id = sem.id
             LEFT JOIN policy_program_subjects pps ON mws.subject_id = pps.subject_id AND mws.college_id = pps.college_id AND mws.semester_id = pps.semester_id
             LEFT JOIN master_programs mp ON pps.program_id = mp.id
+            LEFT JOIN master_programs mp2 ON s.program_id = mp2.id
             LEFT JOIN colleges c ON mws.college_id = c.id
             WHERE 1=1
         `;
@@ -778,6 +791,85 @@ exports.rejectWorkflow = async (req, res) => {
     }
 };
 
+// --- Helper for Roadmap Validation ---
+const validateMilestone = async (dbClient, college_id, academic_year_id, actionType, roundName = null) => {
+    const settingsResult = await dbClient.query("SELECT setting_value FROM system_settings WHERE setting_key = 'roadmap_validation'");
+    const isValidationEnabled = settingsResult.rows.length > 0 ? settingsResult.rows[0].setting_value.enabled : true;
+
+    if (!isValidationEnabled) return null;
+
+    let academicYearStart = null, academicYearEnd = null;
+    if (academic_year_id) {
+        const ayResult = await dbClient.query("SELECT year_name FROM master_academic_years WHERE id = $1", [academic_year_id]);
+        if (ayResult.rows.length > 0) {
+            const parts = (ayResult.rows[0].year_name || '').split('-');
+            if (parts.length >= 2) {
+                academicYearStart = parseInt(parts[0]);
+                academicYearEnd = parseInt(parts[1]);
+            }
+        }
+    }
+
+    const milestonesResult = await dbClient.query(
+        "SELECT * FROM academic_milestones WHERE (college_id = $1 OR college_id IS NULL) AND delete_status = true",
+        [college_id]
+    );
+    const milestones = milestonesResult.rows;
+
+    const matchedMilestone = milestones
+        .filter(m => {
+            if (academicYearStart && m.start_date) {
+                const mYear = new Date(m.start_date).getFullYear();
+                if (mYear !== academicYearStart && mYear !== academicYearEnd) return false;
+            }
+            const mName = m.name.toUpperCase();
+            
+            if (actionType === 'MARKS ENTRY') {
+                if (!roundName) return false;
+                const rName = String(roundName).toUpperCase();
+                const rNum = rName.replace(/\D/g, "");
+                const isTopicMatch = mName.includes(rName) ||
+                    (rName.includes("IA") && rNum && (mName.includes("INTERNAL EXAM " + rNum) || mName.includes("MID-" + rNum))) ||
+                    (rName.includes("MID") && rNum && mName.includes("INTERNAL EXAM " + rNum));
+                return isTopicMatch && mName.includes("MARKS ENTRY");
+            } else if (actionType === 'MARKS SUBMISSION') {
+                return mName.includes("MARKS LOCK & SUBMISSION") || mName.includes("MARKS LOCK");
+            }
+            return false;
+        })
+        .sort((a, b) => {
+            if (!academicYearStart) return 0;
+            const aYear = new Date(a.start_date).getFullYear();
+            const bYear = new Date(b.start_date).getFullYear();
+            const aDiff = Math.abs(aYear - academicYearStart);
+            const bDiff = Math.abs(bYear - academicYearStart);
+            return aDiff - bDiff;
+        })[0] || null;
+
+    if (matchedMilestone) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (matchedMilestone.start_date) {
+            const startDate = new Date(matchedMilestone.start_date);
+            startDate.setHours(0, 0, 0, 0);
+            if (today < startDate) {
+                return `Action not allowed yet. The window for this milestone opens on ${startDate.toDateString()}.`;
+            }
+        }
+
+        if (matchedMilestone.end_date) {
+            const deadline = new Date(matchedMilestone.end_date);
+            deadline.setHours(23, 59, 59, 999);
+            if (today > deadline) {
+                return "Action is closed. The deadline for this milestone has passed.";
+            }
+        }
+    }
+
+    return null; // No error
+};
+
 exports.lockMarks = async (req, res) => {
     try {
         const { subject_id, section, college_id, semester_id, academic_year_id, studentsGraceMarks } = req.body;
@@ -795,6 +887,13 @@ exports.lockMarks = async (req, res) => {
 
         const client = await db.connect();
         try {
+            // Roadmap Milestone Validation for Locking Marks
+            const validationError = await validateMilestone(client, cId, ayId, 'MARKS SUBMISSION');
+            if (validationError) {
+                client.release();
+                return res.status(403).json({ error: validationError });
+            }
+
             await client.query('BEGIN');
 
             // 1. Check review statuses for all students in this section
