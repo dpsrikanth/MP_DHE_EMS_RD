@@ -138,10 +138,32 @@ exports.configureMarksStructure = async (req, res) => {
 exports.getMarksStructure = async (req, res) => {
     try {
         const { subject_id } = req.params;
-        const query = `SELECT * FROM internal_marks_structure WHERE subject_id = $1`;
-        const result = await db.query(query, [subject_id]);
+        const { college_id, program_id, semester_id } = req.query;
+
+        let targetCollegeId = college_id || req.user?.college_id;
+
+        let query = `SELECT * FROM internal_marks_structure WHERE subject_id = $1`;
+        let params = [parseInt(subject_id)];
+
+        if (targetCollegeId && targetCollegeId !== 'undefined' && targetCollegeId !== 'null') {
+            params.push(parseInt(targetCollegeId));
+            query += ` AND college_id = $${params.length}`;
+        }
+        if (program_id && program_id !== 'undefined' && program_id !== 'null') {
+            params.push(parseInt(program_id));
+            query += ` AND program_id = $${params.length}`;
+        }
+        if (semester_id && semester_id !== 'undefined' && semester_id !== 'null') {
+            params.push(parseInt(semester_id));
+            query += ` AND semester_id = $${params.length}`;
+        }
+
+        query += ` ORDER BY id ASC`;
+
+        const result = await db.query(query, params);
         res.status(200).json(result.rows);
     } catch (error) {
+        console.error("Error in getMarksStructure:", error);
         res.status(500).json({ error: "Failed to fetch marks structure" });
     }
 };
@@ -416,12 +438,10 @@ exports.getMarksWorkflowStatus = async (req, res) => {
             params.push(semester_id);
         }
 
+        // HOD filtering
         if (role === 'HOD' && department_id) {
             paramCount++;
-            query += ` AND (
-                pps.department_id = $${paramCount} 
-                OR COALESCE(pps.program_id, s.program_id) IN (SELECT program_id FROM master_program_departments WHERE department_id = $${paramCount})
-            )`;
+            query += ` AND (pps.department_id = $${paramCount} OR pps.department_id IS NULL)`;
             params.push(department_id);
         }
 
@@ -686,6 +706,9 @@ exports.reviewMarks = async (req, res) => {
                 smr.status as review_status, smr.comment as review_comment
             FROM students s
             JOIN student_internal_marks sim ON s.id = sim.student_id
+            JOIN faculty_subjects fs ON sim.entered_by_faculty_id = fs.teacher_id 
+                AND fs.subject_id = sim.subject_id 
+                AND fs.section = $2 
             LEFT JOIN student_marks_review smr ON sim.student_id = smr.student_id 
                 AND sim.subject_id = smr.subject_id 
                 AND smr.section = $2 
@@ -695,12 +718,37 @@ exports.reviewMarks = async (req, res) => {
             WHERE sim.subject_id = $1 
               AND s."collageName" ILIKE (SELECT CONCAT('%', REPLACE(name, '.', ''), '%') FROM colleges WHERE id = $3)
               AND s."deleteStatus" = true
+              AND (
+                  -- Student must have marks entered for this specific section context
+                  -- Either they are enrolled in this section OR have marks tied to this workflow
+                  EXISTS (
+                      SELECT 1 FROM marks_workflow_status mws
+                      WHERE mws.subject_id = $1
+                        AND mws.section = $2
+                        AND mws.college_id = $3
+                        AND mws.semester_id = $4
+                        AND mws.academic_year_id = $5
+                  )
+              )
             ORDER BY s.rollnumber ASC NULLS LAST, s.name ASC, sim.component_id ASC
         `;
 
         const result = await db.query(query, [sId, section, cId, semId, ayId]);
 
+        console.log(`[DEBUG] reviewMarks query executed. sId=${sId}, section=${section}, cId=${cId}, semId=${semId}, ayId=${ayId}`);
         console.log(`[DEBUG] Found ${result.rowCount} mark entries for review`);
+        if (result.rowCount === 0) {
+            // Let's do some manual checks to see why it's 0
+            const checkSim = await db.query("SELECT COUNT(*) FROM student_internal_marks WHERE subject_id = $1", [sId]);
+            const checkWfs = await db.query("SELECT * FROM marks_workflow_status WHERE subject_id = $1 AND section = $2 AND college_id = $3 AND semester_id = $4 AND academic_year_id = $5", [sId, section, cId, semId, ayId]);
+            const checkFs = await db.query("SELECT * FROM faculty_subjects WHERE subject_id = $1 AND section = $2 AND college_id = $3 AND semester_id = $4 AND academic_year_id = $5", [sId, section, cId, semId, ayId]);
+            console.log(`[DEBUG] Diagnostics: SIM count=${checkSim.rows[0].count}, WFS exists=${checkWfs.rowCount > 0}, FS exists=${checkFs.rowCount > 0}`);
+            if (checkFs.rowCount > 0) {
+                 console.log(`[DEBUG] FS teacher_id=${checkFs.rows[0].teacher_id}`);
+                 const checkSimTeacher = await db.query("SELECT entered_by_faculty_id, count(*) FROM student_internal_marks WHERE subject_id = $1 GROUP BY entered_by_faculty_id", [sId]);
+                 console.log(`[DEBUG] SIM entered_by_faculty_id stats:`, checkSimTeacher.rows);
+            }
+        }
 
         const studentsObj = {};
         result.rows.forEach(row => {

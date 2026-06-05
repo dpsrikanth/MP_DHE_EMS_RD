@@ -28,7 +28,9 @@ apiClient.interceptors.request.use(
         } else {
             // If there's no token, we shouldn't even try to send authenticated requests
             // Dispatch unauthorized to force a redirect to login
-            if (!config.url.includes('/login') && !config.url.includes('/refresh-token')) {
+            const publicRoutes = ['/login', '/refresh-token', '/register', '/verify-otp', '/set-password', '/forgot-password', '/reset-password'];
+            const isPublic = publicRoutes.some(route => config.url.includes(route));
+            if (!isPublic) {
                 window.dispatchEvent(new CustomEvent('unauthorized'));
                 return Promise.reject(new Error("Your session has expired. Please log in again."));
             }

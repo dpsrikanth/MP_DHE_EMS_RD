@@ -8,8 +8,8 @@ export const facultyApi = {
     },
 
     // --- Marks Structure (shared with college admin but used by faculty) ---
-    getMarksStructure: async (subjectId) => {
-        const response = await apiClient.get(`/college-admin/marks-structure/${subjectId}`);
+    getMarksStructure: async (subjectId, params = {}) => {
+        const response = await apiClient.get(`/college-admin/marks-structure/${subjectId}`, { params });
         return response.data;
     },
 

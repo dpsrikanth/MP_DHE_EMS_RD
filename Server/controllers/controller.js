@@ -5886,6 +5886,7 @@ const getMasterDepartments = async (req, res) => {
   try {
     const { role } = req.user || {};
     const university_id = req.user?.university_id || req.user?.universityId;
+    const college_id = req.user?.college_id || req.user?.collegeId;
     const uId = (role === 'superadmin' && req.query.universityId) ? req.query.universityId : (role === 'university_admin' ? university_id : null);
 
     let query = `SELECT md.id, md.department_name, md.department_code, md.college_id, md.status
@@ -5897,6 +5898,9 @@ const getMasterDepartments = async (req, res) => {
     if (uId) {
       query += " AND (c.university_id = $1 OR md.college_id IS NULL)";
       params.push(uId);
+    } else if (role === 'college_admin' && college_id) {
+      query += " AND (c.university_id = (SELECT university_id FROM colleges WHERE id = $1) OR md.college_id IS NULL)";
+      params.push(college_id);
     }
 
     query += " ORDER BY md.id ASC";
@@ -6053,9 +6057,25 @@ const updateMasterDepartment = async (req, res) => {
   try {
     const { id } = req.params;
     const { department_name, department_code, status } = req.body;
+    const { role } = req.user || {};
+    const college_id = req.user?.college_id || req.user?.collegeId;
 
     if (!department_name) {
       return res.status(400).json({ message: "Department name is required" });
+    }
+
+    // Check ownership if college admin
+    if (role === 'college_admin' && college_id) {
+      const checkRes = await client.query(
+        "SELECT college_id FROM master_departments WHERE id = $1",
+        [id]
+      );
+      if (checkRes.rows.length === 0) {
+        return res.status(404).json({ message: "Master department not found" });
+      }
+      if (checkRes.rows[0].college_id !== college_id) {
+        return res.status(403).json({ message: "Access denied. You can only update departments in your own college." });
+      }
     }
 
     const result = await client.query(
@@ -6080,6 +6100,23 @@ const updateMasterDepartment = async (req, res) => {
 const deleteMasterDepartment = async (req, res) => {
   try {
     const { id } = req.params;
+    const { role } = req.user || {};
+    const college_id = req.user?.college_id || req.user?.collegeId;
+
+    // Check ownership if college admin
+    if (role === 'college_admin' && college_id) {
+      const checkRes = await client.query(
+        "SELECT college_id FROM master_departments WHERE id = $1",
+        [id]
+      );
+      if (checkRes.rows.length === 0) {
+        return res.status(404).json({ success: false, message: "Master department not found" });
+      }
+      if (checkRes.rows[0].college_id !== college_id) {
+        return res.status(403).json({ message: "Access denied. You can only delete departments in your own college." });
+      }
+    }
+
     const result = await client.query(
       `UPDATE master_departments 
        SET status = 'Inactive', updated_at = CURRENT_TIMESTAMP 

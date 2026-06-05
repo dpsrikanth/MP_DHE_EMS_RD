@@ -98,6 +98,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           type: 'parent',
           icon: <GraduationCap size={20} />,
           children: [
+            { id: 8, name: 'Departments', path: '/departments', icon: <Building2 size={18} /> },
             { id: 6, name: 'Faculty', path: '/teachers', icon: <Users size={18} /> },
             { id: 7, name: 'Students', path: '/students', icon: <UserCircle size={18} /> },
             { id: 31, name: 'Student Search', path: '/university/student-search', icon: <Search size={18} /> },

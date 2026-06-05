@@ -371,19 +371,13 @@ const StudentResults = () => {
       </button>
     </div>
   ) : (
-    <div className="flex flex-col items-end gap-1">
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full shadow-sm">
-        <CheckCircle2 size={10} />
-        Provisional
-      </span>
-      <button
-        onClick={() => handleOpenDiscrepancyModal(sub)}
-        className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-extrabold text-violet-700 hover:text-white bg-violet-50 hover:bg-violet-600 border border-violet-100 hover:border-violet-600 rounded-lg transition-all duration-200 shadow-sm"
-      >
-        <MessageSquare size={12} />
-        Report Issue
-      </button>
-    </div>
+    <button
+      onClick={() => handleOpenDiscrepancyModal(sub)}
+      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-extrabold text-violet-700 hover:text-white bg-violet-50 hover:bg-violet-600 border border-violet-100 hover:border-violet-600 rounded-lg transition-all duration-200 shadow-sm"
+    >
+      <MessageSquare size={12} />
+      Request Correction
+    </button>
   )}
 </div>
                               </div>

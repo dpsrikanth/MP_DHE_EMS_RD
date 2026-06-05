@@ -50,9 +50,12 @@ const getMasters = async (req, res) => {
       `, [user.college_id]);
 
       departments = await client.query(`
-        SELECT id, department_name as name 
-        FROM master_departments 
-        WHERE college_id = $1 AND status = 'Active' ORDER BY id
+        SELECT md.id, md.department_name as name 
+        FROM master_departments md
+        LEFT JOIN colleges c ON md.college_id = c.id
+        WHERE (c.university_id = (SELECT university_id FROM colleges WHERE id = $1) OR md.college_id IS NULL)
+          AND md.status = 'Active' 
+        ORDER BY md.id
       `, [user.college_id]);
     } else if (user && user.role === 'university_admin' && user.university_id) {
       policies = await client.query("SELECT id, name FROM master_policies ORDER BY id");

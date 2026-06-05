@@ -28,8 +28,8 @@ export const collegeAdminApi = {
     /**
      * Get marks structure for a subject
      */
-    getMarksStructure: async (subjectId) => {
-        const response = await apiClient.get(`/college-admin/marks-structure/${subjectId}`);
+    getMarksStructure: async (subjectId, params = {}) => {
+        const response = await apiClient.get(`/college-admin/marks-structure/${subjectId}`, { params });
         return response.data;
     },
 

@@ -66,14 +66,21 @@ const MarksEntry = () => {
         try {
             setLoading(true);
             // 1. Fetch Marks Structure for this subject
-            const structureData = await facultyApi.getMarksStructure(assignment.subject_id);
-            setMarksStructure(structureData || []);
-    
-            // 2. Fetch Students for this subject
-            const studentsData = await facultyApi.getStudentsForSubject({
+            const structureData = await facultyApi.getMarksStructure(assignment.subject_id, {
                 college_id: assignment.college_id,
                 semester_id: assignment.semester_id,
                 program_id: assignment.program_id
+            });
+            setMarksStructure(structureData || []);
+    
+            // 2. Fetch Students for this subject (filter by section to avoid cross-section marks contamination)
+            const studentsData = await facultyApi.getStudentsForSubject({
+                college_id: assignment.college_id,
+                semester_id: assignment.semester_id,
+                program_id: assignment.program_id,
+                academic_year_id: assignment.academic_year_id,
+                subject_id: assignment.subject_id,
+                section: assignment.section
             });
             setStudents(studentsData || []);
     

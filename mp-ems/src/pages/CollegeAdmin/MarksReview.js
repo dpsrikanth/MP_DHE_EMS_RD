@@ -64,7 +64,10 @@ const MarksReview = () => {
             const collegeId = user.college_id;
 
             // 1. Fetch Marks Structure 
-            const structData = await collegeAdminApi.getMarksStructure(subjectId);
+            const structData = await collegeAdminApi.getMarksStructure(subjectId, {
+                college_id: collegeId,
+                semester_id: semesterId
+            });
             setMarksStructure(structData || []);
 
             // 2. Fetch Review Marks (Raw data grouped by student)
