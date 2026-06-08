@@ -6,6 +6,7 @@ import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
 import { studentApi } from '../../api/studentApi';
 import { masterDataApi } from '../../api/masterDataApi';
+import { milestoneApi } from '../../api/milestoneApi';
 
 const StudentExams = () => {
   const [exams, setExams] = useState([]);
@@ -14,6 +15,8 @@ const StudentExams = () => {
   const [selectedSemester, setSelectedSemester] = useState('');
   const [availableSemesters, setAvailableSemesters] = useState([]);
   const [overallAttendance, setOverallAttendance] = useState(100);
+  const [milestones, setMilestones] = useState([]);
+  const [isValidationEnabled, setIsValidationEnabled] = useState(true);
 
   useEffect(() => {
     const init = async () => {
@@ -40,7 +43,21 @@ const StudentExams = () => {
       }
     };
     init();
+    fetchMilestones();
   }, []);
+
+  const fetchMilestones = async () => {
+    try {
+      const [valData, milestonesData] = await Promise.all([
+        milestoneApi.getValidationSetting(),
+        milestoneApi.getMilestones({})
+      ]);
+      setIsValidationEnabled(valData?.enabled ?? true);
+      setMilestones(Array.isArray(milestonesData) ? milestonesData : []);
+    } catch (err) {
+      console.error('Failed to load milestones');
+    }
+  };
 
   useEffect(() => {
     fetchExams();
@@ -78,6 +95,19 @@ const StudentExams = () => {
   };
 
   const handleRegister = async (examIds) => {
+    if (isValidationEnabled) {
+      const regWindow = getRegistrationMilestone();
+      if (regWindow) {
+        const today = new Date();
+        const startDate = new Date(regWindow.startFull);
+        const endDate = new Date(regWindow.endFull);
+        if (today < startDate || today > endDate) {
+          toast.error(`Validation Error: Registration window is not active. Scheduled from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`);
+          return;
+        }
+      }
+    }
+
     try {
       await studentApi.registerExams({ exam_ids: examIds });
 
@@ -128,6 +158,66 @@ const StudentExams = () => {
     return Object.values(groups);
   }, [filteredExams]);
 
+  const getRegistrationMilestone = () => {
+    if (!Array.isArray(milestones) || milestones.length === 0) return null;
+    
+    let matches = milestones;
+    
+    // Find an external exam to extract precise IDs
+    const externalExamGroup = examGroups.find(g => g.exam_type !== 1);
+    if (externalExamGroup && externalExamGroup.subjects.length > 0) {
+      const exam = externalExamGroup.subjects[0];
+      if (exam.semester_id) {
+        matches = matches.filter(m => !m.semester_id || parseInt(m.semester_id) === parseInt(exam.semester_id));
+      }
+      if (exam.program_id) {
+        matches = matches.filter(m => !m.program_id || parseInt(m.program_id) === parseInt(exam.program_id));
+      }
+      if (exam.academic_year_id) {
+        matches = matches.filter(m => !m.academic_year_id || parseInt(m.academic_year_id) === parseInt(exam.academic_year_id));
+      }
+    } else if (selectedSemester && availableSemesters.length > 0) {
+      const semObj = availableSemesters.find(s => s.semester_name === selectedSemester);
+      if (semObj) {
+        matches = matches.filter(m => !m.semester_id || parseInt(m.semester_id) === parseInt(semObj.id));
+      }
+    }
+    
+    const today = new Date();
+    
+    // Prioritize "ENROLL" milestones since there are multiple overlapping ones
+    let namedMatches = matches.filter(m => m.name.toUpperCase().includes("ENROLL"));
+    if (namedMatches.length === 0) {
+        namedMatches = matches.filter(m => {
+            const name = m.name.toUpperCase();
+            return name.includes("REGISTRATION") || name.includes("EXTERNAL EXAM");
+        });
+    }
+
+    let bestMatch = namedMatches.find(m => new Date(m.start_date) <= today && new Date(m.end_date) >= today);
+    
+    if (!bestMatch && namedMatches.length > 0) {
+        const futureMatches = namedMatches.filter(m => new Date(m.start_date) > today).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+        if (futureMatches.length > 0) {
+            bestMatch = futureMatches[0];
+        } else {
+            const pastMatches = namedMatches.sort((a, b) => new Date(b.end_date) - new Date(a.end_date));
+            bestMatch = pastMatches[0];
+        }
+    }
+
+    if (bestMatch) {
+        return {
+            startFull: bestMatch.start_date,
+            endFull: bestMatch.end_date,
+            name: bestMatch.name
+        };
+    }
+    return null;
+  };
+
+  const regWindow = getRegistrationMilestone();
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -167,6 +257,22 @@ const StudentExams = () => {
           </div>
         </div>
       </div>
+
+      {isValidationEnabled && regWindow && (
+          <div className="flex flex-wrap items-center gap-6 px-1 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500 mb-8">
+              <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                      <Clock size={20} />
+                  </div>
+                  <div>
+                      <p className="text-[12px] font-black text-indigo-600 tracking-widest leading-none mb-1 text-left">Registration Window</p>
+                      <p className="text-sm font-bold text-indigo-600 leading-none text-left">
+                          {formatDate(regWindow.startFull, true)} to {formatDate(regWindow.endFull, true)}
+                      </p>
+                  </div>
+              </div>
+          </div>
+      )}
 
       {examGroups.length === 0 ? (
         <div className="bg-white rounded-[2rem] p-12 text-center border-2 border-dashed border-slate-200">

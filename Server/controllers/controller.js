@@ -6422,6 +6422,8 @@ const getStudentExams = async (req, res) => {
         e.name as exam_name, 
         e.exam_type,
         e.semester_id,
+        e.program_id,
+        e.academic_year_id,
         ms.semester_name,
         COALESCE(c.name, 'University-wide') as college_name,
         et.type_name as exam_type_name,
