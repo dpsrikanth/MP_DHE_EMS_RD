@@ -16,22 +16,25 @@ const UsersForm = () => {
   const [roles, setRoles] = useState([]);
   const [universities, setUniversities] = useState([]);
   const [colleges, setColleges] = useState([]);
+  const [departments, setDepartments] = useState([]);
 
   const [form, setForm] = useState({ 
     name: '', email: '', password: '', role_id: '', 
-    university_id: '', college_id: '', is_active: true 
+    university_id: '', college_id: '', department_id: '', is_active: true 
   });
 
   const fetchMasterData = useCallback(async () => {
     try {
-      const [rRes, uRes, cRes] = await Promise.all([
+      const [rRes, uRes, cRes, dRes] = await Promise.all([
         masterDataApi.getRoles(),
         masterDataApi.getUniversities(),
-        masterDataApi.getColleges()
+        masterDataApi.getColleges(),
+        masterDataApi.getDepartments()
       ]);
       if (rRes) setRoles(rRes);
       if (uRes) setUniversities(uRes);
       if (cRes) setColleges(cRes);
+      if (dRes) setDepartments(dRes);
     } catch (err) {
       console.error("Error fetching masters:", err);
     }
@@ -46,6 +49,7 @@ const UsersForm = () => {
           name: user.name || '', email: user.email || '', password: '',
           role_id: user.role_id || '', university_id: user.university_id || '', 
           college_id: user.college_id || '', 
+          department_id: user.department_id || '',
           is_active: user.is_active === undefined ? true : user.is_active 
         });
       } else {
@@ -86,12 +90,20 @@ const UsersForm = () => {
       setSaving(false);
     }
   };
-
   if (loading) return (
     <div className="form-loading">
       <div className="form-loading__spinner"></div>
       <p className="form-loading__text">Loading User Profile...</p>
     </div>
+  );
+
+  const selectedRole = roles.find(r => r.id?.toString() === form.role_id?.toString());
+  const showDepartment = selectedRole && (
+    selectedRole.role_name === 'HOD' || 
+    selectedRole.role_name === 'Faculty' || 
+    selectedRole.role_name === 'Teacher' ||
+    selectedRole.role_name === 'PAPER_SETTER' ||
+    selectedRole.role_name === 'Paper Setter'
   );
 
   return (
@@ -189,12 +201,22 @@ const UsersForm = () => {
                   </div>
                   <div className="form-field">
                     <label className="form-label">Affiliated College (Optional)</label>
-                    <select value={form.college_id} onChange={e => setForm({...form, college_id: e.target.value})} className="form-select">
+                    <select value={form.college_id} onChange={e => setForm({...form, college_id: e.target.value, department_id: ''})} className="form-select">
                       <option value="">None / Specific College Placement</option>
                       {colleges.filter(c => !form.university_id || c.university_id.toString() === form.university_id.toString()).map(c => <option key={c.id} value={c.id}>{c.college_name}</option>)}
                     </select>
                     <p className="text-[12px] text-slate-400 font-bold  tracking-widest mt-2">Narrows access to institutional data</p>
                   </div>
+                  {showDepartment && (
+                    <div className="form-field">
+                      <label className="form-label">Affiliated Department (Optional)</label>
+                      <select value={form.department_id} onChange={e => setForm({...form, department_id: e.target.value})} className="form-select">
+                        <option value="">None / Specific Department Placement</option>
+                        {departments.filter(d => !form.college_id || d.college_id.toString() === form.college_id.toString()).map(d => <option key={d.id} value={d.id}>{d.department_name || d.name}</option>)}
+                      </select>
+                      <p className="text-[12px] text-slate-400 font-bold tracking-widest mt-2">Narrows access to department data</p>
+                    </div>
+                  )}
                 </div>
               </div>
 

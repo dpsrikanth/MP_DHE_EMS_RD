@@ -229,6 +229,7 @@ const getUsers = async (req, res) => {
     const university_id = req.user?.university_id || req.user?.universityId;
     let query = `
       SELECT DISTINCT u.id, u.name, u.email, u.role_id, u.is_active, u.created_at, 
+             u.college_id, u.university_id, mt.department_id as department_id,
              r.role_name, 
              COALESCE(c_mt.name, c.name, c_t.name, c_s.name) as college_name,
              COALESCE(univ_mt.name, univ.name, univ_t.name, univ_s.name) as university_name
@@ -270,7 +271,7 @@ const getUsers = async (req, res) => {
 
 const createUser = async (req, res) => {
   try {
-    const { name, email, password, role_id, college_id, university_id } = req.body;
+    const { name, email, password, role_id, college_id, university_id, department_id } = req.body;
     const { role: requesterRole } = req.user || {};
     const requesterUnivId = req.user?.university_id || req.user?.universityId;
 
@@ -297,6 +298,23 @@ const createUser = async (req, res) => {
       "INSERT INTO public.users (name, email, password_hash, role_id, college_id, university_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email",
       [name, email, hashedPassword, role_id, college_id || null, university_id || null]
     );
+    const newUserId = result.rows[0].id;
+
+    // Check if the assigned role is HOD or Faculty/Teacher/Paper Setter to sync with master_teachers
+    const roleResult = await client.query("SELECT role_name FROM public.roles WHERE id = $1", [role_id]);
+    if (roleResult.rows.length > 0) {
+      const roleName = roleResult.rows[0].role_name;
+      if (['HOD', 'Faculty', 'Teacher', 'PAPER_SETTER', 'Paper Setter'].includes(roleName)) {
+        const designation_id = roleName === 'HOD' ? 19 : 20; // HOD (19), Professor (20)
+        const finalEmployeeCode = `EMP-${Date.now()}`;
+        await client.query(
+          `INSERT INTO public.master_teachers (user_id, employee_code, college_id, department_id, designation_id, name, email, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active')`,
+          [newUserId, finalEmployeeCode, college_id || null, department_id || null, designation_id, name, email]
+        );
+      }
+    }
+
     res.status(201).json({ message: "User created successfully", data: result.rows[0] });
   } catch (error) {
     console.error("Create user error:", error);
@@ -307,7 +325,7 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, password, role_id, college_id, university_id, is_active } = req.body;
+    const { name, email, password, role_id, college_id, university_id, department_id, is_active } = req.body;
     const { role: requesterRole } = req.user || {};
     const requesterUnivId = req.user?.university_id || req.user?.universityId;
 
@@ -348,6 +366,36 @@ const updateUser = async (req, res) => {
         [name, email, role_id || null, college_id || null, university_id || null, is_active, id]
       );
     }
+
+    // Sync with master_teachers if the role is HOD or Faculty/Teacher
+    if (role_id) {
+      const roleResult = await client.query("SELECT role_name FROM public.roles WHERE id = $1", [role_id]);
+      if (roleResult.rows.length > 0) {
+        const roleName = roleResult.rows[0].role_name;
+        if (['HOD', 'Faculty', 'Teacher', 'PAPER_SETTER', 'Paper Setter'].includes(roleName)) {
+          const designation_id = roleName === 'HOD' ? 19 : 20; // HOD (19), Professor (20)
+          
+          // Check if record exists in master_teachers
+          const teacherCheck = await client.query("SELECT id FROM public.master_teachers WHERE user_id = $1", [id]);
+          if (teacherCheck.rows.length > 0) {
+            await client.query(
+              `UPDATE public.master_teachers 
+               SET college_id = $1, department_id = $2, designation_id = $3, name = $4, email = $5
+               WHERE user_id = $6`,
+              [college_id || null, department_id || null, designation_id, name, email, id]
+            );
+          } else {
+            const finalEmployeeCode = `EMP-${Date.now()}`;
+            await client.query(
+              `INSERT INTO public.master_teachers (user_id, employee_code, college_id, department_id, designation_id, name, email, status)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active')`,
+              [id, finalEmployeeCode, college_id || null, department_id || null, designation_id, name, email]
+            );
+          }
+        }
+      }
+    }
+
     res.json({ message: "User updated successfully" });
   } catch (error) {
     console.error("Update user error:", error);
