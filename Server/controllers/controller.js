@@ -3916,10 +3916,10 @@ const getStudentAttendance = async (req, res) => {
     const collegeId = colRes.rows[0].id;
     const programId = progRes.rows[0].id;
 
-    // Resolve department ID from student's department code
+    // Resolve department ID from student's department code or name
     let departmentId = null;
     if (deptName) {
-      const deptRes = await client.query('SELECT id FROM master_departments WHERE department_code = $1 AND college_id = $2', [deptName, collegeId]);
+      const deptRes = await client.query('SELECT id FROM master_departments WHERE (department_code ILIKE $1 OR department_name ILIKE $1) AND college_id = $2', [deptName, collegeId]);
       if (deptRes.rows.length > 0) {
         departmentId = deptRes.rows[0].id;
       }
@@ -3964,7 +3964,7 @@ const getStudentAttendance = async (req, res) => {
         AND ($5::integer IS NULL OR pps.department_id = $5 OR pps.department_id IS NULL)
       LEFT JOIN total_sessions ts ON sub.id = ts.subject_id
       LEFT JOIN student_present sp ON sub.id = sp.subject_id
-      WHERE pps.subject_id IS NOT NULL OR sp.subject_id IS NOT NULL
+      WHERE pps.subject_id IS NOT NULL OR (sub.program_id = $4 AND sub.semester_id = $2)
       ORDER BY sub.name
     `;
 
@@ -6484,7 +6484,7 @@ const registerForExam = async (req, res) => {
     if (examType === 2) {
       let departmentId = null;
       if (deptName && collegeId) {
-        const deptRes = await client.query('SELECT id FROM master_departments WHERE department_code = $1 AND college_id = $2', [deptName, collegeId]);
+        const deptRes = await client.query('SELECT id FROM master_departments WHERE (department_code ILIKE $1 OR department_name ILIKE $1) AND college_id = $2', [deptName, collegeId]);
         if (deptRes.rows.length > 0) {
           departmentId = deptRes.rows[0].id;
         }
