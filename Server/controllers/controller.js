@@ -1789,6 +1789,179 @@ const getExams = async (req, res) => {
   }
 };
 
+const validateExternalExamRoadmap = async ({
+  college_id,
+  semester_id,
+  program_id,
+  academic_year_id,
+  exam_date,
+  subjects,
+}) => {
+  // Check if roadmap_validation is enabled in system_settings
+  const settingsResult = await client.query("SELECT setting_value FROM system_settings WHERE setting_key = 'roadmap_validation'");
+  const isValidationEnabled = settingsResult.rows.length > 0 ? settingsResult.rows[0].setting_value.enabled : true;
+
+  if (!isValidationEnabled) return null;
+
+  if (!semester_id || !academic_year_id) {
+    return null; // Cannot validate without context
+  }
+
+  // Collect all unique exam dates from the request parameters
+  const allDates = [];
+  if (exam_date) allDates.push(exam_date);
+  if (Array.isArray(subjects)) {
+    subjects.forEach(s => {
+      if (s.exam_date) allDates.push(s.exam_date);
+    });
+  }
+
+  if (allDates.length === 0) return null;
+
+  // Fetch matched academic milestones
+  const milestonesResult = await client.query(
+    `SELECT * FROM academic_milestones 
+     WHERE (college_id = $1 OR college_id IS NULL) 
+       AND semester_id = $2 
+       AND (program_id = $3 OR program_id IS NULL)
+       AND academic_year_id = $4 
+       AND delete_status = true`,
+    [college_id || null, semester_id, program_id || null, academic_year_id]
+  );
+
+  const milestones = milestonesResult.rows;
+
+  const matchedMilestones = milestones.filter(m => {
+    const mName = m.name.toUpperCase();
+    return mName.includes("EXTERNAL") &&
+           mName.includes("EXAM") &&
+           !mName.includes("REGISTRATION") &&
+           !mName.includes("FACULTY") &&
+           !mName.includes("ENROLL");
+  });
+
+  if (matchedMilestones.length === 0) {
+    return {
+      status: 403,
+      error: "Institutional roadmap milestone for External Exams is not configured for this academic context. Please define the roadmap milestone first."
+    };
+  }
+
+  // Sort matched milestones: prefer program_id matching program_id, then college_id matching college_id
+  const milestone = matchedMilestones.sort((a, b) => {
+    if (a.program_id === program_id && b.program_id !== program_id) return -1;
+    if (a.program_id !== program_id && b.program_id === program_id) return 1;
+    if (a.college_id === college_id && b.college_id !== college_id) return -1;
+    if (a.college_id !== college_id && b.college_id === college_id) return 1;
+    return 0;
+  })[0];
+
+  const matchedSchedulingMilestones = milestones.filter(m => {
+    const mName = m.name.toUpperCase();
+    return mName.includes("EXTERNAL") &&
+           (mName.includes("REGISTRATION") || mName.includes("SCHEDULE") || mName.includes("ASSIGNMENT"));
+  });
+
+  const schedulingMilestone = matchedSchedulingMilestones.sort((a, b) => {
+    const aName = a.name.toUpperCase();
+    const bName = b.name.toUpperCase();
+    if (aName.includes("REGISTRATION") && !bName.includes("REGISTRATION")) return -1;
+    if (!aName.includes("REGISTRATION") && bName.includes("REGISTRATION")) return 1;
+    if (aName.includes("SCHEDULE") && !bName.includes("SCHEDULE")) return -1;
+    if (!aName.includes("SCHEDULE") && bName.includes("SCHEDULE")) return 1;
+    if (a.program_id === program_id && b.program_id !== program_id) return -1;
+    if (a.program_id !== program_id && b.program_id === program_id) return 1;
+    return 0;
+  })[0] || null;
+
+  const parseLocalDate = (dateVal) => {
+    if (!dateVal) return null;
+    let year, month, day;
+    if (dateVal instanceof Date) {
+      year = dateVal.getFullYear();
+      month = dateVal.getMonth();
+      day = dateVal.getDate();
+    } else {
+      if (typeof dateVal === 'string' && dateVal.includes('T')) {
+        const d = new Date(dateVal);
+        if (!isNaN(d.getTime())) {
+          year = d.getFullYear();
+          month = d.getMonth();
+          day = d.getDate();
+          return new Date(year, month, day);
+        }
+      }
+      const parts = String(dateVal).split('T')[0].split('-');
+      if (parts.length === 3) {
+        year = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10) - 1;
+        day = parseInt(parts[2], 10);
+      } else {
+        const d = new Date(dateVal);
+        year = d.getFullYear();
+        month = d.getMonth();
+        day = d.getDate();
+      }
+    }
+    return new Date(year, month, day);
+  };
+
+  // 1. Validate Scheduling Window (checking today's date against milestone timeline)
+  if (schedulingMilestone) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const sStart = schedulingMilestone.start_date ? parseLocalDate(schedulingMilestone.start_date) : null;
+    const sEnd = schedulingMilestone.end_date ? parseLocalDate(schedulingMilestone.end_date) : null;
+
+    if (sStart) sStart.setHours(0, 0, 0, 0);
+    if (sEnd) sEnd.setHours(23, 59, 59, 999);
+
+    if (sStart && today < sStart) {
+      return {
+        status: 403,
+        error: "Scheduling for this exam has not started yet. Please wait until the scheduling window opens."
+      };
+    }
+    if (sEnd && today > sEnd) {
+      return {
+        status: 403,
+        error: "Scheduling is closed for this exam. Deadline passed."
+      };
+    }
+  }
+
+  // 2. Validate Allowed Exam Dates
+  const mStart = milestone.start_date ? parseLocalDate(milestone.start_date) : null;
+  const mEnd = milestone.end_date ? parseLocalDate(milestone.end_date) : null;
+
+  if (mStart) mStart.setHours(0, 0, 0, 0);
+  if (mEnd) mEnd.setHours(23, 59, 59, 999);
+
+  for (const dStr of allDates) {
+    const examDate = parseLocalDate(dStr);
+    if (!examDate) continue;
+    examDate.setHours(12, 0, 0, 0);
+
+    if (mStart && examDate < mStart) {
+      const startFormatted = mStart.getFullYear() + '-' + String(mStart.getMonth() + 1).padStart(2, '0') + '-' + String(mStart.getDate()).padStart(2, '0');
+      return {
+        status: 403,
+        error: `Exam date (${dStr}) is scheduled before the Institutional Roadmap start date (${startFormatted}) for External Exams.`
+      };
+    }
+    if (mEnd && examDate > mEnd) {
+      const endFormatted = mEnd.getFullYear() + '-' + String(mEnd.getMonth() + 1).padStart(2, '0') + '-' + String(mEnd.getDate()).padStart(2, '0');
+      return {
+        status: 403,
+        error: `Exam date (${dStr}) is scheduled after the Institutional Roadmap deadline (${endFormatted}) for External Exams.`
+      };
+    }
+  }
+
+  return null;
+};
+
 const createExam = async (req, res) => {
   try {
     const { role, college_id: userCollegeId, department_id: userDepartmentId } = req.user;
@@ -1805,6 +1978,21 @@ const createExam = async (req, res) => {
       department_id = userDepartmentId;
     } else if (role === 'university_admin') {
       university_id = req.user?.university_id || req.user?.universityId;
+    }
+
+    // --- Roadmap Milestone Validation for External Exams ---
+    if (Number(exam_type) === 2) {
+      const validationError = await validateExternalExamRoadmap({
+        college_id,
+        semester_id,
+        program_id,
+        academic_year_id,
+        exam_date,
+        subjects
+      });
+      if (validationError) {
+        return res.status(validationError.status).json({ message: validationError.error, error: validationError.error });
+      }
     }
 
     // --- Sunday & Duplicate Validation ---
@@ -1946,6 +2134,27 @@ const updateExam = async (req, res) => {
       }
       college_id = userCollegeId;
       department_id = userDepartmentId;
+    }
+
+    // --- Roadmap Milestone Validation for External Exams ---
+    const finalExamType = exam_type !== undefined ? exam_type : original.exam_type;
+    const finalSemesterId = semester_id !== undefined ? semester_id : original.semester_id;
+    const finalProgramId = program_id !== undefined ? program_id : original.program_id;
+    const finalAcademicYearId = academic_year_id !== undefined ? academic_year_id : original.academic_year_id;
+    const finalCollegeId = college_id !== undefined ? college_id : original.college_id;
+
+    if (Number(finalExamType) === 2) {
+      const validationError = await validateExternalExamRoadmap({
+        college_id: finalCollegeId,
+        semester_id: finalSemesterId,
+        program_id: finalProgramId,
+        academic_year_id: finalAcademicYearId,
+        exam_date: exam_date !== undefined ? exam_date : (subjects ? null : original.exam_date),
+        subjects
+      });
+      if (validationError) {
+        return res.status(validationError.status).json({ message: validationError.error, error: validationError.error });
+      }
     }
 
     // --- Sunday & Duplicate Validation ---

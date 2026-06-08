@@ -2,10 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
 import authUtils from "../utils/authUtils";
-import { FileText, Plus, X, Check, Calendar, Book, Layers, Hash, AlertCircle, Globe, Users, BookOpen, Clock, ArrowLeft } from "lucide-react";
+import { FileText, Plus, X, Check, Calendar, Book, Layers, Hash, AlertCircle, Globe, Users, BookOpen, Clock, ArrowLeft, Flag } from "lucide-react";
 import '../styles/FormPage.css';
 import { examApi } from '../api/examApi';
 import { masterDataApi } from '../api/masterDataApi';
+import { milestoneApi } from '../api/milestoneApi';
 
 
 const ExamsForm = () => {
@@ -27,6 +28,9 @@ const ExamsForm = () => {
   const [subjects, setSubjects] = useState([]);
   const [subjectMappings, setSubjectMappings] = useState([]);
   const [availableComponents, setAvailableComponents] = useState([]);
+  const [activeExternalMilestone, setActiveExternalMilestone] = useState(null);
+  const [schedulingExternalMilestone, setSchedulingExternalMilestone] = useState(null);
+  const [isValidationEnabled, setIsValidationEnabled] = useState(true);
 
   const [formData, setFormData] = useState({
     name: '', semester_id: '', college_id: '', university_id: '',
@@ -37,6 +41,108 @@ const ExamsForm = () => {
   });
 
   useEffect(() => { fetchDropdownData().then(() => { if (editingId) fetchExamDataToEdit(); }); }, [editingId]);
+
+  useEffect(() => {
+    const fetchValidation = async () => {
+      try {
+        const data = await milestoneApi.getValidationSetting();
+        setIsValidationEnabled(data.enabled);
+      } catch (err) {
+        console.error("Failed to fetch roadmap validation setting:", err);
+      }
+    };
+    fetchValidation();
+  }, []);
+
+  useEffect(() => {
+    const fetchRoadmapMilestone = async () => {
+      const { exam_type, semester_id, program_id, academic_year_id, college_id } = formData;
+      if (Number(exam_type) !== 2 || !semester_id || !program_id || !academic_year_id) {
+        setActiveExternalMilestone(null);
+        setSchedulingExternalMilestone(null);
+        return;
+      }
+
+      try {
+        const params = {
+          semester_id,
+          program_id,
+          academic_year_id,
+        };
+        const resolvedCollegeId = college_id === 'university_wide' ? '' : college_id;
+        if (resolvedCollegeId) {
+          params.college_id = resolvedCollegeId;
+        }
+
+        const data = await milestoneApi.getMilestones(params);
+        if (Array.isArray(data)) {
+          // Filter to match the External Exam milestone
+          const matched = data.filter(m => {
+            const mName = m.name.toUpperCase();
+            return mName.includes("EXTERNAL") &&
+                   mName.includes("EXAM") &&
+                   !mName.includes("REGISTRATION") &&
+                   !mName.includes("FACULTY") &&
+                   !mName.includes("ENROLL");
+          });
+
+          // Sort: prefer program_id matching program_id, then college_id matching college_id
+          const selected = matched.sort((a, b) => {
+            if (a.program_id === parseInt(program_id) && b.program_id !== parseInt(program_id)) return -1;
+            if (a.program_id !== parseInt(program_id) && b.program_id === parseInt(program_id)) return 1;
+            if (a.college_id === parseInt(resolvedCollegeId) && b.college_id !== parseInt(resolvedCollegeId)) return -1;
+            if (a.college_id !== parseInt(resolvedCollegeId) && b.college_id === parseInt(resolvedCollegeId)) return 1;
+            return 0;
+          })[0] || null;
+
+          setActiveExternalMilestone(selected);
+
+          // Filter to match the External Exam scheduling window (Registration / Schedule / Assignment)
+          const matchedSched = data.filter(m => {
+            const mName = m.name.toUpperCase();
+            return mName.includes("EXTERNAL") &&
+                   (mName.includes("REGISTRATION") || mName.includes("SCHEDULE") || mName.includes("ASSIGNMENT"));
+          });
+
+          const selectedSched = matchedSched.sort((a, b) => {
+            const aName = a.name.toUpperCase();
+            const bName = b.name.toUpperCase();
+            if (aName.includes("REGISTRATION") && !bName.includes("REGISTRATION")) return -1;
+            if (!aName.includes("REGISTRATION") && bName.includes("REGISTRATION")) return 1;
+            if (aName.includes("SCHEDULE") && !bName.includes("SCHEDULE")) return -1;
+            if (!aName.includes("SCHEDULE") && bName.includes("SCHEDULE")) return 1;
+            if (a.program_id === parseInt(program_id) && b.program_id !== parseInt(program_id)) return -1;
+            if (a.program_id !== parseInt(program_id) && b.program_id === parseInt(program_id)) return 1;
+            return 0;
+          })[0] || null;
+
+          setSchedulingExternalMilestone(selectedSched);
+        }
+      } catch (err) {
+        console.error("Failed to fetch roadmap milestone:", err);
+        setActiveExternalMilestone(null);
+        setSchedulingExternalMilestone(null);
+      }
+    };
+
+    fetchRoadmapMilestone();
+  }, [formData.exam_type, formData.semester_id, formData.program_id, formData.academic_year_id, formData.college_id]);
+
+  const formatDateString = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) {
+      const parts = dateStr.split('T')[0].split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+      return dateStr;
+    }
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
 
   const fetchDropdownData = async () => {
     try {
@@ -155,6 +261,77 @@ const ExamsForm = () => {
         toast.error("Duplicate exam dates detected. Each subject must be scheduled on a unique date.");
         setSubmitLoading(false);
         return;
+      }
+
+      // 3. Roadmap Validation
+      if (Number(formData.exam_type) === 2 && isValidationEnabled) {
+        const parseLocalDate = (dateVal) => {
+          if (!dateVal) return null;
+          if (typeof dateVal === 'string' && dateVal.includes('T')) {
+            const d = new Date(dateVal);
+            if (!isNaN(d.getTime())) {
+              return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            }
+          }
+          const parts = String(dateVal).split('T')[0].split('-');
+          if (parts.length === 3) {
+            return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+          }
+          const d = new Date(dateVal);
+          if (!isNaN(d.getTime())) {
+            return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+          }
+          return null;
+        };
+
+        // Validate Scheduling Window (Registration / Scheduling window)
+        if (schedulingExternalMilestone) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          const sStart = schedulingExternalMilestone.start_date ? parseLocalDate(schedulingExternalMilestone.start_date) : null;
+          const sEnd = schedulingExternalMilestone.end_date ? parseLocalDate(schedulingExternalMilestone.end_date) : null;
+
+          if (sStart) sStart.setHours(0, 0, 0, 0);
+          if (sEnd) sEnd.setHours(23, 59, 59, 999);
+
+          if (sStart && today < sStart) {
+            toast.error("Scheduling for this exam has not started yet. Please wait until the scheduling window opens.");
+            setSubmitLoading(false);
+            return;
+          }
+          if (sEnd && today > sEnd) {
+            toast.error("Scheduling is closed for this exam. Deadline passed.");
+            setSubmitLoading(false);
+            return;
+          }
+        }
+
+        // Validate Allowed Exam Dates
+        if (activeExternalMilestone) {
+          const mStart = activeExternalMilestone.start_date ? parseLocalDate(activeExternalMilestone.start_date) : null;
+          const mEnd = activeExternalMilestone.end_date ? parseLocalDate(activeExternalMilestone.end_date) : null;
+          
+          if (mStart) mStart.setHours(0, 0, 0, 0);
+          if (mEnd) mEnd.setHours(23, 59, 59, 999);
+
+          for (const dateStr of dates) {
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+            date.setHours(12, 0, 0, 0);
+
+            if (mStart && date < mStart) {
+              toast.error(`Exam date (${formatDateString(dateStr)}) is scheduled before the Institutional Roadmap start date (${formatDateString(activeExternalMilestone.start_date)}) for External Exams.`);
+              setSubmitLoading(false);
+              return;
+            }
+            if (mEnd && date > mEnd) {
+              toast.error(`Exam date (${formatDateString(dateStr)}) is scheduled after the Institutional Roadmap deadline (${formatDateString(activeExternalMilestone.end_date)}) for External Exams.`);
+              setSubmitLoading(false);
+              return;
+            }
+          }
+        }
       }
 
       const normalizedFormData = { ...formData, college_id: formData.college_id === 'university_wide' ? '' : formData.college_id };
@@ -363,6 +540,51 @@ const ExamsForm = () => {
                     </div>
                   </div>
 
+                  {formData.exam_type == 2 && activeExternalMilestone && (
+                    <div className="mb-8 flex flex-wrap items-center gap-6 p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100 shadow-sm animate-in fade-in slide-in-from-top duration-300">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600">
+                          <Flag size={20} />
+                        </div>
+                        <div>
+                          <p className="text-[12px] font-black text-slate-400 tracking-widest leading-none mb-1">Active Milestone</p>
+                          <p className="text-sm font-black text-slate-900 leading-none">{activeExternalMilestone.name}</p>
+                        </div>
+                      </div>
+
+                      <div className="h-10 w-px bg-slate-200 hidden md:block" />
+
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-600">
+                          <Calendar size={20} />
+                        </div>
+                        <div>
+                          <p className="text-[12px] font-black text-slate-400 tracking-widest leading-none mb-1">Allowed Exam Dates</p>
+                          <p className="text-sm font-black text-indigo-600 leading-none italic font-mono">
+                            {formatDateString(activeExternalMilestone.start_date)} to {formatDateString(activeExternalMilestone.end_date)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {schedulingExternalMilestone && (
+                        <>
+                          <div className="h-10 w-px bg-slate-200 hidden md:block" />
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-600">
+                              <Clock size={20} />
+                            </div>
+                            <div>
+                              <p className="text-[12px] font-black text-indigo-600 tracking-widest leading-none mb-1 text-left">Scheduling Window</p>
+                              <p className="text-sm font-black text-indigo-600 leading-none italic font-mono text-left">
+                                {formatDateString(schedulingExternalMilestone.start_date)} to {formatDateString(schedulingExternalMilestone.end_date)}
+                              </p>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
                   <div className="space-y-6">
                     {formData.subjects.map((sub, index) => (
                       <div key={sub.id} className="group relative bg-white border-2 border-slate-50 hover:border-indigo-100 rounded-[2rem] p-8 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5">
@@ -423,6 +645,43 @@ const ExamsForm = () => {
                                       const formatted = `${day}-${month}-${year}`;
                                       toast.error(`Exams cannot be scheduled on Sundays (${formatted}). Sundays are institutional holidays.`);
                                       return;
+                                    }
+
+                                    if (isValidationEnabled && activeExternalMilestone) {
+                                      date.setHours(12, 0, 0, 0);
+                                      const parseLocalDate = (dateVal) => {
+                                        if (!dateVal) return null;
+                                        if (typeof dateVal === 'string' && dateVal.includes('T')) {
+                                          const d = new Date(dateVal);
+                                          if (!isNaN(d.getTime())) {
+                                            return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                                          }
+                                        }
+                                        const parts = String(dateVal).split('T')[0].split('-');
+                                        if (parts.length === 3) {
+                                          return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                                        }
+                                        const d = new Date(dateVal);
+                                        if (!isNaN(d.getTime())) {
+                                          return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                                        }
+                                        return null;
+                                      };
+
+                                      const mStart = activeExternalMilestone.start_date ? parseLocalDate(activeExternalMilestone.start_date) : null;
+                                      const mEnd = activeExternalMilestone.end_date ? parseLocalDate(activeExternalMilestone.end_date) : null;
+                                      
+                                      if (mStart) mStart.setHours(0, 0, 0, 0);
+                                      if (mEnd) mEnd.setHours(23, 59, 59, 999);
+
+                                      if (mStart && date < mStart) {
+                                        toast.error(`Exam date (${formatDateString(value)}) is scheduled before the Institutional Roadmap start date (${formatDateString(activeExternalMilestone.start_date)}) for External Exams.`);
+                                        return;
+                                      }
+                                      if (mEnd && date > mEnd) {
+                                        toast.error(`Exam date (${formatDateString(value)}) is scheduled after the Institutional Roadmap deadline (${formatDateString(activeExternalMilestone.end_date)}) for External Exams.`);
+                                        return;
+                                      }
                                     }
                                   }
                                   const ns = [...formData.subjects];
