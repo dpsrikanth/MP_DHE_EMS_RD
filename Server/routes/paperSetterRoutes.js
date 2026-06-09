@@ -123,6 +123,17 @@ router.get('/faculty/dash-data', checkRole(['Faculty', 'Teacher', 'External Facu
 
 /**
  * @swagger
+ * /api/paper-setter/faculty/roadmap-window:
+ *   get:
+ *     summary: Get the paper submission roadmap window (milestone) for validation
+ *     tags: [Paper Setting Workflow]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/faculty/roadmap-window', checkRole(['Faculty', 'Teacher', 'External Faculty', 'PAPER_SETTER']), paperSetterController.getRoadmapWindow);
+
+/**
+ * @swagger
  * /api/paper-setter/faculty/upload:
  *   post:
  *     summary: Upload a question paper set

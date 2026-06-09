@@ -10,6 +10,15 @@ export const paperSetterApi = {
     },
 
     /**
+     * Get roadmap validation window for paper submission
+     */
+    getRoadmapWindow: async (queryString = '') => {
+        const url = queryString ? `/paper-setter/faculty/roadmap-window?${queryString}` : '/paper-setter/faculty/roadmap-window';
+        const response = await apiClient.get(url);
+        return response.data;
+    },
+
+    /**
      * Upload question paper
      */
     uploadPaper: async (formData) => {

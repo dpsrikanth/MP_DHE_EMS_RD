@@ -207,6 +207,7 @@ exports.getSetterDashData = async (req, res) => {
         e.name as exam_name,
         e.exam_date as exam_date,
         sem.semester_name as semester,
+        mp.name as program_name,
         COALESCE(sub_stats.sets_required, 0) as sets_required,
         COALESCE(sub_stats.sets_submitted, 0) as sets_submitted,
         sub_stats.latest_status,
@@ -223,6 +224,7 @@ exports.getSetterDashData = async (req, res) => {
         ORDER BY subject_id DESC NULLS LAST, created_at DESC LIMIT 1
       ) e ON true
       LEFT JOIN master_semesters sem ON e.semester_id = sem.id
+      LEFT JOIN master_programs mp ON ms.program_id = mp.id
       LEFT JOIN (
         SELECT 
           subject_id, exam_id,
@@ -234,7 +236,7 @@ exports.getSetterDashData = async (req, res) => {
         GROUP BY subject_id, exam_id
       ) sub_stats ON ms.id = sub_stats.subject_id AND e.id = sub_stats.exam_id
       WHERE pss.user_id = $1
-      GROUP BY ms.id, ms.name, e.id, e.name, e.exam_date, sem.semester_name, sub_stats.sets_required, sub_stats.sets_submitted, sub_stats.latest_status
+      GROUP BY ms.id, ms.name, e.id, e.name, e.exam_date, sem.semester_name, mp.name, sub_stats.sets_required, sub_stats.sets_submitted, sub_stats.latest_status
     `;
     
     // 2. Submitted Papers
@@ -267,6 +269,95 @@ exports.getSetterDashData = async (req, res) => {
   } catch (error) {
     console.error('Error fetching paper setter dash data:', error);
     res.status(500).json({ message: 'Internal Server Error' });
+  };
+};
+
+exports.getRoadmapWindow = async (req, res) => {
+  try {
+    const college_id = req.user?.college_id;
+    const { program_name, semester_name } = req.query;
+
+    // Build JOIN + WHERE dynamically based on filters
+    let joinClause = `
+      LEFT JOIN master_programs mp ON am.program_id = mp.id
+      LEFT JOIN master_semesters ms ON am.semester_id = ms.id
+    `;
+    let whereConditions = [
+      `am.delete_status = true`,
+      // Must be an UPLOAD or SUBMISSION type milestone (paper setter upload window)
+      `(
+        (UPPER(am.name) LIKE '%UPLOAD%' AND (UPPER(am.name) LIKE '%PAPER%' OR UPPER(am.name) LIKE '%QUESTION%'))
+        OR
+        (UPPER(am.name) LIKE '%SUBMISSION%' AND (UPPER(am.name) LIKE '%PAPER%' OR UPPER(am.name) LIKE '%QUESTION%'))
+        OR
+        (UPPER(am.name) LIKE '%QUESTION PAPER%')
+      )`,
+      // Exclude finalization milestones
+      `UPPER(am.name) NOT LIKE '%FINAL%'`,
+      `UPPER(am.name) NOT LIKE '%DECRYPT%'`,
+      `UPPER(am.name) NOT LIKE '%APPROV%'`
+    ];
+    const params = [];
+
+    if (college_id) {
+      params.push(college_id);
+      whereConditions.push(`(am.college_id = $${params.length} OR am.college_id IS NULL)`);
+    }
+
+    if (program_name) {
+      params.push(program_name);
+      whereConditions.push(`(mp.name ILIKE $${params.length} OR am.program_id IS NULL)`);
+    }
+
+    if (semester_name) {
+      params.push(semester_name);
+      whereConditions.push(`(ms.semester_name ILIKE $${params.length} OR am.semester_id IS NULL)`);
+    }
+
+    const query = `
+      SELECT am.id, am.name, am.start_date, am.end_date, am.type, am.description,
+             mp.name as program_name, ms.semester_name
+      FROM academic_milestones am
+      ${joinClause}
+      WHERE ${whereConditions.join(' AND ')}
+      ORDER BY
+        CASE
+          WHEN am.start_date <= NOW() AND am.end_date >= NOW() THEN 0
+          WHEN am.start_date > NOW() THEN 1
+          ELSE 2
+        END ASC,
+        CASE
+          WHEN am.start_date > NOW() THEN am.start_date
+          ELSE am.end_date
+        END DESC
+      LIMIT 1
+    `;
+
+    const settingsResult = await pool.query("SELECT setting_value FROM system_settings WHERE setting_key = 'roadmap_validation'");
+    const isValidationEnabled = settingsResult.rows.length > 0 ? settingsResult.rows[0].setting_value.enabled : true;
+
+    const { rows } = await pool.query(query, params);
+    const milestone = rows[0] || null;
+
+    if (!milestone) {
+      return res.json({ milestone: null, validationEnabled: isValidationEnabled, status: 'no_milestone' });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDate = new Date(milestone.start_date);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(milestone.end_date);
+    endDate.setHours(23, 59, 59, 999);
+
+    let status = 'open';
+    if (today < startDate) status = 'not_yet_open';
+    else if (today > endDate) status = 'closed';
+
+    res.json({ milestone, validationEnabled: isValidationEnabled, status });
+  } catch (error) {
+    console.error('Error fetching roadmap window:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 
@@ -289,6 +380,45 @@ exports.uploadPaper = async (req, res) => {
     if (!file) return res.status(400).json({ message: 'No file uploaded.' });
 
     let active_assignment_id = assignment_id !== 'null' ? parseInt(assignment_id) : null;
+
+    // --- Roadmap Validation ---
+    const settingsResult = await pool.query("SELECT setting_value FROM system_settings WHERE setting_key = 'roadmap_validation'");
+    const isValidationEnabled = settingsResult.rows.length > 0 ? settingsResult.rows[0].setting_value.enabled : true;
+    if (isValidationEnabled) {
+      const college_id = req.user?.college_id;
+      let msQuery = `
+        SELECT * FROM academic_milestones
+        WHERE delete_status = true
+          AND (
+            (UPPER(name) LIKE '%UPLOAD%' AND (UPPER(name) LIKE '%PAPER%' OR UPPER(name) LIKE '%QUESTION%'))
+            OR (UPPER(name) LIKE '%SUBMISSION%' AND (UPPER(name) LIKE '%PAPER%' OR UPPER(name) LIKE '%QUESTION%'))
+            OR (UPPER(name) LIKE '%QUESTION PAPER%')
+          )
+          AND UPPER(name) NOT LIKE '%FINAL%'
+          AND UPPER(name) NOT LIKE '%DECRYPT%'
+          AND UPPER(name) NOT LIKE '%APPROV%'
+      `;
+      const msParams = [];
+      if (college_id) { msQuery += ` AND (college_id = $1 OR college_id IS NULL)`; msParams.push(college_id); }
+      msQuery += ` ORDER BY CASE WHEN start_date <= NOW() AND end_date >= NOW() THEN 0 WHEN start_date > NOW() THEN 1 ELSE 2 END ASC, CASE WHEN start_date > NOW() THEN start_date ELSE end_date END DESC LIMIT 1`;
+
+      const msRes = await pool.query(msQuery, msParams);
+      if (msRes.rows.length > 0) {
+        const ms = msRes.rows[0];
+        const today = new Date(); today.setHours(0,0,0,0);
+        const startDate = new Date(ms.start_date); startDate.setHours(0,0,0,0);
+        const endDate = new Date(ms.end_date); endDate.setHours(23,59,59,999);
+        if (today < startDate) {
+          if (file && fs.existsSync(file.path)) fs.unlinkSync(file.path);
+          return res.status(403).json({ message: `Paper submission window has not opened yet. It opens on ${startDate.toLocaleDateString('en-IN')}.` });
+        }
+        if (today > endDate) {
+          if (file && fs.existsSync(file.path)) fs.unlinkSync(file.path);
+          return res.status(403).json({ message: `Paper submission window is closed. Deadline was ${endDate.toLocaleDateString('en-IN')}.` });
+        }
+      }
+    }
+    // --- End Roadmap Validation ---
 
     if (active_assignment_id) {
       // Validate assignment ownership
