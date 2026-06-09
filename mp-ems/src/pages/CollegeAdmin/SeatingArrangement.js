@@ -15,9 +15,19 @@ const SeatingArrangement = () => {
     const [seatingPattern, setSeatingPattern] = useState('sequential');
     const [approvedHalls, setApprovedHalls] = useState([]);
     const [isLocked, setIsLocked] = useState(false);
+    const [seatWindow, setSeatWindow] = useState(null);
 
-
-
+    const fetchSeatWindow = async (programId = '', semesterId = '') => {
+        try {
+            const params = {};
+            if (programId) params.program_id = programId;
+            if (semesterId) params.semester_id = semesterId;
+            const data = await collegeAdminApi.getSeatAllocationWindow(params);
+            setSeatWindow(data);
+        } catch (e) {
+            console.warn('Could not fetch seat allocation window');
+        }
+    };
 
     useEffect(() => {
         fetchExams();
@@ -30,10 +40,14 @@ const SeatingArrangement = () => {
             setIsLocked(exam?.seating_locked || false);
             fetchArrangements();
             fetchStats(selectedExam); // Fetch stats for the specific exam
+            if (exam) {
+                fetchSeatWindow(exam.program_id || '', exam.semester_id || '');
+            }
         } else {
             setArrangements([]);
             setIsLocked(false);
             fetchStats(); // Reset to global stats if no exam selected
+            fetchSeatWindow();
         }
     }, [selectedExam, exams]);
 
@@ -86,6 +100,13 @@ const SeatingArrangement = () => {
 
     const handleAutoAllocate = async () => {
         if (!selectedExam) return toast.warning("Please select an exam first");
+        if (seatWindow && seatWindow.validationEnabled && seatWindow.milestone && seatWindow.status !== 'open') {
+            const msg = seatWindow.status === 'not_yet_open'
+                ? `Seat allocation window has not opened yet. Opens on ${formatDate(seatWindow.milestone.start_date)}.`
+                : `Seat allocation window is closed. It ended on ${formatDate(seatWindow.milestone.end_date)}.`;
+            toast.warning(msg);
+            return;
+        }
         
         try {
             setLoading(true);
@@ -111,6 +132,14 @@ const SeatingArrangement = () => {
     const handleLockSeating = async () => {
         if (!selectedExam) return toast.warning("Please select an exam first");
         if (arrangements.length === 0 && !isLocked) return toast.error("Cannot lock empty seating. Run allocation first.");
+        
+        if (seatWindow && seatWindow.validationEnabled && seatWindow.milestone && seatWindow.status !== 'open') {
+            const msg = seatWindow.status === 'not_yet_open'
+                ? `Seat allocation window has not opened yet. Opens on ${formatDate(seatWindow.milestone.start_date)}.`
+                : `Seat allocation window is closed. It ended on ${formatDate(seatWindow.milestone.end_date)}.`;
+            toast.warning(msg);
+            return;
+        }
 
         const confirmMsg = isLocked 
             ? "Are you sure you want to UNLOCK the seating for this exam?" 
@@ -135,6 +164,13 @@ const SeatingArrangement = () => {
 
     const handleClearAssignments = async () => {
         if (!selectedExam) return toast.warning("Please select an exam first");
+        if (seatWindow && seatWindow.validationEnabled && seatWindow.milestone && seatWindow.status !== 'open') {
+            const msg = seatWindow.status === 'not_yet_open'
+                ? `Seat allocation window has not opened yet. Opens on ${formatDate(seatWindow.milestone.start_date)}.`
+                : `Seat allocation window is closed. It ended on ${formatDate(seatWindow.milestone.end_date)}.`;
+            toast.warning(msg);
+            return;
+        }
         if (!window.confirm("Are you sure you want to clear ALL seat assignments for this exam?")) return;
 
         try {
@@ -182,6 +218,20 @@ const SeatingArrangement = () => {
                 </div>
             </div>
 
+            {/* Window Banner */}
+            {seatWindow && seatWindow.validationEnabled && seatWindow.milestone && (
+                <div className={`p-4 rounded-xl border-2 flex items-center gap-3 shadow-sm ${seatWindow.status === 'open' ? 'bg-indigo-50/50 border-indigo-100 text-indigo-700' : 'bg-red-50/50 border-red-100 text-red-700'}`}>
+                    <AlertCircle size={20} className={seatWindow.status === 'open' ? 'text-indigo-500' : 'text-red-500'} />
+                    <div>
+                        <h4 className="font-bold text-[13px] tracking-wide">
+                            {seatWindow.status === 'open' ? 'Seat Allocation Window is Open' : 'Seat Allocation Window is Closed'}
+                        </h4>
+                        <p className="text-[12px] opacity-80 mt-0.5 font-medium">
+                            {seatWindow.milestone.name} ({formatDate(seatWindow.milestone.start_date)} to {formatDate(seatWindow.milestone.end_date)})
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Quick Stats & Controls */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

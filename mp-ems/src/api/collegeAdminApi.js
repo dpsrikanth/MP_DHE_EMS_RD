@@ -339,6 +339,14 @@ export const collegeAdminApi = {
     },
 
     /**
+     * Get the Seat Allocation milestone window status
+     */
+    getSeatAllocationWindow: async (params) => {
+        const response = await apiClient.get('/college-admin/seat-allocation-window', { params });
+        return response.data;
+    },
+
+    /**
      * Get college performance report
      */
     getCollegePerformance: async () => {

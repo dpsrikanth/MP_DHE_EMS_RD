@@ -386,3 +386,87 @@ exports.getSeatingArrangements = async (req, res) => {
         res.status(500).json({ error: "Failed to fetch arrangement details" });
     }
 };
+
+/**
+ * Get the Seat Allocation milestone window for a specific exam context
+ */
+exports.getSeatAllocationWindow = async (req, res) => {
+    try {
+        const { college_id, program_id, semester_id } = req.query;
+
+        const joinClause = `
+            LEFT JOIN master_programs mp ON am.program_id = mp.id
+            LEFT JOIN master_semesters ms ON am.semester_id = ms.id
+        `;
+        const whereConditions = [
+            `am.delete_status = true`,
+            // Match seat allocation milestone specifically
+            `(
+                UPPER(am.name) LIKE '%SEAT%' AND UPPER(am.name) LIKE '%ALLOCATION%'
+            )`
+        ];
+
+        const params = [];
+
+        if (college_id) {
+            params.push(college_id);
+            whereConditions.push(`(am.college_id = $${params.length} OR am.college_id IS NULL)`);
+        }
+
+        if (program_id) {
+            params.push(program_id);
+            whereConditions.push(`(am.program_id = $${params.length} OR am.program_id IS NULL)`);
+        }
+
+        if (semester_id) {
+            params.push(semester_id);
+            whereConditions.push(`(am.semester_id = $${params.length} OR am.semester_id IS NULL)`);
+        }
+
+        const query = `
+            SELECT am.id, am.name, am.start_date, am.end_date, am.type, am.description,
+                   mp.name as program_name, ms.semester_name
+            FROM academic_milestones am
+            ${joinClause}
+            WHERE ${whereConditions.join(' AND ')}
+            ORDER BY
+                CASE
+                    WHEN am.start_date <= NOW() AND am.end_date >= NOW() THEN 0
+                    WHEN am.start_date > NOW() THEN 1
+                    ELSE 2
+                END ASC,
+                CASE
+                    WHEN am.start_date > NOW() THEN am.start_date
+                    ELSE am.end_date
+                END DESC
+            LIMIT 1
+        `;
+
+        const settingsResult = await db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'roadmap_validation'");
+        const isValidationEnabled = settingsResult.rows.length > 0 ? settingsResult.rows[0].setting_value.enabled : true;
+
+        const { rows } = await db.query(query, params);
+        const milestone = rows[0] || null;
+
+        if (!milestone) {
+            return res.json({ milestone: null, validationEnabled: isValidationEnabled, status: 'no_milestone' });
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const startDate = new Date(milestone.start_date);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(milestone.end_date);
+        endDate.setHours(23, 59, 59, 999);
+
+        let status = 'open';
+        if (today < startDate) status = 'not_yet_open';
+        else if (today > endDate) status = 'closed';
+
+        res.json({ milestone, validationEnabled: isValidationEnabled, status });
+    } catch (error) {
+        console.error('Error fetching seat allocation window:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
