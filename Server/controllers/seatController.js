@@ -51,7 +51,25 @@ exports.clearAssignments = async (req, res) => {
         if (!college_id) return res.status(403).json({ error: "Unauthorized" });
         if (!exam_id) return res.status(400).json({ error: "Exam ID is required" });
 
-        const query = `DELETE FROM seating_arrangements WHERE college_id = $1 AND exam_id = $2`;
+        // Clear home allocations but PRESERVE guest students from other colleges
+        // that have shortage allocations pointing to this college
+        const query = `
+            DELETE FROM seating_arrangements 
+            WHERE college_id = $1 AND exam_id = $2
+            AND student_id NOT IN (
+                SELECT DISTINCT er.student_id
+                FROM exam_registrations er
+                JOIN students st ON er.student_id = st.id
+                JOIN colleges hc ON st."collageName" ILIKE hc.name
+                WHERE hc.id IN (
+                    SELECT sr.college_id 
+                    FROM shortage_requests sr
+                    WHERE sr.allocated_college_id = $1 AND sr.status = 'Allocated'
+                )
+                AND er.exam_id = $2
+                AND er.payment_status = 'Paid'
+            )
+        `;
         await db.query(query, [college_id, exam_id]);
 
         res.status(200).json({ message: "All seat assignments cleared successfully." });
@@ -60,6 +78,7 @@ exports.clearAssignments = async (req, res) => {
         res.status(500).json({ error: "Failed to clear assignments" });
     }
 };
+
 
 /**
  * Automatically allocate seats for students with 'Paid' registration status.
@@ -151,9 +170,28 @@ exports.autoAllocateSeats = async (req, res) => {
         }
 
         // 4. Clear existing home+external allocations for this college + exam
-        //    (Remove all home allocations AND any prior external allocations for these students)
-        await client.query(`DELETE FROM seating_arrangements WHERE college_id = $1 AND exam_id = $2`, [college_id, exam_id]);
-        // Also clear any prior external allocations for these students in this exam
+        //    But PRESERVE any guest overflow students from other colleges seated here
+        //    (i.e., students from colleges that have shortage allocations pointing to this college)
+        await client.query(`
+            DELETE FROM seating_arrangements 
+            WHERE college_id = $1 AND exam_id = $2
+            AND student_id NOT IN (
+                -- Preserve guest students allocated HERE from other colleges' shortage overflow
+                SELECT DISTINCT er.student_id
+                FROM exam_registrations er
+                JOIN students st ON er.student_id = st.id
+                JOIN colleges hc ON st."collageName" ILIKE hc.name
+                WHERE hc.id IN (
+                    SELECT sr.college_id 
+                    FROM shortage_requests sr
+                    WHERE sr.allocated_college_id = $1 AND sr.status = 'Allocated'
+                )
+                AND er.exam_id = $2
+                AND er.payment_status = 'Paid'
+            )
+        `, [college_id, exam_id]);
+        // Also clear any prior external allocations for THIS college's students in this exam
+        // (so they get fresh seats on re-allocation)
         const studentIds = students.map(s => s.student_id);
         await client.query(
             `DELETE FROM seating_arrangements WHERE exam_id = $1 AND student_id = ANY($2) AND college_id != $3`,
@@ -224,6 +262,19 @@ exports.autoAllocateSeats = async (req, res) => {
                 );
                 const extHalls = extHallRes.rows;
 
+                // Fetch ALL currently occupied seats in these external halls for this exam
+                // (occupied by the host college's own students or other guests)
+                const extHallIds = extHalls.map(h => h.id);
+                let occupiedExtSeats = new Set();
+                if (extHallIds.length > 0) {
+                    const occRes = await client.query(
+                        `SELECT hall_id, row_no, seat_no FROM seating_arrangements 
+                         WHERE exam_id = $1 AND hall_id = ANY($2)`,
+                        [exam_id, extHallIds]
+                    );
+                    occRes.rows.forEach(r => occupiedExtSeats.add(`${r.hall_id}-${r.row_no}-${r.seat_no}`));
+                }
+
                 for (const hall of extHalls) {
                     if (studentIdx >= students.length) break;
                     const { id: hall_id, rows, seats_per_row } = hall;
@@ -232,15 +283,22 @@ exports.autoAllocateSeats = async (req, res) => {
                         for (let s = 1; s <= seats_per_row; s++) {
                             if (studentIdx >= students.length) break;
 
+                            // Skip if this seat is already occupied or reserved
+                            if (occupiedExtSeats.has(`${hall_id}-${r}-${s}`) || reservedSeats.has(`${hall_id}-${r}-${s}`)) continue;
+                            if (pattern === 'alternate' && (r + s) % 2 !== 0) continue;
+
                             const student = students[studentIdx];
-                            await client.query(`
+                            const insertRes = await client.query(`
                                 INSERT INTO seating_arrangements (college_id, exam_id, student_id, hall_id, row_no, seat_no)
                                 VALUES ($1, $2, $3, $4, $5, $6)
                                 ON CONFLICT DO NOTHING
                             `, [parseInt(allocated_college_id), exam_id, student.student_id, hall_id, r, s]);
 
-                            studentIdx++;
-                            externalAssigned++;
+                            // Only increment if successfully inserted
+                            if (insertRes.rowCount > 0) {
+                                studentIdx++;
+                                externalAssigned++;
+                            }
                         }
                     }
                 }
@@ -328,8 +386,11 @@ exports.getSeatingArrangements = async (req, res) => {
         const examFilter = exam_id ? ` AND sa.exam_id = $2` : '';
         if (exam_id) params.push(exam_id);
 
-        // UNION Part 1: Seats in THIS college's halls (original reliable logic)
-        // UNION Part 2: Overflow students from THIS college seated at external centers
+        // UNION Part 1: Seats in THIS college's halls (home + any guest students hosted here)
+        // UNION Part 2: THIS college's overflow students seated at external centers
+        //   Uses TWO strategies to find overflow students:
+        //   a) ILIKE name match (original)
+        //   b) shortage_requests allocation record (catches cases where ILIKE name fails)
         const query = `
             SELECT 
                 sa.id, sa.exam_id, sa.student_id, sa.hall_id, sa.row_no, sa.seat_no,
@@ -350,7 +411,7 @@ exports.getSeatingArrangements = async (req, res) => {
 
             UNION ALL
 
-            SELECT 
+            SELECT DISTINCT
                 sa.id, sa.exam_id, sa.student_id, sa.hall_id, sa.row_no, sa.seat_no,
                 sa.college_id as seat_college_id,
                 s.name as student_name, s.rollnumber, s."programName",
@@ -366,14 +427,40 @@ exports.getSeatingArrangements = async (req, res) => {
                 ON sa.exam_id = esl.exam_id AND esl.college_id = $1
             WHERE sa.college_id != $1
             ${examFilter}
-              AND sa.student_id IN (
-                  SELECT er.student_id
-                  FROM exam_registrations er
-                  JOIN students st ON er.student_id = st.id
-                  JOIN colleges hc ON st."collageName" ILIKE hc.name
-                  WHERE hc.id = $1
-                    AND er.payment_status = 'Paid'
-                    ${exam_id ? 'AND er.exam_id = $2' : ''}
+              AND (
+                -- Strategy A: match by student's college name (ILIKE)
+                sa.student_id IN (
+                    SELECT er.student_id
+                    FROM exam_registrations er
+                    JOIN students st ON er.student_id = st.id
+                    JOIN colleges hc ON st."collageName" ILIKE hc.name
+                    WHERE hc.id = $1
+                      AND er.payment_status = 'Paid'
+                      ${exam_id ? 'AND er.exam_id = $2' : ''}
+                )
+                OR
+                -- Strategy B: find overflow via shortage_requests chain
+                -- (catches cases where ILIKE name match fails due to special chars)
+                -- Only show students who are at the allocated external center AND
+                -- who were NOT placed there by that college's own autoAllocate
+                -- (i.e. they must NOT match the allocated college's own student pool)
+                (
+                  sa.college_id IN (
+                      SELECT sr.allocated_college_id
+                      FROM shortage_requests sr
+                      WHERE sr.college_id = $1 AND sr.status = 'Allocated'
+                  )
+                  AND sa.student_id NOT IN (
+                      -- Exclude students who belong to the allocated college itself
+                      SELECT DISTINCT er2.student_id
+                      FROM exam_registrations er2
+                      JOIN students st2 ON er2.student_id = st2.id
+                      JOIN colleges hc2 ON st2."collageName" ILIKE hc2.name
+                      WHERE hc2.id = sa.college_id
+                        AND er2.payment_status = 'Paid'
+                        ${exam_id ? 'AND er2.exam_id = $2' : ''}
+                  )
+                )
               )
 
             ORDER BY is_external ASC, hall_code ASC, row_no ASC, seat_no ASC

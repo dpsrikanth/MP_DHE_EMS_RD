@@ -4,6 +4,7 @@ import { Users, Layout, Trash2, Play, Search, Building2, ChevronRight, Download,
 import { TableSearch } from '../../components/TableControls';
 import { formatDate } from '../../utils/dateUtils';
 import { collegeAdminApi } from '../../api/collegeAdminApi';
+import { authUtils } from '../../utils/authUtils';
 
 const SeatingArrangement = () => {
     const [arrangements, setArrangements] = useState([]);
@@ -16,6 +17,8 @@ const SeatingArrangement = () => {
     const [approvedHalls, setApprovedHalls] = useState([]);
     const [isLocked, setIsLocked] = useState(false);
     const [seatWindow, setSeatWindow] = useState(null);
+
+    const { collegeId: userCollegeId } = authUtils.getAuth();
 
     const fetchSeatWindow = async (programId = '', semesterId = '') => {
         try {
@@ -196,6 +199,9 @@ const SeatingArrangement = () => {
         );
     }, [arrangements, searchQuery]);
 
+    const selectedExamObj = useMemo(() => exams.find(e => String(e.id) === String(selectedExam)), [exams, selectedExam]);
+    const isReadOnlyExam = selectedExamObj && selectedExamObj.college_id && String(selectedExamObj.college_id) !== String(userCollegeId);
+
     return (
         <div className="p-6 md:p-8 space-y-8 animate-fade-in pb-20">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -230,6 +236,13 @@ const SeatingArrangement = () => {
                             {seatWindow.milestone.name} ({formatDate(seatWindow.milestone.start_date)} to {formatDate(seatWindow.milestone.end_date)})
                         </p>
                     </div>
+                </div>
+            )}
+
+            {isReadOnlyExam && (
+                <div className="p-4 rounded-xl border border-blue-100 bg-blue-50/50 text-blue-700 text-sm font-bold flex items-center gap-3 shadow-sm">
+                    <Info size={20} className="shrink-0 text-blue-500" />
+                    <span>This exam is managed by <strong className="text-blue-800">{selectedExamObj.college_name}</strong>. You are viewing the seating arrangements for guest students hosted at your institution. Seating can only be modified by the home college.</span>
                 </div>
             )}
 
@@ -268,7 +281,7 @@ const SeatingArrangement = () => {
                             <div className="flex-1 min-w-[320px] flex items-center gap-2">
                                 <button
                                     onClick={handleAutoAllocate}
-                                    disabled={loading || !selectedExam || isLocked}
+                                    disabled={loading || !selectedExam || isLocked || isReadOnlyExam}
                                     className="flex-[1.5] flex items-center justify-center gap-2 h-[56px] bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95  tracking-widest text-[11px] disabled:opacity-50 disabled:grayscale whitespace-nowrap px-3"
                                 >
                                     <Play size={14} fill="currentColor" />
@@ -277,7 +290,7 @@ const SeatingArrangement = () => {
                                 {!isLocked ? (
                                     <button
                                         onClick={handleLockSeating}
-                                        disabled={loading || !selectedExam || arrangements.length === 0}
+                                        disabled={loading || !selectedExam || arrangements.length === 0 || isReadOnlyExam}
                                         className="flex-1 flex items-center justify-center gap-2 h-[56px] bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95  tracking-widest text-[11px] disabled:opacity-50 whitespace-nowrap px-3"
                                     >
                                         <CheckCircle2 size={14} />
@@ -286,8 +299,8 @@ const SeatingArrangement = () => {
                                 ) : (
                                     <button
                                         onClick={handleLockSeating}
-                                        disabled={loading}
-                                        className="flex-1 flex items-center justify-center gap-2 h-[56px] bg-white border-2 border-slate-200 text-slate-600 hover:bg-slate-50 font-black rounded-2xl transition-all active:scale-95  tracking-widest text-[12px] px-4"
+                                        disabled={loading || isReadOnlyExam}
+                                        className="flex-1 flex items-center justify-center gap-2 h-[56px] bg-white border-2 border-slate-200 text-slate-600 hover:bg-slate-50 font-black rounded-2xl transition-all active:scale-95  tracking-widest text-[12px] px-4 disabled:opacity-50"
                                     >
                                         <Trash2 size={14} className="text-slate-400" />
                                         Unlock
@@ -295,7 +308,7 @@ const SeatingArrangement = () => {
                                 )}
                                 <button
                                     onClick={handleClearAssignments}
-                                    disabled={loading || !selectedExam || arrangements.length === 0 || isLocked}
+                                    disabled={loading || !selectedExam || arrangements.length === 0 || isLocked || isReadOnlyExam}
                                     className="p-4 bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 rounded-2xl transition-all active:scale-95 disabled:opacity-50 h-[56px] w-[56px] flex items-center justify-center"
                                     title="Clear All"
                                 >

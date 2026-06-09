@@ -1645,7 +1645,16 @@ const getExams = async (req, res) => {
     let internalVisibilityClause = '';
 
     if (role === 'college_admin') {
-      visibilityClause = `WHERE (e.college_id = $1 OR (e.exam_type = 2 AND e.college_id IS NULL AND e.university_id = (SELECT university_id FROM colleges WHERE id = $1)))`;
+      visibilityClause = `
+        WHERE (
+          e.college_id = $1 
+          OR (e.exam_type = 2 AND e.college_id IS NULL AND e.university_id = (SELECT university_id FROM colleges WHERE id = $1))
+          OR e.college_id IN (
+            SELECT sr.college_id 
+            FROM shortage_requests sr 
+            WHERE sr.allocated_college_id = $1 AND sr.status = 'Allocated'
+          )
+        )`;
       internalVisibilityClause = `WHERE ies.college_id = $1`;
       params.push(college_id);
     } else if (role === 'HOD') {
