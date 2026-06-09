@@ -80,9 +80,9 @@ exports.getPaperSetters = async (req, res) => {
     }
 
     const settersQuery = `
-      SELECT DISTINCT u.id, u.name, u.email, u.phone, r.role_name, 
+      SELECT u.id, u.name, u.email, u.phone, r.role_name, 
              t.department, t.designation, t.experience, t.qualification, t.status as teacher_status,
-             md.id as department_id, mdes.id as designation_id,
+             MAX(md.id) as department_id, MAX(mdes.id) as designation_id,
              COALESCE(ARRAY_AGG(DISTINCT ms.name) FILTER (WHERE ms.name IS NOT NULL), ARRAY[]::TEXT[]) as subjects,
              COALESCE(ARRAY_AGG(DISTINCT ms.id) FILTER (WHERE ms.id IS NOT NULL), ARRAY[]::INTEGER[]) as subject_ids
       FROM users u
@@ -93,7 +93,7 @@ exports.getPaperSetters = async (req, res) => {
       LEFT JOIN paper_setter_subjects pss ON u.id = pss.user_id
       LEFT JOIN master_subjects ms ON pss.subject_id = ms.id
       ${whereClause}
-      GROUP BY u.id, u.name, u.email, u.phone, r.role_name, t.department, t.designation, t.experience, t.qualification, t.status, md.id, mdes.id
+      GROUP BY u.id, u.name, u.email, u.phone, r.role_name, t.department, t.designation, t.experience, t.qualification, t.status
       ORDER BY u.name
     `;
     const { rows } = await pool.query(settersQuery, params);
@@ -238,6 +238,37 @@ exports.updatePaperSetter = async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error in updatePaperSetter:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  } finally {
+    client.release();
+  }
+};
+
+exports.deletePaperSetter = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { id } = req.params;
+    
+    // Delete subjects mapping
+    await client.query("DELETE FROM paper_setter_subjects WHERE user_id = $1", [id]);
+    
+    // Check if the user has assignments
+    const assignmentsRes = await client.query("SELECT id FROM paper_assignments WHERE paper_setter_id = $1", [id]);
+    if (assignmentsRes.rows.length > 0) {
+      await client.query('COMMIT');
+      return res.json({ message: 'Paper setter subjects removed. User cannot be fully deleted because they have paper assignments.' });
+    }
+    
+    // If no assignments, we can delete the teacher profile and user
+    await client.query("DELETE FROM teachers WHERE user_id = $1", [id]);
+    await client.query("DELETE FROM users WHERE id = $1", [id]);
+    
+    await client.query('COMMIT');
+    res.json({ message: 'Paper setter deleted successfully' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error in deletePaperSetter:', error);
     res.status(500).json({ message: 'Internal Server Error' });
   } finally {
     client.release();

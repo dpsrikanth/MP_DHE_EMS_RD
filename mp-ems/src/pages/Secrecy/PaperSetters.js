@@ -1,5 +1,5 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Eye, Edit3, X, UserPlus, FileText, Smartphone, HardDrive, GraduationCap, Search } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Users, Eye, Edit3, X, UserPlus, FileText, Smartphone, HardDrive, GraduationCap, Search, Trash2 } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
 import { toast } from 'react-toastify';
 import { secrecyApi } from '../../api/secrecyApi';
@@ -16,6 +16,7 @@ const SecrecyPaperSetters = () => {
   const [showAddSetterModal, setShowAddSetterModal] = useState(false);
   const [showViewSetterModal, setShowViewSetterModal] = useState(false);
   const [showEditSetterModal, setShowEditSetterModal] = useState(false);
+  const [showDeleteSetterModal, setShowDeleteSetterModal] = useState(false);
   const [selectedSetter, setSelectedSetter] = useState(null);
   const [setterType, setSetterType] = useState('existing'); // 'existing' or 'new'
   
@@ -136,6 +137,18 @@ const SecrecyPaperSetters = () => {
       fetchSetters();
     } catch (e) { 
       toast.error(e.response?.data?.message || 'Failed to update setter'); 
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedSetter) return;
+    try {
+      await secrecyApi.deletePaperSetter(selectedSetter.id);
+      toast.success('Paper setter deleted successfully');
+      setShowDeleteSetterModal(false);
+      fetchSetters();
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to delete setter');
     }
   };
 
@@ -471,6 +484,15 @@ const SecrecyPaperSetters = () => {
                     >
                       <Edit3 size={18} />
                     </button>
+                    <button 
+                      onClick={() => {
+                        setSelectedSetter(setter);
+                        setShowDeleteSetterModal(true);
+                      }}
+                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -674,6 +696,34 @@ const SecrecyPaperSetters = () => {
       {showViewSetterModal && renderViewSetterModal()}
 
       {showEditSetterModal && renderEditSetterModal()}
+
+      {showDeleteSetterModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-indigo-600/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center animate-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Trash2 size={32} />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2">Confirm Delete</h3>
+            <p className="text-slate-500 text-sm font-medium mb-8 leading-relaxed">
+              Are you sure you want to delete <span className="text-slate-900 font-bold">"{selectedSetter?.name}"</span>? This action is irreversible.
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowDeleteSetterModal(false)} 
+                className="flex-1 py-3.5 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDeleteConfirm} 
+                className="flex-1 py-3.5 bg-red-500 text-white font-black rounded-2xl shadow-lg shadow-red-500/20 hover:bg-red-600 transition-all"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

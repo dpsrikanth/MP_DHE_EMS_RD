@@ -140,6 +140,26 @@ router.post('/setters/new', secrecyOnly, secrecyController.createNewSetter);
  */
 router.put('/setters/:id', secrecyOnly, secrecyController.updatePaperSetter);
 
+/**
+ * @swagger
+ * /api/secrecy/setters/{id}:
+ *   delete:
+ *     summary: Delete a paper setter
+ *     tags: [Secrecy Department]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Setter deleted successfully
+ */
+router.delete('/setters/:id', secrecyOnly, secrecyController.deletePaperSetter);
+
 // Question Papers Review
 /**
  * @swagger

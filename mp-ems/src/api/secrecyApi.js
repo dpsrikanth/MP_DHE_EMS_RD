@@ -66,6 +66,14 @@ export const secrecyApi = {
     },
 
     /**
+     * Delete paper setter
+     */
+    deletePaperSetter: async (id) => {
+        const response = await apiClient.delete(`/secrecy/setters/${id}`);
+        return response.data;
+    },
+
+    /**
      * Get payments
      */
     getPayments: async () => {
