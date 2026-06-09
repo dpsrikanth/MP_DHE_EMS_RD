@@ -87,5 +87,16 @@ export const secrecyApi = {
     processPayment: async (data) => {
         const response = await apiClient.post('/secrecy/payments/process', data);
         return response.data;
+    },
+
+    /**
+     * Get finalization roadmap window for Secrecy Department
+     */
+    getFinalizationWindow: async (queryString = '') => {
+        const url = queryString
+            ? `/secrecy/finalization-window?${queryString}`
+            : '/secrecy/finalization-window';
+        const response = await apiClient.get(url);
+        return response.data;
     }
 };

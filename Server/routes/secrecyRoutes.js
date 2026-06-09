@@ -272,4 +272,7 @@ router.post('/encode-sheets', secrecyOnly, secrecyController.encodeAnswerSheets)
  */
 router.get('/secrecy-codes', secrecyOnly, secrecyController.getSecrecyCodes);
 
+// Finalization Roadmap Window (for Question Papers Review page)
+router.get('/finalization-window', secrecyOnly, secrecyController.getFinalizationWindow);
+
 module.exports = router;

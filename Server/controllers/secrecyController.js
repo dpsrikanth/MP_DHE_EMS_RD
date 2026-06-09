@@ -281,11 +281,13 @@ exports.getQuestionPapers = async (req, res) => {
       SELECT pa.id as assignment_id, pa.subject_id, ms.name as subject_name, pa.exam_id, pa.set_name, pa.status,
              pa.feedback, qp.id as paper_id, qp.title, u.name as setter_name, pa.updated_at,
              e.name as exam_name, e.exam_date, sem.semester_name as semester,
-             e.exam_type, et.type_name as exam_type_name
+             e.exam_type, et.type_name as exam_type_name,
+             mp.name as program_name
       FROM paper_assignments pa
       LEFT JOIN question_papers qp ON qp.assignment_id = pa.id
       LEFT JOIN users u ON pa.paper_setter_id = u.id
       LEFT JOIN master_subjects ms ON pa.subject_id = ms.id
+      LEFT JOIN master_programs mp ON ms.program_id = mp.id
       LEFT JOIN exams e ON pa.exam_id = e.id
       LEFT JOIN master_semesters sem ON e.semester_id = sem.id
       LEFT JOIN exam_types et ON e.exam_type = et.id
@@ -479,6 +481,94 @@ exports.getSecrecyCodes = async (req, res) => {
     res.json(rows);
   } catch(err) {
     console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+// Secrecy Finalization Roadmap Window
+exports.getFinalizationWindow = async (req, res) => {
+  try {
+    const { college_id } = req.user || {};
+    const { program_name, semester_name } = req.query;
+
+    let joinClause = `
+      LEFT JOIN master_programs mp ON am.program_id = mp.id
+      LEFT JOIN master_semesters ms ON am.semester_id = ms.id
+    `;
+
+    let whereConditions = [
+      `am.delete_status = true`,
+      // Match finalization milestone specifically for Secrecy Department
+      `(
+        UPPER(am.name) LIKE '%FINAL%'
+        OR UPPER(am.name) LIKE '%SECRECY%'
+        OR (UPPER(am.name) LIKE '%QUESTION%' AND UPPER(am.name) LIKE '%PAPER%' AND UPPER(am.name) LIKE '%FINAL%')
+      )`,
+      // Exclude upload/submission milestones (those belong to Paper Setter portal)
+      `UPPER(am.name) NOT LIKE '%UPLOAD%'`,
+      `UPPER(am.name) NOT LIKE '%SUBMISSION%'`
+    ];
+
+    const params = [];
+
+    if (college_id) {
+      params.push(college_id);
+      whereConditions.push(`(am.college_id = $${params.length} OR am.college_id IS NULL)`);
+    }
+
+    if (program_name) {
+      params.push(program_name);
+      whereConditions.push(`(mp.name ILIKE $${params.length} OR am.program_id IS NULL)`);
+    }
+
+    if (semester_name) {
+      params.push(semester_name);
+      whereConditions.push(`(ms.semester_name ILIKE $${params.length} OR am.semester_id IS NULL)`);
+    }
+
+    const query = `
+      SELECT am.id, am.name, am.start_date, am.end_date, am.type, am.description,
+             mp.name as program_name, ms.semester_name
+      FROM academic_milestones am
+      ${joinClause}
+      WHERE ${whereConditions.join(' AND ')}
+      ORDER BY
+        CASE
+          WHEN am.start_date <= NOW() AND am.end_date >= NOW() THEN 0
+          WHEN am.start_date > NOW() THEN 1
+          ELSE 2
+        END ASC,
+        CASE
+          WHEN am.start_date > NOW() THEN am.start_date
+          ELSE am.end_date
+        END DESC
+      LIMIT 1
+    `;
+
+    const settingsResult = await pool.query("SELECT setting_value FROM system_settings WHERE setting_key = 'roadmap_validation'");
+    const isValidationEnabled = settingsResult.rows.length > 0 ? settingsResult.rows[0].setting_value.enabled : true;
+
+    const { rows } = await pool.query(query, params);
+    const milestone = rows[0] || null;
+
+    if (!milestone) {
+      return res.json({ milestone: null, validationEnabled: isValidationEnabled, status: 'no_milestone' });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDate = new Date(milestone.start_date);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(milestone.end_date);
+    endDate.setHours(23, 59, 59, 999);
+
+    let status = 'open';
+    if (today < startDate) status = 'not_yet_open';
+    else if (today > endDate) status = 'closed';
+
+    res.json({ milestone, validationEnabled: isValidationEnabled, status });
+  } catch (error) {
+    console.error('Error fetching finalization window:', error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };

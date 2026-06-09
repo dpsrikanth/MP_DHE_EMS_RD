@@ -1,9 +1,10 @@
-﻿import React, { useState, useEffect } from 'react';
-import { FileText, Eye, Download, X, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, Eye, Download, X, Search, Clock, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { TableSearch } from '../../components/TableControls';
 import { secrecyApi } from '../../api/secrecyApi';
 import { formatDate } from '../../utils/dateUtils';
+
 
 const SecrecyQuestionPapers = () => {
   const [questionPapers, setQuestionPapers] = useState([]);
@@ -13,10 +14,14 @@ const SecrecyQuestionPapers = () => {
   const [selectedSets, setSelectedSets] = useState([]);
   const [examFilter, setExamFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [finalizationWindow, setFinalizationWindow] = useState(null);
+
 
   useEffect(() => {
     fetchPapers();
+    fetchFinalizationWindow();
   }, []);
+
 
   const fetchPapers = async () => {
     setLoading(true);
@@ -31,7 +36,45 @@ const SecrecyQuestionPapers = () => {
     }
   };
 
+  const fetchFinalizationWindow = async (programName = '', semesterName = '') => {
+    try {
+      const params = new URLSearchParams();
+      if (programName) params.set('program_name', programName);
+      if (semesterName) params.set('semester_name', semesterName);
+      const data = await secrecyApi.getFinalizationWindow(params.toString());
+      setFinalizationWindow(data);
+    } catch (e) {
+      console.warn('Could not fetch finalization window');
+    }
+  };
+
+  // Re-fetch finalization window whenever exam filter changes
+  useEffect(() => {
+    if (!examFilter) {
+      // No filter — fetch global window
+      fetchFinalizationWindow();
+      return;
+    }
+    // Find the selected exam's program and semester from loaded papers
+    const match = questionPapers.find(p =>
+      p.exam_name && p.exam_name.trim().replace(/\s+/g, ' ').toLowerCase() === examFilter
+    );
+    if (match) {
+      fetchFinalizationWindow(match.program_name || '', match.semester || '');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [examFilter, questionPapers]);
+
+
   const handleUpdateStatus = async (assignment_id, status, feedback = '') => {
+    // Block actions if finalization window is enabled and not open
+    if (finalizationWindow && finalizationWindow.validationEnabled && finalizationWindow.milestone && finalizationWindow.status !== 'open') {
+      const msg = finalizationWindow.status === 'not_yet_open'
+        ? `Finalization window has not opened yet. Opens on ${formatDate(finalizationWindow.milestone.start_date)}.`
+        : `Finalization window is closed. It ended on ${formatDate(finalizationWindow.milestone.end_date)}.`;
+      toast.warning(msg);
+      return;
+    }
     try {
       await secrecyApi.updatePaperStatus(assignment_id, status, feedback);
       toast.success(`Status updated to ${status}`);
@@ -40,6 +83,7 @@ const SecrecyQuestionPapers = () => {
       toast.error(e.response?.data?.message || e.response?.data?.error || 'Failed to update status');
     }
   };
+
 
   const handleDownload = async (paper_id, viewOnly = false) => {
     if (!paper_id) return;
@@ -98,22 +142,27 @@ const SecrecyQuestionPapers = () => {
     }
   };
 
-  // Unique exams derived from loaded papers (group by normalized exam_name)
+  // Unique exams — also store program_name and semester for window re-fetching
   const examOptions = React.useMemo(() => {
     const seen = new Set();
     const options = [];
     questionPapers.forEach(p => {
       if (p.exam_name) {
-        // Normalize: trim, lowercase, remove extra spaces
         const normName = p.exam_name.trim().replace(/\s+/g, ' ').toLowerCase();
         if (!seen.has(normName)) {
           seen.add(normName);
-          options.push({ id: normName, name: p.exam_name.trim().replace(/\s+/g, ' ') });
+          options.push({
+            id: normName,
+            name: p.exam_name.trim().replace(/\s+/g, ' '),
+            program_name: p.program_name || '',
+            semester: p.semester || ''
+          });
         }
       }
     });
     return options;
   }, [questionPapers]);
+
 
   // Papers filtered by exam filter and search query
   const filteredPapers = React.useMemo(() => {
@@ -201,8 +250,58 @@ const SecrecyQuestionPapers = () => {
             </div>
         </div>
       </div>
-      
+
+      {/* Finalization Window Banner */}
+      {finalizationWindow && finalizationWindow.milestone && (() => {
+        const ms = finalizationWindow.milestone;
+        const fmtDate = (d) => {
+          if (!d) return 'N/A';
+          const dt = new Date(d);
+          return `${String(dt.getDate()).padStart(2,'0')}-${String(dt.getMonth()+1).padStart(2,'0')}-${dt.getFullYear()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+        };
+        const isOpen = finalizationWindow.status === 'open';
+        const isNotYet = finalizationWindow.status === 'not_yet_open';
+        const isClosed = finalizationWindow.status === 'closed';
+        if (finalizationWindow.status === 'no_milestone') return null;
+        return (
+          <div className={`flex items-center gap-4 px-5 py-4 rounded-2xl border ${
+            isOpen ? 'bg-indigo-50/60 border-indigo-100' :
+            isNotYet ? 'bg-amber-50/60 border-amber-100' :
+            'bg-red-50/60 border-red-100'
+          } animate-in fade-in duration-500`}>
+            <div className={`w-10 h-10 flex items-center justify-center rounded-xl flex-shrink-0 ${
+              isOpen ? 'bg-indigo-100/80 text-indigo-500' :
+              isNotYet ? 'bg-amber-100/80 text-amber-500' :
+              'bg-red-100/80 text-red-500'
+            }`}>
+              <Clock size={20} />
+            </div>
+            <div>
+              <p className={`text-[11px] font-black tracking-widest uppercase mb-0.5 ${
+                isOpen ? 'text-indigo-400' : isNotYet ? 'text-amber-500' : 'text-red-400'
+              }`}>
+                {isClosed ? 'Finalization Window Closed' : isNotYet ? 'Finalization Window Not Yet Open' : 'Finalization Window'}
+              </p>
+              <p className={`font-black text-sm ${
+                isOpen ? 'text-indigo-700' : isNotYet ? 'text-amber-700' : 'text-red-600'
+              }`}>
+                {fmtDate(ms.start_date)} to {fmtDate(ms.end_date)}
+              </p>
+            </div>
+            {!finalizationWindow.validationEnabled && (
+              <span className="ml-auto text-[11px] font-black text-slate-400 tracking-widest bg-slate-100 px-3 py-1 rounded-full">Validation Off</span>
+            )}
+            {(isClosed || isNotYet) && finalizationWindow.validationEnabled && (
+              <span className="ml-auto flex items-center gap-1.5 text-[12px] font-black text-amber-600 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-full">
+                <AlertCircle size={13} /> Approve / Reject actions are locked
+              </span>
+            )}
+          </div>
+        );
+      })()}
+
       <div className="space-y-4">
+
         {filteredPapers && filteredPapers.map((paper) => (
           <div key={paper.assignment_id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 group transition-all hover:shadow-md">
             <div className="flex flex-col md:flex-row justify-between gap-6">
