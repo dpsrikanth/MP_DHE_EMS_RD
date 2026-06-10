@@ -216,7 +216,53 @@ const StudentExams = () => {
     return null;
   };
 
+  const getHallTicketMilestone = () => {
+    if (!Array.isArray(milestones) || milestones.length === 0) return null;
+    
+    let matches = milestones;
+    
+    const externalExamGroup = examGroups.find(g => g.exam_type !== 1);
+    if (externalExamGroup && externalExamGroup.subjects.length > 0) {
+      const exam = externalExamGroup.subjects[0];
+      if (exam.semester_id) matches = matches.filter(m => !m.semester_id || parseInt(m.semester_id) === parseInt(exam.semester_id));
+      if (exam.program_id) matches = matches.filter(m => !m.program_id || parseInt(m.program_id) === parseInt(exam.program_id));
+      if (exam.academic_year_id) matches = matches.filter(m => !m.academic_year_id || parseInt(m.academic_year_id) === parseInt(exam.academic_year_id));
+    } else if (selectedSemester && availableSemesters.length > 0) {
+      const semObj = availableSemesters.find(s => s.semester_name === selectedSemester);
+      if (semObj) matches = matches.filter(m => !m.semester_id || parseInt(m.semester_id) === parseInt(semObj.id));
+    }
+    
+    const today = new Date();
+    const namedMatches = matches.filter(m => m.name.toUpperCase().includes("HALL TICKET"));
+
+    let bestMatch = namedMatches.find(m => new Date(m.start_date) <= today && new Date(m.end_date) >= today);
+    if (!bestMatch && namedMatches.length > 0) {
+        const futureMatches = namedMatches.filter(m => new Date(m.start_date) > today).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+        if (futureMatches.length > 0) {
+            bestMatch = futureMatches[0];
+        } else {
+            const pastMatches = namedMatches.sort((a, b) => new Date(b.end_date) - new Date(a.end_date));
+            bestMatch = pastMatches[0];
+        }
+    }
+
+    if (bestMatch) {
+        const startDate = new Date(bestMatch.start_date);
+        const endDate = new Date(bestMatch.end_date);
+        // Set time to end of day for end date to allow full day
+        endDate.setHours(23, 59, 59, 999);
+        return {
+            startFull: bestMatch.start_date,
+            endFull: bestMatch.end_date,
+            name: bestMatch.name,
+            isActive: today >= startDate && today <= endDate
+        };
+    }
+    return null;
+  };
+
   const regWindow = getRegistrationMilestone();
+  const htWindow = getHallTicketMilestone();
 
   if (loading) {
     return (
@@ -342,14 +388,29 @@ const StudentExams = () => {
                     </button>
                   )
                 ) : group.seatingLocked ? (
-                  <button
-                    onClick={() => window.open(`/student/hall-ticket/${group.exam_name}/${group.subjects[0].semester_id}`, '_blank')}
-                    className="mt-4 md:mt-0 group relative inline-flex items-center gap-3 bg-emerald-600 text-white px-8 py-3.5 rounded-2xl font-black text-[13px]  tracking-widest shadow-2xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    <Printer size={16} className="relative z-10" />
-                    <span className="relative z-10">Download Hall Ticket</span>
-                  </button>
+                  isValidationEnabled && htWindow && !htWindow.isActive ? (
+                    <div className="flex flex-col items-end gap-1.5 mt-4 md:mt-0">
+                      <button
+                        disabled
+                        className="opacity-50 cursor-not-allowed inline-flex items-center gap-2 px-8 py-3.5 bg-slate-100 border border-slate-200 text-slate-500 font-black rounded-2xl text-[13px] tracking-widest shadow-sm"
+                      >
+                        <Clock size={16} />
+                        <span>Hall Ticket Blocked</span>
+                      </button>
+                      <span className="text-[10px] font-black text-slate-500 tracking-wider">
+                         Available {formatDate(htWindow.startFull, true)}
+                      </span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => window.open(`/student/hall-ticket/${group.exam_name}/${group.subjects[0].semester_id}`, '_blank')}
+                      className="mt-4 md:mt-0 group relative inline-flex items-center gap-3 bg-emerald-600 text-white px-8 py-3.5 rounded-2xl font-black text-[13px]  tracking-widest shadow-2xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      <Printer size={16} className="relative z-10" />
+                      <span className="relative z-10">Download Hall Ticket</span>
+                    </button>
+                  )
                 ) : (
                   <div className="mt-4 md:mt-0 flex items-center gap-2 px-5 py-3 bg-amber-50 border border-amber-200 rounded-2xl text-amber-700 font-bold text-[13px]">
                     <Clock size={14} />

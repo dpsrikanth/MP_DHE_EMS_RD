@@ -32,10 +32,20 @@ const MilestoneManagement = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const [filters, setFilters] = useState({
-    academic_year_id: '',
-    program_id: '',
-    semester_id: ''
+  const [filters, setFilters] = useState(() => {
+    const saved = sessionStorage.getItem('milestoneFilters');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return { academic_year_id: '', program_id: '', semester_id: '' };
+      }
+    }
+    return {
+      academic_year_id: '',
+      program_id: '',
+      semester_id: ''
+    };
   });
 
   const [metadata, setMetadata] = useState({
@@ -143,7 +153,11 @@ const MilestoneManagement = () => {
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
+    setFilters(prev => {
+      const newFilters = { ...prev, [name]: value };
+      sessionStorage.setItem('milestoneFilters', JSON.stringify(newFilters));
+      return newFilters;
+    });
   };
 
   const resolveMetadataName = (type, id) => {
