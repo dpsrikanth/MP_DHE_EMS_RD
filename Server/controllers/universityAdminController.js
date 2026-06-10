@@ -239,6 +239,9 @@ exports.getResultHubData = async (req, res) => {
                     e.name as exam_name,
                     e.exam_type,
                     e.results_published,
+                    e.program_id,
+                    e.semester_id,
+                    e.academic_year_id,
                     sub.name as subject_name, sub.id as subject_id,
                     sub.credit as credits,
                     gc.grade_scale
@@ -274,6 +277,7 @@ exports.getResultHubData = async (req, res) => {
                 mb.moderation_marks, mb.moderation_reason,
                 mb.rollnumber, mb.student_name, mb.college_name, mb.program_name,
                 mb.exam_name, mb.exam_type, mb.results_published,
+                mb.program_id, mb.semester_id, mb.academic_year_id,
                 mb.subject_name, mb.subject_id, mb.credits,
                 mb.pass_threshold, mb.grade_scale, mb.is_grace_enabled,
                 (mb.raw_total + mb.grace_marks) as total_marks,

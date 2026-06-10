@@ -11,6 +11,8 @@ import { universityAdminApi } from "../../api/universityAdminApi";
 import { masterDataApi } from "../../api/masterDataApi";
 import { examApi } from "../../api/examApi";
 import { useGradingPolicy } from "../../hooks/useGradingPolicy";
+import { milestoneApi } from "../../api/milestoneApi";
+import { formatDate } from "../../utils/dateUtils";
 
 const UniversityMarksView = () => {
   // Data
@@ -41,19 +43,26 @@ const UniversityMarksView = () => {
   const [moderationForm, setModerationForm] = useState({ marks: 0, reason: "" });
   const [savingModeration, setSavingModeration] = useState(false);
 
+  const [milestones, setMilestones] = useState([]);
+  const [isValidationEnabled, setIsValidationEnabled] = useState(true);
+
   const { config: gradingConfig } = useGradingPolicy();
 
   useEffect(() => {
     const fetchFilters = async () => {
       try {
-        const [exRes, colRes, progRes] = await Promise.all([
+        const [exRes, colRes, progRes, valRes, milestonesRes] = await Promise.all([
           examApi.getExams(),
           masterDataApi.getColleges(),
-          masterDataApi.getPrograms()
+          masterDataApi.getPrograms(),
+          milestoneApi.getValidationSetting(),
+          milestoneApi.getMilestones({})
         ]);
         if (exRes) setExams(exRes);
         if (colRes) setColleges(colRes);
         if (progRes) setPrograms(progRes);
+        setIsValidationEnabled(valRes?.enabled ?? true);
+        if (milestonesRes) setMilestones(Array.isArray(milestonesRes) ? milestonesRes : []);
       } catch (err) {
         console.error("Failed to load filters:", err);
       }
@@ -108,6 +117,42 @@ const UniversityMarksView = () => {
       setLoading(false);
     }
   }, [selectedExam, selectedCollege, selectedProgram, activeSubject]);
+
+  // Milestone validation logic
+  const resultMilestone = useMemo(() => {
+    if (!marks || marks.length === 0 || !milestones.length) return null;
+    const firstMark = marks[0];
+    
+    // Find all matching milestones (often there's only one, but we filter properly)
+    let matches = milestones.filter(m => m.name === "Results Declaration");
+    if (firstMark.program_id) matches = matches.filter(m => !m.program_id || m.program_id == firstMark.program_id);
+    if (firstMark.semester_id) matches = matches.filter(m => !m.semester_id || m.semester_id == firstMark.semester_id);
+    if (firstMark.academic_year_id) matches = matches.filter(m => !m.academic_year_id || m.academic_year_id == firstMark.academic_year_id);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let bestMatch = matches.find(m => new Date(m.start_date) <= today && new Date(m.end_date) >= today);
+    if (!bestMatch && matches.length > 0) {
+      const future = matches.filter(m => new Date(m.start_date) > today).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+      bestMatch = future.length > 0 ? future[0] : [...matches].sort((a, b) => new Date(b.end_date) - new Date(a.end_date))[0];
+    }
+    
+    if (bestMatch) {
+      const startDate = new Date(bestMatch.start_date);
+      const endDate = new Date(bestMatch.end_date);
+      endDate.setHours(23, 59, 59, 999);
+      return {
+        startFull: bestMatch.start_date,
+        endFull: bestMatch.end_date,
+        name: bestMatch.name,
+        isActive: today >= startDate && today <= endDate
+      };
+    }
+    return null;
+  }, [marks, milestones]);
+
+  const isBlocked = isValidationEnabled && resultMilestone && !resultMilestone.isActive;
 
   // Toggle results published
   const togglePublish = async () => {
@@ -351,7 +396,14 @@ const UniversityMarksView = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col items-end gap-3">
+          {isBlocked && (
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 text-slate-500 px-4 py-2 rounded-xl text-[11px] font-black tracking-widest shadow-sm">
+              <AlertCircle size={14} />
+              Actions Blocked — Available from {formatDate(resultMilestone?.startFull, true)}
+            </div>
+          )}
+          <div className="flex items-center gap-3">
           {marks.length > 0 && (
             <>
               <button
@@ -363,7 +415,7 @@ const UniversityMarksView = () => {
               </button>
               <button
                 onClick={handlePromote}
-                disabled={promoting || !summary?.resultsPublished || summary?.isPromoted}
+                disabled={isBlocked || promoting || !summary?.resultsPublished || summary?.isPromoted}
                 title={summary?.isPromoted ? "Students already promoted" : (!summary?.resultsPublished ? "Results must be published before promotion" : "Promote students who passed to the next semester")}
                 className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-[13px] tracking-widest transition-all shadow-lg disabled:opacity-50 ${summary?.isPromoted ? 'bg-slate-200 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
               >
@@ -372,15 +424,15 @@ const UniversityMarksView = () => {
               </button>
               <button
                 onClick={handleUnpromote}
-                disabled={unpromoting}
-                className="flex items-center gap-2 px-5 py-3 bg-rose-50 border-2 border-rose-100 text-rose-600 rounded-xl font-bold text-[13px] tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                disabled={isBlocked || unpromoting}
+                className="flex items-center gap-2 px-5 py-3 bg-rose-50 border-2 border-rose-100 text-rose-600 rounded-xl font-bold text-[13px] tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {unpromoting ? <Loader2 size={16} className="animate-spin" /> : <EyeOff size={16} />}
                 Unpromote
               </button>
               <button
                 onClick={togglePublish}
-                disabled={publishing || (!summary?.canPublish && !summary?.resultsPublished)}
+                disabled={isBlocked || publishing || (!summary?.canPublish && !summary?.resultsPublished)}
                 title={!summary?.canPublish && !summary?.resultsPublished ? "Results cannot be published until all subjects are 'Locked' by colleges and external marks are submitted." : ""}
                 className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-[13px]  tracking-widest transition-all shadow-lg disabled:opacity-50 ${summary?.resultsPublished
                   ? 'bg-emerald-500 text-white shadow-indigo-500/20 hover:bg-emerald-600'
@@ -392,6 +444,7 @@ const UniversityMarksView = () => {
               </button>
             </>
           )}
+          </div>
         </div>
       </div>
 
