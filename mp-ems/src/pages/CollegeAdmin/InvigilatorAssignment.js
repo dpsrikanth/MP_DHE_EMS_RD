@@ -4,6 +4,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { collegeAdminApi } from '../../api/collegeAdminApi';
+import { milestoneApi } from '../../api/milestoneApi';
+import { formatDate } from '../../utils/dateUtils';
 
 const InvigilatorAssignment = () => {
   const [loadingExams, setLoadingExams]     = useState(true);
@@ -24,15 +26,24 @@ const InvigilatorAssignment = () => {
 
   const [loadingSubjects, setLoadingSubjects] = useState(false);
 
-  // ── Load external exams on mount ─────────────────────────────────────────
+  const [milestones, setMilestones] = useState([]);
+  const [isValidationEnabled, setIsValidationEnabled] = useState(true);
+
+  // ── Load external exams and milestones on mount ──────────────────────────
   useEffect(() => {
     const load = async () => {
       setLoadingExams(true);
       try {
-        const data = await collegeAdminApi.getExternalExams();
-        setExams(data || []);
+        const [examsData, valData, milestonesData] = await Promise.all([
+          collegeAdminApi.getExternalExams(),
+          milestoneApi.getValidationSetting(),
+          milestoneApi.getMilestones({})
+        ]);
+        setExams(examsData || []);
+        setIsValidationEnabled(valData?.enabled ?? true);
+        setMilestones(Array.isArray(milestonesData) ? milestonesData : []);
       } catch {
-        toast.error('Failed to load external exams');
+        toast.error('Failed to load initial data');
       } finally {
         setLoadingExams(false);
       }
@@ -182,6 +193,49 @@ const InvigilatorAssignment = () => {
   const selectedExam = exams.find(e => e.id.toString() === selectedExamId);
   const selectedSubject = subjects.find(s => s.specific_exam_id.toString() === selectedSpecificExamId);
 
+  const getInvigilatorMilestone = () => {
+    if (!Array.isArray(milestones) || milestones.length === 0) return null;
+    
+    let matches = milestones;
+    if (selectedExam) {
+      if (selectedExam.semester_id) matches = matches.filter(m => !m.semester_id || parseInt(m.semester_id) === parseInt(selectedExam.semester_id));
+      if (selectedExam.program_id) matches = matches.filter(m => !m.program_id || parseInt(m.program_id) === parseInt(selectedExam.program_id));
+      if (selectedExam.academic_year_id) matches = matches.filter(m => !m.academic_year_id || parseInt(m.academic_year_id) === parseInt(selectedExam.academic_year_id));
+    }
+    
+    const today = new Date();
+    const namedMatches = matches.filter(m => {
+        const n = m.name.toUpperCase();
+        return n.includes("ASSIGN INVIGILATOR") || n.includes("INVIGILATOR ASSIGNMENT");
+    });
+
+    let bestMatch = namedMatches.find(m => new Date(m.start_date) <= today && new Date(m.end_date) >= today);
+    if (!bestMatch && namedMatches.length > 0) {
+        const futureMatches = namedMatches.filter(m => new Date(m.start_date) > today).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+        if (futureMatches.length > 0) {
+            bestMatch = futureMatches[0];
+        } else {
+            const pastMatches = namedMatches.sort((a, b) => new Date(b.end_date) - new Date(a.end_date));
+            bestMatch = pastMatches[0];
+        }
+    }
+
+    if (bestMatch) {
+        const startDate = new Date(bestMatch.start_date);
+        const endDate = new Date(bestMatch.end_date);
+        endDate.setHours(23, 59, 59, 999);
+        return {
+            startFull: bestMatch.start_date,
+            endFull: bestMatch.end_date,
+            name: bestMatch.name,
+            isActive: today >= startDate && today <= endDate
+        };
+    }
+    return null;
+  };
+
+  const invigMilestone = getInvigilatorMilestone();
+
   return (
     <div className="max-w-6xl mx-auto p-6 md:p-10 space-y-8">
 
@@ -297,14 +351,29 @@ const InvigilatorAssignment = () => {
         </div>
 
         <div className="flex justify-end pt-2">
-          <button
-            onClick={handleAssign}
-            disabled={saving || !selectedSpecificExamId || !selectedHallId || !selectedFacultyId}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black px-8 py-3 rounded-2xl shadow-lg shadow-indigo-200 transition-all text-sm"
-          >
-            {saving ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
-            Assign Invigilator
-          </button>
+          {isValidationEnabled && invigMilestone && !invigMilestone.isActive ? (
+            <div className="flex flex-col items-end gap-1.5">
+              <button
+                disabled
+                className="flex items-center gap-2 bg-slate-100 border border-slate-200 text-slate-500 font-black px-8 py-3 rounded-2xl shadow-sm transition-all text-sm cursor-not-allowed"
+              >
+                <AlertCircle size={16} />
+                Assignment Blocked
+              </button>
+              <span className="text-[10px] font-black text-slate-500 tracking-wider">
+                Available {formatDate(invigMilestone.startFull, true)}
+              </span>
+            </div>
+          ) : (
+            <button
+              onClick={handleAssign}
+              disabled={saving || !selectedSpecificExamId || !selectedHallId || !selectedFacultyId}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black px-8 py-3 rounded-2xl shadow-lg shadow-indigo-200 transition-all text-sm"
+            >
+              {saving ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
+              Assign Invigilator
+            </button>
+          )}
         </div>
       </div>
 
@@ -350,13 +419,17 @@ const InvigilatorAssignment = () => {
                         </div>
                         <span className="text-sm font-bold text-slate-700">{fac.name}</span>
                       </div>
-                      <button
-                        onClick={() => handleRemove(group.hall_id, fac.id)}
-                        disabled={saving}
-                        className="flex items-center gap-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-xl text-xs font-black transition-all disabled:opacity-50"
-                      >
-                        <Trash2 size={13} /> Remove
-                      </button>
+                      {isValidationEnabled && invigMilestone && !invigMilestone.isActive ? (
+                         <span className="text-[10px] font-black text-slate-400 italic">Locked</span>
+                      ) : (
+                        <button
+                          onClick={() => handleRemove(group.hall_id, fac.id)}
+                          disabled={saving}
+                          className="flex items-center gap-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-xl text-xs font-black transition-all disabled:opacity-50"
+                        >
+                          <Trash2 size={13} /> Remove
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
