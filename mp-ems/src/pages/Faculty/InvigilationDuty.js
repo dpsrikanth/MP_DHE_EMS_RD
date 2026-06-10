@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { facultyApi } from '../../api/facultyApi';
+import { milestoneApi } from '../../api/milestoneApi';
+import { formatDate } from '../../utils/dateUtils';
 
 const InvigilationDuty = () => {
   const [loading, setLoading] = useState(true);
@@ -15,6 +17,9 @@ const InvigilationDuty = () => {
   const [selectedDuty, setSelectedDuty] = useState(null); // { exam_id, hall_id, exam_name, hall_name }
   const [students, setStudents] = useState([]);
   const [attendance, setAttendance] = useState({}); // { student_id: status }
+
+  const [milestones, setMilestones] = useState([]);
+  const [isValidationEnabled, setIsValidationEnabled] = useState(true);
 
   useEffect(() => {
     fetchDuties();
@@ -30,8 +35,14 @@ const InvigilationDuty = () => {
   const fetchDuties = async () => {
     setLoading(true);
     try {
-      const data = await facultyApi.getInvigilationDuties();
+      const [data, valData, milestonesData] = await Promise.all([
+        facultyApi.getInvigilationDuties(),
+        milestoneApi.getValidationSetting(),
+        milestoneApi.getMilestones({})
+      ]);
       setDuties(data || []);
+      setIsValidationEnabled(valData?.enabled ?? true);
+      setMilestones(Array.isArray(milestonesData) ? milestonesData : []);
     } catch (error) {
       console.error("Failed to load duties", error);
       toast.error("Failed to load your invigilation duties");
@@ -101,10 +112,53 @@ const InvigilationDuty = () => {
     }
   };
 
-  const formatDate = (dateStr) => {
+  const formatExamDate = (dateStr) => {
     if (!dateStr) return '';
     return new Date(dateStr).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   };
+
+  const getAttendanceMilestone = () => {
+    if (!Array.isArray(milestones) || milestones.length === 0) return null;
+    
+    let matches = milestones;
+    if (selectedDuty) {
+        if (selectedDuty.semester_id) matches = matches.filter(m => !m.semester_id || parseInt(m.semester_id) === parseInt(selectedDuty.semester_id));
+        if (selectedDuty.program_id) matches = matches.filter(m => !m.program_id || parseInt(m.program_id) === parseInt(selectedDuty.program_id));
+        if (selectedDuty.academic_year_id) matches = matches.filter(m => !m.academic_year_id || parseInt(m.academic_year_id) === parseInt(selectedDuty.academic_year_id));
+    }
+    
+    const today = new Date();
+    const namedMatches = matches.filter(m => {
+        const n = m.name.toUpperCase();
+        return n.includes("EXTERNAL EXAM ATTENDANCE") || n.includes("ATTENDANCE");
+    });
+
+    let bestMatch = namedMatches.find(m => new Date(m.start_date) <= today && new Date(m.end_date) >= today);
+    if (!bestMatch && namedMatches.length > 0) {
+        const futureMatches = namedMatches.filter(m => new Date(m.start_date) > today).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+        if (futureMatches.length > 0) {
+            bestMatch = futureMatches[0];
+        } else {
+            const pastMatches = namedMatches.sort((a, b) => new Date(b.end_date) - new Date(a.end_date));
+            bestMatch = pastMatches[0];
+        }
+    }
+
+    if (bestMatch) {
+        const startDate = new Date(bestMatch.start_date);
+        const endDate = new Date(bestMatch.end_date);
+        endDate.setHours(23, 59, 59, 999);
+        return {
+            startFull: bestMatch.start_date,
+            endFull: bestMatch.end_date,
+            name: bestMatch.name,
+            isActive: today >= startDate && today <= endDate
+        };
+    }
+    return null;
+  };
+
+  const attendanceMilestone = getAttendanceMilestone();
 
   return (
     <div className="max-w-[1600px] mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
@@ -130,25 +184,42 @@ const InvigilationDuty = () => {
             </h1>
             <p className="text-[12px] text-slate-400 font-black tracking-[0.2em] mt-2 uppercase">
               {selectedDuty 
-                ? `${selectedDuty.exam_name} ${selectedDuty.subject_code ? `— ${selectedDuty.subject_code}` : ''} ${selectedDuty.exam_date ? `— ${formatDate(selectedDuty.exam_date)}` : ''}`
+                ? `${selectedDuty.exam_name} ${selectedDuty.subject_code ? `— ${selectedDuty.subject_code}` : ''} ${selectedDuty.exam_date ? `— ${formatExamDate(selectedDuty.exam_date)}` : ''}`
                 : 'External Exam Attendance'}
             </p>
           </div>
         </div>
         
         {selectedDuty && (
-          <button 
-            onClick={handleSaveAttendance}
-            disabled={saving || isSaved}
-            className={`h-12 px-8 text-[12px] font-black tracking-widest rounded-2xl flex items-center gap-2 transition-all ${
-              isSaved 
-                ? 'bg-emerald-100 text-emerald-600 border border-emerald-200 cursor-not-allowed opacity-100' 
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20 disabled:opacity-50'
-            }`}
-          >
-            {saving ? <Loader2 size={18} className="animate-spin" /> : isSaved ? <CheckCircle2 size={18} /> : <Save size={18} />}
-            {isSaved ? 'SAVED' : 'SAVE ATTENDANCE'}
-          </button>
+          <div className="flex flex-col items-end gap-1.5">
+            {isValidationEnabled && attendanceMilestone && !attendanceMilestone.isActive ? (
+              <div className="flex flex-col items-center gap-1.5">
+                <button 
+                  disabled
+                  className="h-12 px-8 text-[12px] font-black tracking-widest rounded-2xl flex items-center gap-2 bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                >
+                  <AlertCircle size={18} />
+                  ATTENDANCE BLOCKED
+                </button>
+                <span className="text-[10px] font-black text-slate-500 tracking-wider">
+                  Available from {formatDate(attendanceMilestone.startFull, true)}
+                </span>
+              </div>
+            ) : (
+              <button 
+                onClick={handleSaveAttendance}
+                disabled={saving || isSaved}
+                className={`h-12 px-8 text-[12px] font-black tracking-widest rounded-2xl flex items-center gap-2 transition-all ${
+                  isSaved 
+                    ? 'bg-emerald-100 text-emerald-600 border border-emerald-200 cursor-not-allowed opacity-100' 
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20 disabled:opacity-50'
+                }`}
+              >
+                {saving ? <Loader2 size={18} className="animate-spin" /> : isSaved ? <CheckCircle2 size={18} /> : <Save size={18} />}
+                {isSaved ? 'SAVED' : 'SAVE ATTENDANCE'}
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -199,7 +270,7 @@ const InvigilationDuty = () => {
                 <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between">
                   {duty.exam_date && (
                     <span className="text-[10px] font-black tracking-widest text-indigo-400 uppercase">
-                      {formatDate(duty.exam_date)}
+                      {formatExamDate(duty.exam_date)}
                     </span>
                   )}
                   <span className="text-[11px] font-black tracking-widest text-indigo-600 uppercase group-hover:gap-3 flex items-center gap-1 transition-all">

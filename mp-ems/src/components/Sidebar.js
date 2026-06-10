@@ -268,7 +268,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             { id: 60, name: 'Attendance Shortage', path: '/hod/attendance-shortage', icon: <Users size={18} /> },
           ]
         },
-        { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> }
+        { id: 25, name: 'Academic Calendar', path: '/internal-calendar', icon: <Calendar size={20} /> },
+        { id: 54, name: 'Invigilation Duty', path: '/faculty/invigilation-duty', icon: <Building2 size={20} /> }
       ];
     }
 
