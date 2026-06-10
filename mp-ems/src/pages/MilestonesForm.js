@@ -115,7 +115,7 @@ const MilestonesForm = () => {
         });
       } else {
         toast.error('Milestone not found');
-        navigate('/milestones');
+        navigate('/milestones', { state: { preserveFilters: true } });
       }
     } catch (err) {
       toast.error(err.message);
@@ -139,7 +139,7 @@ const MilestonesForm = () => {
         await milestoneApi.createMilestone(form);
       }
       toast.success(`Milestone ${isEditing ? 'updated' : 'created'} successfully`);
-      navigate('/milestones');
+      navigate('/milestones', { state: { preserveFilters: true } });
     } catch (err) {
       toast.error('Error: ' + (err.response?.data?.message || err.message));
     } finally {
@@ -159,7 +159,7 @@ const MilestonesForm = () => {
       <div className="form-card">
         <div className="form-header">
           <div className="form-header__left">
-            <button type="button" onClick={() => navigate('/milestones')} className="form-header__back">
+            <button type="button" onClick={() => navigate('/milestones', { state: { preserveFilters: true } })} className="form-header__back">
               <ArrowLeft size={20} />
             </button>
             <div className="form-header__icon">
@@ -252,7 +252,7 @@ const MilestonesForm = () => {
           </div>
 
           <div className="form-footer">
-            <button type="button" className="form-btn-cancel" onClick={() => navigate('/milestones')}>
+            <button type="button" className="form-btn-cancel" onClick={() => navigate('/milestones', { state: { preserveFilters: true } })}>
               Discard
             </button>
             <button type="submit" disabled={saving} className="form-btn-submit">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from 'react-toastify';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Flag, 
   Plus, 
@@ -21,6 +21,7 @@ import { masterDataApi } from '../api/masterDataApi';
 
 const MilestoneManagement = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -33,13 +34,19 @@ const MilestoneManagement = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const [filters, setFilters] = useState(() => {
-    const saved = sessionStorage.getItem('milestoneFilters');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return { academic_year_id: '', program_id: '', semester_id: '' };
+    // Only restore from session if we explicitly passed preserveFilters=true in state
+    if (location.state?.preserveFilters) {
+      const saved = sessionStorage.getItem('milestoneFilters');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          return { academic_year_id: '', program_id: '', semester_id: '' };
+        }
       }
+    } else {
+      // Clear session storage if we came from elsewhere (e.g. sidebar)
+      sessionStorage.removeItem('milestoneFilters');
     }
     return {
       academic_year_id: '',
