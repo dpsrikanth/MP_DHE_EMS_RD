@@ -9,6 +9,8 @@ import {
 import { toast } from 'react-toastify';
 import Papa from 'papaparse';
 import { marksApi } from '../../api/marksApi';
+import { milestoneApi } from '../../api/milestoneApi';
+import { formatDate } from '../../utils/dateUtils';
 import BulkImportModal from "../../components/BulkImportModal";
 
 const ExternalMarksEntry = () => {
@@ -21,6 +23,10 @@ const ExternalMarksEntry = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [activeSubjectForImport, setActiveSubjectForImport] = useState(null);
   const [showBulkMenu, setShowBulkMenu] = useState(null); // subject_id
+  const [expandedSubjectId, setExpandedSubjectId] = useState(null);
+
+  const [milestones, setMilestones] = useState([]);
+  const [isValidationEnabled, setIsValidationEnabled] = useState(true);
 
   useEffect(() => {
     fetchAssignments();
@@ -29,7 +35,11 @@ const ExternalMarksEntry = () => {
   const fetchAssignments = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const data = await marksApi.getExternalAssignments();
+      const [data, valData, milestonesData] = await Promise.all([
+        marksApi.getExternalAssignments(),
+        milestoneApi.getValidationSetting(),
+        milestoneApi.getMilestones({})
+      ]);
       if (data) {
         setAssignments(data);
         
@@ -45,6 +55,10 @@ const ExternalMarksEntry = () => {
           }
         });
         setModifiedMarks(initials);
+      }
+      if (!silent) {
+        setIsValidationEnabled(valData?.enabled ?? true);
+        setMilestones(Array.isArray(milestonesData) ? milestonesData : []);
       }
     } catch (error) {
       console.error("Failed to fetch assignments:", error);
@@ -192,6 +206,9 @@ const ExternalMarksEntry = () => {
     if (!acc[eKey]) {
       acc[eKey] = {
         exam_name: curr.exam_name,
+        program_id: curr.program_id,
+        semester_id: curr.semester_id,
+        academic_year_id: curr.academic_year_id,
         subjects: {}
       };
     }
@@ -200,6 +217,9 @@ const ExternalMarksEntry = () => {
       acc[eKey].subjects[sKey] = {
         subject_id: curr.subject_id,
         subject_name: curr.subject_name,
+        program_id: curr.program_id,
+        semester_id: curr.semester_id,
+        academic_year_id: curr.academic_year_id,
         // Mark statuses of all students in this subject to derive subject-level status
         student_marks_statuses: [], 
         students: []
@@ -243,6 +263,47 @@ const ExternalMarksEntry = () => {
   const uniqueExamNames = useMemo(() => {
     return Object.keys(groupedData).sort();
   }, [groupedData]);
+
+  // --- Milestone Validation (per subject/exam) ---
+  const getValuationMilestoneForSubject = (subject) => {
+    if (!Array.isArray(milestones) || milestones.length === 0) return null;
+    const today = new Date();
+    
+    // Start with milestones matching the name pattern
+    let matches = milestones.filter(m => {
+      const n = m.name.toUpperCase();
+      return n.includes("VALUATION") || n.includes("ANSWER SCRIPT") || n.includes("EXTERNAL MARKS");
+    });
+
+    // Filter by program/semester/academic_year if available on the milestone and subject
+    if (subject?.program_id) matches = matches.filter(m => !m.program_id || parseInt(m.program_id) === parseInt(subject.program_id));
+    if (subject?.semester_id) matches = matches.filter(m => !m.semester_id || parseInt(m.semester_id) === parseInt(subject.semester_id));
+    if (subject?.academic_year_id) matches = matches.filter(m => !m.academic_year_id || parseInt(m.academic_year_id) === parseInt(subject.academic_year_id));
+
+    let bestMatch = matches.find(m => new Date(m.start_date) <= today && new Date(m.end_date) >= today);
+    if (!bestMatch && matches.length > 0) {
+      const future = matches.filter(m => new Date(m.start_date) > today).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+      bestMatch = future.length > 0 ? future[0] : [...matches].sort((a, b) => new Date(b.end_date) - new Date(a.end_date))[0];
+    }
+    if (bestMatch) {
+      const startDate = new Date(bestMatch.start_date);
+      const endDate = new Date(bestMatch.end_date);
+      endDate.setHours(23, 59, 59, 999);
+      return {
+        startFull: bestMatch.start_date,
+        endFull: bestMatch.end_date,
+        name: bestMatch.name,
+        isActive: today >= startDate && today <= endDate
+      };
+    }
+    return null;
+  };
+
+  const isSubjectBlocked = (subject) => {
+    if (!isValidationEnabled) return false;
+    const ms = getValuationMilestoneForSubject(subject);
+    return ms && !ms.isActive;
+  };
 
   if (loading) {
     return (
@@ -319,13 +380,19 @@ const ExternalMarksEntry = () => {
 
                 return (
                   <div key={subIdx} className="bg-white rounded-[3rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden group hover:border-indigo-200 transition-all duration-500">
-                    <div className="px-8 py-5 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div 
+                      onClick={() => setExpandedSubjectId(expandedSubjectId === subject.subject_id ? null : subject.subject_id)}
+                      className="px-8 py-5 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-slate-100/50 transition-colors"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
                           <BookOpen size={18} />
                         </div>
                         <div>
-                          <h3 className="text-base font-black text-slate-900 tracking-tight">{subject.subject_name}</h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-base font-black text-slate-900 tracking-tight">{subject.subject_name}</h3>
+                            <ChevronDown size={16} className={`text-slate-400 transition-transform duration-300 ${expandedSubjectId === subject.subject_id ? 'rotate-180' : ''}`} />
+                          </div>
                           <div className="flex items-center gap-3 mt-0.5">
                             <span className={`text-[10px] font-black tracking-widest px-2.5 py-0.5 rounded-full border ${
                               subject.assignment_status === 'Submitted' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
@@ -340,9 +407,17 @@ const ExternalMarksEntry = () => {
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                        {/* Roadmap validation banner */}
+                        {isSubjectBlocked(subject) && (
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="text-[10px] font-black text-slate-400 tracking-wider bg-slate-50 border border-slate-200 px-3 py-1 rounded-full flex items-center gap-1.5">
+                              <AlertCircle size={11} /> Marks entry blocked — Available from {formatDate(getValuationMilestoneForSubject(subject)?.startFull, true)}
+                            </span>
+                          </div>
+                        )}
                         {/* Bulk Actions Menu */}
-                        {subject.assignment_status !== 'Submitted' && (
+                        {subject.assignment_status !== 'Submitted' && !isSubjectBlocked(subject) && (
                           <div className="relative">
                             <button 
                               onClick={() => setShowBulkMenu(showBulkMenu === subject.subject_id ? null : subject.subject_id)}
@@ -390,10 +465,14 @@ const ExternalMarksEntry = () => {
                         {subject.assignment_status === 'Submitted' ? (
                           <button 
                             onClick={() => handleUnlockSubject(subject, exam.exam_name)}
-                            disabled={submitting}
+                            disabled={submitting || isSubjectBlocked(subject)}
                             className="h-10 px-5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-black tracking-widest rounded-xl border border-amber-200 flex items-center gap-2 transition-all disabled:opacity-30"
                           >
                             <Unlock size={14} /> Enable / Unlock
+                          </button>
+                        ) : isSubjectBlocked(subject) ? (
+                          <button disabled className="h-10 px-5 bg-slate-100 text-slate-400 text-[11px] font-black tracking-widest rounded-xl border border-slate-200 flex items-center gap-2 cursor-not-allowed">
+                            <AlertCircle size={14} /> Entry Blocked
                           </button>
                         ) : (
                           <>
@@ -416,7 +495,8 @@ const ExternalMarksEntry = () => {
                       </div>
                     </div>
 
-                    <div className="overflow-x-auto">
+                    {expandedSubjectId === subject.subject_id && (
+                      <div className="overflow-x-auto animate-in slide-in-from-top-2 fade-in duration-300">
                       <table className="w-full text-left">
                         <thead>
                           <tr className="bg-slate-50/50 border-b">
@@ -449,7 +529,7 @@ const ExternalMarksEntry = () => {
                                   <div className="flex flex-col items-center">
                                     <input 
                                       type="text"
-                                      disabled={subject.assignment_status === 'Submitted' || submitting}
+                                      disabled={subject.assignment_status === 'Submitted' || submitting || isSubjectBlocked(subject)}
                                       value={modifiedMarks[key] ?? ""}
                                       onChange={(e) => {
                                         const val = e.target.value;
@@ -489,6 +569,7 @@ const ExternalMarksEntry = () => {
                         </tbody>
                       </table>
                     </div>
+                    )}
                   </div>
                 );
               })}

@@ -10,16 +10,18 @@ exports.getAssignedStudents = async (req, res) => {
         // If efa.subject_id IS NULL, we join with ALL marks for that exam
         // If efa.subject_id IS NOT NULL, we filter by that subject
         const query = `
-            SELECT DISTINCT ON (s.rollnumber, sub.id)
+            SELECT DISTINCT ON (er.student_id, sub.id, e_all.id)
                 efa.id as assignment_id, efa.status as assignment_status,
                 er.id as registration_id, er.student_id, 
                 CASE WHEN sc.fictitious_code IS NOT NULL THEN '--- HIDDEN ---' ELSE CONCAT(s.first_name, ' ', s.last_name) END as student_name, 
                 CASE WHEN sc.fictitious_code IS NOT NULL THEN sc.fictitious_code ELSE s.rollnumber END as rollnumber,
                 sc.fictitious_code,
-                e_all.id as exam_id, e_all.name as exam_name, 
+                e_all.id as exam_id, e_all.name as exam_name,
                 sub.id as subject_id, sub.name as subject_name,
+                sub.subject_code,
                 m.id as mark_id, m.external_marks, m.status as marks_status,
-                e_all.academic_year_id
+                e_all.academic_year_id,
+                e_all.semester_id, e_all.program_id
             FROM external_faculty_assignments efa
             JOIN exams e_assigned ON efa.exam_id = e_assigned.id
             JOIN exams e_all ON e_assigned.name = e_all.name 
@@ -32,7 +34,7 @@ exports.getAssignedStudents = async (req, res) => {
             LEFT JOIN marks m ON m.student_id = s.id AND m.exam_id = e_all.id AND m.subject_id = sub.id
             WHERE efa.faculty_user_id = $1
               AND (efa.subject_id IS NULL OR efa.subject_id = sub.id)
-            ORDER BY s.rollnumber ASC, sub.id ASC, exam_name ASC
+            ORDER BY er.student_id ASC, sub.id ASC, e_all.id ASC, s.rollnumber ASC
         `;
         const result = await db.query(query, [faculty_user_id]);
         res.status(200).json(result.rows);
