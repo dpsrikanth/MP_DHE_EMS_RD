@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { toast } from 'react-toastify';
 import { universityAdminApi } from '../../api/universityAdminApi';
+import { milestoneApi } from '../../api/milestoneApi';
+import { formatDate } from '../../utils/dateUtils';
 
 const ExternalAssignment = () => {
   const [faculties, setFaculties] = useState([]);
@@ -18,6 +20,9 @@ const ExternalAssignment = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
 
+  const [milestones, setMilestones] = useState([]);
+  const [isValidationEnabled, setIsValidationEnabled] = useState(true);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -25,15 +30,19 @@ const ExternalAssignment = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [facultyData, pendingData, assignmentData] = await Promise.all([
+      const [facultyData, pendingData, assignmentData, valData, milestonesData] = await Promise.all([
         universityAdminApi.getExternalFaculties(),
         universityAdminApi.getPendingExternalAssignments(),
-        universityAdminApi.getExternalAssignments()
+        universityAdminApi.getExternalAssignments(),
+        milestoneApi.getValidationSetting(),
+        milestoneApi.getMilestones({})
       ]);
 
       if (facultyData) setFaculties(facultyData);
       if (pendingData) setPendingExams(pendingData);
       if (assignmentData) setAssignments(assignmentData);
+      setIsValidationEnabled(valData?.enabled ?? true);
+      setMilestones(Array.isArray(milestonesData) ? milestonesData : []);
     } catch (error) {
       console.error("Failed to fetch data:", error);
       toast.error("Failed to load assignment data");
@@ -98,6 +107,52 @@ const ExternalAssignment = () => {
       </div>
     );
   }
+
+  const getEvaluatorMilestone = () => {
+    if (!Array.isArray(milestones) || milestones.length === 0) return null;
+    
+    let matches = milestones;
+    if (selectedExams.length > 0) {
+      const selectedExam = pendingExams.find(e => e.exam_id === selectedExams[0]);
+      if (selectedExam) {
+         if (selectedExam.semester_id) matches = matches.filter(m => !m.semester_id || parseInt(m.semester_id) === parseInt(selectedExam.semester_id));
+         if (selectedExam.program_id) matches = matches.filter(m => !m.program_id || parseInt(m.program_id) === parseInt(selectedExam.program_id));
+         if (selectedExam.academic_year_id) matches = matches.filter(m => !m.academic_year_id || parseInt(m.academic_year_id) === parseInt(selectedExam.academic_year_id));
+      }
+    }
+    
+    const today = new Date();
+    const namedMatches = matches.filter(m => {
+        const n = m.name.toUpperCase();
+        return n.includes("EXTERNAL FACULTY") || n.includes("EVALUATOR") || n.includes("EXAM EVALUATION");
+    });
+
+    let bestMatch = namedMatches.find(m => new Date(m.start_date) <= today && new Date(m.end_date) >= today);
+    if (!bestMatch && namedMatches.length > 0) {
+        const futureMatches = namedMatches.filter(m => new Date(m.start_date) > today).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+        if (futureMatches.length > 0) {
+            bestMatch = futureMatches[0];
+        } else {
+            const pastMatches = namedMatches.sort((a, b) => new Date(b.end_date) - new Date(a.end_date));
+            bestMatch = pastMatches[0];
+        }
+    }
+
+    if (bestMatch) {
+        const startDate = new Date(bestMatch.start_date);
+        const endDate = new Date(bestMatch.end_date);
+        endDate.setHours(23, 59, 59, 999);
+        return {
+            startFull: bestMatch.start_date,
+            endFull: bestMatch.end_date,
+            name: bestMatch.name,
+            isActive: today >= startDate && today <= endDate
+        };
+    }
+    return null;
+  };
+
+  const evalMilestone = getEvaluatorMilestone();
 
   return (
     <div className="max-w-[1600px] mx-auto p-4 sm:p-5 space-y-4 animate-in fade-in duration-500">
@@ -192,10 +247,22 @@ const ExternalAssignment = () => {
                       Selected faculty will evaluate ALL subjects for all {selectedExams.reduce((acc, id) => acc + (pendingExams.find(e => e.exam_id === id)?.student_count || 0), 0)} registered students across the selected exams.
                     </p>
                   </div>
-                  <button onClick={handleAssign} disabled={submitting || selectedExams.length === 0} className="w-full h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl transition-all disabled:opacity-50 active:scale-95 flex items-center justify-center gap-3">
-                    {submitting ? <Clock size={18} className="animate-spin" /> : <UserCheck size={20} />}
-                    {submitting ? "Processing..." : "Confirm Assignment"}
-                  </button>
+                  {isValidationEnabled && evalMilestone && !evalMilestone.isActive ? (
+                    <div className="flex flex-col items-center gap-1.5 w-full mt-4">
+                      <button disabled className="w-full h-14 bg-slate-100 text-slate-400 font-black rounded-2xl border border-slate-200 cursor-not-allowed flex items-center justify-center gap-3">
+                        <AlertCircle size={20} />
+                        Assignment Blocked
+                      </button>
+                      <span className="text-[10px] font-black text-slate-500 tracking-wider">
+                        Available from {formatDate(evalMilestone.startFull, true)}
+                      </span>
+                    </div>
+                  ) : (
+                    <button onClick={handleAssign} disabled={submitting || selectedExams.length === 0} className="w-full h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl transition-all disabled:opacity-50 active:scale-95 flex items-center justify-center gap-3 mt-4">
+                      {submitting ? <Clock size={18} className="animate-spin" /> : <UserCheck size={20} />}
+                      {submitting ? "Processing..." : "Confirm Assignment"}
+                    </button>
+                  )}
                </div>
             </div>
           </div>
