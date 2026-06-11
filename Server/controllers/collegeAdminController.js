@@ -1554,6 +1554,7 @@ exports.getPendingComponentApprovals = async (req, res) => {
             SELECT 
                 fs.subject_id, fs.semester_id, fs.academic_year_id, fs.section,
                 ms.name as subject_name, ms.subject_code,
+                COALESCE(pps.program_id, ims2.program_id, ms.program_id) as program_id,
                 mse.semester_name,
                 may.year_name,
                 ims.id as component_id, ims.component_name, ims.max_marks,
@@ -1573,11 +1574,22 @@ exports.getPendingComponentApprovals = async (req, res) => {
                 AND ca.academic_year_id = fs.academic_year_id
                 AND ca.section = fs.section
                 AND ca.component_id = ims.id
+            LEFT JOIN policy_program_subjects pps
+                ON fs.subject_id = pps.subject_id
+                AND fs.college_id = pps.college_id
+                AND fs.semester_id = pps.semester_id
+            LEFT JOIN (
+                SELECT DISTINCT subject_id, college_id, program_id
+                FROM internal_marks_structure
+            ) ims2
+                ON fs.subject_id = ims2.subject_id
+                AND fs.college_id = ims2.college_id
             WHERE fs.college_id = $1 AND ca.is_accepted = FALSE
             GROUP BY 
                 fs.subject_id, fs.semester_id, fs.academic_year_id, fs.section,
-                ms.name, ms.subject_code, mse.semester_name, may.year_name,
-                ims.id, ims.component_name, ims.max_marks, ca.is_accepted, ca.accepted_at, ca.unlock_reason
+                ms.name, ms.subject_code, ms.program_id, mse.semester_name, may.year_name,
+                ims.id, ims.component_name, ims.max_marks, ca.is_accepted, ca.accepted_at, ca.unlock_reason,
+                pps.program_id, ims2.program_id
             HAVING COUNT(DISTINCT sim.student_id) > 0
             ORDER BY fs.subject_id, fs.section, ims.id
         `;

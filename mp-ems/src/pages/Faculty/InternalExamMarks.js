@@ -55,6 +55,7 @@ const InternalExamMarks = () => {
     const [unlockedStudentIds, setUnlockedStudentIds] = useState([]);
     const [milestones, setMilestones] = useState([]);
     const [isValidationEnabled, setIsValidationEnabled] = useState(true);
+    const [isCorrectionMode, setIsCorrectionMode] = useState(false);
 
     const teacherId = JSON.parse(localStorage.getItem('user'))?.teacher_id || 1;
 
@@ -141,6 +142,7 @@ const InternalExamMarks = () => {
         setStudents([]);
         setMarksDraft({});
         setSelectedSubject(null);
+        setIsCorrectionMode(false);
 
         try {
             const data = await facultyApi.getStudentsForRound({
@@ -157,6 +159,7 @@ const InternalExamMarks = () => {
                 setStudents(data.students || []);
                 setComponentInfo(data.structure);
                 setUnlockedStudentIds(data.unlockedStudentIds || []);
+                setIsCorrectionMode(data.isCorrectionMode || false);
 
                 // Fetch pending discrepancies
                 try {
@@ -378,11 +381,18 @@ const InternalExamMarks = () => {
         const roundName = selectedRound.label.toUpperCase();
         const roundNum = roundName.replace(/\D/g, "");
 
+        const semId    = selectedSem?.value;
+        const programId = selectedSubject?.program_id;
+        const ayYearStr = academicYears.find(y => y.id === selectedYear?.value)?.year_name;
+        const ayYear = ayYearStr ? parseInt(ayYearStr.split('-')[0]) : null;
+
         const matches = milestones.filter(m => {
             const mName = m.name.toUpperCase();
-            
-            const ayYearStr = academicYears.find(y => y.id === selectedYear?.value)?.year_name;
-            const ayYear = ayYearStr ? parseInt(ayYearStr.split('-')[0]) : null;
+
+            // Exclude milestones for a different semester or program (if the milestone specifies one)
+            if (semId    && m.semester_id && String(m.semester_id) !== String(semId))    return false;
+            if (programId && m.program_id  && String(m.program_id)  !== String(programId)) return false;
+
             if (ayYear && m.start_date) {
                 const mYear = new Date(m.start_date).getFullYear();
                 if (mYear !== ayYear && mYear !== (ayYear + 1)) return false;
@@ -395,8 +405,17 @@ const InternalExamMarks = () => {
             return isTopicMatch && !mName.includes("MARKS ENTRY") && !mName.includes("SCHEDULE");
         });
 
-        const bestMatch = matches.find(m => m.name.toUpperCase().includes("EXAM")) || matches[0];
-        
+        // Prioritise: both semester+program match > semester match > any match
+        const sorted = [...matches].sort((a, b) => {
+            const aScore = (semId    && String(a.semester_id) === String(semId)    ? 2 : 0) +
+                           (programId && String(a.program_id)  === String(programId) ? 1 : 0);
+            const bScore = (semId    && String(b.semester_id) === String(semId)    ? 2 : 0) +
+                           (programId && String(b.program_id)  === String(programId) ? 1 : 0);
+            return bScore - aScore;
+        });
+
+        const bestMatch = sorted.find(m => m.name.toUpperCase().includes("EXAM")) || sorted[0];
+
         if (bestMatch) {
             return {
                 startFull: bestMatch.start_date,
@@ -412,11 +431,18 @@ const InternalExamMarks = () => {
         const roundName = selectedRound.label.toUpperCase();
         const roundNum = roundName.replace(/\D/g, "");
 
+        const semId     = selectedSem?.value;
+        const programId = selectedSubject?.program_id;
+        const ayYearStr = academicYears.find(y => y.id === selectedYear?.value)?.year_name;
+        const ayYear = ayYearStr ? parseInt(ayYearStr.split('-')[0]) : null;
+
         const matches = milestones.filter(m => {
             const mName = m.name.toUpperCase();
-            
-            const ayYearStr = academicYears.find(y => y.id === selectedYear?.value)?.year_name;
-            const ayYear = ayYearStr ? parseInt(ayYearStr.split('-')[0]) : null;
+
+            // Exclude milestones for a different semester or program (if the milestone specifies one)
+            if (semId    && m.semester_id && String(m.semester_id) !== String(semId))    return false;
+            if (programId && m.program_id  && String(m.program_id)  !== String(programId)) return false;
+
             if (ayYear && m.start_date) {
                 const mYear = new Date(m.start_date).getFullYear();
                 if (mYear !== ayYear && mYear !== (ayYear + 1)) return false;
@@ -429,11 +455,20 @@ const InternalExamMarks = () => {
             return isTopicMatch && mName.includes("MARKS ENTRY");
         });
 
-        if (matches.length > 0) {
+        // Prioritise: both semester+program match > semester match > any match
+        const sorted = [...matches].sort((a, b) => {
+            const aScore = (semId    && String(a.semester_id) === String(semId)    ? 2 : 0) +
+                           (programId && String(a.program_id)  === String(programId) ? 1 : 0);
+            const bScore = (semId    && String(b.semester_id) === String(semId)    ? 2 : 0) +
+                           (programId && String(b.program_id)  === String(programId) ? 1 : 0);
+            return bScore - aScore;
+        });
+
+        if (sorted.length > 0) {
             return {
-                startFull: matches[0].start_date,
-                endFull: matches[0].end_date,
-                name: matches[0].name
+                startFull: sorted[0].start_date,
+                endFull: sorted[0].end_date,
+                name: sorted[0].name
             };
         }
         return null;
@@ -449,8 +484,75 @@ const InternalExamMarks = () => {
         return `${dateStr} ${timeStr}`;
     };
 
+    const findCorrectionMilestone = () => {
+        if (!selectedRound || milestones.length === 0 || !selectedSubject) return null;
+        
+        const componentName = selectedRound.label;
+        const normalized = componentName.trim().toUpperCase();
+        
+        const programId = selectedSubject.program_id;
+        const semesterId = selectedSem?.value;
+        
+        const tokens = [normalized];
+        const componentNumber = (normalized.match(/\d+/) || [])[0];
+        if (normalized.includes('IA') && componentNumber) {
+            tokens.push(`IA${componentNumber}`, `IA ${componentNumber}`, `MID-${componentNumber}`, `MID ${componentNumber}`, `INTERNAL EXAM ${componentNumber}`);
+        }
+        if (normalized.includes('MID') && componentNumber) {
+            tokens.push(`MID-${componentNumber}`, `MID ${componentNumber}`, `INTERNAL EXAM ${componentNumber}`, `IA${componentNumber}`, `IA ${componentNumber}`);
+        }
+        if (normalized.includes('PRACTICAL')) {
+            tokens.push('PRACTICAL');
+        }
+        
+        const isMilestoneContextMatch = (milestone, progId, semId) => {
+            if (!milestone) return false;
+            if (milestone.program_id && progId && String(milestone.program_id) !== String(progId)) return false;
+            if (milestone.semester_id && semId && String(milestone.semester_id) !== String(semId)) return false;
+            return true;
+        };
+
+        const matches = milestones.filter(m => {
+            const mName = String(m.name || '').toUpperCase();
+            const isCorrectionWindow = mName.includes('CORRECTION') || mName.includes('UNLOCK') || mName.includes('DISCREPANCY');
+            if (!isCorrectionWindow) return false;
+            if (!isMilestoneContextMatch(m, programId, semesterId)) return false;
+            return tokens.some(token => mName.includes(token));
+        });
+
+        if (matches.length > 0) return matches[0];
+
+        const fallback = milestones.find(m => {
+            const mName = String(m.name || '').toUpperCase();
+            const isCorrectionWindow = mName.includes('CORRECTION') || mName.includes('UNLOCK') || mName.includes('DISCREPANCY');
+            return isCorrectionWindow && isMilestoneContextMatch(m, programId, semesterId);
+        });
+
+        return fallback || null;
+    };
+
+    const isCorrectionMilestoneOpen = (milestone) => {
+        if (!milestone || !milestone.start_date || !milestone.end_date) return false;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const start = new Date(milestone.start_date);
+        const end = new Date(milestone.end_date);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        return today >= start && today <= end;
+    };
+
     const active = getActiveMilestone();
     const entryWindow = getMarksEntryMilestone();
+    const correctionMilestone = findCorrectionMilestone();
+    const correctionClosed = isValidationEnabled && correctionMilestone && !isCorrectionMilestoneOpen(correctionMilestone);
+
+    // Publish window: first-time → marks entry window; after correction → correction window
+    const isEntryWindowClosed = isValidationEnabled && entryWindow &&
+        !isCorrectionMilestoneOpen({ start_date: entryWindow.startFull, end_date: entryWindow.endFull });
+    const isPublishWindowClosed = isCorrectionMode
+        ? correctionClosed        // re-publish after HOD-approved correction/unlock → correction window
+        : isEntryWindowClosed;    // first-time publish → marks entry window
 
     return (
         <div className="p-6 md:p-10 space-y-8 bg-slate-50 min-h-screen">
@@ -727,10 +829,12 @@ const InternalExamMarks = () => {
                                         const entry = marksDraft[student.id] || { marks: '', isAbsent: false };
                                         const isFailed = !entry.isAbsent && entry.marks !== '' && parseFloat(entry.marks) < (componentInfo?.passing_marks || 0);
                                         const studentDisc = pendingDiscrepancies.find(d => d.student_id === student.id);
+                                        const isDiscrepancyClosed = correctionClosed && studentDisc;
                                         const isAttendanceDisabled = 
                                             (['Approved', 'Locked', 'Unlock Requested'].includes(workflowStatus)) ||
                                             (workflowStatus === 'Published' && !unlockedStudentIds.includes(student.id)) ||
-                                            (unlockedStudentIds.length > 0 && !unlockedStudentIds.includes(student.id));
+                                            (unlockedStudentIds.length > 0 && !unlockedStudentIds.includes(student.id)) ||
+                                            isDiscrepancyClosed;
                                         const isFieldDisabled = entry.isAbsent || isAttendanceDisabled;
 
                                         return (
@@ -757,10 +861,17 @@ const InternalExamMarks = () => {
                                                             </div>
                                                             <button
                                                                 onClick={() => handleResolveDiscrepancy(studentDisc.id)}
-                                                                className="self-start inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors shadow-sm"
+                                                                disabled={correctionClosed}
+                                                                className={`self-start inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black rounded-lg transition-colors shadow-sm ${correctionClosed ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-700 text-white'}`}
+                                                                title={correctionClosed ? `Correction window closed: ${formatDate(correctionMilestone.start_date)} to ${formatDate(correctionMilestone.end_date)}` : ''}
                                                             >
                                                                 Resolve & Close Issue
                                                             </button>
+                                                            {correctionClosed && (
+                                                                <p className="text-[10px] text-red-600 font-black mt-1">
+                                                                    Correction window closed: {formatDate(correctionMilestone.start_date)} to {formatDate(correctionMilestone.end_date)}
+                                                                </p>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </td>
@@ -844,10 +955,11 @@ const InternalExamMarks = () => {
                                 
                                 {(workflowStatus === 'Published' && unlockedStudentIds.length === 0) ? (
                                     <button
-                                        onClick={handleRequestUnlock}
-                                        disabled={isSaving}
+                                        onClick={!correctionClosed ? handleRequestUnlock : undefined}
+                                        disabled={isSaving || correctionClosed}
+                                        title={correctionClosed && correctionMilestone ? `Correction window closed: ${formatDate(correctionMilestone.start_date)} to ${formatDate(correctionMilestone.end_date)}` : ''}
                                         className={`px-10 py-3 rounded-xl font-black tracking-widest text-sm shadow-xl transition-all flex items-center gap-2
-                                            ${isSaving ? 'bg-slate-400 text-white cursor-not-allowed shadow-none' : 'bg-amber-500 text-white shadow-amber-200 hover:bg-amber-600 active:scale-95'}
+                                            ${isSaving || correctionClosed ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none' : 'bg-amber-500 text-white shadow-amber-200 hover:bg-amber-600 active:scale-95'}
                                         `}
                                     >
                                         {isSaving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <AlertCircle size={18} />}
@@ -863,10 +975,15 @@ const InternalExamMarks = () => {
                                     </button>
                                 ) : (
                                     <button
-                                        onClick={handlePublish}
-                                        disabled={isSaving || ['Approved', 'Locked'].includes(workflowStatus)}
+                                        onClick={!isPublishWindowClosed ? handlePublish : undefined}
+                                        disabled={isSaving || ['Approved', 'Locked'].includes(workflowStatus) || isPublishWindowClosed}
+                                        title={isPublishWindowClosed
+                                            ? (isCorrectionMode
+                                                ? (correctionMilestone ? `Correction window closed: ${formatDate(correctionMilestone.start_date)} to ${formatDate(correctionMilestone.end_date)}` : 'Correction window is closed')
+                                                : (entryWindow ? `Marks entry window closed: ${formatDate(entryWindow.startFull)} to ${formatDate(entryWindow.endFull)}` : 'Marks entry window is closed'))
+                                            : ''}
                                         className={`px-10 py-3 rounded-xl font-black tracking-widest text-sm shadow-xl transition-all flex items-center gap-2
-                                            ${isSaving || ['Approved', 'Locked'].includes(workflowStatus) ? 'bg-slate-400 text-white cursor-not-allowed shadow-none' : 'bg-indigo-600 text-white shadow-indigo-200 hover:bg-indigo-700 active:scale-95'}
+                                            ${isSaving || ['Approved', 'Locked'].includes(workflowStatus) || isPublishWindowClosed ? 'bg-slate-400 text-white cursor-not-allowed shadow-none' : 'bg-indigo-600 text-white shadow-indigo-200 hover:bg-indigo-700 active:scale-95'}
                                         `}
                                     >
                                         {isSaving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <CheckCircle size={18} />}

@@ -4055,7 +4055,7 @@ const getMarks = async (req, res) => {
   }
 };
 
-const validateMilestone = async (college_id, academic_year_id, actionType, roundName = null) => {
+const validateMilestone = async (college_id, academic_year_id, actionType, roundName = null, semester_id = null, program_id = null) => {
     const settingsResult = await client.query("SELECT setting_value FROM system_settings WHERE setting_key = 'roadmap_validation'");
     const isValidationEnabled = settingsResult.rows.length > 0 ? settingsResult.rows[0].setting_value.enabled : true;
 
@@ -4085,6 +4085,9 @@ const validateMilestone = async (college_id, academic_year_id, actionType, round
                 const mYear = new Date(m.start_date).getFullYear();
                 if (mYear !== academicYearStart && mYear !== academicYearEnd) return false;
             }
+            if (semester_id && m.semester_id && String(m.semester_id) !== String(semester_id)) return false;
+            if (program_id && m.program_id && String(m.program_id) !== String(program_id)) return false;
+            
             const mName = m.name.toUpperCase();
             
             if (actionType === 'MARKS ENTRY') {
@@ -4112,6 +4115,16 @@ const validateMilestone = async (college_id, academic_year_id, actionType, round
             return false;
         })
         .sort((a, b) => {
+            // Prioritize semester matches
+            const aSemMatch = a.semester_id && String(a.semester_id) === String(semester_id) ? 1 : 0;
+            const bSemMatch = b.semester_id && String(b.semester_id) === String(semester_id) ? 1 : 0;
+            if (aSemMatch !== bSemMatch) return bSemMatch - aSemMatch;
+
+            // Prioritize program matches
+            const aProgMatch = a.program_id && String(a.program_id) === String(program_id) ? 1 : 0;
+            const bProgMatch = b.program_id && String(b.program_id) === String(program_id) ? 1 : 0;
+            if (aProgMatch !== bProgMatch) return bProgMatch - aProgMatch;
+
             if (!academicYearStart) return 0;
             const aYear = new Date(a.start_date).getFullYear();
             const bYear = new Date(b.start_date).getFullYear();
@@ -4154,16 +4167,27 @@ const submitMarksDiscrepancy = async (req, res) => {
     }
 
     // Find student record for this user
-    const studentRes = await client.query('SELECT id, "collageName", semister FROM students WHERE user_id = $1', [userId]);
+    const studentRes = await client.query('SELECT id, "collageName", semister, "programName" FROM students WHERE user_id = $1', [userId]);
     if (studentRes.rows.length === 0) return res.status(404).json({ message: "Student record not found" });
     const student = studentRes.rows[0];
 
-    // Find college and semester to store robust metadata
+    // Find college ID
     const colRes = await client.query('SELECT id FROM colleges WHERE name ILIKE $1', [student.collageName]);
-    const semRes = await client.query('SELECT id FROM master_semesters WHERE semester_name ILIKE $1 OR semester_name ILIKE $2', [student.semister, `%${student.semister}%`]);
-
     const collegeId = colRes.rows.length > 0 ? colRes.rows[0].id : null;
-    const semesterId = semRes.rows.length > 0 ? semRes.rows[0].id : null;
+
+    // Fetch semester_id and program_id from the subject itself!
+    const subjectRes = await client.query('SELECT semester_id, program_id FROM master_subjects WHERE id = $1', [subject_id]);
+    let semesterId = subjectRes.rows.length > 0 ? subjectRes.rows[0].semester_id : null;
+    let programId = subjectRes.rows.length > 0 ? subjectRes.rows[0].program_id : null;
+
+    if (!semesterId) {
+      const semRes = await client.query('SELECT id FROM master_semesters WHERE semester_name ILIKE $1 OR semester_name ILIKE $2', [student.semister, `%${student.semister}%`]);
+      semesterId = semRes.rows.length > 0 ? semRes.rows[0].id : null;
+    }
+    if (!programId) {
+      const progRes = await client.query('SELECT id FROM master_programs WHERE name ILIKE $1', [student.programName]);
+      programId = progRes.rows.length > 0 ? progRes.rows[0].id : null;
+    }
 
     // Retrieve academic_year_id to validate milestone
     let academicYearId = null;
@@ -4188,7 +4212,7 @@ const submitMarksDiscrepancy = async (req, res) => {
 
     // Roadmap Milestone Validation for Student Correction Request
     if (collegeId && academicYearId && component_name) {
-      const validationError = await validateMilestone(collegeId, academicYearId, 'CORRECTION REQUEST', component_name);
+      const validationError = await validateMilestone(collegeId, academicYearId, 'CORRECTION REQUEST', component_name, semesterId, programId);
       if (validationError) {
         return res.status(403).json({ message: validationError });
       }

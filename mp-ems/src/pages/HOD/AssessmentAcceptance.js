@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { 
     CheckCircle, FileText, 
     ShieldCheck, AlertCircle, ClipboardCheck,
-    ChevronDown, ChevronUp, User
+    ChevronDown, ChevronUp, User, Lock
 } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
 import { TableSearch } from '../../components/TableControls';
 import { hodApi } from '../../api/hodApi';
+import { milestoneApi } from '../../api/milestoneApi';
 
 // Inline student marks panel, fetched lazily per component
 const ComponentStudentPanel = ({ comp }) => {
@@ -99,10 +100,26 @@ const AssessmentAcceptance = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedSemester, setSelectedSemester] = useState('');
     const [processingId, setProcessingId] = useState(null);
+    const [milestones, setMilestones] = useState([]);
+    const [isValidationEnabled, setIsValidationEnabled] = useState(true);
 
     useEffect(() => {
         fetchAssessments();
+        fetchMilestonesAndSettings();
     }, []);
+
+    const fetchMilestonesAndSettings = async () => {
+        try {
+            const [mData, sData] = await Promise.all([
+                milestoneApi.getMilestones({ delete_status: true }),
+                milestoneApi.getValidationSetting()
+            ]);
+            setMilestones(Array.isArray(mData) ? mData : (mData?.milestones || []));
+            setIsValidationEnabled(sData?.enabled !== false);
+        } catch (err) {
+            // Silently fail — milestones are optional metadata
+        }
+    };
 
     const fetchAssessments = async () => {
         try {
@@ -114,6 +131,76 @@ const AssessmentAcceptance = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    /**
+     * Find the correction/unlock milestone for a given component card.
+     * Matches on component name tokens, semester_id, program_id, and academic year.
+     */
+    const findCorrectionMilestoneForComp = useCallback((comp) => {
+        if (!comp || !Array.isArray(milestones) || milestones.length === 0) return null;
+
+        const normalized = String(comp.component_name || '').trim().toUpperCase();
+        const componentNumber = (normalized.match(/\d+/) || [])[0];
+        const tokens = [normalized];
+        if (normalized.includes('IA') && componentNumber) {
+            tokens.push(`IA${componentNumber}`, `IA ${componentNumber}`,
+                `MID-${componentNumber}`, `MID ${componentNumber}`,
+                `INTERNAL EXAM ${componentNumber}`);
+        }
+        if (normalized.includes('MID') && componentNumber) {
+            tokens.push(`MID-${componentNumber}`, `MID ${componentNumber}`,
+                `INTERNAL EXAM ${componentNumber}`, `IA${componentNumber}`, `IA ${componentNumber}`);
+        }
+        if (normalized.includes('PRACTICAL')) tokens.push('PRACTICAL');
+
+        const semId   = comp.semester_id;
+        const progId  = comp.program_id;
+        const yearStr = comp.year_name || '';
+        const ayYear  = yearStr ? parseInt(yearStr.split('-')[0]) : null;
+
+        const contextMatch = (m) => {
+            if (m.program_id  && progId && String(m.program_id)  !== String(progId))  return false;
+            if (m.semester_id && semId  && String(m.semester_id) !== String(semId))   return false;
+            return true;
+        };
+
+        const matches = milestones.filter(m => {
+            const mName = String(m.name || '').toUpperCase();
+            const isCorrectionWindow = mName.includes('CORRECTION') || mName.includes('UNLOCK') || mName.includes('DISCREPANCY');
+            if (!isCorrectionWindow) return false;
+            if (!contextMatch(m)) return false;
+            if (ayYear && m.start_date) {
+                const mYear = new Date(m.start_date).getFullYear();
+                if (mYear !== ayYear && mYear !== ayYear + 1) return false;
+            }
+            return tokens.some(token => mName.includes(token));
+        });
+
+        if (matches.length > 0) return matches[0];
+
+        // Fallback: any correction milestone matching context + year
+        return milestones.find(m => {
+            const mName = String(m.name || '').toUpperCase();
+            const isCorrectionWindow = mName.includes('CORRECTION') || mName.includes('UNLOCK') || mName.includes('DISCREPANCY');
+            if (!isCorrectionWindow || !contextMatch(m)) return false;
+            if (ayYear && m.start_date) {
+                const mYear = new Date(m.start_date).getFullYear();
+                if (mYear !== ayYear && mYear !== ayYear + 1) return false;
+            }
+            return true;
+        }) || null;
+    }, [milestones]);
+
+    const isMilestoneOpen = (milestone) => {
+        if (!milestone || !milestone.start_date || !milestone.end_date) return false;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const start = new Date(milestone.start_date);
+        const end   = new Date(milestone.end_date);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        return today >= start && today <= end;
     };
 
     const semesters = useMemo(() => {
@@ -268,6 +355,13 @@ const AssessmentAcceptance = () => {
                                     const procId = `${comp.subject_id}-${comp.section}-${comp.component_id}`;
                                     const isProcessing = processingId === procId;
 
+                                    // --- Roadmap correction window check ---
+                                    const correctionMilestone = findCorrectionMilestoneForComp(comp);
+                                    const correctionClosed = isValidationEnabled && correctionMilestone && !isMilestoneOpen(correctionMilestone);
+                                    const closedLabel = correctionClosed
+                                        ? `Correction window closed: ${formatDate(correctionMilestone.start_date)} to ${formatDate(correctionMilestone.end_date)}`
+                                        : '';
+
                                     return (
                                         <div key={comp.component_id} className="p-5 rounded-2xl border-2 bg-white border-amber-100 hover:border-amber-200 shadow-sm flex flex-col">
                                             <div>
@@ -296,6 +390,16 @@ const AssessmentAcceptance = () => {
                                                     </div>
                                                 )}
 
+                                                {/* Closed Correction Window Warning */}
+                                                {correctionClosed && (
+                                                    <div className="mb-3 flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-3">
+                                                        <Lock size={13} className="text-red-500 flex-shrink-0 mt-0.5" />
+                                                        <p className="text-[10px] font-black text-red-600 leading-snug">
+                                                            {closedLabel}
+                                                        </p>
+                                                    </div>
+                                                )}
+
                                                 {/* Inline Student Marks */}
                                                 <ComponentStudentPanel comp={comp} />
                                             </div>
@@ -303,12 +407,21 @@ const AssessmentAcceptance = () => {
                                             {/* Approve Button */}
                                             <div className="mt-4">
                                                 <button
-                                                    onClick={() => handleAccept(comp)}
-                                                    disabled={isProcessing}
-                                                    className="w-full py-3 bg-amber-500 text-white text-[12px] font-black tracking-[0.2em] rounded-xl shadow-lg shadow-amber-500/20 hover:bg-amber-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                                    onClick={!correctionClosed ? () => handleAccept(comp) : undefined}
+                                                    disabled={isProcessing || correctionClosed}
+                                                    title={closedLabel}
+                                                    className={`w-full py-3 text-[12px] font-black tracking-[0.2em] rounded-xl shadow-lg transition-all flex items-center justify-center gap-2
+                                                        ${isProcessing || correctionClosed
+                                                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+                                                            : 'bg-amber-500 text-white shadow-amber-500/20 hover:bg-amber-600 active:scale-[0.98]'}`}
                                                 >
                                                     {isProcessing ? (
-                                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                        <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                                                    ) : correctionClosed ? (
+                                                        <>
+                                                            <Lock size={14} />
+                                                            Approve Unlock
+                                                        </>
                                                     ) : (
                                                         <>
                                                             <ShieldCheck size={14} />

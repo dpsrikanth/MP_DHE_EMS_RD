@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 // --- Helper for Roadmap Validation ---
-const validateMilestone = async (db, college_id, academic_year_id, actionType, roundName = null) => {
+const validateMilestone = async (db, college_id, academic_year_id, actionType, roundName = null, semester_id = null, program_id = null) => {
     const settingsResult = await db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'roadmap_validation'");
     const isValidationEnabled = settingsResult.rows.length > 0 ? settingsResult.rows[0].setting_value.enabled : true;
 
@@ -31,6 +31,9 @@ const validateMilestone = async (db, college_id, academic_year_id, actionType, r
                 const mYear = new Date(m.start_date).getFullYear();
                 if (mYear !== academicYearStart && mYear !== academicYearEnd) return false;
             }
+            if (semester_id && m.semester_id && String(m.semester_id) !== String(semester_id)) return false;
+            if (program_id && m.program_id && String(m.program_id) !== String(program_id)) return false;
+            
             const mName = m.name.toUpperCase();
             
             if (actionType === 'MARKS ENTRY') {
@@ -58,6 +61,16 @@ const validateMilestone = async (db, college_id, academic_year_id, actionType, r
             return false;
         })
         .sort((a, b) => {
+            // Prioritize semester matches
+            const aSemMatch = a.semester_id && String(a.semester_id) === String(semester_id) ? 1 : 0;
+            const bSemMatch = b.semester_id && String(b.semester_id) === String(semester_id) ? 1 : 0;
+            if (aSemMatch !== bSemMatch) return bSemMatch - aSemMatch;
+
+            // Prioritize program matches
+            const aProgMatch = a.program_id && String(a.program_id) === String(program_id) ? 1 : 0;
+            const bProgMatch = b.program_id && String(b.program_id) === String(program_id) ? 1 : 0;
+            if (aProgMatch !== bProgMatch) return bProgMatch - aProgMatch;
+
             if (!academicYearStart) return 0;
             const aYear = new Date(a.start_date).getFullYear();
             const bYear = new Date(b.start_date).getFullYear();
@@ -277,7 +290,9 @@ exports.enterStudentMarks = async (req, res) => {
                 const componentName = compNameRes.rowCount > 0 ? compNameRes.rows[0].component_name : null;
                 
                 if (componentName) {
-                    const validationError = await validateMilestone(db, college_id, academic_year_id, 'MARKS ENTRY', componentName);
+                    const subRes = await db.query('SELECT program_id FROM master_subjects WHERE id = $1', [subject_id]);
+                    const programId = subRes.rows.length > 0 ? subRes.rows[0].program_id : null;
+                    const validationError = await validateMilestone(db, college_id, academic_year_id, 'MARKS ENTRY', componentName, semester_id, programId);
                     if (validationError) {
                         return res.status(403).json({ error: validationError });
                     }
@@ -419,9 +434,10 @@ exports.submitMarks = async (req, res) => {
         const colRes = await client.query('SELECT name FROM colleges WHERE id = $1', [college_id]);
         const semRes = await client.query('SELECT semester_name FROM master_semesters WHERE id = $1', [semester_id]);
         const subRes = await client.query('SELECT program_id FROM master_subjects WHERE id = $1', [subject_id]);
+        const programId = subRes.rows[0]?.program_id;
         
         // 2. Roadmap Milestone Validation
-        const validationError = await validateMilestone(client, college_id, academic_year_id, 'MARKS SUBMISSION');
+        const validationError = await validateMilestone(client, college_id, academic_year_id, 'MARKS SUBMISSION', null, semester_id, programId);
         if (validationError) {
             await client.query('ROLLBACK');
             return res.status(403).json({ error: validationError });
@@ -434,7 +450,6 @@ exports.submitMarks = async (req, res) => {
 
         const collageName = colRes.rows[0].name;
         const semesterName = semRes.rows[0].semester_name;
-        const programId = subRes.rows[0]?.program_id;
 
         let programName = null;
         if (programId && programId !== 'null' && programId !== 'undefined') {
@@ -569,6 +584,7 @@ exports.publishRoundMarks = async (req, res) => {
         const colRes = await client.query('SELECT name FROM colleges WHERE id = $1', [college_id]);
         const semRes = await client.query('SELECT semester_name FROM master_semesters WHERE id = $1', [semester_id]);
         const subRes = await client.query('SELECT program_id FROM master_subjects WHERE id = $1', [subject_id]);
+        const programId = subRes.rows[0]?.program_id;
         
         // 2. Roadmap Milestone Validation
         const compNameRes = await client.query(
@@ -577,7 +593,26 @@ exports.publishRoundMarks = async (req, res) => {
         );
         const componentName = compNameRes.rowCount > 0 ? compNameRes.rows[0].component_name : null;
         if (componentName) {
-            const validationError = await validateMilestone(client, college_id, academic_year_id, 'MARKS ENTRY', componentName);
+            // Determine if this is a first-time publish or a correction re-publish.
+            // 1. Check if any student-level discrepancy has been raised for this subject & component
+            const discRes = await client.query(
+                `SELECT 1 FROM student_mark_discrepancies 
+                 WHERE subject_id = $1 AND component_name = $2 LIMIT 1`,
+                [subject_id, componentName]
+            );
+            // 2. Check if a component-level full unlock was approved by HOD
+            const unlockLogRes = await client.query(
+                `SELECT 1 FROM audit_logs 
+                 WHERE action = 'COMPONENT_UNLOCK_APPROVED' 
+                   AND entity_id = $1 
+                   AND (new_values->>'section' = $2 OR new_values->>'section' IS NULL) LIMIT 1`,
+                [component_id, section]
+            );
+
+            const isCorrectionPublish = discRes.rowCount > 0 || unlockLogRes.rowCount > 0;
+            const milestoneAction = isCorrectionPublish ? 'CORRECTION REQUEST' : 'MARKS ENTRY';
+
+            const validationError = await validateMilestone(client, college_id, academic_year_id, milestoneAction, componentName, semester_id, programId);
             if (validationError) {
                 await client.query('ROLLBACK');
                 return res.status(403).json({ error: validationError });
@@ -591,7 +626,6 @@ exports.publishRoundMarks = async (req, res) => {
 
         const collageName = colRes.rows[0].name;
         const semesterName = semRes.rows[0].semester_name;
-        const programId = subRes.rows[0]?.program_id;
 
         let programName = null;
         if (programId && programId !== 'null' && programId !== 'undefined') {
@@ -690,7 +724,9 @@ exports.requestRoundUnlock = async (req, res) => {
         );
         const componentName = compNameRes.rowCount > 0 ? compNameRes.rows[0].component_name : null;
         if (componentName) {
-            const validationError = await validateMilestone(db, college_id, academic_year_id, 'CORRECTION REQUEST', componentName);
+            const subRes = await db.query('SELECT program_id FROM master_subjects WHERE id = $1', [subject_id]);
+            const programId = subRes.rows.length > 0 ? subRes.rows[0].program_id : null;
+            const validationError = await validateMilestone(db, college_id, academic_year_id, 'CORRECTION REQUEST', componentName, semester_id, programId);
             if (validationError) {
                 return res.status(403).json({ error: validationError });
             }
@@ -1226,6 +1262,7 @@ exports.getStudentsForRound = async (req, res) => {
         }
 
         let unlockedStudentIds = [];
+        let isCorrectionMode = false;
         if (componentId) {
             const unlockedRes = await db.query(
                 `SELECT student_id FROM student_mark_discrepancies 
@@ -1233,6 +1270,21 @@ exports.getStudentsForRound = async (req, res) => {
                 [parseInt(subject_id), parseInt(college_id), round_name]
             );
             unlockedStudentIds = unlockedRes.rows.map(r => r.student_id);
+
+            // Check if this component has ever been published/unlocked/corrected before for this subject/section
+            const discRes = await db.query(
+                `SELECT 1 FROM student_mark_discrepancies 
+                 WHERE subject_id = $1 AND component_name = $2 LIMIT 1`,
+                [parseInt(subject_id), round_name]
+            );
+            const unlockLogRes = await db.query(
+                `SELECT 1 FROM audit_logs 
+                 WHERE action = 'COMPONENT_UNLOCK_APPROVED' 
+                   AND entity_id = $1 
+                   AND (new_values->>'section' = $2 OR new_values->>'section' IS NULL) LIMIT 1`,
+                [componentId, section]
+            );
+            isCorrectionMode = discRes.rowCount > 0 || unlockLogRes.rowCount > 0;
         }
 
         res.status(200).json({
@@ -1241,7 +1293,8 @@ exports.getStudentsForRound = async (req, res) => {
             component_id: componentId,
             structure: structure,
             workflowStatus: workflowStatus,
-            unlockedStudentIds: unlockedStudentIds
+            unlockedStudentIds: unlockedStudentIds,
+            isCorrectionMode: isCorrectionMode
         });
 
     } catch (error) {
@@ -1431,6 +1484,47 @@ exports.resolveDiscrepancy = async (req, res) => {
 
         if (!discrepancy_id) {
             return res.status(400).json({ error: "Missing required parameter: discrepancy_id" });
+        }
+
+        // Fetch discrepancy details to run roadmap validation
+        const discRes = await db.query(
+            `SELECT subject_id, college_id, semester_id, component_name 
+             FROM student_mark_discrepancies WHERE id = $1`,
+            [discrepancy_id]
+        );
+
+        if (discRes.rowCount > 0) {
+            const { subject_id, college_id, semester_id, component_name } = discRes.rows[0];
+
+            // Query program_id
+            const subRes = await db.query('SELECT program_id FROM master_subjects WHERE id = $1', [subject_id]);
+            const programId = subRes.rows.length > 0 ? subRes.rows[0].program_id : null;
+
+            // Query academic_year_id
+            let academic_year_id = null;
+            const wsRes = await db.query(
+                `SELECT academic_year_id FROM marks_workflow_status 
+                 WHERE subject_id = $1 AND college_id = $2 AND semester_id = $3 
+                 LIMIT 1`,
+                [subject_id, college_id, semester_id]
+            );
+            academic_year_id = wsRes.rows.length > 0 ? wsRes.rows[0].academic_year_id : null;
+            if (!academic_year_id) {
+                const fsRes = await db.query(
+                    `SELECT academic_year_id FROM faculty_subjects 
+                     WHERE subject_id = $1 AND college_id = $2 AND semester_id = $3 
+                     LIMIT 1`,
+                    [subject_id, college_id, semester_id]
+                );
+                academic_year_id = fsRes.rows.length > 0 ? fsRes.rows[0].academic_year_id : null;
+            }
+
+            if (college_id && academic_year_id && component_name) {
+                const validationError = await validateMilestone(db, college_id, academic_year_id, 'CORRECTION REQUEST', component_name, semester_id, programId);
+                if (validationError) {
+                    return res.status(403).json({ error: validationError });
+                }
+            }
         }
 
         await db.query(

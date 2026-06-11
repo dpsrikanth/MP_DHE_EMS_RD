@@ -167,7 +167,7 @@ const StudentResults = () => {
   const handleOpenDiscrepancyModal = (sub) => {
     if (isValidationEnabled) {
       const componentName = getCorrectionComponentName(sub);
-      const milestone = findCorrectionMilestoneForComponent(componentName);
+      const milestone = findCorrectionMilestoneForComponent(componentName, sub.program_name, sub.semester_name);
       if (milestone && !isCorrectionMilestoneOpen(milestone)) {
         toast.error(`Correction requests for ${componentName} are closed. Active from ${formatShortDate(milestone.start_date)} to ${formatShortDate(milestone.end_date)}.`);
         return;
@@ -456,7 +456,7 @@ const StudentResults = () => {
                         const pendingIssue = subjectIssues.find(d => d.status === 'Pending');
                         const resolvedIssue = subjectIssues.find(d => d.status === 'Resolved');
                         const correctionComponentName = getCorrectionComponentName(sub);
-                        const correctionMilestone = findCorrectionMilestoneForComponent(correctionComponentName);
+                        const correctionMilestone = findCorrectionMilestoneForComponent(correctionComponentName, series.program_name, series.semester_name);
                         const correctionClosed = isValidationEnabled && correctionMilestone && !isCorrectionMilestoneOpen(correctionMilestone);
                         const correctionTooltip = correctionClosed ? `Correction requests for ${correctionComponentName} are closed until ${formatShortDate(correctionMilestone.end_date)}.` : '';
                         
