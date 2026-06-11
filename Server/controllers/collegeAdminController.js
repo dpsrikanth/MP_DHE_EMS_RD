@@ -882,6 +882,17 @@ const validateMilestone = async (dbClient, college_id, academic_year_id, actionT
                 return isTopicMatch && mName.includes("MARKS ENTRY");
             } else if (actionType === 'MARKS SUBMISSION') {
                 return mName.includes("MARKS LOCK & SUBMISSION") || mName.includes("MARKS LOCK");
+            } else if (actionType === 'CORRECTION REQUEST') {
+                if (!roundName) return false;
+                const rName = String(roundName).toUpperCase();
+                const rNum = rName.replace(/\D/g, "");
+                if (rName.includes("PRACTICAL")) {
+                    return mName.includes("PRACTICAL") && mName.includes("CORRECTION");
+                }
+                const isTopicMatch = mName.includes(rName) ||
+                    (rName.includes("IA") && rNum && (mName.includes("INTERNAL EXAM " + rNum) || mName.includes("MID-" + rNum))) ||
+                    (rName.includes("MID") && rNum && mName.includes("INTERNAL EXAM " + rNum));
+                return isTopicMatch && (mName.includes("CORRECTION") || mName.includes("UNLOCK"));
             }
             return false;
         })

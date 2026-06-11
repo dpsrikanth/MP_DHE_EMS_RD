@@ -43,6 +43,17 @@ const validateMilestone = async (db, college_id, academic_year_id, actionType, r
                 return isTopicMatch && mName.includes("MARKS ENTRY");
             } else if (actionType === 'MARKS SUBMISSION') {
                 return mName.includes("MARKS LOCK & SUBMISSION");
+            } else if (actionType === 'CORRECTION REQUEST') {
+                if (!roundName) return false;
+                const rName = String(roundName).toUpperCase();
+                const rNum = rName.replace(/\D/g, "");
+                if (rName.includes("PRACTICAL")) {
+                    return mName.includes("PRACTICAL") && mName.includes("CORRECTION");
+                }
+                const isTopicMatch = mName.includes(rName) ||
+                    (rName.includes("IA") && rNum && (mName.includes("INTERNAL EXAM " + rNum) || mName.includes("MID-" + rNum))) ||
+                    (rName.includes("MID") && rNum && mName.includes("INTERNAL EXAM " + rNum));
+                return isTopicMatch && (mName.includes("CORRECTION") || mName.includes("UNLOCK"));
             }
             return false;
         })
@@ -671,6 +682,19 @@ exports.requestRoundUnlock = async (req, res) => {
         const faculty_id = req.user ? req.user.id : null;
 
         if (!faculty_id) return res.status(401).json({ error: "Unauthorized" });
+
+        // 1. Roadmap Milestone Validation
+        const compNameRes = await db.query(
+            `SELECT component_name FROM internal_marks_structure WHERE id = $1`,
+            [component_id]
+        );
+        const componentName = compNameRes.rowCount > 0 ? compNameRes.rows[0].component_name : null;
+        if (componentName) {
+            const validationError = await validateMilestone(db, college_id, academic_year_id, 'CORRECTION REQUEST', componentName);
+            if (validationError) {
+                return res.status(403).json({ error: validationError });
+            }
+        }
 
         // Set to Unlock Requested (is_accepted = false)
         const caQuery = `

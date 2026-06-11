@@ -234,6 +234,9 @@ const FacultyAssignment = () => {
     } else if (selectedProgram) {
         filteredSubjects = filteredSubjects.filter(s => s.program_id === selectedProgram.value);
     }
+    if (selectedSemester) {
+        filteredSubjects = filteredSubjects.filter(s => s.semester_id === selectedSemester.value);
+    }
 
     const uniqueFilteredFaculties = Array.from(
         new Map(filteredFaculties.map(f => [`${f.name}-${f.email}`, f])).values()

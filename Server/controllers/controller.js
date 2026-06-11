@@ -4055,6 +4055,95 @@ const getMarks = async (req, res) => {
   }
 };
 
+const validateMilestone = async (college_id, academic_year_id, actionType, roundName = null) => {
+    const settingsResult = await client.query("SELECT setting_value FROM system_settings WHERE setting_key = 'roadmap_validation'");
+    const isValidationEnabled = settingsResult.rows.length > 0 ? settingsResult.rows[0].setting_value.enabled : true;
+
+    if (!isValidationEnabled) return null;
+
+    let academicYearStart = null, academicYearEnd = null;
+    if (academic_year_id) {
+        const ayResult = await client.query("SELECT year_name FROM master_academic_years WHERE id = $1", [academic_year_id]);
+        if (ayResult.rows.length > 0) {
+            const parts = (ayResult.rows[0].year_name || '').split('-');
+            if (parts.length >= 2) {
+                academicYearStart = parseInt(parts[0]);
+                academicYearEnd = parseInt(parts[1]);
+            }
+        }
+    }
+
+    const milestonesResult = await client.query(
+        "SELECT * FROM academic_milestones WHERE (college_id = $1 OR college_id IS NULL) AND delete_status = true",
+        [college_id]
+    );
+    const milestones = milestonesResult.rows;
+
+    const matchedMilestone = milestones
+        .filter(m => {
+            if (academicYearStart && m.start_date) {
+                const mYear = new Date(m.start_date).getFullYear();
+                if (mYear !== academicYearStart && mYear !== academicYearEnd) return false;
+            }
+            const mName = m.name.toUpperCase();
+            
+            if (actionType === 'MARKS ENTRY') {
+                if (!roundName) return false;
+                const rName = String(roundName).toUpperCase();
+                const rNum = rName.replace(/\D/g, "");
+                const isTopicMatch = mName.includes(rName) ||
+                    (rName.includes("IA") && rNum && (mName.includes("INTERNAL EXAM " + rNum) || mName.includes("MID-" + rNum))) ||
+                    (rName.includes("MID") && rNum && mName.includes("INTERNAL EXAM " + rNum));
+                return isTopicMatch && mName.includes("MARKS ENTRY");
+            } else if (actionType === 'MARKS SUBMISSION') {
+                return mName.includes("MARKS LOCK & SUBMISSION");
+            } else if (actionType === 'CORRECTION REQUEST') {
+                if (!roundName) return false;
+                const rName = String(roundName).toUpperCase();
+                const rNum = rName.replace(/\D/g, "");
+                if (rName.includes("PRACTICAL")) {
+                    return mName.includes("PRACTICAL") && mName.includes("CORRECTION");
+                }
+                const isTopicMatch = mName.includes(rName) ||
+                    (rName.includes("IA") && rNum && (mName.includes("INTERNAL EXAM " + rNum) || mName.includes("MID-" + rNum))) ||
+                    (rName.includes("MID") && rNum && mName.includes("INTERNAL EXAM " + rNum));
+                return isTopicMatch && (mName.includes("CORRECTION") || mName.includes("UNLOCK"));
+            }
+            return false;
+        })
+        .sort((a, b) => {
+            if (!academicYearStart) return 0;
+            const aYear = new Date(a.start_date).getFullYear();
+            const bYear = new Date(b.start_date).getFullYear();
+            const aDiff = Math.abs(aYear - academicYearStart);
+            const bDiff = Math.abs(bYear - academicYearStart);
+            return aDiff - bDiff;
+        })[0] || null;
+
+    if (matchedMilestone) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (matchedMilestone.start_date) {
+            const startDate = new Date(matchedMilestone.start_date);
+            startDate.setHours(0, 0, 0, 0);
+            if (today < startDate) {
+                return `Action not allowed yet. The window for this milestone opens on ${startDate.toDateString()}.`;
+            }
+        }
+
+        if (matchedMilestone.end_date) {
+            const deadline = new Date(matchedMilestone.end_date);
+            deadline.setHours(23, 59, 59, 999);
+            if (today > deadline) {
+                return "Action is closed. The deadline for this milestone has passed.";
+            }
+        }
+    }
+
+    return null; // No error
+};
+
 const submitMarksDiscrepancy = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -4075,6 +4164,35 @@ const submitMarksDiscrepancy = async (req, res) => {
 
     const collegeId = colRes.rows.length > 0 ? colRes.rows[0].id : null;
     const semesterId = semRes.rows.length > 0 ? semRes.rows[0].id : null;
+
+    // Retrieve academic_year_id to validate milestone
+    let academicYearId = null;
+    if (collegeId && semesterId) {
+      const wsRes = await client.query(
+        `SELECT academic_year_id FROM marks_workflow_status 
+         WHERE subject_id = $1 AND college_id = $2 AND semester_id = $3 
+         LIMIT 1`,
+        [subject_id, collegeId, semesterId]
+      );
+      academicYearId = wsRes.rows.length > 0 ? wsRes.rows[0].academic_year_id : null;
+      if (!academicYearId) {
+        const fsRes = await client.query(
+          `SELECT academic_year_id FROM faculty_subjects 
+           WHERE subject_id = $1 AND college_id = $2 AND semester_id = $3 
+           LIMIT 1`,
+          [subject_id, collegeId, semesterId]
+        );
+        academicYearId = fsRes.rows.length > 0 ? fsRes.rows[0].academic_year_id : null;
+      }
+    }
+
+    // Roadmap Milestone Validation for Student Correction Request
+    if (collegeId && academicYearId && component_name) {
+      const validationError = await validateMilestone(collegeId, academicYearId, 'CORRECTION REQUEST', component_name);
+      if (validationError) {
+        return res.status(403).json({ message: validationError });
+      }
+    }
 
     // Check if HOD has approved the marks for this subject — block correction requests if so
     if (collegeId && semesterId) {

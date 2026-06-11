@@ -316,7 +316,7 @@ const InternalExamMarks = () => {
             toast.success('Unlock request sent to HOD!');
             setWorkflowStatus('Unlock Requested');
         } catch (err) {
-            toast.error('Failed to send unlock request');
+            toast.error(err.response?.data?.error || 'Failed to send unlock request');
         } finally {
             setIsSaving(false);
         }

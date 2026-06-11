@@ -99,9 +99,13 @@ const FacultyAssignmentEdit = () => {
         ? faculties.filter(f => f.department === selectedDepartment.label) 
         : faculties;
 
-    const filteredSubjects = selectedDepartment
+    let filteredSubjects = selectedDepartment
         ? subjects.filter(s => s.department_ids && s.department_ids.some(id => id == selectedDepartment.value))
         : subjects;
+
+    if (editingAssignment.semester_id) {
+        filteredSubjects = filteredSubjects.filter(s => s.semester_id === editingAssignment.semester_id);
+    }
 
     const uniqueFilteredFaculties = Array.from(
         new Map(filteredFaculties.map(f => [`${f.name}-${f.email}`, f])).values()
