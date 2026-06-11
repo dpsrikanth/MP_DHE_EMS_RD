@@ -8,6 +8,8 @@ import { getGradeAndPoints, isPass, calculateSGPA } from '../../utils/gradingUti
 import { toast } from 'react-toastify';
 import { TableSearch } from '../../components/TableControls';
 import { studentApi } from '../../api/studentApi';
+import { milestoneApi } from '../../api/milestoneApi';
+import { masterDataApi } from '../../api/masterDataApi';
 
 const StudentResults = () => {
   const [results, setResults] = useState([]);
@@ -25,10 +27,15 @@ const StudentResults = () => {
   const [discrepancyMessage, setDiscrepancyMessage] = useState('');
   const [reportedDiscrepancies, setReportedDiscrepancies] = useState([]);
   const [submittingDiscrepancy, setSubmittingDiscrepancy] = useState(false);
+  const [milestones, setMilestones] = useState([]);
+  const [isValidationEnabled, setIsValidationEnabled] = useState(true);
+  const [programs, setPrograms] = useState([]);
+  const [semesters, setSemesters] = useState([]);
 
   useEffect(() => {
     fetchResults();
     fetchDiscrepancies();
+    fetchMilestoneContext();
   }, []);
 
 
@@ -53,7 +60,120 @@ const StudentResults = () => {
     }
   };
 
+  const fetchMilestoneContext = async () => {
+    try {
+      const [milestoneResponse, validationResponse, programsResponse, semestersResponse] = await Promise.all([
+        milestoneApi.getMilestones({}),
+        milestoneApi.getValidationSetting(),
+        masterDataApi.getPrograms(),
+        masterDataApi.getSemesters()
+      ]);
+      setMilestones(Array.isArray(milestoneResponse) ? milestoneResponse : []);
+      setIsValidationEnabled(validationResponse?.enabled ?? true);
+      setPrograms(Array.isArray(programsResponse) ? programsResponse : []);
+      setSemesters(Array.isArray(semestersResponse) ? semestersResponse : []);
+    } catch (err) {
+      console.error('Fetch milestone validation error:', err);
+    }
+  };
+
+  const normalizeComponentName = (name) => {
+    if (!name) return '';
+    return String(name).trim().toUpperCase();
+  };
+
+  const getProgramId = (programName) => {
+    return programs.find(p => String(p.name || '').trim().toUpperCase() === String(programName || '').trim().toUpperCase())?.id || null;
+  };
+
+  const getSemesterId = (semesterName) => {
+    return semesters.find(s => String(s.semester_name || '').trim().toUpperCase() === String(semesterName || '').trim().toUpperCase())?.id || null;
+  };
+
+  const isMilestoneContextMatch = (milestone, programId, semesterId) => {
+    if (!milestone) return false;
+    if (milestone.program_id && programId && String(milestone.program_id) !== String(programId)) return false;
+    if (milestone.semester_id && semesterId && String(milestone.semester_id) !== String(semesterId)) return false;
+    return true;
+  };
+
+  const buildCorrectionTokens = (normalized) => {
+    const tokens = [normalized];
+    const componentNumber = (normalized.match(/\d+/) || [])[0];
+
+    if (normalized.includes('IA') && componentNumber) {
+      tokens.push(`IA${componentNumber}`, `IA ${componentNumber}`, `MID-${componentNumber}`, `MID ${componentNumber}`, `INTERNAL EXAM ${componentNumber}`);
+    }
+    if (normalized.includes('MID') && componentNumber) {
+      tokens.push(`MID-${componentNumber}`, `MID ${componentNumber}`, `INTERNAL EXAM ${componentNumber}`, `IA${componentNumber}`, `IA ${componentNumber}`);
+    }
+    if (normalized.includes('PRACTICAL')) {
+      tokens.push('PRACTICAL');
+    }
+
+    return Array.from(new Set(tokens)).filter(t => t && t.length > 0);
+  };
+
+  const findCorrectionMilestoneForComponent = (componentName, programName = '', semesterName = '') => {
+    const normalized = normalizeComponentName(componentName);
+    if (!normalized || milestones.length === 0) return null;
+
+    const programId = getProgramId(programName);
+    const semesterId = getSemesterId(semesterName);
+    const tokens = buildCorrectionTokens(normalized);
+
+    const matches = milestones.filter(m => {
+      const mName = String(m.name || '').toUpperCase();
+      const isCorrectionWindow = mName.includes('CORRECTION') || mName.includes('UNLOCK') || mName.includes('DISCREPANCY');
+      if (!isCorrectionWindow) return false;
+      if (!isMilestoneContextMatch(m, programId, semesterId)) return false;
+      return tokens.some(token => mName.includes(token));
+    });
+
+    if (matches.length > 0) return matches[0];
+
+    const fallback = milestones.find(m => {
+      const mName = String(m.name || '').toUpperCase();
+      const isCorrectionWindow = mName.includes('CORRECTION') || mName.includes('UNLOCK') || mName.includes('DISCREPANCY');
+      return isCorrectionWindow && isMilestoneContextMatch(m, programId, semesterId);
+    });
+
+    return fallback || null;
+  };
+
+  const isCorrectionMilestoneOpen = (milestone) => {
+    if (!milestone || !milestone.start_date || !milestone.end_date) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(milestone.start_date);
+    const end = new Date(milestone.end_date);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+    return today >= start && today <= end;
+  };
+
+  const formatShortDate = (isoDate) => {
+    if (!isoDate) return '';
+    const d = new Date(isoDate);
+    if (Number.isNaN(d.getTime())) return isoDate;
+    return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+  };
+
+  const getCorrectionComponentName = (sub) => {
+    const comps = sub.assessment_components || [];
+    return comps.length > 0 ? comps[0].name : 'General';
+  };
+
   const handleOpenDiscrepancyModal = (sub) => {
+    if (isValidationEnabled) {
+      const componentName = getCorrectionComponentName(sub);
+      const milestone = findCorrectionMilestoneForComponent(componentName);
+      if (milestone && !isCorrectionMilestoneOpen(milestone)) {
+        toast.error(`Correction requests for ${componentName} are closed. Active from ${formatShortDate(milestone.start_date)} to ${formatShortDate(milestone.end_date)}.`);
+        return;
+      }
+    }
+
     setSelectedSubject(sub);
     const comps = sub.assessment_components || [];
     setSelectedComponent(comps.length > 0 ? comps[0].name : 'General');
@@ -335,6 +455,10 @@ const StudentResults = () => {
                         const subjectIssues = reportedDiscrepancies.filter(d => d.subject_id === sub.subject_id);
                         const pendingIssue = subjectIssues.find(d => d.status === 'Pending');
                         const resolvedIssue = subjectIssues.find(d => d.status === 'Resolved');
+                        const correctionComponentName = getCorrectionComponentName(sub);
+                        const correctionMilestone = findCorrectionMilestoneForComponent(correctionComponentName);
+                        const correctionClosed = isValidationEnabled && correctionMilestone && !isCorrectionMilestoneOpen(correctionMilestone);
+                        const correctionTooltip = correctionClosed ? `Correction requests for ${correctionComponentName} are closed until ${formatShortDate(correctionMilestone.end_date)}.` : '';
                         
                         return (
                           <tr key={sIdx} className="hover:bg-violet-50/30 transition-colors">
@@ -363,21 +487,39 @@ const StudentResults = () => {
         <CheckCircle2 size={10} />
         Issue Resolved
       </span>
-      <button
-        onClick={() => handleOpenDiscrepancyModal(sub)}
-        className="text-[10px] font-extrabold text-violet-600 hover:text-violet-800 hover:underline"
-      >
-        Report New
-      </button>
+      <div className="flex flex-col items-end gap-1">
+        <button
+          onClick={() => handleOpenDiscrepancyModal(sub)}
+          disabled={correctionClosed}
+          title={correctionTooltip}
+          className={`text-[10px] font-extrabold ${correctionClosed ? 'text-slate-400 cursor-not-allowed' : 'text-violet-600 hover:text-violet-800 hover:underline'}`}
+        >
+          Report New
+        </button>
+        {correctionMilestone && (
+          <p className={`text-[10px] ${correctionClosed ? 'text-red-500' : 'text-slate-500'}`}>
+            {correctionClosed ? 'Correction window closed:' : 'Correction window:'} {formatShortDate(correctionMilestone.start_date)} to {formatShortDate(correctionMilestone.end_date)}
+          </p>
+        )}
+      </div>
     </div>
   ) : (
-    <button
-      onClick={() => handleOpenDiscrepancyModal(sub)}
-      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-extrabold text-violet-700 hover:text-white bg-violet-50 hover:bg-violet-600 border border-violet-100 hover:border-violet-600 rounded-lg transition-all duration-200 shadow-sm"
-    >
-      <MessageSquare size={12} />
-      Request Correction
-    </button>
+    <div className="flex flex-col items-end gap-1">
+      <button
+        onClick={() => handleOpenDiscrepancyModal(sub)}
+        disabled={correctionClosed}
+        title={correctionTooltip}
+        className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-extrabold rounded-lg transition-all duration-200 shadow-sm ${correctionClosed ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' : 'text-violet-700 hover:text-white bg-violet-50 hover:bg-violet-600 border border-violet-100 hover:border-violet-600'}`}
+      >
+        <MessageSquare size={12} />
+        Request Correction
+      </button>
+      {correctionMilestone && (
+        <p className={`text-[10px] ${correctionClosed ? 'text-red-500' : 'text-slate-500'}`}>
+          {correctionClosed ? 'Correction window closed:' : 'Correction window:'} {formatShortDate(correctionMilestone.start_date)} to {formatShortDate(correctionMilestone.end_date)}
+        </p>
+      )}
+    </div>
   )}
 </div>
                               </div>
