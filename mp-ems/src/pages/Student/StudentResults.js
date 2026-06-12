@@ -164,19 +164,17 @@ const StudentResults = () => {
     return comps.length > 0 ? comps[0].name : 'General';
   };
 
-  const handleOpenDiscrepancyModal = (sub) => {
+  const handleOpenDiscrepancyModal = (sub, compName) => {
     if (isValidationEnabled) {
-      const componentName = getCorrectionComponentName(sub);
-      const milestone = findCorrectionMilestoneForComponent(componentName, sub.program_name, sub.semester_name);
+      const milestone = findCorrectionMilestoneForComponent(compName, sub.program_name, sub.semester_name);
       if (milestone && !isCorrectionMilestoneOpen(milestone)) {
-        toast.error(`Correction requests for ${componentName} are closed. Active from ${formatShortDate(milestone.start_date)} to ${formatShortDate(milestone.end_date)}.`);
+        toast.error(`Correction requests for ${compName} are closed. Active from ${formatShortDate(milestone.start_date)} to ${formatShortDate(milestone.end_date)}.`);
         return;
       }
     }
 
     setSelectedSubject(sub);
-    const comps = sub.assessment_components || [];
-    setSelectedComponent(comps.length > 0 ? comps[0].name : 'General');
+    setSelectedComponent(compName);
     setDiscrepancyMessage('');
     setDiscrepancyModalOpen(true);
   };
@@ -295,6 +293,72 @@ const StudentResults = () => {
       return true;
     });
   }, [examSeriesResults, resultTypeFilter, selectedSemester]);
+
+  const renderCorrectionActionBlock = (sub, compName) => {
+    const compIssues = reportedDiscrepancies.filter(d => d.subject_id === sub.subject_id && normalizeComponentName(d.component_name) === normalizeComponentName(compName));
+    const pendingIssue = compIssues.find(d => d.status === 'Pending');
+    const resolvedIssue = compIssues.find(d => d.status === 'Resolved');
+    const milestone = findCorrectionMilestoneForComponent(compName, sub.program_name, sub.semester_name);
+    const correctionClosed = isValidationEnabled && milestone && !isCorrectionMilestoneOpen(milestone);
+    const correctionTooltip = correctionClosed ? `Correction requests for ${compName} are closed.` : '';
+
+    return (
+      <div className="flex flex-col items-center gap-1 mt-2">
+        { ( ((sub.batch_status || '').trim().toLowerCase().includes('approved')) || ((sub.batch_status || '').trim().toLowerCase() === 'locked') ) ? (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full shadow-sm">
+            <CheckCircle2 size={8} />
+            Approved
+          </span>
+        ) : pendingIssue ? (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black bg-amber-50 text-amber-700 border border-amber-200 rounded-full shadow-sm">
+            <AlertCircle size={8} />
+            Pending
+          </span>
+        ) : resolvedIssue ? (
+          <div className="flex flex-col items-center gap-1">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full shadow-sm">
+              <CheckCircle2 size={8} />
+              Resolved
+            </span>
+            <button
+              type="button"
+              onClick={() => handleOpenDiscrepancyModal(sub, compName)}
+              disabled={correctionClosed}
+              title={correctionTooltip}
+              className={`text-[9px] font-extrabold ${correctionClosed ? 'text-slate-400 cursor-not-allowed' : 'text-violet-600 hover:text-violet-800 hover:underline'}`}
+            >
+              Report New
+            </button>
+            {milestone && (
+              <p className={`text-[8px] leading-tight text-center font-semibold mt-0.5 ${correctionClosed ? 'text-red-500' : 'text-slate-500'}`}>
+                {correctionClosed ? 'Closed:' : 'Window:'} <br/>
+                {formatShortDate(milestone.start_date)} to {formatShortDate(milestone.end_date)}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-1">
+            <button
+              type="button"
+              onClick={() => handleOpenDiscrepancyModal(sub, compName)}
+              disabled={correctionClosed}
+              title={correctionTooltip}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 text-[9px] font-extrabold rounded-lg transition-all duration-200 shadow-sm ${correctionClosed ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' : 'text-violet-700 hover:text-white bg-violet-50 hover:bg-violet-600 border border-violet-100 hover:border-violet-600'}`}
+            >
+              <MessageSquare size={10} />
+              Request Correction
+            </button>
+            {milestone && (
+              <p className={`text-[8px] leading-tight text-center font-semibold mt-0.5 ${correctionClosed ? 'text-red-500' : 'text-slate-500'}`}>
+                {correctionClosed ? 'Closed:' : 'Window:'} <br/>
+                {formatShortDate(milestone.start_date)} to {formatShortDate(milestone.end_date)}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
@@ -452,118 +516,75 @@ const StudentResults = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {series.subjects.map((sub, sIdx) => {
-                        const subjectIssues = reportedDiscrepancies.filter(d => d.subject_id === sub.subject_id);
-                        const pendingIssue = subjectIssues.find(d => d.status === 'Pending');
-                        const resolvedIssue = subjectIssues.find(d => d.status === 'Resolved');
-                        const correctionComponentName = getCorrectionComponentName(sub);
-                        const correctionMilestone = findCorrectionMilestoneForComponent(correctionComponentName, series.program_name, series.semester_name);
-                        const correctionClosed = isValidationEnabled && correctionMilestone && !isCorrectionMilestoneOpen(correctionMilestone);
-                        const correctionTooltip = correctionClosed ? `Correction requests for ${correctionComponentName} are closed until ${formatShortDate(correctionMilestone.end_date)}.` : '';
-                        
                         return (
                           <tr key={sIdx} className="hover:bg-violet-50/30 transition-colors">
                             <td className="px-6 py-4 font-bold text-slate-400 text-[13px]">{sIdx + 1}</td>
                             <td className="px-4 py-4">
-                              <div className="flex items-center justify-between gap-4">
-                                <div>
-                                  <p className="text-sm font-black text-slate-900">{sub.subject_name}</p>
-                                  <p className="text-[12px] font-bold text-slate-400 tracking-wider">{sub.subject_code}</p>
-                                </div>
-                                {console.log('Debug batch_status', sub.subject_code, sub.batch_status)}
-                                <div className="flex items-center gap-2">
-  { ( ((sub.batch_status || '').trim().toLowerCase().includes('approved')) || ((sub.batch_status || '').trim().toLowerCase() === 'locked') ) ? (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full shadow-sm">
-      <CheckCircle2 size={10} />
-      HOD Approved
-    </span>
-  ) : pendingIssue ? (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200 rounded-full shadow-sm">
-      <AlertCircle size={10} />
-      Issue Pending
-    </span>
-  ) : resolvedIssue ? (
-    <div className="flex flex-col items-end gap-1">
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full shadow-sm">
-        <CheckCircle2 size={10} />
-        Issue Resolved
-      </span>
-      <div className="flex flex-col items-end gap-1">
-        <button
-          onClick={() => handleOpenDiscrepancyModal(sub)}
-          disabled={correctionClosed}
-          title={correctionTooltip}
-          className={`text-[10px] font-extrabold ${correctionClosed ? 'text-slate-400 cursor-not-allowed' : 'text-violet-600 hover:text-violet-800 hover:underline'}`}
-        >
-          Report New
-        </button>
-        {correctionMilestone && (
-          <p className={`text-[10px] ${correctionClosed ? 'text-red-500' : 'text-slate-500'}`}>
-            {correctionClosed ? 'Correction window closed:' : 'Correction window:'} {formatShortDate(correctionMilestone.start_date)} to {formatShortDate(correctionMilestone.end_date)}
-          </p>
-        )}
-      </div>
-    </div>
-  ) : (
-    <div className="flex flex-col items-end gap-1">
-      <button
-        onClick={() => handleOpenDiscrepancyModal(sub)}
-        disabled={correctionClosed}
-        title={correctionTooltip}
-        className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-extrabold rounded-lg transition-all duration-200 shadow-sm ${correctionClosed ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' : 'text-violet-700 hover:text-white bg-violet-50 hover:bg-violet-600 border border-violet-100 hover:border-violet-600'}`}
-      >
-        <MessageSquare size={12} />
-        Request Correction
-      </button>
-      {correctionMilestone && (
-        <p className={`text-[10px] ${correctionClosed ? 'text-red-500' : 'text-slate-500'}`}>
-          {correctionClosed ? 'Correction window closed:' : 'Correction window:'} {formatShortDate(correctionMilestone.start_date)} to {formatShortDate(correctionMilestone.end_date)}
-        </p>
-      )}
-    </div>
-  )}
-</div>
+                              <div>
+                                <p className="text-sm font-black text-slate-900">{sub.subject_name}</p>
+                                <p className="text-[12px] font-bold text-slate-400 tracking-wider">{sub.subject_code}</p>
                               </div>
                             </td>
                             {internalComponents.length > 0 ? (
-                            internalComponents.map(compName => {
-                              const match = (sub.assessment_components || []).find(c => c.name === compName);
-                              return (
-                                <td key={compName} className="px-4 py-4 text-center">
-                                  {match ? <span className="text-sm font-black text-violet-700">{match.marks}</span> : <span className="text-slate-300">-</span>}
-                                </td>
-                              );
-                            })
-                          ) : (
-                            <td className="px-4 py-4 text-center">
-                              {sub.batch_status === 'Locked' || sub.batch_status === 'Approved' ? (
-                                <span className="text-sm font-black text-slate-700">{sub.internal_marks ?? '-'}</span>
-                              ) : (
-                                <span className="text-slate-300">-</span>
-                              )}
-                            </td>
-                          )}
-                          {practicalComponents.length > 0 ? (
-                            practicalComponents.map(compName => {
-                              const match = (sub.assessment_components || []).find(c => c.name === compName);
-                              return (
-                                <td key={compName} className="px-4 py-4 text-center">
-                                  {match ? <span className="text-sm font-black text-emerald-700">{match.marks}</span> : <span className="text-slate-300">-</span>}
-                                </td>
-                              );
-                            })
-                          ) : (
-                            <td className="px-4 py-4 text-center">
-                              {sub.batch_status === 'Locked' || sub.batch_status === 'Approved' ? (
-                                <span className="text-sm font-bold text-slate-500">{sub.external_marks > 0 ? sub.external_marks : '-'}</span>
-                              ) : (
-                                <span className="text-slate-300">-</span>
-                              )}
-                            </td>
-                          )}
-                          <td className="px-4 py-4 text-center font-black text-violet-700 text-sm">{sub.total_marks}</td>
-                        </tr>
-                      );
-                    })}
+                              internalComponents.map(compName => {
+                                const match = (sub.assessment_components || []).find(c => c.name === compName);
+                                return (
+                                  <td key={compName} className="px-4 py-4 text-center">
+                                    {match ? (
+                                      <div className="flex flex-col items-center justify-center">
+                                        <span className="text-sm font-black text-violet-700">{match.marks}</span>
+                                        {renderCorrectionActionBlock(sub, compName)}
+                                      </div>
+                                    ) : (
+                                      <span className="text-slate-300">-</span>
+                                    )}
+                                  </td>
+                                );
+                              })
+                            ) : (
+                              <td className="px-4 py-4 text-center">
+                                {sub.batch_status === 'Locked' || sub.batch_status === 'Approved' ? (
+                                  <div className="flex flex-col items-center justify-center">
+                                    <span className="text-sm font-black text-slate-700">{sub.internal_marks ?? '-'}</span>
+                                    {sub.internal_marks !== null && sub.internal_marks !== undefined && renderCorrectionActionBlock(sub, 'General')}
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-300">-</span>
+                                )}
+                              </td>
+                            )}
+                            {practicalComponents.length > 0 ? (
+                              practicalComponents.map(compName => {
+                                const match = (sub.assessment_components || []).find(c => c.name === compName);
+                                return (
+                                  <td key={compName} className="px-4 py-4 text-center">
+                                    {match ? (
+                                      <div className="flex flex-col items-center justify-center">
+                                        <span className="text-sm font-black text-emerald-700">{match.marks}</span>
+                                        {renderCorrectionActionBlock(sub, compName)}
+                                      </div>
+                                    ) : (
+                                      <span className="text-slate-300">-</span>
+                                    )}
+                                  </td>
+                                );
+                              })
+                            ) : (
+                              <td className="px-4 py-4 text-center">
+                                {sub.batch_status === 'Locked' || sub.batch_status === 'Approved' ? (
+                                  <div className="flex flex-col items-center justify-center">
+                                    <span className="text-sm font-bold text-slate-500">{sub.external_marks > 0 ? sub.external_marks : '-'}</span>
+                                    {sub.external_marks > 0 && renderCorrectionActionBlock(sub, 'General')}
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-300">-</span>
+                                )}
+                              </td>
+                            )}
+                            <td className="px-4 py-4 text-center font-black text-violet-700 text-sm">{sub.total_marks}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                   <div className="px-6 py-4 bg-violet-50/30 border-t border-violet-100">

@@ -109,6 +109,11 @@ exports.saveSchedules = async (req, res) => {
         // Find scheduling milestone that matches the round name AND falls within the selected academic year
         const schedulingMilestone = milestones
             .filter(m => {
+                // Filter by academic context
+                if (semester_id && m.semester_id && String(m.semester_id) !== String(semester_id)) return false;
+                if (program_id && m.program_id && String(m.program_id) !== String(program_id)) return false;
+                if (academic_year_id && m.academic_year_id && String(m.academic_year_id) !== String(academic_year_id)) return false;
+
                 // Filter by academic year if we have the year range
                 if (academicYearStart && m.start_date) {
                     const mYear = new Date(m.start_date).getFullYear();

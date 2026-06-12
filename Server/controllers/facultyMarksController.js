@@ -292,7 +292,25 @@ exports.enterStudentMarks = async (req, res) => {
                 if (componentName) {
                     const subRes = await db.query('SELECT program_id FROM master_subjects WHERE id = $1', [subject_id]);
                     const programId = subRes.rows.length > 0 ? subRes.rows[0].program_id : null;
-                    const validationError = await validateMilestone(db, college_id, academic_year_id, 'MARKS ENTRY', componentName, semester_id, programId);
+                    
+                    // Determine if this is a first-time entry or a correction re-entry/unlock.
+                    const discRes = await db.query(
+                        `SELECT 1 FROM student_mark_discrepancies 
+                         WHERE subject_id = $1 AND component_name = $2 AND status IN ('HOD_Approved', 'Resolved') LIMIT 1`,
+                        [subject_id, componentName]
+                    );
+                    const unlockLogRes = await db.query(
+                        `SELECT 1 FROM audit_logs 
+                         WHERE action = 'COMPONENT_UNLOCK_APPROVED' 
+                           AND entity_id = $1 
+                           AND (new_values->>'section' = $2 OR new_values->>'section' IS NULL) LIMIT 1`,
+                        [marksData[0].component_id, section]
+                    );
+
+                    const isCorrection = discRes.rowCount > 0 || unlockLogRes.rowCount > 0;
+                    const milestoneAction = isCorrection ? 'CORRECTION REQUEST' : 'MARKS ENTRY';
+
+                    const validationError = await validateMilestone(db, college_id, academic_year_id, milestoneAction, componentName, semester_id, programId);
                     if (validationError) {
                         return res.status(403).json({ error: validationError });
                     }
@@ -597,7 +615,7 @@ exports.publishRoundMarks = async (req, res) => {
             // 1. Check if any student-level discrepancy has been raised for this subject & component
             const discRes = await client.query(
                 `SELECT 1 FROM student_mark_discrepancies 
-                 WHERE subject_id = $1 AND component_name = $2 LIMIT 1`,
+                 WHERE subject_id = $1 AND component_name = $2 AND status IN ('HOD_Approved', 'Resolved') LIMIT 1`,
                 [subject_id, componentName]
             );
             // 2. Check if a component-level full unlock was approved by HOD
@@ -1274,7 +1292,7 @@ exports.getStudentsForRound = async (req, res) => {
             // Check if this component has ever been published/unlocked/corrected before for this subject/section
             const discRes = await db.query(
                 `SELECT 1 FROM student_mark_discrepancies 
-                 WHERE subject_id = $1 AND component_name = $2 LIMIT 1`,
+                 WHERE subject_id = $1 AND component_name = $2 AND status IN ('HOD_Approved', 'Resolved') LIMIT 1`,
                 [parseInt(subject_id), round_name]
             );
             const unlockLogRes = await db.query(
