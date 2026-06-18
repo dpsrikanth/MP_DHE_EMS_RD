@@ -3764,7 +3764,7 @@ const getStudentResults = async (req, res) => {
               COALESCE(i.student_id, o.student_id) as student_id,
               COALESCE(i.subject_id, o.subject_id) as subject_id,
               (COALESCE(i.ia_total, 0) + COALESCE(o.other_total, 0)) as total_raw,
-              MAX(mws2.status) as batch_status
+              MAX(COALESCE(mws2.status, CASE WHEN ca.is_accepted = true THEN 'Approved' ELSE 'Pending' END)) as batch_status
           FROM ia_summary i
           FULL OUTER JOIN other_summary o ON i.student_id = o.student_id AND i.subject_id = o.subject_id
           JOIN students s2 ON COALESCE(i.student_id, o.student_id) = s2.id
@@ -3772,7 +3772,6 @@ const getStudentResults = async (req, res) => {
           JOIN master_subjects sub2 ON COALESCE(i.subject_id, o.subject_id) = sub2.id
           LEFT JOIN marks_workflow_status mws2 ON COALESCE(i.subject_id, o.subject_id) = mws2.subject_id 
               AND mws2.college_id = c2.id 
-              AND mws2.semester_id = sub2.semester_id
           LEFT JOIN component_acceptance ca ON ca.college_id = c2.id 
               AND ca.subject_id = COALESCE(i.subject_id, o.subject_id)
           WHERE (mws2.status IN ('Approved', 'Locked') OR ca.is_accepted = true)

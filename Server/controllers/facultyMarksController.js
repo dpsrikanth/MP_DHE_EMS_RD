@@ -199,6 +199,11 @@ exports.getStudentsForSubject = async (req, res) => {
               AND (
                   s."semister" ILIKE $3
                   OR EXISTS (
+                      SELECT 1 FROM student_internal_marks sim
+                      WHERE sim.student_id = s.id
+                        AND ($6::int IS NULL OR sim.subject_id = $6)
+                  )
+                  OR EXISTS (
                       SELECT 1 FROM student_attendance sa
                       WHERE sa.student_id = s.id
                         AND sa.semester_id = $4

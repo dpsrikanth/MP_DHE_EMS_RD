@@ -160,13 +160,32 @@ exports.getMarksStructure = async (req, res) => {
 
         query += ` ORDER BY id ASC`;
 
-        const result = await db.query(query, params);
+        let result = await db.query(query, params);
+
+        // Fallback: if semester_id filter returned nothing, retry without semester_id
+        // This handles cases where marks structure was configured for a different semester
+        if (result.rows.length === 0 && semester_id && semester_id !== 'undefined' && semester_id !== 'null') {
+            let fallbackQuery = `SELECT * FROM internal_marks_structure WHERE subject_id = $1`;
+            let fallbackParams = [parseInt(subject_id)];
+            if (targetCollegeId && targetCollegeId !== 'undefined' && targetCollegeId !== 'null') {
+                fallbackParams.push(parseInt(targetCollegeId));
+                fallbackQuery += ` AND college_id = $${fallbackParams.length}`;
+            }
+            if (program_id && program_id !== 'undefined' && program_id !== 'null') {
+                fallbackParams.push(parseInt(program_id));
+                fallbackQuery += ` AND program_id = $${fallbackParams.length}`;
+            }
+            fallbackQuery += ` ORDER BY id ASC`;
+            result = await db.query(fallbackQuery, fallbackParams);
+        }
+
         res.status(200).json(result.rows);
     } catch (error) {
         console.error("Error in getMarksStructure:", error);
         res.status(500).json({ error: "Failed to fetch marks structure" });
     }
 };
+
 
 exports.getMarksStructureComponents = async (req, res) => {
     try {
