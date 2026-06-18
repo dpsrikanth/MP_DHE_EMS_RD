@@ -64,14 +64,41 @@ app.use(morgan((tokens, req, res) => {
     reqBody = '[Multipart Form Data omitted]';
   }
 
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip;
+  
+  // Format IPv6 localhost and IPv4-mapped IPv6 addresses for cleaner logs
+  if (ip === '::1') {
+    ip = '127.0.0.1';
+  } else if (ip && ip.startsWith('::ffff:')) {
+    ip = ip.substring(7);
+  }
+
+  const rawUa = tokens['user-agent'](req, res) || '';
+  let browserName = 'Unknown';
+  if (rawUa.includes('Edg/')) browserName = 'Edge';
+  else if (rawUa.includes('Chrome/')) browserName = 'Chrome';
+  else if (rawUa.includes('Firefox/')) browserName = 'Firefox';
+  else if (rawUa.includes('Safari/') && !rawUa.includes('Chrome/')) browserName = 'Safari';
+  else if (rawUa.includes('MSIE') || rawUa.includes('Trident/')) browserName = 'Internet Explorer';
+
+  if (browserName !== 'Unknown') {
+    if (rawUa.includes('Mobile') || rawUa.includes('Android') || rawUa.includes('iPhone')) {
+      browserName += ' (Mobile)';
+    } else {
+      browserName += ' (Desktop)';
+    }
+  } else if (rawUa) {
+    browserName = rawUa.length > 50 ? rawUa.substring(0, 47) + '...' : rawUa;
+  }
+
   return JSON.stringify({
     method: tokens.method(req, res),
     url: tokens.url(req, res),
     status: tokens.status(req, res),
     content_length: tokens.res(req, res, 'content-length'),
     response_time: tokens['response-time'](req, res) + ' ms',
-    ip: tokens['remote-addr'](req, res) || req.ip,
-    user_agent: tokens['user-agent'](req, res),
+    ip: ip,
+    user_agent: browserName,
     user_id: req.user?.id,
     req_body: reqBody,
     res_body: resBody
