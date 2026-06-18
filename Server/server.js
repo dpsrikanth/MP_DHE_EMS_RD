@@ -70,7 +70,8 @@ app.use(morgan((tokens, req, res) => {
     status: tokens.status(req, res),
     content_length: tokens.res(req, res, 'content-length'),
     response_time: tokens['response-time'](req, res) + ' ms',
-    ip: tokens['remote-addr'](req, res),
+    ip: tokens['remote-addr'](req, res) || req.ip,
+    user_agent: tokens['user-agent'](req, res),
     user_id: req.user?.id,
     req_body: reqBody,
     res_body: resBody
