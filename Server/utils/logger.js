@@ -1,12 +1,9 @@
 const winston = require('winston');
 const path = require('path');
 const fs = require('fs');
+const DynamicDateFileTransport = require('./DynamicDateFileTransport');
 
 const LOG_DIR = process.env.LOG_DIR || path.join(__dirname, '../logs');
-
-if (!fs.existsSync(LOG_DIR)) {
-    fs.mkdirSync(LOG_DIR, { recursive: true });
-}
 
 const winstonLogger = winston.createLogger({
     level: 'info',
@@ -15,8 +12,8 @@ const winstonLogger = winston.createLogger({
         winston.format.json()
     ),
     transports: [
-        new winston.transports.File({ filename: path.join(LOG_DIR, 'error.log'), level: 'error' }),
-        new winston.transports.File({ filename: path.join(LOG_DIR, 'access.log') })
+        new DynamicDateFileTransport({ baseDir: LOG_DIR, filename: 'error.log', level: 'error' }),
+        new DynamicDateFileTransport({ baseDir: LOG_DIR, filename: 'access.log' })
     ]
 });
 
