@@ -1,40 +1,55 @@
-const fs = require('fs');
+const winston = require('winston');
 const path = require('path');
+const fs = require('fs');
 
-const LOG_DIR = path.join(__dirname, '../logs');
+const LOG_DIR = process.env.LOG_DIR || path.join(__dirname, '../logs');
 
 if (!fs.existsSync(LOG_DIR)) {
-    fs.mkdirSync(LOG_DIR);
+    fs.mkdirSync(LOG_DIR, { recursive: true });
 }
 
-const errorLogStream = fs.createWriteStream(path.join(LOG_DIR, 'error.log'), { flags: 'a' });
-const accessLogStream = fs.createWriteStream(path.join(LOG_DIR, 'access.log'), { flags: 'a' });
+const winstonLogger = winston.createLogger({
+    level: 'info',
+    format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+    ),
+    transports: [
+        new winston.transports.File({ filename: path.join(LOG_DIR, 'error.log'), level: 'error' }),
+        new winston.transports.File({ filename: path.join(LOG_DIR, 'access.log') })
+    ]
+});
 
-function formatLog(message, context = {}) {
-    const timestamp = new Date().toISOString();
-    const contextStr = Object.keys(context).length ? ` | Context: ${JSON.stringify(context)}` : '';
-    return `[${timestamp}] ${message}${contextStr}\n`;
+// Optionally log to console
+if (process.env.NODE_ENV !== 'production') {
+    winstonLogger.add(new winston.transports.Console({
+        format: winston.format.combine(
+            winston.format.colorize(),
+            winston.format.simple()
+        )
+    }));
 }
 
 const logger = {
-    info: (message, context) => {
-        const log = formatLog(`INFO: ${message}`, context);
-        console.log(log.trim());
-        accessLogStream.write(log);
+    info: (message, context = {}) => {
+        winstonLogger.info(message, { context });
     },
-    error: (message, context, error) => {
-        let errorDetails = '';
-        if (error) {
-            errorDetails = ` | Error: ${error.message} | Stack: ${error.stack}`;
+    error: (message, context = {}, error = null) => {
+        const errorDetails = error ? { message: error.message, stack: error.stack } : undefined;
+        winstonLogger.error(message, { context, error: errorDetails });
+    },
+    warn: (message, context = {}) => {
+        winstonLogger.warn(message, { context });
+    },
+    stream: {
+        write: (message) => {
+            try {
+                const logData = JSON.parse(message);
+                winstonLogger.info('HTTP Request/Response Log', logData);
+            } catch (e) {
+                winstonLogger.info(message.trim());
+            }
         }
-        const log = formatLog(`ERROR: ${message}${errorDetails}`, context);
-        console.error(log.trim());
-        errorLogStream.write(log);
-    },
-    warn: (message, context) => {
-        const log = formatLog(`WARN: ${message}`, context);
-        console.warn(log.trim());
-        accessLogStream.write(log);
     }
 };
 

@@ -11,6 +11,7 @@ const port = process.env.PORT || 8080;
 // returns the actual client IP instead of the loopback address.
 app.set('trust proxy', true);
 const logger = require('./utils/logger');
+const morgan = require('morgan');
 
 const routes = require('./routes/routes');
 const collegeAdminRoutes = require('./routes/collegeAdminRoutes');
@@ -34,11 +35,43 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// 1. Request Logging Middleware
+// 1. Request and Response Logging Middleware
 app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.originalUrl}`, { ip: req.ip, user: req.user?.id });
+  const originalSend = res.send;
+  res.send = function (body) {
+    res.__custombody__ = body;
+    originalSend.call(this, body);
+  };
   next();
 });
+
+app.use(morgan((tokens, req, res) => {
+  let resBody = res.__custombody__;
+  try {
+    if (typeof resBody === 'string') {
+      resBody = JSON.parse(resBody);
+    }
+  } catch (e) {
+    // Ignore if not JSON
+  }
+
+  let reqBody = req.body;
+  if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+    reqBody = '[Multipart Form Data omitted]';
+  }
+
+  return JSON.stringify({
+    method: tokens.method(req, res),
+    url: tokens.url(req, res),
+    status: tokens.status(req, res),
+    content_length: tokens.res(req, res, 'content-length'),
+    response_time: tokens['response-time'](req, res) + ' ms',
+    ip: tokens['remote-addr'](req, res),
+    user_id: req.user?.id,
+    req_body: reqBody,
+    res_body: resBody
+  });
+}, { stream: logger.stream }));
 
 // Security Middlewares
 app.use(helmet({
