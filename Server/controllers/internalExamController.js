@@ -1,11 +1,29 @@
 const db = require('../config/db');
 
+// Roles that operate across colleges and may target a specific college via request.
+// Compared case-insensitively (covers "superadmin"/"superAdmin" etc.).
+const SUPER_ROLES = ['superadmin', 'admin', 'system_admin', 'university_admin', 'university'];
+
+// Resolve the effective college_id for an internal-exam request.
+// - College-scoped users (college_admin / HOD): always their own college; any
+//   college_id in the request is ignored (they cannot reach another college).
+// - Super / University admins: have no college of their own, so they must supply
+//   one via query (GET) or body (POST) — e.g. from the college picker in the UI.
+const resolveCollegeId = (req) => {
+    const isSuperUser = SUPER_ROLES.includes((req.user?.role || '').toLowerCase());
+    if (isSuperUser) {
+        const fromReq = req.query?.college_id ?? req.body?.college_id;
+        return fromReq ? parseInt(fromReq, 10) : null;
+    }
+    return req.user?.college_id || null;
+};
+
 // --- Internal Exam Round Management ---
 
 exports.getRounds = async (req, res) => {
     try {
-        const college_id = req.user?.college_id;
-        if (!college_id) return res.status(403).json({ error: "Unauthorized: No college assigned" });
+        const college_id = resolveCollegeId(req);
+        if (!college_id) return res.status(403).json({ error: "No college selected. Please select a college." });
 
         // Fetch custom rounds AND distinct components from marks structure
         const query = `
@@ -46,21 +64,31 @@ exports.createRound = async (req, res) => {
 exports.getSchedules = async (req, res) => {
     try {
         const { round_id, program_id, semester_id, academic_year_id } = req.query;
-        const college_id = req.user?.college_id;
+        const college_id = resolveCollegeId(req);
 
-        if (!college_id) return res.status(403).json({ error: "Unauthorized" });
+        if (!college_id) return res.status(403).json({ error: "No college selected. Please select a college." });
+
+        // college_id is always required; the rest narrow the result when provided.
+        // The scheduling page sends all filters; the calendar sends only college_id
+        // and expects every schedule for that college.
+        const conditions = ['ies.college_id = $1'];
+        const params = [college_id];
+        let i = 2;
+        if (round_id) { conditions.push(`ies.round_id = $${i++}`); params.push(round_id); }
+        if (program_id) { conditions.push(`ies.program_id = $${i++}`); params.push(program_id); }
+        if (semester_id) { conditions.push(`ies.semester_id = $${i++}`); params.push(semester_id); }
+        if (academic_year_id) { conditions.push(`ies.academic_year_id = $${i++}`); params.push(academic_year_id); }
 
         const query = `
-            SELECT ies.id, ies.round_id, ies.program_id, ies.semester_id, ies.academic_year_id, 
+            SELECT ies.id, ies.round_id, ies.program_id, ies.semester_id, ies.academic_year_id,
                    ies.college_id, ies.subject_id, TO_CHAR(ies.exam_date, 'YYYY-MM-DD') as exam_date,
                    ies.start_time, ies.end_time,
-                   ms.name as subject_name, ms.subject_code 
+                   ms.name as subject_name, ms.subject_code
             FROM internal_exam_schedules ies
             JOIN master_subjects ms ON ies.subject_id = ms.id
-            WHERE ies.round_id = $1 AND ies.program_id = $2 AND ies.semester_id = $3 
-            AND ies.academic_year_id = $4 AND ies.college_id = $5
+            WHERE ${conditions.join(' AND ')}
         `;
-        const result = await db.query(query, [round_id, program_id, semester_id, academic_year_id, college_id]);
+        const result = await db.query(query, params);
         res.status(200).json(result.rows);
     } catch (error) {
         console.error("getSchedules error:", error);
@@ -71,9 +99,9 @@ exports.getSchedules = async (req, res) => {
 exports.saveSchedules = async (req, res) => {
     try {
         const { round_id, program_id, semester_id, academic_year_id, schedules } = req.body;
-        const college_id = req.user?.college_id;
+        const college_id = resolveCollegeId(req);
 
-        if (!college_id) return res.status(403).json({ error: "Unauthorized" });
+        if (!college_id) return res.status(403).json({ error: "No college selected. Please select a college." });
 
         // Duplicate Date Validation
         const dates = (schedules || []).map(s => s.exam_date).filter(Boolean);
@@ -207,9 +235,9 @@ exports.saveSchedules = async (req, res) => {
 exports.getAvailableContexts = async (req, res) => {
     try {
         const { round_id } = req.query; // component_name
-        const college_id = req.user?.college_id;
-        
-        if (!college_id) return res.status(403).json({ error: "Unauthorized" });
+        const college_id = resolveCollegeId(req);
+
+        if (!college_id) return res.status(403).json({ error: "No college selected. Please select a college." });
 
         if (!round_id) {
             return res.status(200).json({ programs: [], semesters: [] });

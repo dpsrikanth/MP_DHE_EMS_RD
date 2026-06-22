@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { initiateRegistration, verifyOtp, setInitialPassword, changePassword, getDashboardStats, getUsers, createUser, updateUser, deleteUser, getPrograms, getSubjects, getAcademicYears, getSemesters, getExamTypes, getRoles, createRole, updateRole, deleteRole, Login, getLoginHistory, refreshToken, getUniversities, getUniversityById, createUniversity, updateUniversity, deleteUniversity, createCollege, updateCollege, deleteCollege, createProgram, updateProgram, deleteProgram, createAcademicYear, updateAcademicYear, deleteAcademicYear, getStudents, getColleges, getTeachers, updateTeacher, getExams, createExam, updateExam, deleteExam, publishExam, toggleStudentApplication, getMarks, getMasterSemesters, createMasterSemester, updateMasterSemester, deleteMasterSemester, getMasterSemester, getMasterSubjects, createMasterSubject, updateMasterSubject, deleteMasterSubject, getMasterSubject, getMasterPrograms, createMasterProgram, getMasterProgram, updateMasterProgram, deleteMasterProgram, getMasterPolicies, getMasterPolicy, createMasterPolicy, updateMasterPolicy, deleteMasterPolicy, getCollegeMasterPolicy, createStudent, bulkUploadStudents, bulkUploadTeachers, updateStudent, deleteStudent, getMasterTeachers, getMasterTeachersAuditLogs, getMasterTeacher, createMasterTeacher, updateMasterTeacher, deleteMasterTeacher, getMasterDesignations, createMasterDesignation, getMasterDepartments, createMasterDepartment, getCollegeSemesters, getCollegePrograms, getCollegePolicies, getCollegeAcademicYears, getMasterDepartment, updateMasterDepartment, deleteMasterDepartment, getStudentsForMarks, saveTeacherMarks, bulkUploadMarks, getMarksForApproval, approveRejectMarks, getMasterBatches, createMasterBatch, updateMasterBatch, deleteMasterBatch, getSubjectMappings, createSubjectMapping, updateSubjectMapping, deleteSubjectMapping, getStudentExams, registerForExam, publishResults, getStudentResults, getStudentAttendance, getStudentAttendanceDetail, getStudentAttendanceHistory, getHallTicketData, getResultSheetData, forgotPassword, resetPassword, mapMasterProgram, unmapMasterProgram, mapMasterSemester, unmapMasterSemester, mapMasterAcademicYear, unmapMasterAcademicYear, mapMasterPolicy, unmapMasterPolicy, getNextAdmissionSerial, submitMarksDiscrepancy, getStudentDiscrepancies, getStudentInternalExamAttendance, getAdminInternalExamAttendance, getFacultyInternalExamAttendance, bulkUploadUniversities, bulkUploadColleges, bulkUploadMasterSubjects, bulkUploadDepartments, bulkUploadPrograms, bulkUploadAcademicYears, bulkUploadSemesters, bulkUploadBatches } = require('../controllers/controller');
 const { getMasters, getUniversityConfig, updateUniversityConfig, getCollegeConfig, updateCollegeConfig } = require('../controllers/masterController');
-const { getSmtpConfig, updateSmtpConfig } = require('../controllers/configController');
+const { getSmtpConfig, updateSmtpConfig, testSmtpConfig } = require('../controllers/configController');
 const { autoAllocateSeats, clearAssignments, getSeatingArrangements, lockSeating, getSeatAllocationWindow } = require('../controllers/seatController');
 const { getMilestones, createMilestone, updateMilestone, deleteMilestone, cloneMilestones } = require('../controllers/milestoneController');
 const { getRounds, createRound, getSchedules, saveSchedules, getAvailableContexts } = require('../controllers/internalExamController');
@@ -1719,6 +1719,20 @@ router.get('/config/smtp', verifyToken, getSmtpConfig);
  *         description: Settings updated
  */
 router.post('/config/smtp', verifyToken, updateSmtpConfig);
+
+/**
+ * @swagger
+ * /api/config/smtp/test:
+ *   post:
+ *     summary: Test the active outgoing email configuration (verify + optional test send)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: SMTP test result
+ */
+router.post('/config/smtp/test', verifyToken, testSmtpConfig);
 
 // --- Seating Arrangement Routes ---
 router.get('/college-admin/seating-arrangements', verifyToken, getSeatingArrangements);

@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Mail,
@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   School,
   ArrowRight,
-  Zap,
   AlertCircle
 } from "lucide-react";
 import authUtils from "../utils/authUtils";
@@ -99,119 +98,173 @@ const Login = () => {
     }
   };
 
+  const highlights = [
+    "Role-based secure access",
+    "End-to-end encrypted question papers",
+    "Real-time results & analytics"
+  ];
+
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[rgb(42_105_192)] p-4 font-sans selection:bg-indigo-500/30">
+    <div className="min-h-screen w-full flex bg-slate-50 font-sans">
+      {/* ── Brand panel (desktop only) ── */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-indigo-700 via-indigo-600 to-sky-600">
+        {/* Decorative glows */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-[28rem] h-[28rem] bg-sky-400/20 rounded-full blur-3xl" />
 
-      <div className="w-full max-w-[460px] relative z-10 animate-in fade-in duration-700">
-        {/* Brand Section */}
-        <div className="flex flex-col items-center gap-2 mb-12">
-          <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 mb-2">
-            <School size={32} />
+        <div className="relative z-10 flex flex-col justify-between p-14 text-white w-full">
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/15 backdrop-blur rounded-2xl flex items-center justify-center ring-1 ring-white/25">
+              <School size={26} />
+            </div>
+            <div>
+              <h1 className="text-xl font-black tracking-tight leading-none">Intense</h1>
+              <p className="text-[10px] font-semibold text-indigo-200 tracking-[0.25em] uppercase mt-1">MP DHE EMS</p>
+            </div>
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tight">Intense</h1>
-          <p className="text-[10px] font-black text-indigo-400 tracking-[0.3em] uppercase">Institutional Portal</p>
+
+          {/* Headline */}
+          <div className="space-y-6 max-w-md">
+            <h2 className="text-4xl font-black leading-tight tracking-tight">
+              Examination management,<br />simplified.
+            </h2>
+            <p className="text-indigo-100/80 text-base leading-relaxed font-medium">
+              A unified portal for universities, colleges, and faculty to manage
+              exams, question papers, and results — securely, end to end.
+            </p>
+            <ul className="space-y-3 pt-2">
+              {highlights.map((item) => (
+                <li key={item} className="flex items-center gap-3 text-sm font-semibold text-indigo-50">
+                  <CheckCircle2 size={18} className="text-sky-300 shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center gap-2 text-indigo-200/70">
+            <Lock size={13} />
+            <span className="text-[10px] font-bold tracking-[0.2em] uppercase">Secured by Intense Infrastructure</span>
+          </div>
         </div>
+      </div>
 
-        {/* The Card */}
-        <div className="bg-[#0f172a] rounded-[3rem] shadow-[0_0_50px_-12px_rgba(79,70,229,0.25)] border border-white/10 p-8 sm:p-12 flex flex-col items-center">
-          <div className="w-full mb-10">
-            <h2 className="text-3xl font-bold text-white tracking-tight">Portal Login</h2>
-            <p className="text-slate-400 text-sm mt-2 font-medium">Authenticate to manage your institution</p>
+      {/* ── Form panel ── */}
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
+        <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center gap-3 mb-10">
+            <div className="w-11 h-11 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+              <School size={22} />
+            </div>
+            <div>
+              <h1 className="text-lg font-black text-slate-900 tracking-tight leading-none">Intense</h1>
+              <p className="text-[9px] font-bold text-indigo-500 tracking-[0.25em] uppercase mt-1">MP DHE EMS</p>
+            </div>
           </div>
 
-          <form onSubmit={handleLogin} className="w-full space-y-8">
+          {/* Heading */}
+          <div className="mb-8">
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Welcome back</h2>
+            <p className="text-slate-500 text-sm mt-2 font-medium">Sign in to your account to continue</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-5">
             {error && (
-              <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold rounded-xl flex items-center gap-3 animate-in shake duration-300">
-                <AlertCircle size={16} />
+              <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-600 text-xs font-semibold rounded-xl flex items-center gap-2.5">
+                <AlertCircle size={16} className="shrink-0" />
                 {error}
               </div>
             )}
 
-            {/* Email Field */}
-            <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-500 tracking-widest uppercase ml-1">Email Address</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="collegeadmin@test.com"
-                required
-                className="w-full bg-[#eef2ff] rounded-2xl py-4 px-6 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all font-bold"
-              />
+            {/* Email */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">Email Address</label>
+              <div className="relative">
+                <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="you@institution.edu"
+                  required
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-12 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all font-medium"
+                />
+              </div>
             </div>
 
-            {/* Password Field */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between px-1">
-                <label className="text-[11px] font-black text-slate-500 tracking-widest uppercase">Password</label>
-                <button 
+            {/* Password */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700">Password</label>
+                <button
                   type="button"
                   onClick={() => navigate("/forgot-password")}
-                  className="text-[10px] font-black text-indigo- hover:text-indigo-400 transition-colors uppercase tracking-widest"
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
                 >
-                  Forgot?
+                  Forgot password?
                 </button>
               </div>
               <div className="relative">
+                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="••••••••••"
+                  placeholder="Enter your password"
                   required
-                  className="w-full bg-[#eef2ff] rounded-2xl py-4 px-6 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all font-bold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-12 pr-12 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all font-medium"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
 
-            {/* Switch Toggle */}
-            <div className="flex items-center gap-4 px-1">
+            {/* Remember me */}
+            <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, rememberMe: !formData.rememberMe })}
-                className={`w-11 h-6 rounded-full transition-all duration-300 relative ${formData.rememberMe ? 'bg-indigo-600' : 'bg-slate-700'}`}
+                className={`w-11 h-6 rounded-full transition-all duration-300 relative shrink-0 ${formData.rememberMe ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                aria-pressed={formData.rememberMe}
               >
-                <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${formData.rememberMe ? 'translate-x-5' : ''}`} />
+                <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-300 ${formData.rememberMe ? 'translate-x-5' : ''}`} />
               </button>
-              <span className="text-xs font-bold text-slate-500">Keep me logged in</span>
+              <span className="text-sm font-medium text-slate-600">Keep me signed in</span>
             </div>
 
-            {/* Sign In Button */}
+            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-indigo-600 to-sky-500 text-white font-black text-xs uppercase tracking-[0.2em] py-5 rounded-2xl hover:brightness-110 active:scale-[0.98] transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-3.5 rounded-xl active:scale-[0.99] transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  <span>Authenticate</span>
+                  <span>Sign In</span>
                   <ArrowRight size={18} />
                 </>
               )}
             </button>
           </form>
 
-          <p className="mt-10 text-center text-sm text-slate-400 font-medium">
+          <p className="mt-8 text-center text-sm text-slate-500 font-medium">
             New to the system?{' '}
-            <button onClick={() => navigate("/register")} className="text-indigo-400 font-bold hover:underline underline-offset-4">Create Account</button>
+            <button onClick={() => navigate("/register")} className="text-indigo-600 font-bold hover:underline underline-offset-4">
+              Create an account
+            </button>
           </p>
-        </div>
-
-        {/* Security Badge */}
-        <div className="mt-10 flex items-center justify-center gap-2 opacity-30">
-          <CheckCircle2 size={14} className="text-slate-400" />
-          <span className="text-[9px] font-black tracking-[0.2em] text-slate-400 uppercase">Secured by Intense Infrastructure</span>
         </div>
       </div>
     </div>

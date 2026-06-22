@@ -1,23 +1,16 @@
-﻿import React, { useState, useEffect } from "react";
-import { Server, Hash, Mail, Lock, User, Eye, EyeOff, Save, CheckCircle2, AlertCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Server, Hash, Mail, Lock, User, Eye, EyeOff, Send, CheckCircle2, AlertCircle, ShieldCheck, RefreshCw } from "lucide-react";
 import { systemConfigApi } from "../api/systemConfigApi";
 
 const SmtpConfig = () => {
-  const [formData, setFormData] = useState({
-    host: "",
-    port: "",
-    user: "",
-    password: "",
-    displayName: "",
-    fromEmail: ""
-  });
-
+  const [config, setConfig] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [status, setStatus] = useState({ type: null, message: "" });
+  const [loadError, setLoadError] = useState(null);
 
-
+  const [testEmail, setTestEmail] = useState("");
+  const [isTesting, setIsTesting] = useState(false);
+  const [result, setResult] = useState({ type: null, message: "" });
 
   useEffect(() => {
     fetchConfig();
@@ -25,39 +18,53 @@ const SmtpConfig = () => {
 
   const fetchConfig = async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const data = await systemConfigApi.getSmtpConfig();
-      setFormData(data);
+      setConfig(data);
     } catch (error) {
       console.error("Fetch config error:", error);
-      setStatus({ type: 'error', message: "Failed to load SMTP configuration" });
+      setLoadError(error.response?.data?.message || "Failed to load SMTP configuration");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (status.message) setStatus({ type: null, message: "" });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setStatus({ type: null, message: "" });
-
+  // sendTest=false -> verify connection only; sendTest=true -> send a real email
+  const runTest = async (sendTest) => {
+    setIsTesting(true);
+    setResult({ type: null, message: "" });
     try {
-      await systemConfigApi.updateSmtpConfig(formData);
-      setStatus({ type: 'success', message: "Configuration updated successfully!" });
-      setTimeout(() => setStatus({ type: null, message: "" }), 3000);
+      const payload = sendTest ? { testEmail: testEmail.trim() } : {};
+      const data = await systemConfigApi.testSmtpConfig(payload);
+      setResult({ type: "success", message: data.message || "SMTP test succeeded." });
     } catch (error) {
-      console.error("Update config error:", error);
-      setStatus({ type: 'error', message: error.response?.data?.message || "Failed to update configuration" });
+      console.error("SMTP test error:", error);
+      setResult({ type: "error", message: error.response?.data?.message || "SMTP test failed." });
     } finally {
-      setIsSaving(false);
+      setIsTesting(false);
     }
   };
+
+  const maskedPassword = config?.password
+    ? "•".repeat(Math.min(config.password.length, 16))
+    : "—";
+
+  const fields = config
+    ? [
+        { label: "SMTP Host", value: config.host || "—", icon: Server },
+        { label: "SMTP Port", value: config.port || "—", icon: Hash },
+        { label: "SMTP User", value: config.user || "—", icon: Mail },
+        {
+          label: "SMTP Password",
+          value: showPassword ? (config.password || "—") : maskedPassword,
+          icon: Lock,
+          isPassword: true
+        },
+        { label: "Sender Display Name", value: config.displayName || "—", icon: User },
+        { label: "From Email Address", value: config.fromEmail || "—", icon: Mail }
+      ]
+    : [];
 
   if (isLoading) {
     return (
@@ -68,172 +75,130 @@ const SmtpConfig = () => {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="bg-white p-12 rounded-[2.5rem] border border-rose-200 shadow-sm flex flex-col items-center justify-center text-center space-y-4">
+        <div className="p-3 bg-rose-50 rounded-2xl text-rose-500">
+          <AlertCircle size={28} />
+        </div>
+        <p className="text-slate-700 font-bold">{loadError}</p>
+        <button
+          onClick={fetchConfig}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors"
+        >
+          <RefreshCw size={16} /> Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">SMTP Configuration</h2>
-          <p className="text-slate-500 font-medium tracking-tight mt-1 text-sm">Configure your outgoing email server settings</p>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Email Server Configuration</h2>
+          <p className="text-slate-500 font-medium tracking-tight mt-1 text-sm">
+            Active outgoing email settings (read-only). Edit them in the server <code className="text-slate-600 font-bold">config/.env</code> file.
+          </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-sky-50 rounded-xl border border-sky-100">
-          <Server size={14} className="text-sky-500" />
-          <span className="text-[12px] font-black text-sky-600  tracking-widest">Server Settings</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-xl border border-emerald-100">
+          <ShieldCheck size={14} className="text-emerald-500" />
+          <span className="text-[12px] font-black text-emerald-600 tracking-widest">Read Only</span>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* SMTP Host */}
-          <div className="space-y-2.5">
-            <label className="text-[12px] font-black text-slate-400  tracking-[0.15em] ml-1">SMTP Host</label>
-            <div className="relative group">
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
-                <Server size={18} />
+      {/* Read-only details */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {fields.map((f) => {
+          const Icon = f.icon;
+          return (
+            <div key={f.label} className="space-y-2">
+              <label className="text-[12px] font-black text-slate-400 tracking-[0.15em] ml-1">{f.label}</label>
+              <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-14 min-h-[3.5rem]">
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                  <Icon size={18} />
+                </div>
+                <span className="text-slate-800 font-semibold break-all">{f.value}</span>
+                {f.isPassword && config.password && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                )}
               </div>
-              <input
-                type="text"
-                name="host"
-                value={formData.host}
-                onChange={handleChange}
-                placeholder="smtp.example.com"
-                required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm"
-              />
             </div>
+          );
+        })}
+      </div>
+
+      {/* Divider */}
+      <div className="my-8 border-t border-slate-100" />
+
+      {/* Test section */}
+      <div>
+        <h3 className="text-lg font-black text-slate-900 tracking-tight">Test Email Client</h3>
+        <p className="text-slate-500 font-medium text-sm mt-1">
+          Verify the server can reach the mail provider, or send a real test email to confirm delivery.
+        </p>
+
+        <div className="mt-5 flex flex-col lg:flex-row gap-3">
+          <div className="relative flex-1">
+            <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+              <Mail size={18} />
+            </div>
+            <input
+              type="email"
+              value={testEmail}
+              onChange={(e) => { setTestEmail(e.target.value); if (result.message) setResult({ type: null, message: "" }); }}
+              placeholder="Recipient email for test message"
+              className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-semibold"
+            />
           </div>
 
-          {/* SMTP Port */}
-          <div className="space-y-2.5">
-            <label className="text-[12px] font-black text-slate-400  tracking-[0.15em] ml-1">SMTP Port</label>
-            <div className="relative group">
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
-                <Hash size={18} />
-              </div>
-              <input
-                type="text"
-                name="port"
-                value={formData.port}
-                onChange={handleChange}
-                placeholder="465"
-                required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm"
-              />
-            </div>
-          </div>
-
-          {/* SMTP User */}
-          <div className="space-y-2.5">
-            <label className="text-[12px] font-black text-slate-400  tracking-[0.15em] ml-1">SMTP User (Email)</label>
-            <div className="relative group">
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
-                <Mail size={18} />
-              </div>
-              <input
-                type="email"
-                name="user"
-                value={formData.user}
-                onChange={handleChange}
-                placeholder="sender@example.com"
-                required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm"
-              />
-            </div>
-          </div>
-
-          {/* SMTP Password */}
-          <div className="space-y-2.5">
-            <label className="text-[12px] font-black text-slate-400  tracking-[0.15em] ml-1">SMTP Password</label>
-            <div className="relative group">
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
-                <Lock size={18} />
-              </div>
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-14 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Sender Display Name */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-2.5">
-            <label className="text-[12px] font-black text-slate-400  tracking-[0.15em] ml-1">Sender Display Name</label>
-            <div className="relative group">
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
-                <User size={18} />
-              </div>
-              <input
-                type="text"
-                name="displayName"
-                value={formData.displayName}
-                onChange={handleChange}
-                placeholder="Institution Name"
-                required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2.5">
-            <label className="text-[12px] font-black text-slate-400  tracking-[0.15em] ml-1">From Email Address</label>
-            <div className="relative group">
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors pointer-events-none">
-                <Mail size={18} />
-              </div>
-              <input
-                type="email"
-                name="fromEmail"
-                value={formData.fromEmail}
-                onChange={handleChange}
-                placeholder="noreply@example.com"
-                required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4">
-          {status.message && (
-            <div className={`flex items-center gap-2 font-bold text-sm animate-in fade-in slide-in-from-left-4 ${status.type === 'success' ? 'text-emerald-600' : 'text-rose-600'}`}>
-              {status.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-              {status.message}
-            </div>
-          )}
-          {!status.message && <div />}
-          
           <button
-            type="submit"
-            disabled={isSaving}
-            className="w-full md:w-auto px-10 group relative overflow-hidden bg-slate-900 text-white rounded-2xl py-4 font-black text-sm  tracking-[0.15em] shadow-xl shadow-slate-900/10 hover:shadow-indigo-500/20 active:scale-[0.98] transition-all disabled:opacity-70"
+            type="button"
+            onClick={() => runTest(true)}
+            disabled={isTesting || !testEmail.trim()}
+            className="px-7 bg-indigo-600 text-white rounded-2xl py-4 font-black text-sm tracking-wide shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-sky-400 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="relative flex items-center justify-center gap-2">
-              {isSaving ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <Save size={18} />
-                  <span>Update Configuration</span>
-                </>
-              )}
-            </div>
+            {isTesting ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                <Send size={18} /> Send Test Email
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => runTest(false)}
+            disabled={isTesting}
+            className="px-7 bg-white text-slate-700 border-2 border-slate-200 rounded-2xl py-4 font-black text-sm tracking-wide hover:border-slate-300 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap"
+          >
+            <ShieldCheck size={18} /> Verify Connection
           </button>
         </div>
-      </form>
+
+        {/* Result */}
+        {result.message && (
+          <div
+            className={`mt-5 flex items-start gap-2.5 p-4 rounded-2xl font-bold text-sm ${
+              result.type === "success"
+                ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
+                : "bg-rose-50 border border-rose-200 text-rose-700"
+            }`}
+          >
+            {result.type === "success" ? <CheckCircle2 size={18} className="shrink-0 mt-0.5" /> : <AlertCircle size={18} className="shrink-0 mt-0.5" />}
+            <span className="break-words">{result.message}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

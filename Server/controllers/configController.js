@@ -1,8 +1,25 @@
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
+const nodemailer = require('nodemailer');
 
-const envPath = path.join(__dirname, '../.env');
+// dotenv is loaded from Server/config/.env (see server.js), so point here too.
+const envPath = path.join(__dirname, '../config/.env');
+
+// Build a transporter from the currently active SMTP environment variables,
+// mirroring Server/utils/sendEmail.js so a passing test reflects real sends.
+const buildTransport = () => nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT) || 587,
+  secure: process.env.SMTP_PORT == '465',
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
 
 const getSmtpConfig = (req, res) => {
   try {
@@ -66,7 +83,43 @@ const updateSmtpConfig = (req, res) => {
   }
 };
 
+// Test the active SMTP configuration.
+// Always verifies the connection + credentials. If `testEmail` is supplied,
+// also sends a real test message to that address.
+const testSmtpConfig = async (req, res) => {
+  const { testEmail } = req.body || {};
+
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
+    return res.status(400).json({ success: false, message: "SMTP is not configured on the server." });
+  }
+
+  try {
+    const transporter = buildTransport();
+
+    // Step 1: verify connection + authentication
+    await transporter.verify();
+
+    // Step 2: optionally send an actual test email
+    if (testEmail) {
+      await transporter.sendMail({
+        from: `${process.env.FROM_NAME || 'EMS Admin'} <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
+        to: testEmail,
+        subject: 'EMS SMTP Test Email',
+        text: 'This is a test email from the EMS system. If you received this, your SMTP configuration is working correctly.',
+        html: '<p>This is a <b>test email</b> from the EMS system.</p><p>If you received this, your outgoing email configuration is working correctly.</p>'
+      });
+      return res.json({ success: true, message: `Connection verified and test email sent to ${testEmail}.` });
+    }
+
+    return res.json({ success: true, message: "SMTP connection verified — server reachable and credentials accepted." });
+  } catch (error) {
+    console.error("SMTP test error:", error);
+    return res.status(400).json({ success: false, message: error.message || "SMTP test failed." });
+  }
+};
+
 module.exports = {
   getSmtpConfig,
-  updateSmtpConfig
+  updateSmtpConfig,
+  testSmtpConfig
 };

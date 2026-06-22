@@ -1,109 +1,119 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
-import Dashboard from "./components/Dashboard";
-import Register from "./pages/Register";
+
+// Eager: shown on first paint or wrapping every protected route.
 import Login from "./pages/Login";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import ViewStudentsAndUniversities from "./pages/viewStudentsAndUniversitys"
 import ProtectedRoute from "./components/ProtectedRoute";
-import Universities from "./pages/Universities";
-import Colleges from "./pages/Colleges";
-import Programs from "./pages/Programs";
-import Batches from './pages/Batches';
-import AcademicYears from "./pages/AcademicYears";
-import Semesters from "./pages/Semesters";
-import Subjects from "./pages/Subjects";
-import Teachers from "./pages/Teachers";
-import Students from "./pages/Students";
-import Users from "./pages/Users";
-import Roles from "./pages/Roles";
-import Exams from "./pages/Exams";
-import Marks from "./pages/Marks";
-import Policies from "./pages/Policies";
-import Departments from "./pages/Departments";
-import InternalCalendar from "./pages/InternalCalendar";
-import MilestoneManagement from "./pages/MilestoneManagement";
-import MilestonesForm from "./pages/MilestonesForm";
-import PolicyConfig from "./pages/CollegeAdmin/PolicyConfig";
-import MarksConfig from "./pages/CollegeAdmin/MarksConfig";
-import FacultyAssignment from "./pages/CollegeAdmin/FacultyAssignment";
-import FacultyAssignmentEdit from "./pages/CollegeAdmin/FacultyAssignmentEdit";
-import MarksApproval from "./pages/CollegeAdmin/MarksApproval";
-import ExaminationHalls from "./pages/CollegeAdmin/ExaminationHalls";
-import InfrastructureAnalytics from "./pages/UniversityAdmin/InfrastructureAnalytics";
-import ExamAnalytics from "./pages/UniversityAdmin/ExamAnalytics";
-import InstitutionalRanking from "./pages/UniversityAdmin/InstitutionalRanking";
-import FacultyStatus from "./pages/CollegeAdmin/FacultyStatus";
-import CollegePerformance from "./pages/CollegeAdmin/CollegePerformance";
-import SeatingArrangement from "./pages/CollegeAdmin/SeatingArrangement";
-import InvigilatorAssignment from './pages/CollegeAdmin/InvigilatorAssignment';
-import FacultyDashboard from "./pages/Faculty/Dashboard";
-import MarksEntry from "./pages/Faculty/MarksEntry";
-import InternalExamMarks from "./pages/Faculty/InternalExamMarks";
-import Attendance from "./pages/Faculty/Attendance";
-import FacultyInternalAttendance from "./pages/Faculty/InternalExamAttendance";
-import InvigilationDuty from "./pages/Faculty/InvigilationDuty";
-import MarksVerification from "./pages/CollegeAdmin/MarksVerification";
-import MarksReview from "./pages/CollegeAdmin/MarksReview";
-import MarksReports from "./pages/CollegeAdmin/MarksReports";
-import InternalExamAttendance from "./pages/CollegeAdmin/InternalExamAttendance";
-import CollegeAdminDashboard from "./pages/CollegeAdmin/Dashboard";
-import StudentDashboard from "./pages/Student/Dashboard";
-import StudentExams from "./pages/Student/StudentExams";
-import StudentResults from "./pages/Student/StudentResults";
-import StudentAttendance from "./pages/Student/StudentAttendance";
-import HODDashboard from "./pages/HOD/Dashboard";
-import AssessmentAcceptance from "./pages/HOD/AssessmentAcceptance";
-import ExternalAssignment from "./pages/UniversityAdmin/ExternalAssignment";
-import ExternalFacultyDashboard from "./pages/ExternalFaculty/Dashboard";
-import ExternalMarksEntry from "./pages/ExternalFaculty/MarksEntry";
-import UniversityMarksView from "./pages/UniversityAdmin/UniversityMarksView";
-import GradingPolicy from "./pages/UniversityAdmin/GradingPolicy";
-import HallTicket from "./pages/Student/HallTicket";
-import ResultSheet from "./pages/Student/ResultSheet";
-import ManageCredits from "./pages/UniversityAdmin/ManageCredits";
-import HallApprovals from "./pages/UniversityAdmin/HallApprovals";
-import StudentCenterAllocations from "./pages/UniversityAdmin/StudentCenterAllocations";
-import StudentGlobalSearch from "./pages/UniversityAdmin/StudentGlobalSearch";
-import UniversityExamAttendance from "./pages/UniversityAdmin/UniversityExamAttendance";
-import PaperSetterDashboard from "./pages/PaperSetter/Dashboard";
-import PaperSetterSubmittedPapers from "./pages/PaperSetter/SubmittedPapers";
-import PaperSetterGuidelines from "./pages/PaperSetter/Guidelines";
-import SecrecyDashboard from "./pages/Secrecy/Dashboard";
-import SecrecyPaperSetters from "./pages/Secrecy/PaperSetters";
-import SecrecyQuestionPapers from "./pages/Secrecy/QuestionPapers";
-import SecrecyPayments from "./pages/Secrecy/Payments";
-import SmtpSettings from "./pages/SmtpSettings";
-import RoundManagement from "./pages/InternalExams/RoundManagement";
-import ExamScheduling from "./pages/InternalExams/ExamScheduling";
 import Layout from "./components/Layout";
-import UniversitiesForm from "./pages/UniversitiesForm";
-import CollegesForm from "./pages/CollegesForm";
-import ProgramsForm from "./pages/ProgramsForm";
-import BatchesForm from "./pages/BatchesForm";
-import AcademicYearsForm from "./pages/AcademicYearsForm"; // Assuming this might be needed later or created
-import SemestersForm from "./pages/SemestersForm";
-import SubjectsForm from "./pages/SubjectsForm";
-import TeachersForm from "./pages/TeachersForm";
-import StudentsForm from "./pages/StudentsForm";
-import UsersForm from "./pages/UsersForm";
-import RolesForm from "./pages/RolesForm";
-import ExamsForm from "./pages/ExamsForm";
-import PoliciesForm from "./pages/PoliciesForm";
-import DepartmentsForm from "./pages/DepartmentsForm";
-import Profile from "./pages/Profile";
+
+// Lazy: every page is its own chunk, fetched only when its route is visited.
+const Dashboard = React.lazy(() => import("./components/Dashboard"));
+const Register = React.lazy(() => import("./pages/Register"));
+const ForgotPassword = React.lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
+const ViewStudentsAndUniversities = React.lazy(() => import("./pages/viewStudentsAndUniversitys"));
+const Universities = React.lazy(() => import("./pages/Universities"));
+const Colleges = React.lazy(() => import("./pages/Colleges"));
+const Programs = React.lazy(() => import("./pages/Programs"));
+const Batches = React.lazy(() => import("./pages/Batches"));
+const AcademicYears = React.lazy(() => import("./pages/AcademicYears"));
+const Semesters = React.lazy(() => import("./pages/Semesters"));
+const Subjects = React.lazy(() => import("./pages/Subjects"));
+const Teachers = React.lazy(() => import("./pages/Teachers"));
+const Students = React.lazy(() => import("./pages/Students"));
+const Users = React.lazy(() => import("./pages/Users"));
+const Roles = React.lazy(() => import("./pages/Roles"));
+const Exams = React.lazy(() => import("./pages/Exams"));
+const Marks = React.lazy(() => import("./pages/Marks"));
+const Policies = React.lazy(() => import("./pages/Policies"));
+const Departments = React.lazy(() => import("./pages/Departments"));
+const InternalCalendar = React.lazy(() => import("./pages/InternalCalendar"));
+const MilestoneManagement = React.lazy(() => import("./pages/MilestoneManagement"));
+const MilestonesForm = React.lazy(() => import("./pages/MilestonesForm"));
+const PolicyConfig = React.lazy(() => import("./pages/CollegeAdmin/PolicyConfig"));
+const MarksConfig = React.lazy(() => import("./pages/CollegeAdmin/MarksConfig"));
+const FacultyAssignment = React.lazy(() => import("./pages/CollegeAdmin/FacultyAssignment"));
+const FacultyAssignmentEdit = React.lazy(() => import("./pages/CollegeAdmin/FacultyAssignmentEdit"));
+const MarksApproval = React.lazy(() => import("./pages/CollegeAdmin/MarksApproval"));
+const ExaminationHalls = React.lazy(() => import("./pages/CollegeAdmin/ExaminationHalls"));
+const InfrastructureAnalytics = React.lazy(() => import("./pages/UniversityAdmin/InfrastructureAnalytics"));
+const ExamAnalytics = React.lazy(() => import("./pages/UniversityAdmin/ExamAnalytics"));
+const InstitutionalRanking = React.lazy(() => import("./pages/UniversityAdmin/InstitutionalRanking"));
+const FacultyStatus = React.lazy(() => import("./pages/CollegeAdmin/FacultyStatus"));
+const CollegePerformance = React.lazy(() => import("./pages/CollegeAdmin/CollegePerformance"));
+const SeatingArrangement = React.lazy(() => import("./pages/CollegeAdmin/SeatingArrangement"));
+const InvigilatorAssignment = React.lazy(() => import("./pages/CollegeAdmin/InvigilatorAssignment"));
+const FacultyDashboard = React.lazy(() => import("./pages/Faculty/Dashboard"));
+const MarksEntry = React.lazy(() => import("./pages/Faculty/MarksEntry"));
+const InternalExamMarks = React.lazy(() => import("./pages/Faculty/InternalExamMarks"));
+const Attendance = React.lazy(() => import("./pages/Faculty/Attendance"));
+const FacultyInternalAttendance = React.lazy(() => import("./pages/Faculty/InternalExamAttendance"));
+const InvigilationDuty = React.lazy(() => import("./pages/Faculty/InvigilationDuty"));
+const MarksVerification = React.lazy(() => import("./pages/CollegeAdmin/MarksVerification"));
+const MarksReview = React.lazy(() => import("./pages/CollegeAdmin/MarksReview"));
+const MarksReports = React.lazy(() => import("./pages/CollegeAdmin/MarksReports"));
+const InternalExamAttendance = React.lazy(() => import("./pages/CollegeAdmin/InternalExamAttendance"));
+const CollegeAdminDashboard = React.lazy(() => import("./pages/CollegeAdmin/Dashboard"));
+const StudentDashboard = React.lazy(() => import("./pages/Student/Dashboard"));
+const StudentExams = React.lazy(() => import("./pages/Student/StudentExams"));
+const StudentResults = React.lazy(() => import("./pages/Student/StudentResults"));
+const StudentAttendance = React.lazy(() => import("./pages/Student/StudentAttendance"));
+const HODDashboard = React.lazy(() => import("./pages/HOD/Dashboard"));
+const AssessmentAcceptance = React.lazy(() => import("./pages/HOD/AssessmentAcceptance"));
+const ExternalAssignment = React.lazy(() => import("./pages/UniversityAdmin/ExternalAssignment"));
+const ExternalFacultyDashboard = React.lazy(() => import("./pages/ExternalFaculty/Dashboard"));
+const ExternalMarksEntry = React.lazy(() => import("./pages/ExternalFaculty/MarksEntry"));
+const UniversityMarksView = React.lazy(() => import("./pages/UniversityAdmin/UniversityMarksView"));
+const GradingPolicy = React.lazy(() => import("./pages/UniversityAdmin/GradingPolicy"));
+const HallTicket = React.lazy(() => import("./pages/Student/HallTicket"));
+const ResultSheet = React.lazy(() => import("./pages/Student/ResultSheet"));
+const ManageCredits = React.lazy(() => import("./pages/UniversityAdmin/ManageCredits"));
+const HallApprovals = React.lazy(() => import("./pages/UniversityAdmin/HallApprovals"));
+const StudentCenterAllocations = React.lazy(() => import("./pages/UniversityAdmin/StudentCenterAllocations"));
+const StudentGlobalSearch = React.lazy(() => import("./pages/UniversityAdmin/StudentGlobalSearch"));
+const UniversityExamAttendance = React.lazy(() => import("./pages/UniversityAdmin/UniversityExamAttendance"));
+const PaperSetterDashboard = React.lazy(() => import("./pages/PaperSetter/Dashboard"));
+const PaperSetterSubmittedPapers = React.lazy(() => import("./pages/PaperSetter/SubmittedPapers"));
+const PaperSetterGuidelines = React.lazy(() => import("./pages/PaperSetter/Guidelines"));
+const SecrecyDashboard = React.lazy(() => import("./pages/Secrecy/Dashboard"));
+const SecrecyPaperSetters = React.lazy(() => import("./pages/Secrecy/PaperSetters"));
+const SecrecyQuestionPapers = React.lazy(() => import("./pages/Secrecy/QuestionPapers"));
+const SecrecyPayments = React.lazy(() => import("./pages/Secrecy/Payments"));
+const SmtpSettings = React.lazy(() => import("./pages/SmtpSettings"));
+const RoundManagement = React.lazy(() => import("./pages/InternalExams/RoundManagement"));
+const ExamScheduling = React.lazy(() => import("./pages/InternalExams/ExamScheduling"));
+const UniversitiesForm = React.lazy(() => import("./pages/UniversitiesForm"));
+const CollegesForm = React.lazy(() => import("./pages/CollegesForm"));
+const ProgramsForm = React.lazy(() => import("./pages/ProgramsForm"));
+const BatchesForm = React.lazy(() => import("./pages/BatchesForm"));
+const AcademicYearsForm = React.lazy(() => import("./pages/AcademicYearsForm"));
+const SemestersForm = React.lazy(() => import("./pages/SemestersForm"));
+const SubjectsForm = React.lazy(() => import("./pages/SubjectsForm"));
+const TeachersForm = React.lazy(() => import("./pages/TeachersForm"));
+const StudentsForm = React.lazy(() => import("./pages/StudentsForm"));
+const UsersForm = React.lazy(() => import("./pages/UsersForm"));
+const RolesForm = React.lazy(() => import("./pages/RolesForm"));
+const ExamsForm = React.lazy(() => import("./pages/ExamsForm"));
+const PoliciesForm = React.lazy(() => import("./pages/PoliciesForm"));
+const DepartmentsForm = React.lazy(() => import("./pages/DepartmentsForm"));
+const Profile = React.lazy(() => import("./pages/Profile"));
 
 // New Report Pages
-import AttendanceShortage from "./pages/CollegeAdmin/AttendanceShortage";
-import ResultSummary from "./pages/CollegeAdmin/ResultSummary";
-import StatisticalReports from "./pages/UniversityAdmin/StatisticalReports";
-import HODAttendanceShortage from "./pages/HOD/AttendanceShortage";
-import FacultyAttendanceShortage from "./pages/Faculty/AttendanceShortage";
+const AttendanceShortage = React.lazy(() => import("./pages/CollegeAdmin/AttendanceShortage"));
+const ResultSummary = React.lazy(() => import("./pages/CollegeAdmin/ResultSummary"));
+const StatisticalReports = React.lazy(() => import("./pages/UniversityAdmin/StatisticalReports"));
+const HODAttendanceShortage = React.lazy(() => import("./pages/HOD/AttendanceShortage"));
+const FacultyAttendanceShortage = React.lazy(() => import("./pages/Faculty/AttendanceShortage"));
 
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen w-full">
+    <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 const AppRoutes = () => {
   return (
+    <Suspense fallback={<PageLoader />}>
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
@@ -257,6 +267,7 @@ const AppRoutes = () => {
       <Route path="/profile" element={<Layout><ProtectedRoute element={<Profile />} /></Layout>} />
       <Route path="/smtp-settings" element={<Layout><ProtectedRoute element={<SmtpSettings />} /></Layout>} />
     </Routes>
+    </Suspense>
   );
 };
 

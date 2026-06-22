@@ -5,9 +5,13 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+// Vite's import.meta.env.BASE_URL is the configured `base` (e.g. "/ems/").
+// React Router wants the basename without a trailing slash.
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <BrowserRouter>
+  <BrowserRouter basename={basename}>
     <App />
   </BrowserRouter>
 );

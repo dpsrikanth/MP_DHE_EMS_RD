@@ -46,8 +46,9 @@ export const examApi = {
         const response = await apiClient.get('/milestones');
         return response.data;
     },
-    getInternalSchedules: async () => {
-        const response = await apiClient.get('/internal-exams/schedules');
+    getInternalSchedules: async (collegeId) => {
+        const qs = collegeId ? `?college_id=${collegeId}` : '';
+        const response = await apiClient.get(`/internal-exams/schedules${qs}`);
         return response.data;
     },
     getInternalRounds: async () => {

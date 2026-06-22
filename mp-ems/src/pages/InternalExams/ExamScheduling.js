@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Calendar, Save, Clock, Search, BookOpen, GraduationCap, Flag } from 'lucide-react';
+import { Calendar, Save, Clock, Search, BookOpen, GraduationCap, Flag, Building2 } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
 import { internalExamApi } from '../../api/internalExamApi';
 import { milestoneApi } from '../../api/milestoneApi';
 import { masterDataApi } from '../../api/masterDataApi';
+import SearchableSelect from '../../components/SearchableSelect';
+
 const ExamScheduling = () => {
     const [rounds, setRounds] = useState([]);
     const [programs, setPrograms] = useState([]);
@@ -16,6 +18,14 @@ const ExamScheduling = () => {
     const [isValidationEnabled, setIsValidationEnabled] = useState(true);
 
     const [availableContexts, setAvailableContexts] = useState({ programs: [], semesters: [], mapping: [] });
+
+    // College scoping: college_admin/HOD have a college on their token; super/university
+    // admins do not, so they must pick one from a searchable dropdown.
+    const collegeFromToken = localStorage.getItem('collegeId');
+    const needsCollegeSelection = !collegeFromToken;
+    const [colleges, setColleges] = useState([]);
+    const [selectedCollege, setSelectedCollege] = useState('');
+    const effectiveCollegeId = needsCollegeSelection ? selectedCollege : collegeFromToken;
 
     const [filters, setFilters] = useState({
         round_id: '',
@@ -55,16 +65,40 @@ const ExamScheduling = () => {
         }
     }, [filters.round_id]);
 
+    // Rounds are college-scoped, so (re)load them whenever the effective college changes.
+    useEffect(() => {
+        if (effectiveCollegeId) {
+            fetchRounds();
+        } else {
+            setRounds([]);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [effectiveCollegeId]);
+
+    const fetchRounds = async () => {
+        try {
+            const roundsData = await internalExamApi.getRounds(effectiveCollegeId);
+            setRounds(Array.isArray(roundsData) ? roundsData : []);
+        } catch (error) {
+            console.error("Failed to fetch rounds:", error);
+        }
+    };
+
     const fetchInitialData = async () => {
         try {
-            const [roundsData, programsData, semestersData, yearsData] = await Promise.all([
-                internalExamApi.getRounds(),
+            const requests = [
                 masterDataApi.getPrograms(),
                 masterDataApi.getSemesters(),
                 masterDataApi.getAcademicYears()
-            ]);
+            ];
+            if (needsCollegeSelection) requests.push(masterDataApi.getColleges());
 
-            setRounds(roundsData);
+            const [programsData, semestersData, yearsData, collegesData] = await Promise.all(requests);
+
+            if (needsCollegeSelection) {
+                const list = Array.isArray(collegesData) ? collegesData : (collegesData?.colleges || []);
+                setColleges(list);
+            }
             setPrograms(programsData);
             setSemesters(semestersData.sort((a, b) => {
                 const numA = parseInt(a.semester_name.replace(/\D/g, '')) || 0;
@@ -98,7 +132,7 @@ const ExamScheduling = () => {
     const fetchAvailableContexts = async (roundId) => {
         try {
             setLoading(prev => ({ ...prev, contexts: true }));
-            const data = await internalExamApi.getAvailableContexts(roundId);
+            const data = await internalExamApi.getAvailableContexts(roundId, effectiveCollegeId);
 
             // Assuming data is { programs: [id...], semesters: [id...], mapping: [{program_id, semester_id}...] }
             // If the backend doesn't return mapping yet, we'll just use the IDs for now as requested.
@@ -120,6 +154,15 @@ const ExamScheduling = () => {
         }
     };
 
+    const handleCollegeChange = (val) => {
+        setSelectedCollege(val);
+        // Reset everything downstream when the target college changes
+        setFilters(prev => ({ ...prev, round_id: '', semester_id: '' }));
+        setSubjects([]);
+        setSchedules({});
+        setAvailableContexts({ programs: [], semesters: [], mapping: [] });
+    };
+
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
         setFilters(prev => {
@@ -131,6 +174,10 @@ const ExamScheduling = () => {
     };
 
     const fetchSubjectsAndSchedules = async () => {
+        if (needsCollegeSelection && !selectedCollege) {
+            toast.warning("Please select a college first");
+            return;
+        }
         if (!filters.program_id || !filters.semester_id || !filters.round_id || !filters.academic_year_id) {
             toast.warning("Please select all filters");
             return;
@@ -150,13 +197,14 @@ const ExamScheduling = () => {
                     round_id: filters.round_id,
                     program_id: filters.program_id,
                     semester_id: filters.semester_id,
-                    academic_year_id: filters.academic_year_id
+                    academic_year_id: filters.academic_year_id,
+                    college_id: effectiveCollegeId
                 }),
                 milestoneApi.getMilestones({
                     semester_id: filters.semester_id,
                     program_id: filters.program_id,
                     academic_year_id: filters.academic_year_id,
-                    college_id: localStorage.getItem('collegeId')
+                    college_id: effectiveCollegeId
                 })
             ]);
 
@@ -363,6 +411,7 @@ const ExamScheduling = () => {
             setLoading(prev => ({ ...prev, saving: true }));
             await internalExamApi.saveSchedules({
                 ...filters,
+                college_id: effectiveCollegeId,
                 schedules: scheduleArray
             });
 
@@ -425,6 +474,22 @@ const ExamScheduling = () => {
                 )}
 
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-wrap gap-4 items-end mb-8">
+                    {needsCollegeSelection && (
+                        <div className="flex-1 min-w-[240px]">
+                            <label className="flex items-center gap-1.5 text-[12px] font-bold text-slate-400 tracking-widest mb-2 ml-1">
+                                <Building2 size={12} /> College
+                            </label>
+                            <SearchableSelect
+                                options={colleges}
+                                value={selectedCollege}
+                                onChange={handleCollegeChange}
+                                placeholder="Select College"
+                                searchPlaceholder="Search college..."
+                                getLabel={(c) => c.name || c.college_name || c.collegeName || `College #${c.id}`}
+                                getValue={(c) => c.id}
+                            />
+                        </div>
+                    )}
                     <div className="flex-1 min-w-[200px]">
                         <label className="block text-[12px] font-bold text-slate-400  tracking-widest mb-2 ml-1">Academic Year</label>
                         <select name="academic_year_id" value={filters.academic_year_id} onChange={handleFilterChange} className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-700">
@@ -613,11 +678,19 @@ const ExamScheduling = () => {
                 )}
 
                 {subjects.length === 0 && !loading.subjects && (
-                    <div className="py-24 text-center bg-white rounded-3xl border border-dashed border-slate-200">
-                        <GraduationCap className="mx-auto text-slate-200 mb-4" size={64} />
-                        <h3 className="text-lg font-bold text-slate-400">Ready to Schedule?</h3>
-                        <p className="text-slate-400 text-sm max-w-xs mx-auto">Select the Round, Program, and Semester above to start assigning exam dates.</p>
-                    </div>
+                    needsCollegeSelection && !selectedCollege ? (
+                        <div className="py-24 text-center bg-white rounded-3xl border border-dashed border-slate-200">
+                            <Building2 className="mx-auto text-slate-200 mb-4" size={64} />
+                            <h3 className="text-lg font-bold text-slate-400">Select a College</h3>
+                            <p className="text-slate-400 text-sm max-w-xs mx-auto">Choose a college from the dropdown above to view and schedule its internal exams.</p>
+                        </div>
+                    ) : (
+                        <div className="py-24 text-center bg-white rounded-3xl border border-dashed border-slate-200">
+                            <GraduationCap className="mx-auto text-slate-200 mb-4" size={64} />
+                            <h3 className="text-lg font-bold text-slate-400">Ready to Schedule?</h3>
+                            <p className="text-slate-400 text-sm max-w-xs mx-auto">Select the Round, Program, and Semester above to start assigning exam dates.</p>
+                        </div>
+                    )
                 )}
             </div>
         </div>

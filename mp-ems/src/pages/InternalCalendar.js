@@ -11,12 +11,15 @@ import {
   Plus,
   Flag,
   User,
-  ShieldAlert
+  ShieldAlert,
+  Building2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import authUtils from '../utils/authUtils';
 import { formatDate } from '../utils/dateUtils';
 import { examApi } from '../api/examApi';
+import { masterDataApi } from '../api/masterDataApi';
+import SearchableSelect from '../components/SearchableSelect';
 
 const InternalCalendar = () => {
   const navigate = useNavigate();
@@ -27,33 +30,60 @@ const InternalCalendar = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDayEvents, setSelectedDayEvents] = useState(null);
 
+  // College scoping: college_admin/HOD carry a college on their token; super/
+  // university admins do not, so they choose one from a searchable dropdown.
+  const collegeFromToken = localStorage.getItem('collegeId');
+  const needsCollegeSelection = !collegeFromToken;
+  const [colleges, setColleges] = useState([]);
+  const [selectedCollege, setSelectedCollege] = useState('');
+  const effectiveCollegeId = needsCollegeSelection ? selectedCollege : collegeFromToken;
+
   useEffect(() => {
     fetchData();
   }, []);
 
+  // Internal schedules are college-scoped — (re)load when the effective college changes.
+  useEffect(() => {
+    fetchInternalSchedules();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveCollegeId]);
+
   const fetchData = async () => {
     try {
-      const [examsData, milestonesData, internalData] = await Promise.all([
-        examApi.getExams(),
-        examApi.getMilestones(),
-        examApi.getInternalSchedules()
-      ]);
+      const requests = [examApi.getExams(), examApi.getMilestones()];
+      if (needsCollegeSelection) requests.push(masterDataApi.getColleges());
+
+      const [examsData, milestonesData, collegesData] = await Promise.all(requests);
 
       if (examsData) {
         setExams(Array.isArray(examsData) ? examsData.filter(e => e.exam_type === 1) : []);
       }
-      
+
       if (milestonesData) {
         setMilestones(Array.isArray(milestonesData) ? milestonesData : []);
       }
 
-      if (internalData) {
-        setInternalSchedules(Array.isArray(internalData) ? internalData : []);
+      if (needsCollegeSelection && collegesData) {
+        setColleges(Array.isArray(collegesData) ? collegesData : (collegesData.colleges || []));
       }
     } catch (err) {
       console.error("Failed to fetch data:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchInternalSchedules = async () => {
+    if (!effectiveCollegeId) {
+      setInternalSchedules([]);
+      return;
+    }
+    try {
+      const internalData = await examApi.getInternalSchedules(effectiveCollegeId);
+      setInternalSchedules(Array.isArray(internalData) ? internalData : []);
+    } catch (err) {
+      console.error("Failed to fetch internal schedules:", err);
+      setInternalSchedules([]);
     }
   };
 
@@ -112,12 +142,13 @@ const InternalCalendar = () => {
          return cellDate >= start && cellDate <= end;
        });
 
-       days.push({ 
-         day: i, 
-         month, 
-         year, 
-         currentMonth: true, 
+       days.push({
+         day: i,
+         month,
+         year,
+         currentMonth: true,
          exams: dayExams,
+         internalExams: dayInternal,
          milestones: dayMilestones,
          isToday: formatDate(new Date()) === formatDate(cellDate)
        });
@@ -132,7 +163,7 @@ const InternalCalendar = () => {
     }
     
     return days;
-  }, [currentDate, exams, milestones]);
+  }, [currentDate, exams, milestones, internalSchedules]);
 
   const nextMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
@@ -173,6 +204,23 @@ const InternalCalendar = () => {
             <p className="text-sm text-slate-500 font-medium tracking-tight">Institutional Roadmap & Exam Schedules</p>
           </div>
         </div>
+
+        {needsCollegeSelection && (
+          <div className="w-full md:w-72">
+            <div className="flex items-center gap-2 mb-1.5 ml-1 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
+              <Building2 size={12} /> College
+            </div>
+            <SearchableSelect
+              options={colleges}
+              value={selectedCollege}
+              onChange={setSelectedCollege}
+              placeholder="Select College to view exams"
+              searchPlaceholder="Search college..."
+              getLabel={(c) => c.name || c.college_name || c.collegeName || `College #${c.id}`}
+              getValue={(c) => c.id}
+            />
+          </div>
+        )}
 
         <div className="flex items-center bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
           <button onClick={prevMonth} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-indigo-500">

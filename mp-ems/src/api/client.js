@@ -1,9 +1,21 @@
 import axios from 'axios';
 import authUtils from '../utils/authUtils';
 
-// Helper to get base URL since it's loaded dynamically in public/json/config.js
+// Helper to get base URL. Primary source is public/json/config.js (resolved at
+// runtime). If that script failed to load, fall back to the same dynamic rule
+// so we never hardcode an environment-specific host.
+const resolveBaseUrl = () => {
+    const { protocol, hostname, host } = window.location;
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+        return `${protocol}//${hostname}:8080/api`;
+    }
+    // import.meta.env.BASE_URL is the Vite `base` (e.g. "/ems/"); strip trailing slash.
+    const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+    return `${protocol}//${host}${base}/api`;
+};
+
 const getBaseUrl = () => {
-    return window.EMS_CONFIG?.API_BASE_URL || "http://localhost:8080/api";
+    return window.EMS_CONFIG?.API_BASE_URL || resolveBaseUrl();
 };
 
 // Create a configured axios instance
