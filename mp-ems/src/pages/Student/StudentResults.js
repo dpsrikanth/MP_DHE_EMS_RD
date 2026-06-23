@@ -1,5 +1,6 @@
 import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   TrendingUp, Award, CheckCircle, XCircle, BookOpen, Clock, Download, 
   LayoutDashboard, Search, GraduationCap, CheckCircle2, AlertCircle, HelpCircle, MessageSquare
@@ -384,9 +385,9 @@ const StudentResults = () => {
                   placeholder="Filter results..."
                 />
              </div>
-             <a href="/student/dashboard" className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-[13px] hover:bg-slate-800 transition-all shadow-lg shadow-indigo-600/20 whitespace-nowrap">
+             <Link to="/student/dashboard" className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-[13px] hover:bg-slate-800 transition-all shadow-lg shadow-indigo-600/20 whitespace-nowrap">
                 <LayoutDashboard size={16} /> Return to Home
-             </a>
+             </Link>
         </div>
       </div>
 

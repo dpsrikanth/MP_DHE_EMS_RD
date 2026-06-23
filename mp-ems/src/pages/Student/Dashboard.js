@@ -1,11 +1,12 @@
 import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { User, Mail, GraduationCap, School, Calendar, BookOpen, AlertCircle, FileText } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
 
 const StudentDashboard = () => {
   const [user, setUser] = useState((useAuthStore.getState().user || {}));
-  
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-8">
@@ -22,7 +23,7 @@ const StudentDashboard = () => {
             </div>
             <div>
               <h2 className="text-2xl font-black text-slate-900 leading-tight">{user.name}</h2>
-              <p className="text-indigo-600 font-black text-sm  tracking-widest mt-1 uppercase">Undergraduate Student</p>
+              <p className="text-indigo-600 font-black text-sm tracking-widest mt-1 uppercase">Undergraduate Student</p>
             </div>
           </div>
 
@@ -33,7 +34,7 @@ const StudentDashboard = () => {
                   <Mail size={18} />
                 </div>
                 <div>
-                  <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">Email Address</p>
+                  <p className="text-[12px] font-black text-slate-400 tracking-widest leading-none mb-1">Email Address</p>
                   <p className="text-slate-700 font-bold">{user.email}</p>
                 </div>
               </div>
@@ -42,7 +43,7 @@ const StudentDashboard = () => {
                   <GraduationCap size={18} />
                 </div>
                 <div>
-                  <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">Roll Number</p>
+                  <p className="text-[12px] font-black text-slate-400 tracking-widest leading-none mb-1">Roll Number</p>
                   <p className="text-slate-700 font-bold">{user.rollnumber || 'N/A'}</p>
                 </div>
               </div>
@@ -53,7 +54,7 @@ const StudentDashboard = () => {
                   <School size={18} />
                 </div>
                 <div>
-                  <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">Institution</p>
+                  <p className="text-[12px] font-black text-slate-400 tracking-widest leading-none mb-1">Institution</p>
                   <p className="text-slate-700 font-bold">{user.collageName || 'N/A'}</p>
                 </div>
               </div>
@@ -62,7 +63,7 @@ const StudentDashboard = () => {
                   <BookOpen size={18} />
                 </div>
                 <div>
-                  <p className="text-[12px] font-black text-slate-400  tracking-widest leading-none mb-1">Current Program</p>
+                  <p className="text-[12px] font-black text-slate-400 tracking-widest leading-none mb-1">Current Program</p>
                   <p className="text-slate-700 font-bold">{user.programName || 'N/A'}{user.semister ? ` - ${user.semister}` : ''}</p>
                 </div>
               </div>
@@ -77,9 +78,9 @@ const StudentDashboard = () => {
              <Calendar className="text-indigo-200 mb-4" size={32} />
              <h3 className="text-xl font-black mb-2 tracking-tight">Examinations</h3>
              <p className="text-indigo-100 text-sm font-medium mb-6 leading-relaxed">View scheduled exams, register for seating, and download hall tickets.</p>
-             <a href="/student/exams" className="inline-flex items-center gap-2 text-white font-black text-[13px]  tracking-widest hover:text-sky-300 transition-colors">
+             <Link to="/student/exams" className="inline-flex items-center gap-2 text-white font-black text-[13px] tracking-widest hover:text-sky-300 transition-colors">
                Access Exams <div className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
-             </a>
+             </Link>
           </div>
 
           <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50 relative overflow-hidden group">
@@ -87,9 +88,9 @@ const StudentDashboard = () => {
              <FileText className="text-emerald-500 mb-4" size={32} />
              <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight text-shadow-sm">Academic Results</h3>
              <p className="text-slate-500 text-sm font-medium mb-6 leading-relaxed text-shadow-sm">Check your finalized grades, SGPA, and download official marksheets.</p>
-             <a href="/student/results" className="inline-flex items-center gap-2 text-emerald-600 font-black text-[13px]  tracking-widest hover:text-emerald-500 transition-colors">
+             <Link to="/student/results" className="inline-flex items-center gap-2 text-emerald-600 font-black text-[13px] tracking-widest hover:text-emerald-500 transition-colors">
                View Results <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-             </a>
+             </Link>
           </div>
 
           <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50 relative overflow-hidden group">
@@ -97,9 +98,9 @@ const StudentDashboard = () => {
              <Calendar className="text-indigo-600 mb-4" size={32} />
              <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Attendance Record</h3>
              <p className="text-slate-500 text-sm font-medium mb-6 leading-relaxed">Track your subject-wise attendance and verify eligibility for examinations.</p>
-             <a href="/student/attendance" className="inline-flex items-center gap-2 text-indigo-600 font-black text-[13px]  tracking-widest hover:text-indigo-500 transition-colors">
+             <Link to="/student/attendance" className="inline-flex items-center gap-2 text-indigo-600 font-black text-[13px] tracking-widest hover:text-indigo-500 transition-colors">
                Track Attendance <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
-             </a>
+             </Link>
           </div>
 
           <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50">
