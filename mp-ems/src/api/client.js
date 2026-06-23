@@ -1,5 +1,6 @@
 import axios from 'axios';
 import authUtils from '../utils/authUtils';
+import useAuthStore from '../store/useAuthStore';
 
 // Helper to get base URL. Primary source is public/json/config.js (resolved at
 // runtime). If that script failed to load, fall back to the same dynamic rule
@@ -33,7 +34,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
     (config) => {
         config.baseURL = getBaseUrl();
-        const token = localStorage.getItem('token');
+        const token = useAuthStore.getState().token;
         if (token) {
             config.headers = config.headers || {};
             config.headers.Authorization = `Bearer ${token}`;

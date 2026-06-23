@@ -1,3 +1,4 @@
+import useAuthStore from '../store/useAuthStore';
 import React, { useState, useEffect } from "react";
 import { toast } from 'react-toastify';
 import { useNavigate } from "react-router-dom";
@@ -65,7 +66,7 @@ const AcademicYears = () => {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = useAuthStore.getState().token;
     if (!token) {
       navigate('/');
       return;

@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -134,7 +135,7 @@ const MarksConfigForm = () => {
 
         setSaving(true);
         try {
-            const collegeId = localStorage.getItem('collegeId');
+            const collegeId = useAuthStore.getState().collegeId;
 
             for (let comp of components) {
                 await collegeAdminApi.saveMarksStructure({

@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import "./App.css";
 import AppRoutes from "./routes";
 import SessionMonitor from "./components/SessionMonitor";
+import useAuthStore from "./store/useAuthStore";
 
 // Setup Global Fetch Interceptor
 const originalFetch = window.fetch;
@@ -28,9 +29,7 @@ window.fetch = async function () {
   }
 
   if (isUnauthorized) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('roleName');
-    localStorage.removeItem('user');
+    useAuthStore.getState().logout();
     window.dispatchEvent(new CustomEvent('unauthorized'));
     return new Promise(() => {});
   }

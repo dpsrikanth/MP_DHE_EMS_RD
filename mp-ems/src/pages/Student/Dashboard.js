@@ -1,9 +1,10 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect } from 'react';
 import { User, Mail, GraduationCap, School, Calendar, BookOpen, AlertCircle, FileText } from 'lucide-react';
 import authUtils from '../../utils/authUtils';
 
 const StudentDashboard = () => {
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
+  const [user, setUser] = useState((useAuthStore.getState().user || {}));
   
   return (
     <div className="p-6 max-w-6xl mx-auto">

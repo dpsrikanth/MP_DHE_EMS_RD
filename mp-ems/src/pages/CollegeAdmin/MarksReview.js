@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -35,8 +36,8 @@ const MarksReview = () => {
     // Extracted subject metadata
     const [subjectMeta, setSubjectMeta] = useState(null);
 
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const roleName = localStorage.getItem('roleName');
+    const user = (useAuthStore.getState().user || {});
+    const roleName = useAuthStore.getState().roleName;
     const isHOD = roleName === 'HOD';
     const isCollegeAdmin = roleName === 'college_admin';
 

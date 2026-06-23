@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { FileDown, Printer, Filter, Search, BookOpen, Download } from "lucide-react";
@@ -40,7 +41,7 @@ const MarksReports = () => {
         }
         try {
             setLoading(true);
-            const userStr = localStorage.getItem('user');
+            const userStr = JSON.stringify(useAuthStore.getState().user || null);
             const collegeId = userStr ? JSON.parse(userStr).college_id : 1;
 
             const params = { college_id: collegeId, semester_id: selectedSemester.value };

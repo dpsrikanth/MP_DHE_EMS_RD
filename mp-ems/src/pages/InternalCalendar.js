@@ -1,3 +1,4 @@
+import useAuthStore from '../store/useAuthStore';
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Calendar as CalendarIcon, 
@@ -32,7 +33,7 @@ const InternalCalendar = () => {
 
   // College scoping: college_admin/HOD carry a college on their token; super/
   // university admins do not, so they choose one from a searchable dropdown.
-  const collegeFromToken = localStorage.getItem('collegeId');
+  const collegeFromToken = useAuthStore.getState().collegeId;
   const needsCollegeSelection = !collegeFromToken;
   const [colleges, setColleges] = useState([]);
   const [selectedCollege, setSelectedCollege] = useState('');

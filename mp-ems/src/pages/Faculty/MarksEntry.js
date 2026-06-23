@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
@@ -50,7 +51,7 @@ const MarksEntry = () => {
     const fetchAssignedSubjects = async () => {
         try {
             setLoading(true);
-            const userStr = localStorage.getItem('user');
+            const userStr = JSON.stringify(useAuthStore.getState().user || null);
             const teacherId = userStr ? JSON.parse(userStr).teacher_id : 1;
             const data = await facultyApi.getAssignedSubjects(teacherId);
             setAssignedSubjects(data || []);
@@ -283,8 +284,8 @@ const MarksEntry = () => {
 
         setIsSaving(true);
         try {
-            const token = localStorage.getItem('token');
-            const userStr = localStorage.getItem('user');
+            const token = useAuthStore.getState().token;
+            const userStr = JSON.stringify(useAuthStore.getState().user || null);
             const teacherId = userStr ? JSON.parse(userStr).teacher_id : 1;
 
             const payload = [];
@@ -415,8 +416,8 @@ const MarksEntry = () => {
 
         setIsSaving(true);
         try {
-            const token = localStorage.getItem('token');
-            const userStr = localStorage.getItem('user');
+            const token = useAuthStore.getState().token;
+            const userStr = JSON.stringify(useAuthStore.getState().user || null);
             const teacherId = userStr ? JSON.parse(userStr).teacher_id : 1;
 
             // 1. First Save the marks as draft
@@ -476,7 +477,7 @@ const MarksEntry = () => {
 
         setIsSaving(true);
         try {
-            const token = localStorage.getItem('token');
+            const token = useAuthStore.getState().token;
             const data = await facultyApi.requestUnlock({
                 subject_id: assignmentStr.subject_id,
                 section: assignmentStr.section,
@@ -759,7 +760,7 @@ const MarksEntry = () => {
                     optionalColumns={marksStructure.map(c => `comp_${c.id}`)}
                     extraPayload={{
                         subject_id: assignedSubjects.find(a => a.id === selectedAssignment.value)?.subject_id,
-                        faculty_id: JSON.parse(localStorage.getItem('user'))?.teacher_id || 1,
+                        faculty_id: (useAuthStore.getState().user || {})?.teacher_id || 1,
                         college_id: assignedSubjects.find(a => a.id === selectedAssignment.value)?.college_id,
                         semester_id: assignedSubjects.find(a => a.id === selectedAssignment.value)?.semester_id,
                         academic_year_id: assignedSubjects.find(a => a.id === selectedAssignment.value)?.academic_year_id,

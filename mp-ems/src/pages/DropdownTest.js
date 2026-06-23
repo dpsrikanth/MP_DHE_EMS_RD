@@ -1,3 +1,4 @@
+import useAuthStore from '../store/useAuthStore';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
@@ -24,7 +25,7 @@ const DropdownTest = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = useAuthStore.getState().token;
     if (!token) {
       console.warn("No authentication token found. Redirecting to login.");
       toast.error("Please login to access this page");

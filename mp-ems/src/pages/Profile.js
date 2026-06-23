@@ -1,3 +1,4 @@
+import useAuthStore from '../store/useAuthStore';
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Shield, Building2, School, GraduationCap, MapPin, Globe, History, Laptop, Smartphone } from 'lucide-react';
 import { authApi } from '../api/authApi';
@@ -7,8 +8,8 @@ import { authApi } from '../api/authApi';
  * Shows details for the currently logged-in user Based on their role.
  */
 const Profile = () => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const roleName = localStorage.getItem('roleName') || 'User';
+  const user = (useAuthStore.getState().user || {});
+  const roleName = useAuthStore.getState().roleName || 'User';
 
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);

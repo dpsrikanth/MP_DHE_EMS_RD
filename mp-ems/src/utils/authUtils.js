@@ -1,122 +1,68 @@
+import { useAuthStore } from '../store/useAuthStore';
+
 // Authentication utility functions
+// These simply proxy to the Zustand store, allowing non-React files 
+// to interact with auth state without using hooks.
 
 export const authUtils = {
   setAuth: (token, roleName, userId, collegeId, userObj, departmentId, universityId) => {
-    localStorage.setItem("token", token);
-    localStorage.setItem("roleName", roleName);
-    localStorage.setItem("userId", userId);
-    if (collegeId) localStorage.setItem("collegeId", collegeId);
-    if (departmentId) localStorage.setItem("departmentId", departmentId);
-    if (universityId) localStorage.setItem("universityId", universityId);
-    if (userObj) localStorage.setItem("user", JSON.stringify(userObj));
+    useAuthStore.getState().setAuth(
+      token, 
+      roleName, 
+      userId, 
+      collegeId, 
+      departmentId, 
+      universityId, 
+      userObj
+    );
   },
 
   // Get authentication data
   getAuth: () => ({
-    token: localStorage.getItem("token"),
-    roleName: localStorage.getItem("roleName"),
-    userId: localStorage.getItem("userId"),
-    collegeId: localStorage.getItem("collegeId"),
-    departmentId: localStorage.getItem("departmentId"),
+    token: useAuthStore.getState().token,
+    roleName: useAuthStore.getState().roleName,
+    userId: useAuthStore.getState().userId,
+    collegeId: useAuthStore.getState().collegeId,
+    departmentId: useAuthStore.getState().departmentId,
   }),
 
-  getUserEmail: () => {
-    try {
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        return user.email;
-      }
-    } catch (e) {
-      console.error("Error parsing user from localStorage", e);
-    }
-    return null;
-  },
+  getUserEmail: () => useAuthStore.getState().getUserEmail(),
 
-  isSystemAdmin: () => {
-    const roleName = localStorage.getItem("roleName");
-    return roleName === "superadmin" || roleName === "superAdmin";
-  },
+  isSystemAdmin: () => useAuthStore.getState().isSystemAdmin(),
 
   // Check if user is authenticated
-  isAuthenticated: () => {
-    return !!localStorage.getItem("token");
-  },
+  isAuthenticated: () => useAuthStore.getState().isAuthenticated(),
 
   // Check if user is admin
-  isAdmin: () => {
-    const roleName = localStorage.getItem("roleName");
-    return roleName === "superadmin" || roleName === "superAdmin" || roleName === "admin" || roleName === "university_admin";
-  },
+  isAdmin: () => useAuthStore.getState().isAdmin(),
 
-  isSuperAdmin: () => {
-    const roleName = localStorage.getItem("roleName");
-    return roleName === "superadmin" || roleName === "superAdmin";
-  },
+  isSuperAdmin: () => useAuthStore.getState().isSystemAdmin(),
 
-  isUniversityAdmin: () => {
-    const roleName = localStorage.getItem("roleName");
-    return roleName === "university_admin";
-  },
+  isUniversityAdmin: () => useAuthStore.getState().isUniversityAdmin(),
 
-  isCollegeAdmin: () => {
-    const roleName = localStorage.getItem("roleName");
-    return roleName === "college_admin";
-  },
+  isCollegeAdmin: () => useAuthStore.getState().isCollegeAdmin(),
 
-  isHOD: () => {
-    const roleName = localStorage.getItem("roleName");
-    return roleName === "HOD";
-  },
+  isHOD: () => useAuthStore.getState().isHOD(),
 
-  isFaculty: () => {
-    const roleName = localStorage.getItem("roleName");
-    if (!roleName) return false;
-    const normalizedRole = roleName.toLowerCase();
-    return normalizedRole === "faculty" || normalizedRole === "teacher";
-  },
+  isFaculty: () => useAuthStore.getState().isFaculty(),
 
-  isStudent: () => {
-    const roleName = localStorage.getItem("roleName");
-    return roleName?.toLowerCase() === "student";
-  },
+  isStudent: () => useAuthStore.getState().isStudent(),
 
-  isExternalFaculty: () => {
-    const roleName = localStorage.getItem("roleName");
-    return roleName === "External Faculty";
-  },
+  isExternalFaculty: () => useAuthStore.getState().isExternalFaculty(),
 
-  isSecrecy: () => {
-    const roleName = localStorage.getItem("roleName");
-    if (!roleName) return false;
-    const normalized = roleName.toLowerCase();
-    return normalized === "secrecy" || normalized === "secrecy_dept";
-  },
+  isSecrecy: () => useAuthStore.getState().isSecrecy(),
 
-  isPaperSetter: () => {
-    const roleName = localStorage.getItem("roleName");
-    return roleName === "PAPER_SETTER";
-  },
+  isPaperSetter: () => useAuthStore.getState().isPaperSetter(),
 
   // Logout and clear auth data
   logout: () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("roleName");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("collegeId");
-    localStorage.removeItem("departmentId");
-    localStorage.removeItem("universityId");
-    localStorage.removeItem("user");
+    useAuthStore.getState().logout();
   },
 
   // Get authorization header
-  getAuthHeader: () => ({
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  }),
+  getAuthHeader: () => useAuthStore.getState().getAuthHeader(),
 
-  getUniversityId: () => {
-    return localStorage.getItem("universityId");
-  },
+  getUniversityId: () => useAuthStore.getState().universityId,
 };
 
 export default authUtils;

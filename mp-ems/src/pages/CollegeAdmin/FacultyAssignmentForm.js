@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -66,7 +67,7 @@ const FacultyAssignmentForm = () => {
 
     const fetchAssignmentDataEdit = async (masterData) => {
         try {
-            const collegeId = localStorage.getItem('collegeId');
+            const collegeId = useAuthStore.getState().collegeId;
             const data = await collegeAdminApi.getFacultyAssignments(collegeId);
             const assignment = data.find(m => m.id.toString() === id.toString());
             if (assignment) {
@@ -95,7 +96,7 @@ const FacultyAssignmentForm = () => {
         }
         setSaving(true);
         try {
-            const collegeId = localStorage.getItem('collegeId');
+            const collegeId = useAuthStore.getState().collegeId;
             await collegeAdminApi.assignFaculty({
                 college_id: collegeId,
                 teacher_id: selectedFaculty.value,

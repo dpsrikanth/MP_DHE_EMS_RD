@@ -1,3 +1,4 @@
+import useAuthStore from '../store/useAuthStore';
 ﻿import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
@@ -65,10 +66,8 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
       // Close modal and redirect to login after a short delay
       setTimeout(() => {
         onClose();
-        localStorage.removeItem('token');
-        localStorage.removeItem('roleName');
-        localStorage.removeItem('user');
-        navigate('/');
+        useAuthStore.getState().logout();
+navigate('/');
       }, 1500);
 
     } catch (err) {

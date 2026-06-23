@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { CheckCircle, Clock, ShieldAlert, FileText, ChevronRight, Lock, Building, Search, X, Send, History } from 'lucide-react';
@@ -19,7 +20,7 @@ const MarksVerification = () => {
     const [auditLogs, setAuditLogs] = useState([]);
     const [loadingLogs, setLoadingLogs] = useState(false);
 
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = (useAuthStore.getState().user || {});
     const isAdmin = user.role?.toLowerCase() === 'admin' || user.role === 'college_admin';
 
 
@@ -30,7 +31,7 @@ const MarksVerification = () => {
     const fetchTrackingData = async () => {
         try {
             setLoading(true);
-            const userStr = localStorage.getItem('user');
+            const userStr = JSON.stringify(useAuthStore.getState().user || null);
             const user = userStr ? JSON.parse(userStr) : {};
             const collegeId = user.college_id;
 

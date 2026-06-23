@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
@@ -46,8 +47,8 @@ const FacultyAssignment = () => {
             const depts = data.departments || [];
             setDepartments(depts);
             
-            const userRole = localStorage.getItem('roleName');
-            const userDeptId = localStorage.getItem('departmentId');
+            const userRole = useAuthStore.getState().roleName;
+            const userDeptId = useAuthStore.getState().departmentId;
             console.log("FacultyAssignment HOD Check:", { userRole, userDeptId, depts });
             
             if (userRole === 'HOD' && userDeptId) {
@@ -56,7 +57,7 @@ const FacultyAssignment = () => {
                 // Fallback for database inconsistency where HOD's department ID is not in active departments list
                 if (!dept) {
                     try {
-                        const userObj = JSON.parse(localStorage.getItem('user') || '{}');
+                        const userObj = (useAuthStore.getState().user || {});
                         dept = { id: userDeptId, name: userObj.department_name || 'HOD Department' };
                         depts.push(dept);
                         setDepartments([...depts]);
@@ -96,7 +97,7 @@ const FacultyAssignment = () => {
 
     const fetchAssignments = async () => {
         try {
-            const collegeId = localStorage.getItem('collegeId');
+            const collegeId = useAuthStore.getState().collegeId;
             const data = await collegeAdminApi.getFacultyAssignments(collegeId);
             setAssignments(data || []);
         } catch (err) {
@@ -110,7 +111,7 @@ const FacultyAssignment = () => {
         }
 
         try {
-            const collegeId = localStorage.getItem('collegeId');
+            const collegeId = useAuthStore.getState().collegeId;
 
             await collegeAdminApi.assignFaculty({
                 college_id: collegeId,
@@ -184,11 +185,11 @@ const FacultyAssignment = () => {
         </div>
     );
 
-    const userRole = localStorage.getItem('roleName');
+    const userRole = useAuthStore.getState().roleName;
     
     let filteredDepartments = departments;
     if (userRole === 'HOD') {
-        const userDeptId = localStorage.getItem('departmentId');
+        const userDeptId = useAuthStore.getState().departmentId;
         if (userDeptId) {
             filteredDepartments = departments.filter(d => d.id == userDeptId);
         }

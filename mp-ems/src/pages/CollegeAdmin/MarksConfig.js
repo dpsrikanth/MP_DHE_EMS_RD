@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
@@ -186,7 +187,7 @@ const MarksConfig = () => {
         }
 
         try {
-            const collegeId = localStorage.getItem('collegeId');
+            const collegeId = useAuthStore.getState().collegeId;
 
             for (let comp of components) {
                 // If it's existing, we could call update, but the requirement is mostly about showing and adding

@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 ﻿import React, { useState, useEffect } from "react";
 import { 
   ShieldCheck, Save, Info, 
@@ -19,8 +20,8 @@ const ManageCredits = () => {
     // Selector state (reusing the high-level admin logic)
     const [universities, setUniversities] = useState([]);
     const [selectedUni, setSelectedUni] = useState("");
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const roleName = localStorage.getItem('roleName') || '';
+    const user = (useAuthStore.getState().user || {});
+    const roleName = useAuthStore.getState().roleName || '';
     const isSuperOrAdmin = user.role === 'superadmin' || user.role === 'superAdmin' || user.role === 'admin' || roleName === 'superadmin' || roleName === 'superAdmin' || roleName === 'admin';
     const isUniversityAdmin = user.role === 'university_admin' || roleName === 'university_admin';
     const isHighLevelAdmin = isSuperOrAdmin; // Only super/system admins get the full editable university dropdown
@@ -51,7 +52,7 @@ const ManageCredits = () => {
 
     const fetchOwnUniversity = async () => {
         try {
-            const uniId = localStorage.getItem('universityId') || user.university_id;
+            const uniId = useAuthStore.getState().universityId || user.university_id;
             // Fetch all universities and filter to this admin's university
             const data = await masterDataApi.getUniversities();
             if (data) {

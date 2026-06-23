@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
@@ -57,7 +58,7 @@ const InternalExamMarks = () => {
     const [isValidationEnabled, setIsValidationEnabled] = useState(true);
     const [isCorrectionMode, setIsCorrectionMode] = useState(false);
 
-    const teacherId = JSON.parse(localStorage.getItem('user'))?.teacher_id || 1;
+    const teacherId = (useAuthStore.getState().user || {})?.teacher_id || 1;
 
     useEffect(() => {
         fetchInitialData();
@@ -225,7 +226,7 @@ const InternalExamMarks = () => {
     const handleSave = async (silent = false) => {
         setIsSaving(true);
         try {
-            const token = localStorage.getItem('token');
+            const token = useAuthStore.getState().token;
             if (!componentInfo) {
                 toast.error("Marks structure component not found for this round.");
                 return false;

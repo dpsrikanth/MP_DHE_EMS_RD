@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Calendar, BookOpen, Clock, AlertCircle, 
@@ -215,7 +216,7 @@ const StudentAttendance = () => {
     const [expandedSemester, setExpandedSemester] = useState(null);
 
     // Semester-wise states
-    const [user] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
+    const [user] = useState((useAuthStore.getState().user || {}));
     const [semestersList, setSemestersList] = useState([]);
     const [selectedSemester, setSelectedSemester] = useState('');
 

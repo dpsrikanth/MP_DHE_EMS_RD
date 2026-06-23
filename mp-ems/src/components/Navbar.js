@@ -1,3 +1,4 @@
+import useAuthStore from '../store/useAuthStore';
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -45,8 +46,8 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
     };
   }, [isHelpOpen]);
 
-  const roleName = localStorage.getItem('roleName') || 'Guest';
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const roleName = useAuthStore.getState().roleName || 'Guest';
+  const user = (useAuthStore.getState().user || {});
   const displayName = user.name || roleName;
 
   const getPageTitle = (path) => {
@@ -62,10 +63,8 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('roleName');
-    localStorage.removeItem('user');
-    navigate('/');
+    useAuthStore.getState().logout();
+navigate('/');
     setShowDropdown(false);
   };
 

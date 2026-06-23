@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { BookOpen, CheckCircle, Clock, ShieldAlert, ChevronRight, User, Search, X } from "lucide-react";
@@ -20,7 +21,7 @@ const FacultyDashboard = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const userStr = localStorage.getItem('user');
+            const userStr = JSON.stringify(useAuthStore.getState().user || null);
             const user = userStr ? JSON.parse(userStr) : null;
             const teacherId = user ? user.teacher_id : 1;
             const collegeId = user ? user.college_id : 1;
@@ -80,7 +81,7 @@ const FacultyDashboard = () => {
         navigate('/faculty/attendance', { state: { assignmentId: assignment.id } });
     };
 
-    const userStr = localStorage.getItem('user');
+    const userStr = JSON.stringify(useAuthStore.getState().user || null);
     const user = userStr ? JSON.parse(userStr) : { name: 'Faculty' };
 
     return (

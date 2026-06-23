@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 ﻿import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -117,7 +118,7 @@ const PolicyConfigForm = () => {
         }
         setSaving(true);
         try {
-            const collegeId = localStorage.getItem('collegeId');
+            const collegeId = useAuthStore.getState().collegeId;
 
             // 1. Map Program & Semester to Policy
             await collegeAdminApi.mapPolicy({

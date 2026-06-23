@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
@@ -20,7 +21,7 @@ const MarksApproval = () => {
     const [milestones, setMilestones] = useState([]);
     const [isValidationEnabled, setIsValidationEnabled] = useState(true);
 
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = (useAuthStore.getState().user || {});
     const isHOD = user.role === 'HOD';
     const isCollegeAdmin = user.role === 'college_admin';
 

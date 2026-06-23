@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { Calendar, Clock, BookOpen, CreditCard, CheckCircle, AlertCircle, Printer, Search, X } from 'lucide-react';
@@ -31,7 +32,7 @@ const StudentExams = () => {
         setAvailableSemesters(sortedSems);
         
         // Try to get student's current semester from user object
-        const userStr = localStorage.getItem('user');
+        const userStr = JSON.stringify(useAuthStore.getState().user || null);
         if (userStr) {
           const user = JSON.parse(userStr);
           if (user.semister) {

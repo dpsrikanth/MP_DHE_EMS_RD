@@ -1,3 +1,4 @@
+import useAuthStore from '../store/useAuthStore';
 import React, { useState, useEffect } from "react";
 import { toast } from 'react-toastify';
 import { useNavigate, useLocation } from "react-router-dom";
@@ -28,7 +29,7 @@ const MilestoneManagement = () => {
   const [error, setError] = useState(null);
   const [isValidationEnabled, setIsValidationEnabled] = useState(true);
   const [updatingSettings, setUpdatingSettings] = useState(false);
-  const roleName = localStorage.getItem('roleName');
+  const roleName = useAuthStore.getState().roleName;
   const canEdit = roleName === 'university_admin';
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);

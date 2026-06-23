@@ -1,3 +1,4 @@
+import useAuthStore from '../store/useAuthStore';
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import authUtils from "../utils/authUtils";
@@ -50,7 +51,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const [expandedMenus, setExpandedMenus] = useState({});
 
   useEffect(() => {
-    const roleName = localStorage.getItem('roleName');
+    const roleName = useAuthStore.getState().roleName;
     if (['Faculty', 'Teacher', 'External Faculty'].includes(roleName)) {
       facultyApi.checkAssigned()
         .then(data => setIsAssignedPaperSetter(data.isAssigned))
@@ -87,7 +88,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   };
 
   const renderMenuByRole = () => {
-    const roleName = localStorage.getItem('roleName');
+    const roleName = useAuthStore.getState().roleName;
 
     if (roleName === 'college_admin') {
       return [

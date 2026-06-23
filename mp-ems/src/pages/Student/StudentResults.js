@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, Award, CheckCircle, XCircle, BookOpen, Clock, Download, 
@@ -16,7 +17,7 @@ const StudentResults = () => {
   const [loading, setLoading] = useState(true);
   const { config: gradingConfig, loading: configLoading } = useGradingPolicy();
   const [error, setError] = useState(null);
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
+  const [user, setUser] = useState((useAuthStore.getState().user || {}));
   const [searchQuery, setSearchQuery] = useState('');
   const [resultTypeFilter, setResultTypeFilter] = useState('external');
   const [selectedSemester, setSelectedSemester] = useState('All');

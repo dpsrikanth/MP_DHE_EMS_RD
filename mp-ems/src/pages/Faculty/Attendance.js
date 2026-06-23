@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
@@ -81,7 +82,7 @@ const Attendance = () => {
     const fetchAssignedSubjects = async () => {
         try {
             setLoading(true);
-            const userStr = localStorage.getItem('user');
+            const userStr = JSON.stringify(useAuthStore.getState().user || null);
             const teacherId = userStr ? JSON.parse(userStr).teacher_id : 1;
             const data = await facultyApi.getAssignedSubjects(teacherId);
             setAssignedSubjects(data || []);
@@ -250,7 +251,7 @@ const Attendance = () => {
         if (!assignment) return;
         setIsSaving(true);
         try {
-            const userStr = localStorage.getItem('user');
+            const userStr = JSON.stringify(useAuthStore.getState().user || null);
             const teacherId = userStr ? JSON.parse(userStr).teacher_id : 1;
             const payload = Object.entries(attendanceDraft).map(([studentId, status]) => ({
                 student_id: parseInt(studentId),

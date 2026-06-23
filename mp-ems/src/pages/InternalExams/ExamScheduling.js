@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Calendar, Save, Clock, Search, BookOpen, GraduationCap, Flag, Building2 } from 'lucide-react';
@@ -21,7 +22,7 @@ const ExamScheduling = () => {
 
     // College scoping: college_admin/HOD have a college on their token; super/university
     // admins do not, so they must pick one from a searchable dropdown.
-    const collegeFromToken = localStorage.getItem('collegeId');
+    const collegeFromToken = useAuthStore.getState().collegeId;
     const needsCollegeSelection = !collegeFromToken;
     const [colleges, setColleges] = useState([]);
     const [selectedCollege, setSelectedCollege] = useState('');

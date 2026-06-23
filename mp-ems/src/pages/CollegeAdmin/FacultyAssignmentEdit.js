@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import Select from 'react-select';
@@ -54,7 +55,7 @@ const FacultyAssignmentEdit = () => {
 
     const fetchAssignmentData = async () => {
         try {
-            const collegeId = localStorage.getItem('collegeId');
+            const collegeId = useAuthStore.getState().collegeId;
             const data = await collegeAdminApi.getFacultyAssignments(collegeId);
             const found = data.find(a => a.id.toString() === id);
             if (found) {

@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/useAuthStore';
 import {
     Users,
     GraduationCap,
@@ -33,7 +34,7 @@ const HODDashboard = () => {
         const fetchHODData = async () => {
             try {
                 const { collegeId, departmentId } = authUtils.getAuth();
-                const user = JSON.parse(localStorage.getItem("user") || "{}");
+                const user = (useAuthStore.getState().user || {});
                 setDepartmentName(user.department_name || "Department");
 
                 // 1. Fetch Stats (Approvals)

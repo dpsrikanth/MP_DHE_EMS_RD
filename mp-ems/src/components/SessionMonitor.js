@@ -1,3 +1,4 @@
+import useAuthStore from '../store/useAuthStore';
 ﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { authApi } from '../api/authApi';
 
@@ -32,7 +33,7 @@ const SessionMonitor = ({ children }) => {
   }, [updateActivity]);
 
   const checkToken = useCallback(() => {
-    const token = localStorage.getItem('token');
+    const token = useAuthStore.getState().token;
     if (!token) return;
 
     try {
@@ -59,10 +60,8 @@ const SessionMonitor = ({ children }) => {
         setShowWarning(false);
         const timeSinceLastActivity = Date.now() - lastActivity.current;
         if (timeSinceLastActivity >= IDLE_TIMEOUT) {
-           localStorage.removeItem('token');
-           localStorage.removeItem('roleName');
-           localStorage.removeItem('user');
-           window.dispatchEvent(new CustomEvent('unauthorized'));
+           useAuthStore.getState().logout();
+window.dispatchEvent(new CustomEvent('unauthorized'));
         }
       } else {
         setShowWarning(false);
@@ -82,7 +81,7 @@ const SessionMonitor = ({ children }) => {
     try {
       const data = await authApi.refreshToken();
       // Update local storage with the new fresh token (payload decoded correctly)
-      localStorage.setItem('token', data.token);
+      useAuthStore.setState({ token: data.token });
       setShowWarning(false);
       // Refresh our interval check instantly
       checkToken();
