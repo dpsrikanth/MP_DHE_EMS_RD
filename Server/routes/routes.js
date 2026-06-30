@@ -62,49 +62,6 @@ router.post('/register', initiateRegistration);
 router.post('/verify-otp', verifyOtp);
 router.post('/set-password', setInitialPassword);
 
-router.get('/demo/apply-grace', async (req, res) => {
-    try {
-        const { applyGraceMarks } = require('../utils/graceUtils');
-        const db = require('../config/db');
-        const rollNumber = '25BT1303';
-        const examName = 'Programming Lab';
-        
-        const studentRes = await db.query(`
-            SELECT s.id, c.university_id 
-            FROM students s
-            LEFT JOIN colleges c ON s."collageName" = c.name
-            WHERE s.rollnumber = $1
-        `, [rollNumber]);
-        
-        if (studentRes.rows.length === 0) return res.status(404).json({ error: "Student not found" });
-        const studentId = studentRes.rows[0].id;
-        const universityId = studentRes.rows[0].university_id || 1;
-
-        await db.query(`
-            UPDATE grading_configs 
-            SET grace_policy = '{"is_enabled": true, "max_total_grace": 5, "max_per_subject_grace": 3}'
-            WHERE university_id = $1
-        `, [universityId]);
-
-        await db.query(`
-            UPDATE marks 
-            SET internal_marks = 16, external_marks = 22, total_marks = 38, status = 'Fail', grace_marks = 0
-            WHERE student_id = $1 AND exam_id = (SELECT id FROM exams WHERE name = $2 LIMIT 1)
-        `, [studentId, examName]);
-
-        await applyGraceMarks(studentId, examName, universityId, null);
-        
-        res.json({ 
-            message: "Grace demo completed successfully", 
-            student: "Sanjana KC", 
-            subject: "Programming Lab", 
-            action: "Marks updated to 38 -> Grace Engine triggered -> Now Pass (40)" 
-        });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
-
 /**
  * @swagger
  * /api/change-password:

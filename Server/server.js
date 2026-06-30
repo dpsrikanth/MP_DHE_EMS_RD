@@ -13,6 +13,8 @@ app.set('trust proxy', true);
 const logger = require('./utils/logger');
 const morgan = require('morgan');
 
+const { redactSensitive } = require('./utils/redact');
+
 const routes = require('./routes/routes');
 const collegeAdminRoutes = require('./routes/collegeAdminRoutes');
 const facultyMarksRoutes = require('./routes/facultyMarksRoutes');
@@ -58,10 +60,13 @@ app.use(morgan((tokens, req, res) => {
   } catch (e) {
     // Ignore if not JSON
   }
+  resBody = redactSensitive(resBody);
 
   let reqBody = req.body;
   if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
     reqBody = '[Multipart Form Data omitted]';
+  } else {
+    reqBody = redactSensitive(reqBody);
   }
 
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip;
@@ -139,9 +144,12 @@ app.get('/api', (req, res) => {
   res.json({ message: 'API is running' });
 });
 
-app.get('/api/test-error', (req, res) => {
-  throw new Error("This is a manual test error to verify logging functionality.");
-});
+// Debug-only endpoint to verify error logging — never exposed in production.
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/api/test-error', (req, res) => {
+    throw new Error("This is a manual test error to verify logging functionality.");
+  });
+}
 
 // 4. Global Error Handling Middleware
 app.use((err, req, res, next) => {
