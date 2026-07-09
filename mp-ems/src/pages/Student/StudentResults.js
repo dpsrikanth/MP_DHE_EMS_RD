@@ -481,7 +481,7 @@ const StudentResults = () => {
                     </div>
                     {series.exam_type !== 1 && (
                       <button 
-                        onClick={() => window.open(`/student/result-sheet/${encodeURIComponent(series.exam_name)}`, '_blank')}
+                        onClick={() => window.open(`${(import.meta.env.BASE_URL || "/").replace(/\/$/, "")}/student/result-sheet/${encodeURIComponent(series.exam_name)}`, '_blank')}
                         className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-[12px] font-black  tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-slate-800 transition-all flex items-center gap-2 group"
                       >
                         <Download size={14} className="group-hover:translate-y-0.5 transition-transform" /> 

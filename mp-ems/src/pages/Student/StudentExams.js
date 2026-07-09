@@ -404,7 +404,7 @@ const StudentExams = () => {
                     </div>
                   ) : (
                     <button
-                      onClick={() => window.open(`/student/hall-ticket/${group.exam_name}/${group.subjects[0].semester_id}`, '_blank')}
+                      onClick={() => window.open(`${(import.meta.env.BASE_URL || "/").replace(/\/$/, "")}/student/hall-ticket/${group.exam_name}/${group.subjects[0].semester_id}`, '_blank')}
                       className="mt-4 md:mt-0 group relative inline-flex items-center gap-3 bg-emerald-600 text-white px-8 py-3.5 rounded-2xl font-black text-[13px]  tracking-widest shadow-2xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
